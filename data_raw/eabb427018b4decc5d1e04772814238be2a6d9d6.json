@@ -1,0 +1,3911 @@
+{
+    "paper_id": "eabb427018b4decc5d1e04772814238be2a6d9d6",
+    "metadata": {
+        "title": "Forecasting the 2013-2014 Influenza Season Using Wikipedia",
+        "authors": [
+            {
+                "first": "K",
+                "middle": [
+                    "S"
+                ],
+                "last": "Open Access Citation ; Hickmann",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "G",
+                "middle": [],
+                "last": "Fairchild",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "R",
+                "middle": [],
+                "last": "Priedhorsky",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "N",
+                "middle": [],
+                "last": "Generous",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "J",
+                "middle": [
+                    "M"
+                ],
+                "last": "Hyman",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "A",
+                "middle": [],
+                "last": "Deshpande",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Infectious diseases are one of the leading causes of morbidity and mortality around the world; thus, forecasting their impact is crucial for planning an effective response strategy. According to the Centers for Disease Control and Prevention (CDC), seasonal influenza affects 5% to 20% of the U.S. population and causes major economic impacts resulting from hospitalization and absenteeism. Understanding influenza dynamics and forecasting its impact is fundamental for developing prevention and mitigation strategies. We combine modern data assimilation methods with Wikipedia access logs and CDC influenza-like illness (ILI) reports to create a weekly forecast for seasonal influenza. The methods are applied to the 2013-2014 influenza season but are sufficiently general to forecast any disease outbreak, given incidence or case count data. We adjust the initialization and parametrization of a disease model and show that this allows us to determine systematic model bias. In addition, we provide a way to determine where the model diverges from observation and evaluate forecast accuracy. Wikipedia article access logs are shown to be highly correlated with historical ILI records and allow for accurate prediction of ILI data several weeks before it becomes available. The results show that prior to the peak of the flu season, our forecasting method produced 50% and 95% credible intervals for the 2013-2014 ILI observations that contained the actual observations for most weeks in the forecast. However, since our model does not account for re-infection or multiple strains of influenza, the tail of the epidemic is not predicted well after the peak of flu season has passed. PLOS Computational Biology |",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "We use modern methods for injecting current data into epidemiological models in order to offer a probabilistic evaluation of the future influenza state in the U.S. population. This type of disease forecasting is still in its infancy, but as these methods become more developed it will allow for increasingly robust control measures to react to and prevent large disease outbreaks. While weather forecasting has steadily improved over the last half century Introduction Despite preventive efforts and educational activities for seasonal influenza in the United States (U.S.), on average 5%-20% of the population gets influenza [1] , more than 200,000 people [1] are hospitalized from seasonal influenza complications, and 3,000-49,000 people die each year [2] . The result is a significant public health and economic burden for the U.S. population [3] [4] [5] .",
+            "cite_spans": [
+                {
+                    "start": 626,
+                    "end": 629,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 657,
+                    "end": 660,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 755,
+                    "end": 758,
+                    "text": "[2]",
+                    "ref_id": null
+                },
+                {
+                    "start": 847,
+                    "end": 850,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 851,
+                    "end": 854,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 855,
+                    "end": 858,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "The Centers for Disease Control and Prevention (CDC) monitor influenza burden by collecting information from volunteer public health departments at the state and local level [6] [7] [8] [9] . Data are then used for planning and mitigation activities based on what is believed to be the current state of influenza throughout the U.S. [6, 7, 10] . These rough estimates could possibly lead to significant over-or under-preparation for any given flu season.",
+            "cite_spans": [
+                {
+                    "start": 174,
+                    "end": 177,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 178,
+                    "end": 181,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 182,
+                    "end": 185,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 186,
+                    "end": 189,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 333,
+                    "end": 336,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 337,
+                    "end": 339,
+                    "text": "7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 340,
+                    "end": 343,
+                    "text": "10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "In November of 2013, the CDC launched the Predict the Influenza Season Challenge competition to evaluate the growing capabilities in disease forecasting models that use digital surveillance data [11] . The competition asked entrants to forecast the timing, peak, and disease incidence of the 2013-2014 influenza season using Twitter or other Internet data to supplement ILI weekly reported data. The work described in this paper was conducted as an entry for this competition. The CDC challenge concluded on March 27 th , 2014. Though individual entries' scores were not announced, the winner was. Officials conducting the contest found each entry informative as to the capabilities of disease modeling to inform public policy but the general consensus was that the current state of influenza forecasting still has too much uncertainty to base public health policy on. Details of the contest will be announced in a forthcoming paper by the CDC [12] . Based on our entry to this contest, we present a novel method to provide a probabilistic forecast of the influenza season based on a mathematical model for seasonal influenza dynamics and historical U.S. influenza observations. The forecast is dynamically adjusted using a statistical filter as current influenza data is observed.",
+            "cite_spans": [
+                {
+                    "start": 195,
+                    "end": 199,
+                    "text": "[11]",
+                    "ref_id": null
+                },
+                {
+                    "start": 944,
+                    "end": 948,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "Reliable forecasts of influenza dynamics in the U.S. cannot be obtained without consistently updated public health observations pertaining to flu [13] . It is necessary to have a historical record of these observations in order to asses the relation between the forecasting model and the data source. Our primary data source, ILINet, is the CDC's outpatient influenza-like illness (ILI) surveillance system [6, 14] . ILINet data represent the collection of outpatient data from over 3,000 hospitals and doctors' offices across the U.S. Each week, these locations report the total number of patient visits and the number of those visits that were seen for ILI, defined as fever (temperature ! 100\u00b0F) and a cough or sore throat without a known cause other than influenza. Since 2003, these data have been collected weekly, year-round. ILINet data make up one portion of the CDC's complete influenza surveillance efforts. For example, U.S. influenzarelated mortality and virological strain data are also collected, but they are not used in this study. For a complete overview of the CDC's influenza surveillance programs we refer the reader to [6, 7, 14] .",
+            "cite_spans": [
+                {
+                    "start": 146,
+                    "end": 150,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 407,
+                    "end": 410,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 411,
+                    "end": 414,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1141,
+                    "end": 1144,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1145,
+                    "end": 1147,
+                    "text": "7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1148,
+                    "end": 1151,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "Due to the ILINet dataset's use by the CDC and other public health agencies in the U.S. together with ILINet's availability and archived collection of historical influenza data, we develop our influenza forecast to predict ILINet. However, ILI represents a limited syndromic observation of people who seek medical attention each week [7, 10] . Furthermore, the distribution and specific reporting practices of the approximately 3,000 healthcare providers involved in ILINet, the lack of care-seeking for many individuals infected with influenza, and the possibility of ILI symptoms without infection from the influenza virus complicates the understanding of the relation between a reported level of ILI and actual U.S. influenza prevalence. An additional drawback is related to the bureaucratic hierarchy of the ILI system; there is a 1-2 week lag present in data availability.",
+            "cite_spans": [
+                {
+                    "start": 334,
+                    "end": 337,
+                    "text": "[7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 338,
+                    "end": 341,
+                    "text": "10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "We used Wikipedia article access logs to supplement the ILINet data and broaden the range and depth of information. The addition of new data sources that estimate influenza incidence can increase the robustness of the ILI data stream [15] [16] [17] [18] [19] . Wikipedia access logs for articles highly correlated with influenza prevalence, as measured by ILI, improve our knowledge of the current influenza incidence in the U.S. The rationale for using the Wikipedia access logs was thoroughly explored in reference [15] .",
+            "cite_spans": [
+                {
+                    "start": 234,
+                    "end": 238,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 239,
+                    "end": 243,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 244,
+                    "end": 248,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 249,
+                    "end": 253,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 254,
+                    "end": 258,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 517,
+                    "end": 521,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "Influenza forecasting must provide two things in order to inform public health policy: 1) the expected future influenza dynamics and 2) the likelihood of observing dynamics deviating from this expectation. These two properties are informed by both the inherent model dynamics and current observations of flu. Fortunately for epidemiologists, the methodology for generating probabilistic forecasts with a deterministic mathematical model based on observed data has been well developed in climatology, meteorology, and oceanography [20] [21] [22] . We demonstrate how the ensemble Kalman smoother, can be used to iteratively update a distribution of the influenza model's initial conditions and parameterizations. An advantage of our technique is that it retains information about when the model dynamics systematically diverge from the dynamics of observations. The systematic model divergence from observed influenza dynamics will be used as a basis for future research in model discrepancy to improve forecasts.",
+            "cite_spans": [
+                {
+                    "start": 530,
+                    "end": 534,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 535,
+                    "end": 539,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 540,
+                    "end": 544,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "The capability for real-time forecasting of events, such as influenza dynamics, with quantified uncertainty, has been crucial for major advances across the spectrum of science [20] [21] [22] . However, this capability is still in its infancy in the field of public health. For more complete literature reviews on the field, we refer the reader to [23, 24] . Briefly, we present the literature on epidemic forecasting influencing this work, all of which rely on a Bayesian viewpoint to adjust an underlying disease model given incoming observations [25] . First, disease forecasting methods that use data to parameterize an underlying causal model of disease can use either sequential Monte Carlo type methods [14, [26] [27] [28] [29] [30] [31] or ensemble methods [32] [33] [34] [35] . Some work has been done on comparing the two methods [36, 37] . There are also several works of a more statistical nature [38] [39] [40] [41] [42] [43] , one that relies on a pure Kalman filter [44] , and one that uses variational assimilation methods [45] . Of these works, the majority tune a differential equation-based compartmental disease model [26, 28-30, 32, 33, 36, 37, 45] . However, some forecasts have been formed using agent based simulations [27, 31, 41] or spatial models [34, 35] .",
+            "cite_spans": [
+                {
+                    "start": 176,
+                    "end": 180,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 181,
+                    "end": 185,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 186,
+                    "end": 190,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 347,
+                    "end": 351,
+                    "text": "[23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 352,
+                    "end": 355,
+                    "text": "24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 548,
+                    "end": 552,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 709,
+                    "end": 713,
+                    "text": "[14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 714,
+                    "end": 718,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 719,
+                    "end": 723,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 724,
+                    "end": 728,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 729,
+                    "end": 733,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 734,
+                    "end": 738,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 739,
+                    "end": 743,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 764,
+                    "end": 768,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 769,
+                    "end": 773,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 774,
+                    "end": 778,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 779,
+                    "end": 783,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 839,
+                    "end": 843,
+                    "text": "[36,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 844,
+                    "end": 847,
+                    "text": "37]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 908,
+                    "end": 912,
+                    "text": "[38]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 913,
+                    "end": 917,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 918,
+                    "end": 922,
+                    "text": "[40]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 923,
+                    "end": 927,
+                    "text": "[41]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 928,
+                    "end": 932,
+                    "text": "[42]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 933,
+                    "end": 937,
+                    "text": "[43]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 980,
+                    "end": 984,
+                    "text": "[44]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 1038,
+                    "end": 1042,
+                    "text": "[45]",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 1137,
+                    "end": 1168,
+                    "text": "[26, 28-30, 32, 33, 36, 37, 45]",
+                    "ref_id": null
+                },
+                {
+                    "start": 1242,
+                    "end": 1246,
+                    "text": "[27,",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 1247,
+                    "end": 1250,
+                    "text": "31,",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 1251,
+                    "end": 1254,
+                    "text": "41]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 1273,
+                    "end": 1277,
+                    "text": "[34,",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 1278,
+                    "end": 1281,
+                    "text": "35]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "Each of these examples rely on defining a prior distribution for the parameterization and initialization of the underlying model. However, the methods to arrive at this prior are usually ad hoc and based on beliefs about the ranges for the parameters. It is therefore difficult to see how these methods may be applied to a general disease model given historic observations in the presence of model error. Our method for defining a prior parameterization/initialization can be generalized to any dataset pertaining to disease spread and disease model. After outlining the general forecast methodology, we describe the details of our data sources and model, the technique used to estimate a prior forecast, our data assimilation technique, and our measure of forecast accuracy. We then present an application of our methods to forecasting the 2013-2014 influenza season in the results section, and conclude with a summary of our approach and suggestions for future improvements.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "We identify correlations between CDC ILI data and Wikipedia access log data to improve our forecasts. There is a time delay in reporting of ILINet data. Wikipedia data, on the other hand, is available almost immediately and has the potential to provide information about the current state of influenza.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Wikipedia data"
+        },
+        {
+            "text": "As mentioned above, there is a 1-2 week lag between a patient seeing a doctor and the case appearing in the ILI database. Therefore, there is a need for the use of digital surveillance data available in near real-time that can complement ILINet data. We turn to publicly available Wikipedia access log data to achieve this.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Wikipedia data"
+        },
+        {
+            "text": "Wikipedia provides summary article access logs to anyone who wishes to use them. These summaries contain, for each hour from December 9, 2007 to present (and updated in realtime), a compressed text file listing the number of requests served for every article in every language, for articles with at least one request. Using the MapReduce programming paradigm [46] , we aggregate these hourly requests into weekly access counts and normalize the total number of accesses per article using the total requests for all articles across the entire English Wikipedia in each week. Wikipedia access logs have been studied extensively in [15, 16] , and we refer the reader to these sources for thorough analyses of the data. In short, it was shown that for a range of infectious diseases across many countries, some articles have access rates that are highly correlated with public health infectious disease records. Simple statistical models trained using only these article access rates were capable of nowcasting and even forecasting public health data, achieving r 2 ! 0.9 in certain cases.",
+            "cite_spans": [
+                {
+                    "start": 359,
+                    "end": 363,
+                    "text": "[46]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 629,
+                    "end": 633,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 634,
+                    "end": 637,
+                    "text": "16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Wikipedia data"
+        },
+        {
+            "text": "Five articles from the English language edition of Wikipedia were selected for estimation of present national ILI using the methods outlined in [15] . These articles were Human Flu, Influenza, Influenza A virus, Influenza B virus, and Oseltamivir. To select these articles, we used the simple article selection procedure described in [15] : we first gathered access log time series for relevant articles linked to from the main influenza Wikipedia article [47] , including the main influenza article itself. This totaled approximately 50 articles. The correlation between each of the 50 article access log time series and U.S. ILI data was computed. It was found that access log time series from the five articles mentioned above were much more highly correlated with the ILI data than the remaining articles, so it was decided that only these five articles would be used. It is important to note that only examining this restricted set of 50 Wikipedia access logs will inevitably leave the potential for the existence of an un-investigated article that is highly correlated with ILI data. However, barring an exhaustive search of Wikipedia articles focusing on the articles linked from the main English influenza article seemed like a reasonable choice.",
+            "cite_spans": [
+                {
+                    "start": 144,
+                    "end": 148,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 334,
+                    "end": 338,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 456,
+                    "end": 460,
+                    "text": "[47]",
+                    "ref_id": "BIBREF46"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Wikipedia data"
+        },
+        {
+            "text": "The weekly article request data for each article can be written as the independent variables x 1 , x 2 , . . ., x 5 . Current ILI data are estimated using a linear regression from these variables. We combine the article request data with the previous week's ILI data, which we'll denote by ILI \u22121 , and a constant offset term. This forms our regression vector X = (1, x 1 , x 2 , . . ., x 5 , ILI \u22121 ). Our linear model used to estimate the current week's ILI data is then given by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Wikipedia data"
+        },
+        {
+            "text": "The regression coefficients b = (b 0 , b 1 , b 2 , . . ., b 6 ) were then determined from historical ILI data and Wikipedia data. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Wikipedia data"
+        },
+        {
+            "text": "We only model the U.S. ILI data during the part of the year that we designate as the influenza season. Our forecasts are ordered by epidemiological week (also called CDC week or MMWR week) since this is how ILI data are reported by the CDC [48] . Epidemiological weeks are used throughout public health reporting in the U.S. (and many other regions of the world). Their widespread acceptance makes them a natural temporal scale to use in disease forecasting. The mathematical model we use for influenza spread does not include re-infection of individuals or loss of immunity and therefore can only hope to model one season's influenza course. For this reason, it was necessary to define a fixed maximum possible length influenza season that would include the earliest possible ramp up of the flu season and the latest possible tapering off. By examining the ILI data for the entire U.S. from the 2002-2003 season to the 2012-2013 season, it was found that influenza incidence does not start to noticeably increase until at least epidemiological week 32 (mid-August). Moreover, once the influenza peak has passed, the incidence decreases to non-epidemic levels by at least epidemiological week 20 (mid-May). To illustrate our maximal flu season's relation to historical ILI data we have includ- With the flu season defined to be between epidemiological week 32 and epidemiological week 20, even the 2009 H1N1 emergence is mostly accounted for. We emphasize that our definition of a fixed maximal influenza season allows us to avoid modeling influenza prevalence during the dormant summer months, a task which would require some re-introduction of susceptible individuals into the population. It is possible that, through modeling the increase of the susceptible population over the summer months or the change in distinct influenza strains the definition of an influenza season could be made unnecessary.",
+            "cite_spans": [
+                {
+                    "start": 240,
+                    "end": 244,
+                    "text": "[48]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Model description"
+        },
+        {
+            "text": "The U.S. ILI data between mid-August and mid-May are then modeled using a Susceptible-Exposed-Infected-Recovered (SEIR) differential equation model [49] [50] [51] . The standard SEIR model is then modified to allow seasonal variation in the transmission rate [52] and to account for heterogeneity in the contact structure [53] [54] [55] . We will refer to the model as the seasonal S \u03bd EIR model. This model does not account for several factors that could possibly be important for forecasting influenza dynamics such as spatial disease spread, behavior change due to disease, multiple viral strains, vaccination rates, or more detailed contact structure [56] [57] [58] [59] .",
+            "cite_spans": [
+                {
+                    "start": 148,
+                    "end": 152,
+                    "text": "[49]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 153,
+                    "end": 157,
+                    "text": "[50]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 158,
+                    "end": 162,
+                    "text": "[51]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 259,
+                    "end": 263,
+                    "text": "[52]",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 322,
+                    "end": 326,
+                    "text": "[53]",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 327,
+                    "end": 331,
+                    "text": "[54]",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 332,
+                    "end": 336,
+                    "text": "[55]",
+                    "ref_id": "BIBREF54"
+                },
+                {
+                    "start": 655,
+                    "end": 659,
+                    "text": "[56]",
+                    "ref_id": "BIBREF55"
+                },
+                {
+                    "start": 660,
+                    "end": 664,
+                    "text": "[57]",
+                    "ref_id": "BIBREF56"
+                },
+                {
+                    "start": 665,
+                    "end": 669,
+                    "text": "[58]",
+                    "ref_id": "BIBREF57"
+                },
+                {
+                    "start": 670,
+                    "end": 674,
+                    "text": "[59]",
+                    "ref_id": "BIBREF58"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Model description"
+        },
+        {
+            "text": "In our model, the U.S. population is divided into epidemiological categories for each time t > 0 as follows: the proportion susceptible to flu S(t), the proportion exposed (and noninfectious, asymptomatic) E(t), the proportion infectious and symptomatic I(t), and the proportion recovered and immune R(t). Since there is usually a single dominant strain each flu season, we assumed that recovered individuals are then immune to the disease for the remainder of the season. In practice, this assumption is not entirely accurate since an individual that contracted and recovered from one strain can get infected from a different strain in the same season [56] . Indeed, in the 2013-2014 influenza season, an elevated level of ILI was maintained well after the primary peak. Upon investigation of World Health Organization and the National Respiratory and Enteric Virus Surveillance System (WHO/NREVSS) strain subtyping data this elevated level correlated with the emergence of influenza B as a secondary dominant strain. We still believe the presentation of our results using a single strain model to be informative especially since one will always have to weigh the cost of model parameter explosion, which can confound identifiability of the model from data with model complexity. After all, an influenza model with no spatial heterogeneity and n strains would consist of 2 n\u22121 (n+2) independent equations [60] compared to the three independent equations we must identify in (2).",
+            "cite_spans": [
+                {
+                    "start": 653,
+                    "end": 657,
+                    "text": "[56]",
+                    "ref_id": "BIBREF55"
+                },
+                {
+                    "start": 1406,
+                    "end": 1410,
+                    "text": "[60]",
+                    "ref_id": "BIBREF59"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Model description"
+        },
+        {
+            "text": "The seasonal S \u03bd EIR model is defined by the following system of ordinary differential equations:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Model description"
+        },
+        {
+            "text": "S(t), E(t), I(t), and R(t) are the proportions of the U.S. population at time t > 0 defined above. Individuals transition from exposed to infectious with constant incubation rate \u03b8, and they recover at constant rate \u03b3. The transmission coefficient, \u03b2(t;\u03b2 0 , \u03b1, c, w) is allowed to vary over the course of the flu season. The specific variation is controlled by the parameters (\u03b2 0 , \u03b1, c, w), as shown in Fig 3. Algebraically, the transmission rate is defined by \u03b2(t;\u03b2 0 , \u03b1, c, w) = \u03b2 0 (1+\u03b1f(t;c, w)) where the smooth bump function, f, is defined as",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 406,
+                    "end": 412,
+                    "text": "Fig 3.",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Model description"
+        },
+        {
+            "text": "The parameters c and w control the center (peak of elevated flu transmission) and width (length of elevated flu transmission). The max transmission and minimum transmission levels attained are then controlled by \u03b2 0 and \u03b1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Model description"
+        },
+        {
+            "text": "To model some aspects of heterogeneity in the influenza contact network, we use a powerlaw scaling, \u03bd, on the susceptible proportion of the population in the term S \u03bd . Including this factor has been demonstrated to be an effective approach for this simple model to better fit largescale detailed agent based models with a heterogeneous contact network [54] . Though, in [54] , it was shown that an individual cities' contact network causes the scaling power \u03bd to vary city by city the findings were driven by fitting the power to data. Therefore, we proceed under the hypothesis that there will be a \u03bd that provides a best fit to data for the entire U.S. ILI dataset. After optimization of the model to U.S. ILI data this was indeed verified to be the case.",
+            "cite_spans": [
+                {
+                    "start": 353,
+                    "end": 357,
+                    "text": "[54]",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 371,
+                    "end": 375,
+                    "text": "[54]",
+                    "ref_id": "BIBREF53"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Model description"
+        },
+        {
+            "text": "We start by specifying a distribution of model parameterizations that we will consider before any observations from the 2013-2014 season are available. This prior distribution specifies what we think is possible to observe in the new influenza season. Therefore, it is based on the previously observed ILI data and is broad enough to assign a high likelihood to any of the past influenza seasons. Though our method of specifying a prior is reasonable enough to meet this criterion, it does not rely on more rigorous approaches, such as full Markov chain Monte Carlo exploration of the observation's influence on an uninformative prior distribution. This will be left to future work.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "Let us assume that we have ILI observations from M different influenza seasons. The observations for each season are made at regular intervals, \u0394t = 1week, from the end of epidemiological week 32 to the end of epidemiological week 20 of the following year. With the seasons indexed by i we denote these data by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "with K being the number of weeks in each season and i = 1, 2, . . ., M.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "A solution of our model is determined by the parameterization vector",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "and each choice of p yields a discretely sampled solution vector",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "The state of our S \u03bd EIR model is denoted by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "The link between our epidemiological model and the data is obtained from the infected proportion at the discrete time points. Specifically, it is the model-to-data map defined by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "with the multiplication changing the proportion into a percentage, which is what ILI is measured in. Our goal now is to determine a prior distribution for p, \u03c0 0 (p), so that samples drawn from the prior, make M p [C 1:K ] close to at least one prior season's dataset, d i 1:K . For each season's data, i = 1, 2, . . ., M, we can determine an allowable p i by approximately solving the non-linear optimization problem",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "where k\u00c1k denotes the root sum of squares discrepancy over the discrete time points. The approximate solution to (9) is reached by applying a stochastic optimization algorithm [61, 62] and this process is repeated L times for each season. Variation in these optimal p for a single season are considered to represent variation that we should allow in the prior distribution of our model. This process then yields M\u00c1L approximate solutions p i l , which are then treated as samples from a prior distribution for the model's parameterization.",
+            "cite_spans": [
+                {
+                    "start": 176,
+                    "end": 180,
+                    "text": "[61,",
+                    "ref_id": "BIBREF60"
+                },
+                {
+                    "start": 181,
+                    "end": 184,
+                    "text": "62]",
+                    "ref_id": "BIBREF61"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "A log-normal distribution, fit to these samples, is chosen for \u03c0 0 (p). We have chosen a lognormal distribution for \u03c0 0 (p) since physically all terms in p must be positive and the relation of the log-normal to a Gaussian distribution makes it a convenient choice when implementing our ensemble Kalman filtering method.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distribution estimation"
+        },
+        {
+            "text": "An iterative data assimilation process is implemented to continually adjust the parameters and initial state of the seasonal S \u03bd EIR model, which incorporates new ILI and Wikipedia observations. The model can then be propagated through the end of flu season to create an informed forecast. Data assimilation has been successful in a diverse array of fields, from meteorology [20, 21] to economics [22] but has only recently begun to be applied to disease spread [28-30, 32, 33, 35-37] . One of the most common schemes for data assimilation is based on the Kalman filter in which both the model error and observation error are assumed to be Gaussian and all mathematical models are assumed to be linear. Updating the model using observations is then accomplished by conditioning a joint Gaussian distribution. In particular, the ensemble Kalman filtering methods we use here, explained in detail below, have been successfully applied to non-linear systems of ordinary differential equations with a much higher degree of non-linearity and a much higher dimension than our S \u03bd EIR model [63] [64] [65] . Our approach to using Kalman filtering to estimate the underlying parameters of our model is more difficult than an estimation of the state of the system. However, parameter estimation too has had success with much larger and more non-linear systems of differential equations [66] .",
+            "cite_spans": [
+                {
+                    "start": 375,
+                    "end": 379,
+                    "text": "[20,",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 380,
+                    "end": 383,
+                    "text": "21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 397,
+                    "end": 401,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 462,
+                    "end": 484,
+                    "text": "[28-30, 32, 33, 35-37]",
+                    "ref_id": null
+                },
+                {
+                    "start": 1084,
+                    "end": 1088,
+                    "text": "[63]",
+                    "ref_id": "BIBREF62"
+                },
+                {
+                    "start": 1089,
+                    "end": 1093,
+                    "text": "[64]",
+                    "ref_id": "BIBREF63"
+                },
+                {
+                    "start": 1094,
+                    "end": 1098,
+                    "text": "[65]",
+                    "ref_id": "BIBREF64"
+                },
+                {
+                    "start": 1377,
+                    "end": 1381,
+                    "text": "[66]",
+                    "ref_id": "BIBREF65"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "We use an ensemble Kalman smoother (enKS) [21, 67] , with propagation always performed from the start of the influenza season, to assimilate the ILI/Wikipedia data into the transmission model. Our implementation of the enKS directly adjusts only the parameterization of our system. However, the adjustment is determined using information about the model's dynamics throughout the season.",
+            "cite_spans": [
+                {
+                    "start": 42,
+                    "end": 46,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 47,
+                    "end": 50,
+                    "text": "67]",
+                    "ref_id": "BIBREF66"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "With the exception of reference [45] , the previous disease forecasting methods only use the most recent observation to update the epidemic model. This can lead to problems in determination of the underlying model parameters since the dynamic trends of the data are not considered during the model adjustment. The enKS method we use is more sensitive to the underlying dynamics of the data timeseries.",
+            "cite_spans": [
+                {
+                    "start": 32,
+                    "end": 36,
+                    "text": "[45]",
+                    "ref_id": "BIBREF44"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "When performing data assimilation to adjust the current model state, conditions such as the population in each epidemic category summing to the total population are often disrupted. Moreover, if the model state is adjusted directly each time an observation is made, the forecast epidemic curve may not represent any single realization of the epidemic model. This makes it difficult to judge systematic model error and thus identify specific areas where the model may be improved. In our assimilation scheme only the model's parameterization and initialization are adjusted. Therefore, each forecast represents a realization of the model.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "For a more precise description of the ensemble Kalman smoother implemented for this work we refer the reader to [21] . The main idea is to view the time series of our epidemiological model together with its parameters and the ILI/Wikipedia data as a large Gaussian random vector. We can then use standard formulas to condition our S \u03bd EIR time series and parameters on the ILI/Wikipedia observations. Draws from this conditional Gaussian give an updated parameterization of the system from which we can re-propagate to form an updated forecast.",
+            "cite_spans": [
+                {
+                    "start": 112,
+                    "end": 116,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "The enKS is similar to a standard ensemble Kalman filter except that instead of just using the most recent data to inform the forecast it uses a number of the most recent observations. The three most current observations, including Wikipedia observations, are used to inform our forecasts. The advantages of using the enKS is that more of the current trends/dynamics of the observations are used in each assimilation step. This helps in estimating the underlying parameterizations of the system by propagating the observation's information backward into the model ensemble's history [21, 67] .",
+            "cite_spans": [
+                {
+                    "start": 583,
+                    "end": 587,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 588,
+                    "end": 591,
+                    "text": "67]",
+                    "ref_id": "BIBREF66"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "For each week in the simulation, we receive the ILI data and a Wikipedia estimate of the ILI data the following week. These data become available at regular time intervals of \u0394t = 1week and we denote the data corresponding to the first K weeks by d 1:K as in (4) . Note that now the index K corresponds to the most current week instead of the last week in the season. During the data assimilation step, d 1:K is compared with simulations of our S \u03bd EIR model and its parameterization, sampled at weekly intervals, denoted by C 1:K as in (6) above.",
+            "cite_spans": [
+                {
+                    "start": 259,
+                    "end": 262,
+                    "text": "(4)",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "The link between our epidemiological model and the data is again obtained from the simulated infected proportion at the time the most recent data are collected, K\u0394t. This is similar to (8) except that we only use the infected proportions corresponding to recent data. Specifically, the model-to-data map is",
+            "cite_spans": [
+                {
+                    "start": 185,
+                    "end": 188,
+                    "text": "(8)",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "Using this model-to-data map implies that we are only attempting to model and forecast the dynamics of ILI as opposed to the actual proportion of the U.S. population infected with influenza. The last three sampled values of the infected proportion are used, corresponding to the Wikipedia estimated ILI, the most current ILI, and the previous week's ILI observations. In the ensemble Kalman filtering framework, the simulation and data, \u00f0C T 1:K ; d T \u00f0K\u00c02\u00de:K \u00de T , are assumed to be jointly Gaussian distributed. Therefore, the conditional random vector C 1:K jd (K \u22122):K is also Gaussian, which we can sample from. We only sample the marginal distribution, which is also Gaussian, of our S \u03bd EIR parameterization, pjd (K\u22122):K . Samples of pjd (K\u22122):K are then used to re-propagate our S \u03bd EIR model from an adjusted initial state to form an updated forecast. When new data are collected on the (K+1) th week, the process is repeated. The remaining details of the enKS implementation deal with the choice of the mean and covariance structure of the joint Gaussian distribution for \u00f0C T 1:K ; d T \u00f0K\u00c02\u00de:K \u00de T . Our implementation followed Evensen's explanation [21] . In short, the mean is determined by sampling our S \u03bd EIR model at different parameterizations, while the covariance structure is determined by assumptions on the observational error for ILI, the Wikipedia estimate, and our epidemiological model.",
+            "cite_spans": [
+                {
+                    "start": 1161,
+                    "end": 1165,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data assimilation"
+        },
+        {
+            "text": "To evaluate the accuracy of a forecast, we compare the distribution determined by the ensemble with the actual observed disease data. We can, of course, only perform this evaluation retrospectively since we require data to evaluate our forecasts against. Since the enKS method assumes that the forecast distributions are Gaussian, we can evaluate the forecast's precision by scaling the distance of our forecast mean from the observation using the ensemble covariance. Such a distance has been widely used in statistics and is commonly referred to as the Mahalanobis distance (M-distance) [68] . The M-distance gives a description of the quality of the forecast that accounts for both precision in the mean prediction and precision in the dispersion about the mean. Other methods of evaluating forecast accuracy such as the root mean square error only consider how close the mean of the forecast is to the observations. Thus, a distribution with a great deal of uncertainty, or dispersion, can have a small root mean square error compared to observations. A forecast is made up of an analysis ensemble of parameterizations fp i K g N i\u00bc1 , K is the index corresponding to the most recently assimilated observation and N is the size of the ensemble. Each p i K is drawn from a Gaussian distribution conditioned on the most recent observations as described above. We can form a forecast of ILI data for the entire season by propagating the p i K through our S \u03bd EIR model. We will denote the discretely sampled time series of these realizations by c i K . The M-distance will then be evaluated using the ensemble of forecast observations, fM f \u00bdc i K g N i\u00bc1 , corresponding to the infected proportion time series, after the time index K, with each c i K scaled to a percentage. The M-distance is then calculated from the M f \u00bdc i K using their sample mean and covariance denoted \u03bc obs and C obs , respectively. Lettingd K correspond to un-assimilated observations (i.e., observations with time indices greater than K), the M-distance we evaluate is",
+            "cite_spans": [
+                {
+                    "start": 589,
+                    "end": 593,
+                    "text": "[68]",
+                    "ref_id": "BIBREF67"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Evaluating forecast accuracy"
+        },
+        {
+            "text": "In order to judge the quality of our forecasting methods and ultimately to justify the complexity of our data assimilation procedure, we generate a simplistic straw man model for comparison. We first collect all historical time series of disease outbreaks and then determine a correspondence time between each of the time points for each of the outbreak datasets. This gives a common time frame for each of the historical data sets. Then, at each of these common time points, the average and standard deviation of the historical observations can be computed. Thus, the straw man forecast consists of a normal distribution at each corresponding time point in the forecast with an averaged mean and standard deviation. We can then evaluate the straw man's accuracy using the metric given in Eq (11). Given the simple construction of the straw man forecast, this provides a good baseline to necessarily beat, in terms of smaller M-distance, for any compartmental data assimilation-derived forecast. To illustrate the improvement in the M-distance metric of our data assimilative forecast over the straw man forecast, we will calculate the percent of growth (or decline) of the M-distance for the data assimilative forecast in the straw man forecast for each week of the forecast.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Evaluating forecast accuracy"
+        },
+        {
+            "text": "Besides using a strictly quantitative measure of forecast accuracy, we also suggest computing more qualitative measures of accuracy. With the ensemble forecast, the samples c i K can be used to estimate quantiles of the forecast distribution such as the standard 5-number summary of the distribution given by the 5%, 25%, 50%, 75%, and 95% quantiles for the seasonal S \u03bd EIR realizations. Moreover, if we are interested in the forecast of some other quantity of interest derived from the time series of observations, such as the epidemic's peak time, peak level, duration, or start time, we may also derive 5-number summaries for these quantities by computing the appropriate quantity of interest. Analyzing where the actual observations fall compared to the 5-number summary provides a qualitative way to understand the accuracy of the forecast.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Evaluating forecast accuracy"
+        },
+        {
+            "text": "For our data assimilative forecast, we calculate weekly 5-number summaries for four quantities of interest: the start of elevated ILI data, the duration that the ILI data will remain elevated, the timing of the peak of ILI data, and the height of the ILI peak. Here, the start of the influenza season is defined to be the first week that ILI goes above 2% and remains elevated for at least 3 consecutive weeks. The end of the influenza season, used to calculate the duration, is when ILI goes below the 2% national baseline and remains there.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Evaluating forecast accuracy"
+        },
+        {
+            "text": "We present the results of our prior estimation techniques and our evaluation of forecast accuracy for the 2013-2014 influenza season. Again, to restrict our forecast to only one seasonal outbreak and avoid modeling influenza dynamics during the dormant summer months, our maximal influenza season is defined to be between the 32 nd and 20 th epidemiological weeks, or from mid-August to mid-May, for successive years. Our forecasts are only valid during this time period.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "Historical ILI data from the 2003-2004 U.S. influenza season through the 2012-2013 influenza season were used to generate our prior distribution of the seasonal S \u03bd EIR model's parameterization. This was done following the methods described above. An example fit using a stochastic optimization algorithm to find 10 approximate solutions to (9) for the 2006-2007 ILI data is shown in Fig 4. Two things can be noticed from this fit of our epidemiological model. First, there is often a small early peak in the ILI data before the primary peak and our model does a poor job of capturing this. In several conversations we've had with experts, the hypothesis has been put forward that the double peak in U.S. ILI data is due to under reporting during the holiday season in the U.S. However, from our observations the first peak can vary in its timing substantially and does not seem to be always present or strongly correlated with the holidays or emergence of separate influenza strains. Second, the ILI data usually remain elevated longer than our model's realizations can support. Under retrospective examination of the tail for the 2013-2014 season, the extended elevated ILI level appears to be due to the emergence of a secondary dominant strain. Further examination of this phenomenon using historical ILI data is necessary but beyond the scope of this study. Both of these areas point to systematic divergence of the model from data. It is always possible that our model fit is representative of influenza prevalence but, due to bias in the ILI reporting, diverges from the historical data. However, without a stronger ground truth dataset to support this, such hypotheses are difficult to test.",
+            "cite_spans": [
+                {
+                    "start": 341,
+                    "end": 344,
+                    "text": "(9)",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 384,
+                    "end": 390,
+                    "text": "Fig 4.",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Prior forecast"
+        },
+        {
+            "text": "From the joint prior, \u03c0 0 (p), we can examine samples from the marginal priors to examine our method's forecast for traits of the average influenza season. In Figs 5, 6, 7, 8 and 9 we show histograms of samples from a few of these marginal priors. We see that our methods have determined that the average base time of transmission is 2-5 days, the average incubation time is 3-7 days, and the average recovery time is 6-8 days. This automatically lets us know that the recovery rate is tightly specified by our prior whereas the base transmission and incubation rates are not. Since our S \u03bd EIR model includes a variable transmission rate, we also include the (9) . For each of the influenza seasons, from 2003-2004 through 2012-2013, fits similar to the above were generated. These parameterizations formed the basis for our prior, \u03c0 0 (p). This is a good example of the seasonal S \u03bd EIR model's two areas of systematic divergence. In the weeks 50-1 there is a first peak that the model does not catch. However, the fitted model does envelop the secondary peak around the 8 th epidemiological week. During the tail weeks 15-20 our S \u03bd EIR model tapers too quickly. Histogram of the marginal distribution for the average recovery time, measured in days. The rate parameter in our S \u03bd EIR model, \u03b3, is the inverse of this average time. We see that this distribution is concentrated over 6-7 days and skewed toward longer incubation times. The prior distribution for \u03b3 is more concentrated than the distributions for \u03b8 and \u03b2 0 which means that the ILI data determine this parameter more exactly.",
+            "cite_spans": [
+                {
+                    "start": 660,
+                    "end": 663,
+                    "text": "(9)",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Prior forecast"
+        },
+        {
+            "text": "doi:10.1371/journal.pcbi.1004239.g007 Sampling 300 parameterizations from the log-normal prior \u03c0 0 (p) leads to the prior forecast for the 2013-2014 influenza season shown in Fig 10. One can notice that our prior forecast allows for a wide range of peak times and sizes. In general, the earlier the peak, the smaller its forecast height. It is also apparent that our forecast tapers off quickly after the peak occurs. Unfortunately, in carrying out this process of model fitting and estimation of a log-normal prior, it becomes apparent that there is a strong negative bias in our prior forecasts. Our hypothesis for this outcome is that in a typical influenza season, there are many more low ILI observations than there are high ILI observations. Since, in our fitting of the S \u03bd EIR model, all the ILI data was given equal weight a good fit can be obtained from a model solution that stays below the peak. The effect of this negative bias can be seen in our data assimilative forecasts as a strong negative bias.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 175,
+                    "end": 182,
+                    "text": "Fig 10.",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Prior forecast"
+        },
+        {
+            "text": "In Fig 11, we show the results of our forecasting process for two different weeks during the 2013-2014 influenza season. Note, the performance of the seasonal S \u03bd EIR model is drastically reduced once the peak of the influenza season has passed. However, before the peak, the model In this section, we analyze both of these forecasts' performance using the measures described above.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 3,
+                    "end": 10,
+                    "text": "Fig 11,",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "Forecast results illustrated in Fig 11 may seem disappointing at first glance. The variance in the forecast at epidemiological week 43 is quite large and the mean forecast underestimates the peak. For the forecast made on epidemiological week 2, even the 90% credible region of the forecast diverges from the tail of the epidemic despite the addition of many more ILI observations. As discussed above, the underestimation of the forecast is most likely due to a bias toward low ILI seasons in the prior forecast we have used. In this way, the use of the enKS actually is a success since by our week 43 forecast the projected ILI peak is much higher than the median peak predicted in our prior distribution. In other words, the data assimilation method is performing well, but the prior and possibly the model itself has significant bias that needs to be corrected in future work. Model bias (i.e., systematic divergence of the model from ILI observations) is also responsible for the degradation of performance in our forecast once the ILI peak has past. Our S \u03bd EIR model has a difficult time simulating an elevated tail. Thus, there are fewer model parameterizations that are close to ILI observations by the 2 nd epidemiological week, so the variance in our forecast ensemble is reduced even though accuracy is decreased.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 32,
+                    "end": 42,
+                    "text": "Fig 11 may",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "Judging accuracy for forecasts is difficult to do from figure such as those in Figs 11 and 12. For instance, in Fig 12, the 2013-2014 season is mostly included in the 50% credible interval. There is, therefore, no correlation between the forecast at successive time points. This is seen when sampling time series from this forecast (right). The lack of correlation in forecasts for successive weeks severely limits the usefulness of such a forecast for public health decision making. For instance, after the 2013-2014 ILI peak was observed a further ILI peak is forecast to be just as likely six weeks later. Forecasting the Influenza Season However, individual forecasts made from the straw man method look different, as time series, from an ILI season since little of the dynamics of ILI are present in the straw man model. On the other hand some of the 2013-2014 ILI data falls outside the 50% credible region during the 43 rd epidemiological week forecast in Fig 11. As discussed previously, this is most likely due to error in the original model and the bias toward low influenza seasons in our prior. However, the accuracy of a probabilistic forecast like Fig 11 should always be in terms of probability. It is possible that the 2013-2014 ILI data given the 2013-2014 ILI data up to epidemiological week 43 should have been assigned a lower probability based on previous seasons. In particular, based on previous ILI seasons it is not uncommon to see a much lower and later ILI peak given the ILI level at epidemiological week 43 for 2013-2014. For this reason, probabilistic forecasts are difficult for public health planners to rely on. However, without a forecast that predicts the dynamics of ILI faithfully week by week, planning can not be informed from the forecast.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 112,
+                    "end": 119,
+                    "text": "Fig 12,",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 963,
+                    "end": 970,
+                    "text": "Fig 11.",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1162,
+                    "end": 1175,
+                    "text": "Fig 11 should",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "Quantitative accuracy. In Fig 13, we show the successive M-distances computed for our forecast and for 300 samples from the straw man forecast. We notice that until the peak of the 2013-2014 influenza season, the data-assimilative forecasting scheme has a noticeably smaller M-distance than that of the straw man forecast. However, after the peak of the influenza season, during week 52 for 2013-2014, the straw man shows considerably smaller M-distance. The M-distances plotted for the straw man prediction use sample covariances and means calculated from 300 time series draws of the straw man forecast. Due to the lack of causal relations included in the straw man model this measure of accuracy is significantly lower in the early season for the straw man prediction. This figure shows that the data assimilation forecast has a noticeably smaller M-distance, and therefore is quantitatively better, than the straw man model for the early influenza season. Once the influenza season peaks the success of the forecast breaks down due to model error. It is interesting to note that due to the enKS data assimilation our S \u03bd EIR forecast seems to attempt self-correction, i.e. the M-distance is increasing and then decreases. This is due to the seasonal S \u03bd EIR's inability to taper off slowly from the peak of the flu season. After the peak, our model has exhausted its susceptible proportion of the population, and the infected proportion rapidly goes to zero. A possible point of confusion in this analysis is the sharp drop off of the M-distance as the end of our forecast horizon is approached. This is due to the decreased dimension of the data being forecasted. During week 17, the forecasts only need to predict the ILI data for 3 more weeks and distances in this 3-dimensional space grow much slower as a function of week-by-week error.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 26,
+                    "end": 33,
+                    "text": "Fig 13,",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "In the early part of the influenza season, the improvement of the data-assimilative forecast over the straw man forecast is more apparent if we look at the percent improvement in the straw man's M-distance that the data assimilative M-distance represents, Fig 14. Up until a week or two before the peak of 2013-2014 ILI the use of the S \u03bd EIR model together with the enKS data assimilation scheme offers up to a 20% improvement in the M-distance of the straw man forecast. Since the majority of public health decisions are made well before the peak of ILI this represents a significant advantage of the data-assimilative method over the straw man method. We are confident that with further improvements to the prior and the model this improvement can be increased.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 256,
+                    "end": 263,
+                    "text": "Fig 14.",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "Qualitative accuracy. Each week, given the 300 infected time series from the analyzed ensemble, we gain 300 samples of the epidemic peak percent infected, the epidemic start time, the epidemic duration, and the week of the epidemic peak. From these 300 samples of these quantities of interest, we estimate the 5%, 25%, 50%, 75%, and 95% posterior quantiles. This gives us Here we see that up to a month before the peak of ILI the use of a mathematical influenza model with data assimilation provides up to a 20% improvement in the forecast with a minimum of a 10% improvement. However, this improvement is quickly degraded due to model bias close to the peak. It is notable that after the peak is observed the data assimilation attempts to correct the model but can not make up for the S \u03bd EIR model's strong tendency to a zero infected state after the peak. a convenient weekly summary of our influenza forecast with uncertainty quantified by 50% and 90% posterior credible intervals about the median. It is important to clarify that, since we are adjusting the underlying parameterization and initialization of the S \u03bd EIR model and not the state of the model directly, the median and credible intervals for quantities such as the start week of the elevated ILI season continue to be adjusted even after they are observed. It is important to report these adjustments as they show how later observations effect the model's dynamics throughout the entire season. For example, we can observe that the enKS applied to the S \u03bd EIR model in the later ILI season tries to maintain an elevated ILI level by pushing the simulated peak forward in time. In practical application, the forecast of quantities such as the start week would be fixed once they were observed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "A time series plot of the start week credible intervals for our seasonal S \u03bd EIR forecast is shown in Fig 15. A similar plot for the start week credible intervals forecast using the straw man model would show a constant distribution with median start week forecast at the 38 th epidemiological week. We can see for Fig 15 that the high probability region for start week, as forecast by our epidemiological model, is usually 1-2 weeks after the actual 2013-2014 start week. However, the actual start week is contained within the 90% credible region until a week or two after the peak of flu season. This region is also seen to constrict as ILI and Wikipedia observations are assimilated. week are plotted along with the median. Each week, as new ILI data become available the forecast is revised. This causes the uncertainty in our forecast to diminish. However, due to the model's inability to maintain an elevated ILI level past the peak, we see that late in the flu season, the model adjusts by pushing the start week later into the season. This causes an overestimation of the start week that worsens as the season progresses. In practice, once the start week has been observed the forecast would be fixed. However, adjustment of the model parameterization using the enKS would continue to affect the model simulation start date. We calculated similar time series of credible intervals for the forecast peak week (Fig 16) , and the magnitude of the ILI peak (Fig 17) . The forecast for the ILI peak was uncertain with the 90% credible interval having width of around 6% until close to the actual peak. However, the median forecast for the peak week was consistently within one or two weeks of the actual observed peak. These results suggest that our model and prior were calibrated to predict the timing of the start and peak of influenza season well but underestimate the size of the peak.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 102,
+                    "end": 109,
+                    "text": "Fig 15.",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 315,
+                    "end": 326,
+                    "text": "Fig 15 that",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1416,
+                    "end": 1424,
+                    "text": "(Fig 16)",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1461,
+                    "end": 1469,
+                    "text": "(Fig 17)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "When compared to the forecast start week from the straw man model, our S \u03bd EIR model seems like a favorable tool. The straw man's forecast does not assimilate current observations and thus its predicted start week is constant. Two things should be mentioned about calculating these credible intervals for the straw man forecast. First, since a sample from the straw man forecast has no week-to-week correlations, the weekly forecasts can vary greatly from week to week. This is a problem when computing the start week for the influenza season since a given straw man sample does not remain above 2% for consecutive weeks. Second, for similar reasons the duration cannot even be defined for one time series sample of the straw man forecast. The lack of correlations in week-by-week forecasts in the straw man model severely restricts its usefulness in influencing public health policy. For example, even after the 2013-2014 ILI data had been observed to decrease over the course of five weeks the straw man's median prediction was increasing. This makes it difficult to use to interpret the dynamics of influenza progression. On the other hand, even though the S \u03bd EIR model has significant errors in the forecast after the peak the trend of decreasing ILI is in agreement. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Forecast analysis"
+        },
+        {
+            "text": "We have outlined an approach to forecasting seasonal influenza that relies on modern ensemble data assimilation methods for updating a prior distribution of a disease transmission model. The method used a dynamic compartmental model of influenza spread that has been used in previous research [51, 52, 54] but is applicable to any compartmental model of disease with a regularly updated public health data source. Though the flu forecasting system we have presented here is not ready to entirely base public health policy on, the methods provide a valuable framework. In particular, this framework provides real-time model testing, model dependent prior estimation, evaluation of probabilistic disease forecasting, and transitioning from a deterministic model to a probabilistic forecast. Moreover, if prior to the peak our model predicts an unexpected change in the future number of cases, then this is an indication to public health decision makers that the model may be picking up on hidden events and trends that are being missed by more traditional statistical prediction methods. In this regard, the model forecast is similar to having another expert viewpoint available during the decision process that can identify trends that might have otherwise been missed.",
+            "cite_spans": [
+                {
+                    "start": 293,
+                    "end": 297,
+                    "text": "[51,",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 298,
+                    "end": 301,
+                    "text": "52,",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 302,
+                    "end": 305,
+                    "text": "54]",
+                    "ref_id": "BIBREF53"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "We evaluated the accuracy of our forecast using the M-distance, based on the Gaussian likelihood of observations, and the deviation of time series of quantiles for a set of quantities of interest arising from flu dynamics. Both of these methods were used on our data assimilation Forecasts for the size of the ILI peak were widely varying in the 90% credible interval. This could possibly be reduced by the elimination of high peak outliers such as the 2009 H1N1 emergence and through adjustment of low forecasts in our prior. However, even with these draw backs the 50% credible region has a width of only 1%-2%. approach and on a much simpler forecast using estimated normal distributions. The application of these measures of accuracy, combined with our specific approach to data assimilation with a dynamic model of the influenza dynamics allowed us to highlight model inaccuracies that can then be improved in the future.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "Though a statistically simple tool, the inclusion of a straw man forecast as a baseline to evaluate our data assimilation scheme's usefulness is indispensable when evaluating measures of accuracy. Especially for some measures, such as the M-distance, it is difficult to tell whether or not a value implies the forecast performed well without a baseline. We hope that the approach of measuring a forecast against a baseline becomes established practice in future developments of epidemic forecasting.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "The differential equation representation of influenza dynamics, modeled proportions of the population as susceptible, exposed/non-infectious, symptomatic/infectious, and recovered/immune/removed. The model did not allow for any re-infection of influenza, which is thought to be biologically accurate for at least a single strain of flu in a single season [56] . We also modeled the effect of heterogeneity in the influenza contact network and seasonal variation in the transmissibility of flu. Our method of data assimilation adjusted the allowable parameterizations and initializations of this model as ILI data became available.",
+            "cite_spans": [
+                {
+                    "start": 355,
+                    "end": 359,
+                    "text": "[56]",
+                    "ref_id": "BIBREF55"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "The forecast was made up of actual realizations of our S \u03bd EIR model used. This has the arguable advantage of highlighting observed sections of the ILI data stream that differ drastically from the model's assumptions. However, since the model state is not adjusted at each ILI data point directly, the forecast with an incorrect model eventually diverges from the data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "To iteratively update the prior distributions of parameterizations and initializations, we used an ensemble Kalman smoother. This was observed to significantly pull the model toward a subset of parameterizations and initializations that agreed well with the data. Since the model seemed to be reasonably adjusted toward observations and retained a significant amount of ensemble variation in the forecast, there is strong evidence that the assimilation scheme works well. The challenge now is to arrive at a model that more accurately represents influenza dynamics perhaps by including considerations made in [53, [55] [56] [57] [58] [59] .",
+            "cite_spans": [
+                {
+                    "start": 609,
+                    "end": 613,
+                    "text": "[53,",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 614,
+                    "end": 618,
+                    "text": "[55]",
+                    "ref_id": "BIBREF54"
+                },
+                {
+                    "start": 619,
+                    "end": 623,
+                    "text": "[56]",
+                    "ref_id": "BIBREF55"
+                },
+                {
+                    "start": 624,
+                    "end": 628,
+                    "text": "[57]",
+                    "ref_id": "BIBREF56"
+                },
+                {
+                    "start": 629,
+                    "end": 633,
+                    "text": "[58]",
+                    "ref_id": "BIBREF57"
+                },
+                {
+                    "start": 634,
+                    "end": 638,
+                    "text": "[59]",
+                    "ref_id": "BIBREF58"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "Our quantitative measure of forecast accuracy is motivated by the Gaussian likelihood function and has been used, in many instances, to assign a value to the distance from some predicted distribution with a fixed mean and covariance. This is exactly the setting we are in, when we make the Gaussian assumptions inherent in the Kalman filter methods. The application of the M-distance in this instance showed that our model performed better than the simple straw man forecast in the beginning of the season but then systematically diverged from the late season ILI data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "Besides demonstrating the accuracy of our forecast at capturing overall dynamics, we also quantified our forecating method's ability to accurately estimate quantities of interest relating to the impact of a given influenza season. We showed how the time series of forecast median and posterior credible intervals for the season's start week, peak week, duration, and peak level changed over time. This measure in particular demonstrated the advantages of having an underlying mechanistic model as compared to the purely statistical normal approximation forecast as used in the straw man forecast.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Summary of method"
+        },
+        {
+            "text": "This work shows the viability of using a data assimilation method to sequentially tune a model of disease dynamics. However, it also highlights the need to use caution when adjusting the model to match data. If balances inherent in the model are not maintained during each adjustment step, it is possible to forecast data accurately with a model that is incorrect (e.g., one that has no single realization that will reproduce the data up to data error). The upside of this approach is that if only the model parameterization and initialization are adjusted, this type of forecasting process allows one to identify the assumptions of the model that diverge from observations. This is an important tool, to advance models to more accurate representations of reality, that could be ignored if data assimilation methods are used to adjust a model's state and parameterization throughout the forecast.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Future improvements and lessons learned"
+        },
+        {
+            "text": "The method proposed here, which maintain S \u03bd EIR balances during assimilation, are not the only possible methods of maintaining the population balances assumed in a compartmental disease model. More research needs to be done on the best way to adjust a model to observations while maintaining an accurate representation of disease model balances. Moreover, if the goal is to create forecasts for multiple seasons, forecasting from initial conditions will not always be viable. It remains an important open research question as to how far in the past one should optimally start forecasts from. The farther in the past a forecast is made from, the more dynamics of the model and data are assimilated. The downside of this is that considering too much of the models dynamics can impose unnecessary restrictions on the prior, leading to a divergent forecast.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Future improvements and lessons learned"
+        },
+        {
+            "text": "A major concern for our epidemiological model is the systematic divergence from the data at the end of the influenza season. This divergence is evident in the optimal fitting done with our S \u03bd EIR model on historical ILI data. Since we did not know, before completing this work, which factors in disease forecasting would be most important, we have only added complexity in the model to account for some heterogeneity in the contact network of influenza spread and seasonally-varying transmissibility of influenza. Spatial spread of influenza does have a good data source that could be used in the future since ILI is collected in 10 different Health and Human Services regions for the United States. However, a disease model that links spatial spread in each of these regions would have significantly more parameters to determine in a prior distribution. Moreover, the level of ILI error between regions seems to be highly variable when observing historical ILI time series from different regions. The variability between regional ILI reporting methods poses a challenge beyond the scope of this first approach.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Future improvements and lessons learned"
+        },
+        {
+            "text": "Behavior change was not incorporated into this work since regularly updated observations of human behavior changes affecting influenza spread are, to the authors knowledge, not available. Vaccination data are available but are not updated on a time scale fine enough to be comparable with weekly ILI. Moreover, vaccination rates would directly reduce the proportion of the population susceptible to influenza. Unfortunately, only sparse data are available on the actual proportion of the population susceptible to a given influenza strain. Thus, incorporation of vaccination rates into a forecast is not obvious until there exists a good method to directly determine the proportion of susceptibles in the United States.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Future improvements and lessons learned"
+        },
+        {
+            "text": "We did not include multiple strains in our forecasts since it was not obvious to us that a single strain model would fail. This belief was based on the fact that a single strain model, with the inclusion of variable transmission, has surprisingly flexible dynamics and thus may be able to fit ILI dynamics well even without biological correctness. Secondly, the introduction of multiple strains into a model adds many more parameters to the model, making it difficult to determine a prior distribution from historical data and increasing the problem of \"lack of determination\" in the model. However, there are regularly updated data on prevalence of specific strains provided by the WHO/NREVSS [6] and therefore, in retrospect, inclusion of multiple strains may be highly advantageous in the future. These data show that often there are one or two outbreaks of secondary dominant influenza strains in the late season. We hypothesize that these secondary strains are a primary cause of the heightened tail in the ILI data and we will investigate a multi-strain influenza model [56] in future forecasting work.",
+            "cite_spans": [
+                {
+                    "start": 694,
+                    "end": 697,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1076,
+                    "end": 1080,
+                    "text": "[56]",
+                    "ref_id": "BIBREF55"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Future improvements and lessons learned"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Seasonal influenza Q&A",
+            "authors": [],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Estimating seasonal influenza-associated deaths in the united states: CDC study confirms variability of flu",
+            "authors": [],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "National strategy for biosurveillance",
+            "authors": [],
+            "year": 2012,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Pandemic potential of a strain of influenza a (H1N1): early findings",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Hanage",
+                    "suffix": ""
+                },
+                {
+                    "first": "Mdv",
+                    "middle": [],
+                    "last": "Kerkhove",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Hollingsworth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Science",
+            "volume": "324",
+            "issn": "",
+            "pages": "1557--1561",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1176062"
+                ],
+                "PMID": [
+                    "19433588"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Mitigation strategies for pandemic influenza in the United States",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Germann",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Kadau",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Longini",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Macken",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "PNAS",
+            "volume": "103",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0601266103"
+                ],
+                "PMID": [
+                    "16585506"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Overview of influenza surveillance in the United States",
+            "authors": [],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Seasonal and pandemic influenza surveillance considerations for constructing multicomponent systems",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Brammer",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Budd",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Cox",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Influenza and Other Respiratory Viruses",
+            "volume": "3",
+            "issn": "",
+            "pages": "51--58",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1750-2659.2009.00077.x"
+                ],
+                "PMID": [
+                    "19496841"
+                ]
+            }
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "State and Local Public Health Surveillance",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Burkhead",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Maylahn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Principles and Practice of Public Health Surveillance",
+            "volume": "",
+            "issn": "",
+            "pages": "253--286",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Public health preparedness capabilities: National standards for state and local planning",
+            "authors": [],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "The ratio of emergency department visits for ili to seroprevalence of 2009 pandemic influenza a (h1n1) virus infection, florida",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Hopkins",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kite-Powell",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Goodin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hamilton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLOS Currents Outbreaks",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/currents.outbreaks.44157f8d90cf9f8fafa04570e3a00cab"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Announcement of requirements and registration for the predict the influenza season challenge",
+            "authors": [],
+            "year": 2013,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Results from the Centers for Disease Control and Prevention's predict the 2013-2014 influenza season challenge",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Biggerstaff",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Alper",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Dredze",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Fox",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Fung",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Hickmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Epidemiological determinants of spread of causal agent of severe acute respiratory syndrome in Hong Kong",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ghani",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hedley",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "The Lancet",
+            "volume": "361",
+            "issn": "",
+            "pages": "1761--1766",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S0140-6736(03)13410-1"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Real-time epidemic monitoring and forecasting of h1n1-2009 using influenza-like illness from general practice and family doctor clinics in Singapore",
+            "authors": [
+                {
+                    "first": "Jbs",
+                    "middle": [],
+                    "last": "Ong",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Mark",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Cook",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PloS one",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0010036"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Global Disease Monitoring and Forecasting with Wikipedia",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Generous",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Fairchild",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Deshpande",
+                    "suffix": ""
+                },
+                {
+                    "first": "Del",
+                    "middle": [],
+                    "last": "Valle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Priedhorsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS Comput Biol",
+            "volume": "10",
+            "issn": "11",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003892"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Wikipedia usage estimates prevalence of influenza-like illness in the united states in near real-time",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Mciver",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Brownstein",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS computational biology",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003581"
+                ],
+                "PMID": [
+                    "24743682"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Detecting influenza epidemics using search engine query data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ginsberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Matthew",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Patel",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Brammer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Smolinski",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Brilliant",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature",
+            "volume": "457",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Inferring the origin locations of tweets with quantitative confidence",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Priedhorsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Culotta",
+                    "suffix": ""
+                },
+                {
+                    "first": "Del",
+                    "middle": [],
+                    "last": "Valle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Proc. Computer Supported Cooperative Work (CSCW)",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Tracking the flu pandemic by monitoring the social web",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Lampos",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Cristianini",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Proc. Workshop on Cognitive Information Processing",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Atmospheric modeling, data assimilation, and predictability",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Kalnay",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Data assimilation: The ensemble Kalman filter",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Evensen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "A survey of sequential Monte Carlo methods for economics and finance",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Creal",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Econometric Reviews",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1080/07474938.2011.607333"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Influenza forecasting in human populations: A scoping review",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Chretien",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "George",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Chitale",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Mckenzie",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PloS one",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0094130"
+                ],
+                "PMID": [
+                    "24714027"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "A systematic review of studies on forecasting the dynamics of influenza outbreaks",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Nsoesie",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Brownstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Ramakrishnan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Marathe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Influenza and other respiratory viruses",
+            "volume": "8",
+            "issn": "",
+            "pages": "309--316",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/irv.12226"
+                ],
+                "PMID": [
+                    "24373466"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Towards real time epidemiology: Data assimilation, modeling and anomaly detection of health surveillance data streams",
+            "authors": [
+                {
+                    "first": "Lma",
+                    "middle": [],
+                    "last": "Bettencourt",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ribeiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Chowell",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lant",
+                    "suffix": ""
+                },
+                {
+                    "first": "Castillo",
+                    "middle": [],
+                    "last": "Chavez",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Intelligence and Security Informatics: Biosurveillance",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "http:/link.springer.com/chapter/10.1007/978-3-540-72608-1_8"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Real time bayesian estimation of the epidemic potential of emerging infectious diseases",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Bettencourt",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Ribeiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "PLOS One",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0002185"
+                ],
+                "PMID": [
+                    "18478118"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "A simulation optimization approach to epidemic forecasting",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Nsoesie",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Beckman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Shashaani",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Nagaraj",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Marathe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PloS one",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0067164"
+                ],
+                "PMID": [
+                    "23826222"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "A simple modification for improving inference of non-linear dynamical systems",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Monitoring and prediction of an epidemic outbreak using syndromic observations",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Skvortsov",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Ristic",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Mathematical Biosciences",
+            "volume": "240",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.mbs.2012.05.010"
+                ],
+                "PMID": [
+                    "22705339"
+                ]
+            }
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Early detection and assessment of epidemics by particle filtering",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "J\u00e9gat",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carrat",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lajaunie",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Wackernagel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Geostatistics for environmental applications",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "http:/link.springer.com/chapter/10.1007/978-1-4020-6448-7_2"
+                ]
+            }
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Seasonal transmission potential and activity peaks of the new influenza a (h1n1): a monte carlo likelihood analysis based on human mobility",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Balcan",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Goncalves",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bajardi",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Poletto",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ramasco",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC medicine",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1741-7015-7-45"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Forecasting seasonal outbreaks of influenza",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Karspeck",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PNAS",
+            "volume": "109",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.1208772109"
+                ],
+                "PMID": [
+                    "23184969"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Real-time influenza forecasts during the 2012-2013 season",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Karspeck",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tamerius",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nature communications",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/ncomms3837"
+                ],
+                "PMID": [
+                    "24302074"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Bayesian tracking of emerging epidemics using ensemble optimal statistical interpolation. Spatial and spatio-temporal epidemiology",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Cobb",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Krishnamurthy",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mandel",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Beezley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Data driven computing by the morphing fast Fourier transform ensemble Kalman filter in epidemic spread simulations",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mandel",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Beezeley",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Cobb",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Krishnamurthy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Procedia Computer Science",
+            "volume": "1",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.procs.2010.04.136"
+                ],
+                "PMID": [
+                    "21031155"
+                ]
+            }
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Comparison of filtering methods for the modeling and retrospective forecasting of influenza epidemics",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Karspeck",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS computational biology",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003583"
+                ],
+                "PMID": [
+                    "24762780"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Comparison of the performance of particle filter algorithms applied to tracking of a disease epidemic",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Sheinson",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Niemi",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Meiring",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Mathematical biosciences",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.mbs.2014.06.018"
+                ],
+                "PMID": [
+                    "25016201"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Prediction of an epidemic curve: A supervised classification approach. Statistical communications in infectious diseases 3",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Nsoesie",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Beckman",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Marathe",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Lewis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.2202/1948-4690.1038"
+                ],
+                "PMID": [
+                    "22997545"
+                ]
+            }
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "A dirichlet process model for classifying and forecasting epidemic curves",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Nsoesie",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Leman",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Marathe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC infectious diseases",
+            "volume": "14",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2334-14-12"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Forecasting peaks of seasonal influenza epidemics",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Nsoesie",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Mararthe",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Brownstein",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS currents",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/currents.outbreaks.bb1e879a23137022ea79a8c508b030bc"
+                ],
+                "PMID": [
+                    "23873050"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Forecasting a moving target: Ensemble models for ILI case count predictions",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Chakraborty",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Khadivi",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Lewis",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mahendiran",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Butler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Proceedings of the 2014 SIAM International Conference on Data Mining, SIAM",
+            "volume": "",
+            "issn": "",
+            "pages": "262--270",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Real-time characterization of partially observed epidemics using surrogate models",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Safta",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ray",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lefantzi",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Crary",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sargsyan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Cheng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Time series analysis via mechanistic models",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bret\u00f3",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ionides",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "King",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "The Annals of Applied Statistics",
+            "volume": "",
+            "issn": "",
+            "pages": "319--348",
+            "other_ids": {}
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Using the kalman filter and dynamic models to assess the changing hiv/aids epidemic",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Cazelles",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Chau",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Mathematical biosciences",
+            "volume": "140",
+            "issn": "",
+            "pages": "131--154",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S0025-5564(96)00155-1"
+                ]
+            }
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Variational data assimilation with epidemic models",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Rhodes",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hollingsworth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "258",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jtbi.2009.02.017"
+                ],
+                "PMID": [
+                    "19268475"
+                ]
+            }
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "MapReduce: simplified data processing on large clusters",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Dean",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ghemawat",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Communications of the ACM",
+            "volume": "51",
+            "issn": "",
+            "pages": "107--113",
+            "other_ids": {
+                "DOI": [
+                    "10.1145/1327452.1327492"
+                ]
+            }
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Wikimedia Foundation",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "2014--2026",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Infectious diseases of humans: Dynamics and control",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "May",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "The mathematics of infectious diseases",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Hethcote",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "SIAM Review",
+            "volume": "42",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1137/S0036144500371907"
+                ]
+            }
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "The prevention of malaria",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Ross",
+                    "suffix": ""
+                }
+            ],
+            "year": 1910,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Bioterrorism: Mathematical modeling applications in homeland security",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Hyman",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Laforce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "",
+            "volume": "28",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Mixing patterns between age groups in social networks",
+            "authors": [
+                {
+                    "first": "Del",
+                    "middle": [],
+                    "last": "Valle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Hyman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Hethcote",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Eubank",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Social Networks",
+            "volume": "29",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.socnet.2007.04.005"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Semi-empirical power-law scaling of new infection rate to model epidemic dynamics with inhomogeneous mixing",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Stroud",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Sydoriak",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Riese",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Mniszewski",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Romero",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Mathematical Biosciences",
+            "volume": "203",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.mbs.2006.01.007"
+                ],
+                "PMID": [
+                    "16540129"
+                ]
+            }
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "Spatial dynamics of pandemic influenza in a massive artificial society",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Stroud",
+                    "suffix": ""
+                },
+                {
+                    "first": "Del",
+                    "middle": [],
+                    "last": "Valle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Sydoriak",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riese",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mniszewski",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "A deterministic model for influenza infection with multiple strains and antigenic drift",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Alfaro-Murillo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Towers",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Feng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Journal of biological dynamics",
+            "volume": "7",
+            "issn": "",
+            "pages": "199--211",
+            "other_ids": {
+                "DOI": [
+                    "10.1080/17513758.2013.801523"
+                ],
+                "PMID": [
+                    "23701386"
+                ]
+            }
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "Modeling the impact of behavior changes on the spread of pandemic influenza",
+            "authors": [
+                {
+                    "first": "Del",
+                    "middle": [],
+                    "last": "Valle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Mniszewski",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Hyman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Modeling the interplay between human behavior and the spread of infectious diseases",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "http:/link.springer.com/chapter/10.1007/978-1-4614-5474-8_4"
+                ]
+            }
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "Human mobility networks, travel restrictions, and the global spread of 2009 h1n1 pandemic",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bajardi",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Poletto",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Ramasco",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tizzoni",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Colizza",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Vespignani",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PloS one",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0016591"
+                ],
+                "PMID": [
+                    "21304943"
+                ]
+            }
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "A computer simulation of vaccine prioritization, allocation, and rationing during the 2009 H1N1 influenza pandemic",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Brown",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Korch",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Cooley",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Zimmerman",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Wheaton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Vaccine",
+            "volume": "28",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.vaccine.2010.05.002"
+                ]
+            }
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "A deterministic model for influenza infection with multiple strains and antigenic drift",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Alfaro-Murillo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Towers",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Zhilan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Journal of Biological Dynamics",
+            "volume": "7",
+            "issn": "",
+            "pages": "199--211",
+            "other_ids": {
+                "DOI": [
+                    "10.1080/17513758.2013.801523"
+                ],
+                "PMID": [
+                    "23701386"
+                ]
+            }
+        },
+        "BIBREF60": {
+            "ref_id": "b60",
+            "title": "A New Heuristic Optimization Algorithm: Harmony Search",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Geem",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Loganathan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Simulation",
+            "volume": "76",
+            "issn": "",
+            "pages": "60--68",
+            "other_ids": {
+                "DOI": [
+                    "10.1177/003754970107600201"
+                ]
+            }
+        },
+        "BIBREF61": {
+            "ref_id": "b61",
+            "title": "Improved harmony search from ensemble of music players. In: Knowledge-based intelligent information and engineering systems",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Geem",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF62": {
+            "ref_id": "b62",
+            "title": "Comparison of sequential data assimilation methods for the Kuramoto-Sivanshinsky equation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Jardak",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Navon",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zupanski",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "International journal for numerical methods in fluids",
+            "volume": "62",
+            "issn": "",
+            "pages": "374--402",
+            "other_ids": {}
+        },
+        "BIBREF63": {
+            "ref_id": "b63",
+            "title": "Efficient data assimilation for spatiotemporal chaos: A local ensemble transform kalman filter",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Hunt",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Kostelich",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Szunyogh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Physica D: Nonlinear Phenomena",
+            "volume": "230",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.physd.2006.11.008"
+                ]
+            }
+        },
+        "BIBREF64": {
+            "ref_id": "b64",
+            "title": "Well-posedness and accuracy of the ensemble Kalman filter in discrete and continuous time",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Law",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Stuart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF65": {
+            "ref_id": "b65",
+            "title": "Parameter estimation for stiff deterministic dynamical systems via ensemble Kalman filter. Inverse Problems 30",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Arnold",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Calvetti",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Somersalo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1088/0266-5611/30/10/105008"
+                ]
+            }
+        },
+        "BIBREF66": {
+            "ref_id": "b66",
+            "title": "An ensemble kalman smoother for nonlinear dynamics",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Evensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Van Leeuwen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Monthly Weather Review",
+            "volume": "128",
+            "issn": "",
+            "pages": "1852--1867",
+            "other_ids": {
+                "DOI": [
+                    "10.1175/1520-0493(2000)128%3C1852:AEKSFN%3E2.0.CO;2"
+                ]
+            }
+        },
+        "BIBREF67": {
+            "ref_id": "b67",
+            "title": "On the generalized distance in statistics",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Mahalanobis",
+                    "suffix": ""
+                }
+            ],
+            "year": 1936,
+            "venue": "Proceedings of the National Institute of Sciences (Calcutta",
+            "volume": "2",
+            "issn": "",
+            "pages": "49--55",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Fig 1 showsthe regression from the 5 Wikipedia access logs and the previous week ILI to historical ILI data. The regression coefficients were b 0 = 0.0063, b 1 = 17517.3, b 2 = 3206.1, b 3 = 41258.9, b 4 = \u221271428.7, b 5 = \u221217410.9, b 6 = 0.955. It is important to note here that the access logs and historical ILI observations used as regressors do not exist on the same scale and therefore it is not correct to use these coefficients to infer importance of the various terms as predictors of ILI. This issue is further complicated by the fact that the individual Wikipedia access logs are not independent or uncorrelated with each other.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Regression of Wikipedia access logs to ILI data. Here we show the linear regression of one weeks prior ILI observation, a constant term, and the access logs of five Wikipedia articles related to influenza to the current ILI observation. The regression is highly correlated to the true ILI outcome. However, due to the simple form of this linear regression it is difficult to quantify which of the six regressors used was most influential in predicting ILI.doi:10.1371/journal.pcbi.1004239.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "ed Fig 2 with our flu season highlighted. The exception to our maximal influenza season range is the the 2009 H1N1 pandemic, which emerged in the late 2008-2009 season causing this season to be prolonged and an early start in 2009-2010 season.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "The transmission rate function \u03b2(t;\u03b2 0 , \u03b1, c, w). The transmission function is chosen to be a smooth, five times differentiable, bump function ranging between \u03b2 0 (1+\u03b1) at the peak of flu transmission and \u03b2 0 (1\u2212\u03b1) at the low point. This is done to account for seasonality in our model. The parameters c and w control the center (peak of elevated flu transmission) and width (duration of elevated flu transmission).doi:10.1371/journal.pcbi.1004239.g003",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Seasonal S \u03bd EIR fit to 2006-2007 U.S. ILI data. Ten seasonal heterogeneous S \u03bd EIR model parameterizations for the U.S. ILI 2006-2007 data. These are approximate solutions to",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Histogram of the marginal distribution for the average transmission time, measured in days. The rate parameter, \u03b2 0 , is then the inverse of this average time. We see that this distribution is concentrated over 2-4.5 days. All histograms were generated from 300 samples of \u03c0 0 (p).doi:10.1371/journal.pcbi.1004239.g005",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "Histogram of the marginal distribution for the average incubation time, measured in days. The rate parameter in our S \u03bd EIR model, \u03b8, is then the inverse of this average time. We see that this distribution is concentrated over 3-6 days and skewed toward longer incubation times.doi:10.1371/journal.pcbi.1004239.g006",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Fig 7. Histogram of the marginal distribution for the average recovery time, measured in days. The rate parameter in our S \u03bd EIR model, \u03b3, is the inverse of this average time. We see that this distribution is concentrated over 6-7 days and skewed toward longer incubation times. The prior distribution for \u03b3 is more concentrated than the distributions for \u03b8 and \u03b2 0 which means that the ILI data determine this parameter more exactly.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "Histogram of the marginal distribution for the peak of the transmissibility function, \u03b2(t;\u03b2 0 , \u03b1, c, w). The parameter c here is represented in weeks since the beginning of simulation. Thus, a value c = 16 corresponds to the peak transmissibility during the 48 th epidemiological week. We see that this distribution is concentrated over 20-30 weeks into the simulation and skewed toward late in the simulation.doi:10.1371/journal.pcbi.1004239.g008 marginals for the week of peak transmissibility, c, and the duration the transmission rate is elevated, w. For our prior, the duration w is centered over 14-20 weeks into our simulation, while the center c is between 20-30 weeks into our simulation. This corresponds to the center of our elevated transmission being between epidemiological week 52 of 2013 and epidemiological week 10 of 2014, between the last week of December and the first week of March.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF10": {
+            "text": "Histogram of the marginal distribution for the duration of heightened transmissibility. The parameter w is represented in weeks. A value w = 14 corresponds to 16 weeks of elevated transmission. We see that this distribution is concentrated over 14-20 weeks and skewed toward longer periods of elevated transmission. doi:10.1371/journal.pcbi.1004239.g009Forecasting the Influenza Season",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "U.S. ILI prior forecast for 2013-2014 flu season. This figure shows the prior forecast along with the 2013-2014 ILI data. Note the potential for an early and late peaking influenza season. The red line represents the median forecast from 300 samples of the prior. The dark blue and light blue regions represent the 50% and 90% credible regions centered around this median, respectively. Credible intervals were also generated from 300 samples of the prior. doi:10.1371/journal.pcbi.1004239.g010 Fig 11. U.S. ILI forecast for the 2013-2014 flu season made during the 43 rd (left) and 2 nd (right) epidemiological weeks. In each plot the dark blue region represents the region centered about the median in which 50% of forecasts fall, the light blue region represents where 90% of forecasts fall, and the red line represents the median forecast. The diamonds represent the 2013-2014 ILI data with the current data point marked by a red circle. doi:10.1371/journal.pcbi.1004239.g011 forecasts a range of possible influenza scenarios that include the 2013-2014 season. In Fig 12, we show the forecast resulting from the straw man approach for the 2013-2014 influenza season.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF12": {
+            "text": "U.S. ILI straw man forecast. This figure shows the results of our straw man prediction based on averaging past flu seasons. Since this forecast of the 2013-2014 influenza season was made using only the statistics of the sample mean and sample standard deviation from previous season's ILI observations it's credible intervals (left) do a good job of containing the current influenza season. This forecast does not include any causal model of influenza spread.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF13": {
+            "text": "doi:10.1371/journal.pcbi.1004239.g012",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF14": {
+            "text": "S \u03bd EIR with enKS vs. straw man forecast for the 2013-2014 U.S. ILI data. The M-distance between U.S. 2013-2014 ILI data and the two forecasts is plotted. The M-distance between the forecast and ILI data is calculated for each epidemiological week until the end of the influenza season. The Mdistances at week 36 uses the forecast observations from week 36 of 2013 to week 20 of 2014 and the ILI data from week 36 of 2013 to week 20 of 2014.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF15": {
+            "text": "doi:10.1371/journal.pcbi.1004239.g013",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF16": {
+            "text": "Percent improvement in M-distance using S \u03bd EIR with enKS to forecast 2013-2014 U.S. ILI data. The percent improvement in the M-distance for the U.S. 2013-2014 ILI forecast using the data assimilative method compared to the straw man method is shown.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF17": {
+            "text": "doi:10.1371/journal.pcbi.1004239.g014",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF18": {
+            "text": "S \u03bd EIR start week quantiles for 2013-2014 U.S. ILI. 50% and 90% credible interval estimates of the influenza season start",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF19": {
+            "text": "doi:10.1371/journal.pcbi.1004239.g015",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF20": {
+            "text": "S \u03bd EIR peak week quantiles for 2013-2014 U.S. ILI. 50% and 90% credible interval estimates of the influenza season peak week are plotted along with the median. Due to our prior and biases in our model the forecast for the week of ILI peak is consistently later than the observed 2013-2014 peak. However, we can see here that, as ILI observations are assimilated, early peaks are eliminated from the forecast prior to observation of the peak.doi:10.1371/journal.pcbi.1004239.g016",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF21": {
+            "text": "S \u03bd EIR peak quantiles for 2013-2014 U.S. ILI. 50% and 90% credible interval estimates of the influenza season peak are plotted along with the median.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF22": {
+            "text": "doi:10.1371/journal.pcbi.1004239.g017",
+            "latex": null,
+            "type": "figure"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "This work was inspired by the CDC's hosting of the 2013-2014 Predict the influenza season challenge. We would like to thank the organizers of this challenge and the participants for the wealth of insight gained through discussions about disease forecasting and monitoring.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        },
+        {
+            "text": "Conceived and designed the experiments: KSH GF RP NG JMH SYDV. Performed the experiments: KSH GF RP NG. Analyzed the data: KSH GF RP NG. Contributed reagents/materials/ analysis tools: KSH GF RP NG. Wrote the paper: KSH GF RP NG JMH AD SYDV.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Contributions"
+        }
+    ]
+}

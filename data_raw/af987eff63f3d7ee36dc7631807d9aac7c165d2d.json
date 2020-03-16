@@ -1,0 +1,1674 @@
+{
+    "paper_id": "af987eff63f3d7ee36dc7631807d9aac7c165d2d",
+    "metadata": {
+        "title": "Prediction of novel mouse TLR9 agonists using a random forest approach",
+        "authors": [
+            {
+                "first": "Varun",
+                "middle": [],
+                "last": "Khanna",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Lei",
+                "middle": [],
+                "last": "Li",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Johnson",
+                "middle": [],
+                "last": "Fung",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Shoba",
+                "middle": [],
+                "last": "Ranganathan",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Nikolai",
+                "middle": [],
+                "last": "Petrovsky",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Toll-like receptor 9 is a key innate immune receptor involved in detecting infectious diseases and cancer. TLR9 activates the innate immune system following the recognition of single-stranded DNA oligonucleotides (ODN) containing unmethylated cytosine-guanine (CpG) motifs. Due to the considerable number of rotatable bonds in ODNs, high-throughput in silico screening for potential TLR9 activity via traditional structurebased virtual screening approaches of CpG ODNs is challenging. In the current study, we present a machine learning based method for predicting novel mouse TLR9 (mTLR9) agonists based on features including count and position of motifs, the distance between the motifs and graphically derived features such as the radius of gyration and moment of Inertia. We employed an in-house experimentally validated dataset of 396 single-stranded synthetic ODNs, to compare the results of five machine learning algorithms. Since the dataset was highly imbalanced, we used an ensemble learning approach based on repeated random down-sampling.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Results: Using in-house experimental TLR9 activity data we found that random forest algorithm outperformed other algorithms for our dataset for TLR9 activity prediction. Therefore, we developed a cross-validated ensemble classifier of 20 random forest models. The average Matthews correlation coefficient and balanced accuracy of our ensemble classifier in test samples was 0.61 and 80.0%, respectively, with the maximum balanced accuracy and Matthews correlation coefficient of 87.0% and 0.75, respectively. We confirmed common sequence motifs including 'CC', 'GG','AG', 'CCCG' and 'CGGC' were overrepresented in mTLR9 agonists. Predictions on 6000 randomly generated ODNs were ranked and the top 100 ODNs were synthesized and experimentally tested for activity in a mTLR9 reporter cell assay, with 91 of the 100 selected ODNs showing high activity, confirming the accuracy of the model in predicting mTLR9 activity.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "We combined repeated random down-sampling with random forest to overcome the class imbalance problem and achieved promising results. Overall, we showed that the random forest algorithm outperformed other machine learning algorithms including support vector machines, shrinkage discriminant analysis, gradient boosting machine and neural networks. Due to its predictive performance and simplicity, the random forest technique is a useful method for prediction of mTLR9 ODN agonists.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Toll-like receptors (TLRs) represent an ancient evolutionary host immune defense system. There are 13 expressed TLR genes in mice (10 in humans), and each is devoted to recognizing a distinct set of pathogen associated molecular patterns (PAMPs) that are not found in healthy vertebrate cells, making them an important tool to help fight infections [1] . TLRs 1, 2, 4, 5 and 6 are extracellular and are situated in the plasma membrane where they bind bacterial cell wall components such as lipoteichoic acids, lipopolysaccharides, lipoproteins, and flagella. TLRs 3, 7, 8, 9 are located in endosomes where they recognize specific nucleic acid sequences expressed by various pathogens [2] . The extracellular signaling domain of TLR9 forms a horseshoe shaped dimer that forms a sandwich that clasps two CpG oligonucleotides (ODN) resulting in the cytoplasmic domains coming into close proximity thereby triggering downstream signaling [2] . Upon activation, TLR9 triggers an innate immune response characterized by the production of pro-inflammatory cytokines such as TNF-\u03b1, IL-1, IL-6, and IL-12.",
+            "cite_spans": [
+                {
+                    "start": 349,
+                    "end": 352,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 559,
+                    "end": 566,
+                    "text": "TLRs 3,",
+                    "ref_id": null
+                },
+                {
+                    "start": 567,
+                    "end": 569,
+                    "text": "7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 570,
+                    "end": 572,
+                    "text": "8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 573,
+                    "end": 574,
+                    "text": "9",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 684,
+                    "end": 687,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 934,
+                    "end": 937,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Some synthetic single-stranded ODNs that contain unmethylated CpG motifs mimic bacterial DNA and can bind and activate TLR9 leading to cytokine secretion and enhancement of adaptive immune responses. Synthetic TLR9-active ODNs have shown utility as vaccine adjuvants and anti-cancer immunotherapeutic agents. To identify a good TLR9 ligand, typically a large library of ODNs needs to be synthesized and screened on cell lines, which is a time consuming and expensive task. We hypothesized that modern in silico high-throughput screening (HTS) methods may improve the ability to identify novel highly active TLR9 ligands. In silico screening, also known as virtual screening (VS), has been widely used to enrich datasets with compounds that have a higher probability of binding to the target of interest [3] [4] [5] , and has an advantage over traditional screening or physical HTS due to its massively parallel processing ability; hence millions of compounds can be assessed economically in parallel. This is particularly important when the search space for potential ODNs TLR9 ligands is taken into consideration. A typical singlestranded ODN TLR9 agonist is 24 nucleotides in length, which amounts to 4 24 total number of possible ODNs.",
+            "cite_spans": [
+                {
+                    "start": 803,
+                    "end": 806,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 807,
+                    "end": 810,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 811,
+                    "end": 814,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "VS methods are of two major classes based on the availability of structural information. If the 3D structure of a receptor is known, structure-based virtual screening (SBVS) [6] techniques such as homology modeling, molecular docking and molecular dynamics can be used. However, if the structural information of the receptor is lacking, then ligand-based virtual screening (LBVS) [7] techniques such as quantitative structure-activity relationship and machine learning are more appropriate. SBVS involves molecular complex optimization to find the most favorable 3D binding conformation of the ligand. Consequently, SBVS is unsuitable for highthroughput screening of ligands like 24-mer ODNs, which have over 100 rotatable bonds. On the other hand, LBVS is computationally inexpensive, easy to use and might therefore be useful in the screening of TLR9 activating ODNs.",
+            "cite_spans": [
+                {
+                    "start": 174,
+                    "end": 177,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 380,
+                    "end": 383,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In a recent review, Murgueitio et al. [8] discussed the use of various computational approaches to investigate the structure and function of TLR receptors. To discover potential TLR ligands. Zatsepin et al. [9] screened a library of 1.8 million commercially available compounds to discover TLR9 antagonists by using computational chemistry and cell-based assays. The authors reported 21 potential TLR9 antagonists with IC50 lower than 10 \u03bcM, with five of them having IC50 values below 1 \u03bcM. Zhou et al. [10] constructed a 3D structure of human TLR9 ectodomains, complexed with CpG ODNs using homology modeling, then used molecular docking to study the interactions between TLR9 and the ODNs. They reported that leucine rich region (LRR)-11 was the main region in TLR9 responsible for ODN binding. The authors further reported that five positively charged residues within LRR11 were specifically involved in the ODN binding to TLR9. Nagpal et al. [11] reported a support vector machine model to predict ODNs with TLR9 activity with the model achieving a maximum Matthews Correlation Coefficient of 0.75 with an accuracy of 87%.",
+            "cite_spans": [
+                {
+                    "start": 38,
+                    "end": 41,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 207,
+                    "end": 210,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 503,
+                    "end": 507,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 946,
+                    "end": 950,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "TLR9 ligand prediction tools require availability of well-annotated ODN datasets with experimentally determined TLR9 activity data. Machine learning (ML) based techniques such as decision trees, random forest, support vector machines and neural networks can then be applied to such ODN datasets. ML is an umbrella term for statistical models built to discover patterns in existing data to explain unseen data. ML models are very powerful tools that have been used in the past to predict and classify the pharmacokinetics or toxicological profiles of compounds [12] , predict biological activities or toxicity [13] and assist in screening and optimization of compounds [5] .",
+            "cite_spans": [
+                {
+                    "start": 560,
+                    "end": 564,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 609,
+                    "end": 613,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 668,
+                    "end": 671,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "To our knowledge, this is the first report on the use of random forest-based approaches to predict novel mTLR9 ligands based on an in-house experimentally validated ODN dataset, with 91% prediction accuracy shown by experimental validation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The main goal of this study was to build a ML model that could distinguish ODNs that have high activity for mTLR9 from ODNs with low activity. We used 117 ODNs with known high mTLR9 activity, as positive examples while 274 ODNs with low activity were used as negative examples.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "We first analysed the dataset to understand the occurrence of sequence motifs in mTLR9 activating ODNs. We observed an uneven distribution of motifs with a few motifs such as 'GG' or 'CC' present in 57% of the ODNs in the high activity group compared to only 13% of the ODNs in the low activity group. Figure 1 shows the percentage of ODNs in the top 20 motifs arrange in a clockwise manner, based on the absolute difference in the percentage of occurrence in high and low mTLR9 activity groups of ODNs. All motifs having an absolute difference above 10% are shown in Additional file 1.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 302,
+                    "end": 310,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Motif analysis"
+        },
+        {
+            "text": "We further analyzed the effect of motif occurrence on the mTLR9 activity score in the high and low activity groups of ODNs in the dataset. Using the Mann-Whitney U test we compared the median mTLR9 activity score of ODNs with a motif to those without the motif for the two classes and calculated the p values. The significance threshold was set at 0.05. Figure 2 shows the effect of top 20 motifs occurrence in high (Fig. 2a) and low (Fig. 2b ) mTLR9 active group of ODNs. The darker colored bars stand for a significant difference in the median mTRL9 activity score (p < 0.05) due to the presence of the motif in the ODNs. The dotted line is the median mTLR9 score of 0.53 and 0.18 for the high and low activity groups of ODNs, respectively. Within the low activity group (Additional file 2), we found that presence of motifs such as 'CC', 'GG', 'GGC', 'GCC', 'CCCG' and 'CGGC' significantly increases the median mTLR9 activity score, while the presence of motifs e.g. 'TGT', 'CGCGT' and 'TCT' further lowers the activity of ODNs. In contrast, we found presence of 'CGTT' motif to significantly improve while 'AG' motif to significantly decrease the median mTLR9 activity score of the ODNs in the high activity group (Additional file 3). Since there was no single motif that could account for the mTLR9 activity score of the ODNs, we surmised that the combination of motifs and their interaction with the TLR9 receptor was responsible for determining overall mTLR9 activity.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 354,
+                    "end": 362,
+                    "text": "Figure 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 416,
+                    "end": 425,
+                    "text": "(Fig. 2a)",
+                    "ref_id": null
+                },
+                {
+                    "start": 434,
+                    "end": 442,
+                    "text": "(Fig. 2b",
+                    "ref_id": null
+                }
+            ],
+            "section": "Motif analysis"
+        },
+        {
+            "text": "Mean classification levels achieved by all algorithms in different k-fold cross validation schemes when applied to 20 bootstrap test samples obtained using the down-sampling technique are shown in Fig. 3 . We found that overall RF model either outperformed or was on par with the other prediction algorithms in all four cross validation schemes. In five-fold cross validation the best rates were achieved by the RF and SVM model with a maximum balanced accuracy of 95.65% and mcc of 0.91 (Additional file 4). The mean balanced accuracy and mean MCC for RF model in five-fold cross validation was 77.8% and 0.57, respectively, with standard deviations of 0.08 and 0.15, respectively (Table 1 ). In ten-fold cross validation, RF and GBM achieved the best results with the maximum balanced accuracy and mcc of 89.13% and 0.78, respectively (Additional file 5). The mean balanced accuracy and mcc for the RF model in ten-fold cross validation was 78.9% and 0.60, respectively, with standard deviations of 0.06 and 0.11, respectively (Table 1 ). In 15fold cross validation the best results were achieved by RF and SVM with the maximum balanced accuracy and mcc of 86.9% and 0.74, respectively (Additional file 6). The mean balanced accuracy and mcc for the RF model in 15-fold was 77.0% and 0.55, respectively with standard deviations of 0.06 and 0.11, respectively (Table 1 ). In 20fold cross validation random forest achieved the best result with the maximum balanced accuracy and mcc of 87.0% and 0.75, respectively (Additional file 7). The mean balanced accuracy and mcc of RF model was 79.7% and 0.61, respectively, with standard deviations of 0.05 and 0.09, respectively (Table 1) . Overall, the RF algorithm outperformed in all other ML methods, for different cross-validation values. We therefore selected RF with the 20-fold cross-validation scheme, having maximum mean balanced accuracy and MCC and minimum standard deviation on both measures, to perform the Fig. 2 The effect of top 20 motifs in the high (a) and low (b) mTLR9 activity group of ODNs in the dataset. The darker bars represent a significant difference in the median mTLR9 activity score due to the presence of motif in the ODNs. The dotted line shows the median mTLR9 activity of 0.53 and 0.18 for the ODNs in the high and low activity groups, respectively, in the dataset mTLR9 activity predictions for the randomly generated ODN dataset.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 197,
+                    "end": 203,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                },
+                {
+                    "start": 682,
+                    "end": 690,
+                    "text": "(Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1029,
+                    "end": 1037,
+                    "text": "(Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1361,
+                    "end": 1369,
+                    "text": "(Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1672,
+                    "end": 1681,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1964,
+                    "end": 1970,
+                    "text": "Fig. 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Model selection"
+        },
+        {
+            "text": "External validation is the final step to evaluate the realistic performance of any prediction model. In this technique, the performance of the model is evaluated on a new dataset not used in training or testing the model. To rigorously evaluate the performance of our model, we randomly generated 6000 24-mer ODN sequences using an in-house written Python script and then screened and ranked these randomly generated ODN for mTLR9 activity using our RF model. These ODNs were not present in our original dataset of 396 ODNs used for model building or training, and as they were virtual we had no prior knowledge of their likely mTLR9 activity at the time of model prediction. Our RF model predicted 545 of these 6000 random ODNs to be of high activity and we selected the top 100 for chemical synthesis, and then experimental tested them for mTLR9 activity using the RAW-Blue reporter cell line that expresses mTLR. Ninety-one (91%) of the predicted high activity ODNs had a mTLR9 activity value above 0.4, confirming the high accuracy of the model in predicting ODN sequences with positive mTLR9 activity (Fig. 4 ). This demonstrates that our mTLR9-specific RF prediction model is rigorous, with a strong performance on making predictions on a completely independent dataset.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1106,
+                    "end": 1113,
+                    "text": "(Fig. 4",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "External validation"
+        },
+        {
+            "text": "In this study we demonstrated the feasibility of using an RF model for in silico screening of synthetic ODNs to detect high activity mTLR9 agonists. Multiple sequence features such as simple counts of nucleotides, the distance between motifs and graphically derived features like the moment of inertia were calculated before building the RF model. We observed higher occurrence of several motifs such as 'CGGC', 'CCCG', 'GCC', 'CGG', 'GGC', 'CCG', 'CCC', 'GG' and 'CC' in high activity as compared to low activity ODNs. This means that these cytosine and guanine rich motifs along with the key unmethylated CpG dinucleotide contribute to strong mouse TLR9 activation. Interestingly, this is in contrast with the thymine rich motifs reported for TLR9 Fig. 3 Mean and standard deviation of Balanced Accuracy rates of the five classifiers on the twenty bootstrap test samples using k-fold crossvalidation scheme. Mean balanced accuracy rate of RF model was greater than all five algorithms in all the folds stimulatory ODNs by Nagpal et al. [11] . This may be due the fact that our ODN training set was mouse specific whereas the dataset used by Nagpal et al. [11] was not specific to any organism. On further analysis we found 15 and 4 motifs which significantly increased, or decreased, respectively, mTLR9 activity in the low activity group (Additional file 2), whereas, we found only 3 and 4 motifs in the high activity ODNs which significantly (p value < 0.05) increased or decreased, respectively, mTLR9 activity (Additional file 3). Furthermore, we discovered motifs which significantly decreased mTLR9 activity in both low and high groups. For example, 'CGCGTG' and sub motifs like 'GCGTG' and 'CGCGT', decreased the activity of ODNs in both the high and low groups. However, we were unable to identify motifs that increased mTLR9 activity for both groups of ODNs. This suggests that a combination of motifs might be required to increase activity of ODNs in the high group whereas the activity of low ODNs can be improved even by inclusion of a single motif. Cooccurrence of motifs and their effect on mouse TLR9 activity can be analyzed in the future to discover combinations of motifs responsible for the increase in the activity of ODNs in both groups.",
+            "cite_spans": [
+                {
+                    "start": 1038,
+                    "end": 1042,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1157,
+                    "end": 1161,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 750,
+                    "end": 756,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "The performance of the RF model was compared to other methods, which were trained on the same data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The average classification accuracy achieved by all the methods when applied to 20 bootstrap test samples in four different cross-validation schemes is shown in Fig.  3 . The results demonstrated that the RF model had the superior performance on the test datasets in most of the scenarios. The GBM and SVM classifiers also had reasonable classification accuracy rates, however, RF outperformed them in 20-fold cross validation scheme. The selected RF model on average correctly classified 79.1% of the ODNs in the training set with high activity for mTLR9 and 80.2% of ODNs with low activity. The RF thereby achieved an overall balanced accuracy of 79.7%.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 161,
+                    "end": 168,
+                    "text": "Fig.  3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Finally, the RF model was used to virtually screen 6000 randomly generated ODNs from which it predicted 545 ODNs to have high activity for mTLR9. Due to large number of predicted positive hits, the top 100 ODNs were selected for synthesis and testing for mTLR9 activity in vitro. Ninety one out of the 100 synthesized ODNs were found to have mTLR9 activity above the cutoff of 0.4 for high activity ODNs confirming the prediction potential of the RF model. However, Fig. 4 shows that the majority of predicted ligands had an activity value ranging from 0.5 to 0.7, which indicates that the model might need to be further fine-tuned to get even higher activity ligands, with a much larger dataset than the randomly generated 6000 oligonucleotides screened to find high activity ligands.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 466,
+                    "end": 472,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "In this study we found several sequence motifs that help explain the mTLR9 activity of CpG ODNs. Motifs including 'CGTT', 'GGC', 'GCC' and 'CCCG' significantly improved, whereas motifs such as 'AG', 'TCT' and 'CGCGT' significantly decreased, the activity of mTLR9 ODNs. Further, we developed and validated an RF model for predicting ODNs with mTLR9 activity. The results showed that the RF method was well suited for predicting high activity mTLR9 specific ODNs and outperformed various other learning algorithms such as SVM, SDA, NN and GBM. The model was used to screen a random library of 6000 ODNs and correctly identified 91 out of 100 ODNs that were subsequently confirmed to have mTLR9 activity. This shows the power of machine learning models for discovering novel TLR9 agonists. The lead mTLR9 active ODN candidates from the above studies are now being tested as vaccine adjuvants and anti-cancer agents in relevant mouse models.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "The quality of the training dataset determines the quality of the resulting machine learning model. Missing or insufficient data, mislabeling of the target variable, and irrelevant features may complicate the learning task and hinder the performance of the trained model. The sequences of ODNs with experimentally determined mTLR9 activity were obtained from in-house data we generated on synthesized ODNs that were characterized using a mouse TLR9 expressing reporter cell line (RAW-Blue cells, Invivogen, USA). The dataset consisted of 396 ODNs with mTLR9 activity values ranging from 0.0 (no activity) to 1.14 (high activity). The ODNs were grouped into two classes (Fig. 5) based on their respective activity value (i.e. 0.4 and above: high activity and below 0.4: low activity), resulting in a high activity group (count 117) and a low activity group (count 279).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 669,
+                    "end": 677,
+                    "text": "(Fig. 5)",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Preparation of the dataset"
+        },
+        {
+            "text": "To ensure data quality, it is customary to check and remove any outliers, impute the missing data, check, and assign the variables the correct datatype. Our dataset had neither missing values nor outliers and therefore, no further action was required in cleaning the dataset. However, to avoid overtraining the model with similar ODNs, the diversity of the dataset was increased by limiting the similarity within the group. This was achieved by clustering the ODNs within a group using the binary fingerprint features we developed during this study and applying a clustering cutoff of 0.85 to remove similar ODNs. This resulted in the removal of five ODNs from the low activity group with 274 remaining. All ODNs in the high group (count 117) were dissimilar enough not to breach the similarity cutoff and were retained. In our training dataset, the number of ODNs with low mTLR9 activity was approximately 2.5 times more than the number of ODNs with high mTLR9 activity. Therefore, we used the down-sampling technique to balance the dataset, so that 50% of the samples were derived from the set of ODNs with high activity and 50% from the set of ODNs with low activity. Subsequently, the down-sampled dataset was subdivided into training (80%) and testing (also known as validation) sets (20%), using a random sampling technique and the ODNs in the test set were excluded from model training. In order to choose the best classifier with k-fold cross validation, the performance of our models were measured using 20 down-sampled test sets. The overall methodology adopted in the study is shown in Fig. 6 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1597,
+                    "end": 1603,
+                    "text": "Fig. 6",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Preparation of the dataset"
+        },
+        {
+            "text": "In Table 2 , we present the composition of the dataset used in this study. For each instance, the training dataset was composed of 188 ODNs (derived from 94 ODNs with high and low mTLR9 activity each). The test dataset used to evaluate the performance of a model was composed of 46 ODNs (23 each from the two groups of high and low mTLR9 activity). For the prediction set, we used an in-house python script to randomly generate 6000 24-mer ODNs, to capture the diversity of the 24-mer CpG-ODN universe. Every ODN in the prediction set was classified using the selected model and crossvalidation scheme in a loop. For the final prediction, a consensus of the 20 predictions were taken for each ODN in the prediction set. Finally, the top 100 high activity predicted ODNs were selected for synthesis and experimental testing using the RAW-Blue reporter cell line assay. The training and test set ODNs along with experimental activity information are available in Additional file 8. The measured mTLR9 activity value of all the synthesized 24-mer ODNs in the dataset. The ODNs were divided into two groups of high (shown in purple) and low (shown in green) activity using a cutoff score of 0.4, based on the optimal density (OD) results from the Raw-blue reporter cell assay",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 3,
+                    "end": 10,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Preparation of the dataset"
+        },
+        {
+            "text": "It is possible to generate a large number of features for the ODN sequence data that can be used to construct machine learning models. However, there are several problems in using all the possible features as (i) some of the features may be highly correlated (ii) some may not be relevant and may contribute to the noise in the model and (iii) using a large number of features may lead to overfitting. Additionally, constructing models with many features is computationally demanding [14] . Therefore, one of the most important aspects of creating a good ML model is the choice of appropriate features that can help explain the behavior of interest based on Occam's Razor principle (i.e. simple models are more likely to be closer to reality than complex models.) [15] . While there are a variety of features used in bioinformatics for sequence data, we used the binary fingerprint features and numerical features, including count and position of motifs, distance of the motifs with respect to the start position and graphically derived features such as the moment of inertia and radius of gyration, to train the model [16] .",
+            "cite_spans": [
+                {
+                    "start": 484,
+                    "end": 488,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 764,
+                    "end": 768,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1119,
+                    "end": 1123,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Molecular feature calculation and selection"
+        },
+        {
+            "text": "To generate fingerprint features, a fasta formatted file containing all high activity ODN sequences was analysed using an in-house Perl subroutine, to chop each sequence into motifs of increasing length from two to six nucleotides and record the start positions of the motifs. For example, with a small hypothetical ODN 'TCG' of three nucleotides, two dinucleotides motifs TC1, CG2 and a trinucleotide TCG1 motif were generated. Finally, a dictionary of the motifs with at least 10% difference in the occurrence rate in low and high group of ODNs (count 67) was prepared. Subsequently, the dictionary was used to generate the binary fingerprint pattern for each sequence, where 1 showed the presence of a motif while 0 indicated its absence.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Fingerprint features"
+        },
+        {
+            "text": "Different patterns of nucleotide usage in ODNs may lead to varied mTLR9 activity. Therefore, all nucleotide characters (A, T, G, C) were counted in a sequence and the Perl built-in dictionary data structure, hash, was used to store the count of each nucleotide. Ambiguous nucleotide characters or gaps were ignored if present.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Count of nucleotides"
+        },
+        {
+            "text": "Calculating the distance between motifs with respect to their start positions",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Count of nucleotides"
+        },
+        {
+            "text": "The most commonly occurring motifs were used to calculate the distance between motif features along with their specific location. To map the position of a motif in the ODNs, the sequence of each ODN was scanned for the presence of a motif and all the positions where each motif occurs were recorded. Using eqs. (1)-(3), the distance between the second and first, third and first and the third and second occurrence of the motifs were calculated for all the motifs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Count of nucleotides"
+        },
+        {
+            "text": "where d_motif is the distance, p3, p2 and p1 are the position 3, position 2 and position 1 of the motif respectively, and 'n' is the number of nucleotides before the latter motif. In the case of the absence of a motif, 0 was substituted in the equation. It is important to keep 'n' in the equation to provide the specific location of the motifs within an ODN, because the calculated distance between motifs could be same in several ODNs. For example, in a sequence S1 = TATGCGTTCG-TACTTGATCTGAC, the distance between CG motifs is 9-5 = 4. Similarly, for another sequence S2 = TGCTTTCTTGTCGTGCGGGCTGT, the distance between the CG motifs is 16-12 = 4, again. However, the descriptor d_CG2_1 value for S1 and S2 are 12 and 19, respectively, with the addition of n to the simple distance formula of d_motif.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Count of nucleotides"
+        },
+        {
+            "text": "The graphical representation of DNA sequences have been used for many applications including assessing phylogenetic relationships [17] , characterization of neuraminidase gene in H5N1 avian flu [18] and for describing similarity/dissimilarity of DNA sequences [4] . In order to derive features, the 24-mer ODN sequences were represented as a 2D-graph, as previously described [16] . Briefly, each base in the sequence is represented as a material point on the graph which is treated as a rigid body and follows the rules of Newtonian dynamics. Numerical features such as the center of mass (\u03bc x , \u03bc y ), the principal moment of inertia(I 11, I 22 ) and radius of gyration (R g ) were calculated for each sequence as described in [16] .",
+            "cite_spans": [
+                {
+                    "start": 130,
+                    "end": 134,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 194,
+                    "end": 198,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 260,
+                    "end": 263,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 376,
+                    "end": 380,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 729,
+                    "end": 733,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Graphically derived features"
+        },
+        {
+            "text": "There are several feature selection methods used in machine learning to remove redundant or irrelevant features. These can be broadly divided into filter methods (e.g. correlation matrix, information gain, Chi-square score, principal component analysis, regression coefficients, variable importance) and wrapper methods (e.g. forward/backward selection, randomized methods that combine PLS with the genetic algorithm or Monte Carlo algorithm) [19] [20] [21] . Filter methods are easy to implement because there is no learning involved and depend only on the application of a cut-off value to reject features due to the low importance in the model construction. In the wrapper methods, the performance of a learning algorithm is evaluated to select the optimum subset of features therefore, it is a very computationally expensive process [19] and is best suited for a limited number of features. Furthermore, filter methods work well for text mining [19] , and are applicable for ODN features, which are essentially nucleotide \"words.\" Due to the large number of fingerprint features available (67 in total), we first filtered out the constant and near-constant features (features with < 0.3 standard deviation) also known as zero and near zero variance features using the caret package in R. Constant or near constant features take a unique value across samples and are uninformative. This resulted in the removal of 26 features. Since these features are binary in nature, we also checked and removed any linear combinations of features if present. This resulted in the removal of 31 features. To understand the distribution in the high and low group of ODNs we created a Cricos plot using the circlize package in R [22] . For all numerical features in addition to removing zero and near zero variance features we also calculated the correlation matrix and filtered out features that were highly correlated. The correlation coefficient was set at 0.85 and features with correlation above the cutoff value were removed. We then normalized the remaining features using centering and scaling techniques to make them unit independent. Subsequently, we merged the fingerprint and numerical features to give us a merged set of 40 features, listed in Table 3 .",
+            "cite_spans": [
+                {
+                    "start": 443,
+                    "end": 447,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 448,
+                    "end": 452,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 453,
+                    "end": 457,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 837,
+                    "end": 841,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 949,
+                    "end": 953,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 1716,
+                    "end": 1720,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 2244,
+                    "end": 2251,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Feature selection"
+        },
+        {
+            "text": "In the current study, five ML algorithms, i.e. random forest, gradient boosting machine, shrinkage discriminant analysis, support vector machine and neural network were compared, and the best performing model was chosen for the prediction of novel mTLR9 active ODNs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Learning algorithms"
+        },
+        {
+            "text": "To have a non-biased assessment of the performance, kfold cross-validation was followed where one instance of the down-sampled training data was further divided into k partitions. The value of k varies from 5, 10, 15 to 20. For each partition, ODNs not included in the training were considered part of the testing dataset. Finally, the testing data of the instance was used to evaluate the classification accuracy of the model, with the best model selected for prediction on an independent validation dataset. A graphic representation of the general procedure is given in Fig. 6 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 572,
+                    "end": 578,
+                    "text": "Fig. 6",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Learning algorithms"
+        },
+        {
+            "text": "The Random Forest (RF) algorithm was introduced by Breiman in 2001 [23] and is one of the most powerful ensemble machine learning technique that make predictions by averaging over several independent base learners in order to identify the class label for unknown instances. The base learners are usually the Classification and Regression Trees (CART) constructed using a sample with replacement from the training data with the [23, 24] . Briefly RF takes advantage of two powerful statistical techniques, bagging and random feature selection. In bagging each tree is trained on a bootstrap sample (sampling with replacement) and the predictions are made by the majority vote of the trees. Furthermore, in RF instead of using all the features, RF randomly selects a set of features to split at each node when growing a tree. To assess the performance of the RF algorithm, RF performs a type of crossvalidation using the out-of-bag (OOB) samples (samples which are not included in the training set). The concept of variable importance is inbuilt in the RF algorithm and the importance is measured by the Gini impurity criterion index [25] . We used the caret package in R to evaluate the performance and developed an ensemble of 20 different RF models for final prediction. The mtry parameter was tuned using the tuneGrid argument in the train function.",
+            "cite_spans": [
+                {
+                    "start": 67,
+                    "end": 71,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 427,
+                    "end": 431,
+                    "text": "[23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 432,
+                    "end": 435,
+                    "text": "24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 1132,
+                    "end": 1136,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Random Forest algorithm"
+        },
+        {
+            "text": "The accuracy of the five ML algorithms was measured by presenting the prediction results in the form of a confusion matrix and the variety of performance measures were calculated based on the following statistical measures:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "TP, true positivesthe total number of correctly classified high activity ODNs. TN, true negativesthe total number of correctly classified low activity ODNs. FP, false positivesthe total number of low activity ODNs incorrectly classified as high activity ODNs. FN, false negativesthe total number of high activity ODNs incorrectly classified as low activity ODNs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "Using the measures above, a series of statistical metrics were computed including sensitivity (Se), specificity (Sp), Balanced Accuracy (Ba), Matthews correlation coefficient (MCC) and precision.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "The recall rate for the members of the positive class (high activity ODNs) is given by sensitivity, in eq. (4):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "Similarly, the recall rate for the members of the negative class (low activity ODNs) is given by specificity, in eq. (5):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "The balanced accuracy of the model was calculated based on the eq. (6):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "We then calculated the MCC from eq. (7); the coefficient returns a value between + 1 and \u2212 1. The higher the value of the coefficient, the better the classification result.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "Finally, the precision was computed to measure the reproducibility of the results, in eq. (8):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        },
+        {
+            "text": "Mouse RAW-blue TLR9 reporter cell assay RAW-Blue\u2122 cells are derived from the murine RAW 264.7 macrophage cell line with chromosomal integration of a secreted embryonic alkaline phosphatase (SEAP) reporter construct inducible by NF-\u03baB and AP-1 and were acquired from InvivoGen. The presence of agonists of mouse TLR9 activates downstream signaling pathways leading to the activation of NF-\u03baB and AP-1, and the subsequent secretion by the RAW cells of SEAP. Levels of SEAP in the culture supernatant are measured chromatographically using the detection medium QUANTI-Blue\u2122. RAW-Blue cells were cultured in DMEM supplemented with 10% (v/v) heat-inactivated fetal bovine serum, penicillin-streptomycin 10,000 U/mL (Gibco), and Normocin 100 \u03bcg/mL (InvivoGen). Subsequently, RAW-Blue cells were seeded at a density of approximately 1 \u00d7 105 cells/well in a volume of 180 \u03bcL/well in a flat-bottom 96well culture plate (Greiner-One). ODNs were diluted in saline and added to the culture plate containing RAW-Blue cells to the total volume of 200 \u03bcL. After culturing the cells for 3 h, the levels of SEAP were determined in the supernatant with QUANTI-Blue\u2122 Solution (Invivo-Gen) by reading the absorbance at wavelength of 650 nm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance metrics"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Toll-like receptors: activation, signalling and transcriptional modulation",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "De Nardo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Cytokine",
+            "volume": "74",
+            "issn": "",
+            "pages": "181--190",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "The structural biology of toll-like receptors",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Botos",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Segal",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Davies",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Structure",
+            "volume": "19",
+            "issn": "",
+            "pages": "447--59",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "In silico approach to screen compounds active against parasitic nematodes of major socio-economic importance",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Khanna",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ranganathan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "BMC Bioinformatics",
+            "volume": "12",
+            "issn": "13",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Graphical representation and similarity analysis of DNA sequences based on trigonometric functions",
+            "authors": [
+                {
+                    "first": "G-S",
+                    "middle": [],
+                    "last": "Xie",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jin X-B",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Pu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mo",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Acta Biotheor",
+            "volume": "66",
+            "issn": "",
+            "pages": "113--146",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Discovering highly selective and diverse PPAR-delta agonists by ligand based machine learning and structural modeling",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Da&apos;adoosh",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Marcus",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rayan",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "King",
+                    "suffix": ""
+                },
+                {
+                    "first": "Che",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Goldblum",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2019,
+            "venue": "Sci Rep",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Computational methods in drug discovery",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Leelananda",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lindert",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Beilstein J Org Chem",
+            "volume": "12",
+            "issn": "",
+            "pages": "2694--718",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Use of machine learning approaches for novel drug discovery",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Lima",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Philot",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ghg",
+                    "middle": [],
+                    "last": "Trossini",
+                    "suffix": ""
+                },
+                {
+                    "first": "Lpb",
+                    "middle": [],
+                    "last": "Scott",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Maltarollo",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Honorio",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Expert Opin Drug Discov",
+            "volume": "11",
+            "issn": "",
+            "pages": "225--264",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Balancing inflammation: computational Design of Small-Molecule Toll-like Receptor Modulators",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Murgueitio",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Rakers",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Frank",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Wolber",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Trends Pharmacol Sci",
+            "volume": "38",
+            "issn": "",
+            "pages": "155--68",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Computational discovery and experimental confirmation of TLR9 receptor antagonist leads",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zatsepin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mattes",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Rupp",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Finkelmeier",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Basu",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Burger-Kentischer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "J Chem Inf Model",
+            "volume": "56",
+            "issn": "",
+            "pages": "1835--1881",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Toll-like receptor 9 interaction with CpG ODN--an in silico analysis approach",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Pan",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Qiu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Theor Biol Med Model",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "VaccineDA: prediction, design and genome-wide screening of oligodeoxynucleotide-based vaccine adjuvants",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Nagpal",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Gupta",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Chaudhary",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kumar Dhanda",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Prakash",
+                    "suffix": ""
+                },
+                {
+                    "first": "Gps",
+                    "middle": [],
+                    "last": "Raghava",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Sci Rep",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Applying machine learning techniques for ADME-Tox prediction: a review",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Maltarollo",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Gertrudes",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Oliveira",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Honorio",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Expert Opin Drug Metab Toxicol",
+            "volume": "11",
+            "issn": "",
+            "pages": "259--71",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "DeepTox: toxicity prediction using deep learning",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mayr",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Klambauer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Unterthiner",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Hochreiter",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Front Environ Sci",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3389/fenvs.2015.00080"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "The curse of dimensionality in data mining and time series prediction",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Verleysen",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Fran\u00e7ois",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Computational intelligence and bioinspired systems",
+            "volume": "",
+            "issn": "",
+            "pages": "758--70",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "The problem of Overfitting",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Hawkins",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Chem Inf Comput Sci",
+            "volume": "44",
+            "issn": "",
+            "pages": "1--12",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "2D-dynamic representation of DNA sequences",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bieli\u0144ska-Wa",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Wa",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Nowak",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Nandy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Chem Phys Lett",
+            "volume": "442",
+            "issn": "",
+            "pages": "140--144",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Coronavirus phylogeny based on triplets of nucleic acids bases",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Liao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Chem Phys Lett",
+            "volume": "421",
+            "issn": "",
+            "pages": "313--321",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Graphical representation and numerical characterization of H5N1 avian flu neuraminidase gene sequence",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Nandy",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Basak",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Gute",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "J Chem Inf Model",
+            "volume": "47",
+            "issn": "",
+            "pages": "945--51",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "A review of feature selection methods with applications",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Jovi\u0107",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Brki\u0107",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Bogunovi\u0107",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "38th International Convention on Information and Communication Technology",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "A review of feature selection and feature extraction methods applied on microarray data",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Hira",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Gillies",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Adv Bioinforma",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1155/2015/198363"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "A review of variable selection methods in partial least squares regression",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Mehmood",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Liland",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Snipen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Saeb\u00f8",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Chemom Intell Lab Syst",
+            "volume": "118",
+            "issn": "",
+            "pages": "62--71",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "circlize implements and enhances circular visualization in R",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Gu",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Gu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Eils",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Schlesner",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Brors",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Bioinformatics",
+            "volume": "30",
+            "issn": "",
+            "pages": "2811--2813",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Random Forests",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Breiman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Mach Learn",
+            "volume": "45",
+            "issn": "",
+            "pages": "5--32",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Random forests: from early developments to recent advancements",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Fawagreh",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Gaber",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Elyan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Syst Sci Control Eng",
+            "volume": "2",
+            "issn": "",
+            "pages": "602--611",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "The origins of the Gini index: extracts from Variabilit\u00e0 e Mutabilit\u00e0 (1912) by Corrado Gini",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Ceriani",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Verme",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J Econ Inequal",
+            "volume": "10",
+            "issn": "",
+            "pages": "421--464",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Publisher's Note",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Top 20 motifs in mTLR9 active ODN arranged in clockwise manner based on the absolute difference in the percentage of occurrence in high and low activity groups of ODNs. The width of the ribbon shows average percent composition of the motifs in each group",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Measured mTRL9 activity values of the 100 top predicted TLR9 active ODNs. The dotted black line is the cutoff value for the ODNs in the high activity group used in building the model",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Fig. 5 The measured mTLR9 activity value of all the synthesized 24-mer ODNs in the dataset. The ODNs were divided into two groups of high (shown in purple) and low (shown in green) activity using a cutoff score of 0.4, based on the optimal density (OD) results from the Raw-blue reporter cell assay",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Flowchart of methodology adopted",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Mean and standard deviation (SD) values of the balanced accuracy and Matthews Correlation Coefficient (MCC) for all five learning algorithms in 20 bootstrap test samples. The best values in each fold category are underlined with the overall best in bold",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Composition of the training and test sets at any instance",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Features used in this study controlled variation. RF can be used for both classification and regression tasks. It can manage missing values, outliers efficiently and perform well with imbalanced datasets. The detailed account of RF methodology is present in the literature",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "This article has been published as part of BMC Molecular and Cell Biology, Volume 20 Supplement 2, 2019: 18th International Conference on Bioinformatics. The full contents of the supplement are available at https:// bmcmolcellbiol.biomedcentral.com/articles/supplements/volume-20supplement-2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "About this supplement"
+        },
+        {
+            "text": "Supplementary information accompanies this paper at https://doi.org/10. 1186/s12860-019-0241-0.Additional file 1. Sequence motifs in mTLR9 active ODNs having an absolute difference in the occurrences above 10% in high and low activity groups of ODNs, arranged in a clockwise manner. The width of the ribbon shows the average percentage composition of the motifs each group.Additional file 2. The effect of ODN motif occurrences on the median mTLR9 activity in the low activity group. The median RAW-Blue activity for all the ODNs in the low activity group was 0.18. Increase or decrease in the median activity values due to the presence of a motif are coloured green and red, respectively, with statistically significant values in bold. The significance threshold was set at p-value < 0.05. The motifs are arranged in alphabetical order.Additional file 3. The effect of ODN motif occurrences on the median mTLR9 activity in the high activity group. The median RAW-Blue activity for all the ODNs in the high activity group was 0.53. Increase or decrease in the median activity values due to the presence of a motif are coloured in green and red, respectively, with statistically significant values in bold. The significance threshold was set at p value < 0.05. The motifs are arranged in alphabetical order.Additional file 4. Results of five-fold cross-validation.Additional file 5. Results of ten-fold cross-validation.Additional file 6. Results of fifteen-fold cross-validation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supplementary information"
+        },
+        {
+            "text": "Additional file 8. ODNs used as test and training sets for building the prediction model, along with activity information.Authors' contributions VK and NP designed the research; VK, LL and JF performed the research; VK, LL, JF. NP, and SR analyzed data; VK, LL, NP, and SR wrote the paper. All authors have read and approved the final manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional file 7. Results of twenty-fold cross-validation."
+        },
+        {
+            "text": "This work was supported by funding by the National Institute of Allergy and Infectious Diseases of the National Institutes of Health under Contract HHS-N272201400053C. The content is solely the responsibility of the authors and does not necessarily represent the official views of the NIH.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Funding"
+        },
+        {
+            "text": "All data reported in this study are available as Tables and Supplementary data. The cell line used in the assay is commercially available from Invivogen Inc. [26] .Ethics approval and consent to participate Not applicable.",
+            "cite_spans": [
+                {
+                    "start": 158,
+                    "end": 162,
+                    "text": "[26]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "The authors declare that they have no competing interests. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

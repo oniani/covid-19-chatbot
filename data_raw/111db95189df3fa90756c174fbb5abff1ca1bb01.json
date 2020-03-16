@@ -1,0 +1,1463 @@
+{
+    "paper_id": "111db95189df3fa90756c174fbb5abff1ca1bb01",
+    "metadata": {
+        "title": "A generalized approach to predicting protein-protein interactions between virus and host",
+        "authors": [
+            {
+                "first": "Xiang",
+                "middle": [],
+                "last": "Zhou",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Byungkyu",
+                "middle": [],
+                "last": "Park",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Daesik",
+                "middle": [],
+                "last": "Choi",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Kyungsook",
+                "middle": [],
+                "last": "Han",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Viral infection involves a large number of protein-protein interactions (PPIs) between virus and its host. These interactions range from the initial binding of viral coat proteins to host membrane receptor to the hijacking the host transcription machinery by viral proteins. Therefore, identifying PPIs between virus and its host helps understand the mechanism of viral infections and design antiviral drugs. Many computational methods have been developed to predict PPIs, but most of them are intended for PPIs within a species rather than PPIs across different species such as PPIs between virus and host. Results: In this study, we developed a prediction model of virus-host PPIs, which is applicable to new viruses and hosts. We tested the prediction model on independent datasets of virus-host PPIs, which were not used in training the model. Despite a low sequence similarity between proteins in training datasets and target proteins in test datasets, the prediction model showed a high performance comparable to the best performance of other methods for single virus-host PPIs. Conclusions: Our method will be particularly useful to find PPIs between host and new viruses for which little information is available. The program and support data are available at http://bclab.inha.ac.kr/VirusHostPPI. to the hijacking the host transcription machinery by viral proteins. Therefore, identifying PPIs between virus and its host helps understand the mechanism of viral infections and design antiviral drugs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Many computational methods have been developed to predict PPIs, but most of them are intended for PPIs within a same species rather than for PPIs across different species. Methods for predicting intra-species PPIs do not distinguish interactions between proteins of the same species from those of different species, and thus are not appropriate for predicting inter-species PPIs. Motivated by a recent increase in data of virus-host PPIs, a few computational methods have been developed to predict virushost PPIs using machine learning methods. For instance, a homology-based method [3] and domain-based method [4] were proposed to predict PPIs between H. sapiens and M. tuberculosis H37Rv. Cui et al. [5] developed a support",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "There are many types of viruses that cause a wide variety of viral infections or viral diseases. For example, more than 11,000 deaths were reported in Africa during the outbreak of Ebola virus disease in 2014 and 2015 [1] . More recently, an outbreak of Middle East respiratory syndrome coronavirus (MERS-CoV) [2] , which began with a patient in an emergency room, occurred in South Korea. So far, there is no specific vaccine or effective treatment for Ebola virus and MERS-CoV [1, 2] . Viral infection involves a large number of protein-protein interactions (PPIs) between virus and its host. These interactions range from the initial binding of viral coat proteins to host membrane receptor vector machine (SVM) model to predict PPIs between human and two types of viruses (hepatitis C virus and human papillomavirus). However, these prediction methods cannot be applied to new viruses or new hosts that have no known PPIs to the methods. Inter-species PPIs predicted by these methods are for PPIs between virus of a single type and host of a single type. A recent SVM model called DeNovo is perhaps the only one that can predict PPIs of new viruses with a shared host [6] . Amino acid sequence similarity between different types of viruses or hosts is relatively low, so sequence-based prediction of virus-host PPIs for new viruses or hosts is quite challenging. In this study, we developed a new prediction method of virus-host PPIs which is applicable to new viruses or hosts. The rest of this paper discusses the details of the method and its experimental results.",
+            "cite_spans": [
+                {
+                    "start": 218,
+                    "end": 221,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 310,
+                    "end": 313,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 479,
+                    "end": 482,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 483,
+                    "end": 485,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 1172,
+                    "end": 1175,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We obtained all known PPIs between virus and host using the PSICQUIC web service (http://www.ebi.ac.uk/Tools/ webservices/psicquic/view/main.xhtml). We extracted virus-host PPIs from four databases, APID, IntAct, Mentha and UniProt, which use same protein identifiers. The sequences of the proteins involved in any of the PPIs were obtained from the UniProt database (http://www.uniprot. org). As of December 2016, there are a total of 12, 157 PPIs between 29 hosts and 332 viruses ( Table 1 ). The reason that human is listed as a separate category from other animals (i.e., non-human animals) in the classification of hosts is because human has a much larger number of known PPIs with viruses than other animals. Detailed information on the viruses involved in the virus-host PPIs is available at http://bclab.inha.ac.kr/VirusHostPPI.",
+            "cite_spans": [
+                {
+                    "start": 436,
+                    "end": 439,
+                    "text": "12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 440,
+                    "end": 443,
+                    "text": "157",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 484,
+                    "end": 491,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Data of virus-host PPIs"
+        },
+        {
+            "text": "Learning-based prediction of PPIs requires both positive and negative PPI data, but negative data are not readily available in databases. For negative data, we obtained protein sequences of major hosts (human, non-human animal, plant, and bacteria) from UniProt, and removed those with a sequence similarity higher than 80% to any positive data using CD-HIT-2D [7] .",
+            "cite_spans": [
+                {
+                    "start": 361,
+                    "end": 364,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data of virus-host PPIs"
+        },
+        {
+            "text": "We constructed several datasets to examine the applicability of our prediction method to new viruses or hosts. The datasets are classified into two types: To examine the applicability of the prediction method to new viruses, we constructed a training dataset with 10,955 PPIs between human and any virus except H1N1 virus (hereafter called TR1). The prediction method was later tested on a test dataset with 381 PPIs between human and H1N1 virus (called TS1), which were not used in training the method. We constructed another training dataset TR2 with 11,341 PPIs between human and any virus except Ebola virus. The prediction method trained with TR2 was tested on a test dataset TS2, which contains 150 PPIs between human and Ebola virus (Fig. 1a) . Additional training datasets for studying the applicability to new viruses are TR3 and TR4. TR3 contains 11,617 virus-host PPIs except PPIs of H1N1 virus. TR4 consists of 12,007 virus-host PPIs except PPIs of Ebola virus. The prediction model trained with TR3 and TR4 was later tested on TS1 and TS2, respectively (see Fig. 1b for details).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 740,
+                    "end": 749,
+                    "text": "(Fig. 1a)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1071,
+                    "end": 1078,
+                    "text": "Fig. 1b",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Datasets"
+        },
+        {
+            "text": "The reason for selecting the viruses for the SVM model is as follows: (1) For training the SVM model, we tried to select as many virus proteins as possible which have known interactions with host proteins. (2) For testing the SVM method on new viruses, we selected H1N1 and Ebola virus because the viruses caused a large number of deaths recently but no specific vaccine or effective treatment is available yet.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Datasets"
+        },
+        {
+            "text": "The applicability of the prediction method to new hosts was evaluated using training dataset TR5 and test datasets TS5.1-TS5.4. TR5 contains 11,491 PPIs between human and any virus. The prediction method trained with TR5 was tested on PPIs of non-human hosts with virus, which were not used in training the method. The test datasets include TS5.1 (PPIs of non-human animal with virus), TS5.2 (PPIs of plant with virus), TS5.3 (PPIs of bacteria with virus) and TS5.4 (PPIs of any non-human host with virus) (Fig. 2) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 506,
+                    "end": 514,
+                    "text": "(Fig. 2)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Datasets"
+        },
+        {
+            "text": "To assess the independence of the test data from the training data, we analyzed the sequence similarity between the training datasets and test datasets using EMBOSS Needle tool [8] . As shown in Table 2 , target proteins in the test datasets showed a very low sequence similarity with proteins in the training datasets (see the supporting data at http://bclab.inha.ac.kr/VirusHostPPI for the similarity of every sequence pair between the training datasets and test datasets).",
+            "cite_spans": [
+                {
+                    "start": 177,
+                    "end": 180,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 195,
+                    "end": 202,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Datasets"
+        },
+        {
+            "text": "Feature selection and representation are critical to the success of prediction of PPIs. In particular, one of the challenges in sequence-based prediction of virus-host PPIs is to represent two types of proteins of variable lengths into a feature vector of a fixed length. Several encoding schemes have been used to represent protein sequences for predicting PPIs. For instance, Shen et al. [9] clustered 20 amino acids into seven groups, and represented the relative frequency of three consecutive amino acids (referred to 'amino acid triplet') in a protein sequence using the classification. In our previous work [5] , we redefined the relative frequency of an amino acid triplet using six groups of amino acids. However, both Shen's representation and ours generate a feature vector with many zero-valued elements, which lower the prediction performance. [9] and others [10] . In this classification of amino acids, there are 7 \u00d7 7 \u00d7 7 = 343 possible amino acid triplets.",
+            "cite_spans": [
+                {
+                    "start": 390,
+                    "end": 393,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 614,
+                    "end": 617,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 857,
+                    "end": 860,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 872,
+                    "end": 876,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Features and representation"
+        },
+        {
+            "text": "For each pair of host and virus proteins, we represent the relative frequency of amino acid triplets (RFAT) as a feature vector with 686 elements (343 for a host protein and 343 for a virus protein). The RFAT of the i-th amino acid triplet is defined by Eq. 1. In the equation, f i , avgF, and maxF denote the frequency of the i-th amino acid triplet, the average, and the maximum frequency of amino acid triplets in the protein sequence, respectively.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features and representation"
+        },
+        {
+            "text": "where",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features and representation"
+        },
+        {
+            "text": "Another feature is the frequency difference of amino acid triplets (FDAT) between virus and host proteins, which is defined by Eq. 2. In Eq. 2, f hi is the frequency of the i-th amino acid triplet in the host protein of the host-virus pair, and f vi is the frequency of the i-th amino acid triplet in the virus protein of the same host-virus pair. avgFD and maxFD denote the average and the maximum frequency difference of amino acid triplets in a host-virus pair, respectively.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features and representation"
+        },
+        {
+            "text": "We also represent amino acid composition (AC) in each pair of host and virus proteins (Eq. 3). AC i is the frequency of the i-th amino acid present in a host-virus pair divided by the maximum frequency of an amino acid in the pair.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features and representation"
+        },
+        {
+            "text": "The above three features, RFAT, FDAT and AC were developed in our previous study for inter-species PPIs of a single type [11] . However, the previous study used a different classification of amino acids and computed the average and the maximum frequency from all proteins in a dataset instead of a single protein being encoded.",
+            "cite_spans": [
+                {
+                    "start": 121,
+                    "end": 125,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Features and representation"
+        },
+        {
+            "text": "As additional features, we used composition, transition and distribution of amino acid groups [10] . Composition represents the normalized frequency of each amino acid group in the protein sequence. Transition represents the normalized frequency of transition between each amino acid group in the protein sequence. Distribution is the normalized position of the first, 25%, 50%, 75% and 100%th amino acid of each amino acid group in the protein Figure 3 shows an example of a feature vector for a pair of host and virus proteins.",
+            "cite_spans": [
+                {
+                    "start": 94,
+                    "end": 98,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 445,
+                    "end": 453,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Features and representation"
+        },
+        {
+            "text": "We built several support vector machine (SVM) models using LIBSVM [12] to predict the interactions between virus and host proteins. The radial basis function (RBF) was used as a kernel function for training the SVM models, and the best values of parameters C and \u03b3 were found by running the grid search of LIBSVM on training datasets. Unless specified otherwise, the results shown in this paper were obtained with C = 32, \u03b3 = 0.03125. The SVM models take a pair of virus and host protein sequences as input. As output, the SVM models classify whether or not the virus protein interacts with the host protein. The SVM models and supporting data are available at http://bclab.inha.ac.kr/VirusHostPPI.",
+            "cite_spans": [
+                {
+                    "start": 66,
+                    "end": 70,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Prediction models of virus-host PPIs"
+        },
+        {
+            "text": "The performance of the prediction models were evaluated by several measures: sensitivity, specificity, accuracy, positive predictive value (PPV), negative predictive value (NPV), Matthews correlation coefficient (MCC) and the area under the ROC curve (AUC), which are defined as follows ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "We performed 10-fold cross validation of the SVM model with several datasets which contain different ratios of positive to negative data (1:1, 1:2 and 1:3). Due to the randomness of selecting negative data, we constructed three different datasets for each ratio of positive to negative data. Table 3 shows the results of the cross validation. The best performance of the SVM model was observed in the balanced dataset with 1:1 ratio of positive to negative data. As expected, running the SVM model on unbalanced datasets resulted in lower performances than running it on the balanced dataset with 1:1 ratio of positive to negative data. Datasets are available at http://bclab.inha. ac.kr/VirusHostPPI.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 292,
+                    "end": 299,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Results of cross validation"
+        },
+        {
+            "text": "We also examined the contribution of features to the prediction performance of our SVM model. Table 4 compares different combinations of features in 10-fold cross validation of the SVM model with the 1:1 dataset of Table 3 . Among the single features, RFAT was better than the others (i.e., FDAT, AC, composition, transition, and distribution) in all performance measures. With RFAT alone, the SVM model achieved an accuracy above 83% and an MCC above 0.668, which indicates that RFAT is a very powerful feature in predicting virus-host PPIs. Although RFAT is a powerful feature, performance gain was obtained with it was used with combination of other features. For example, using three features of RFAT, FDAT and AC showed a better performance than using RFAT alone. The best performance of the SVM model was observed when all six features were used. Table 5 shows the results of testing the prediction model on 2 independent datasets of PPIs of H1N1 and Ebola virus, which were not used in training the models. As discussed earlier, proteins of H1N1 virus have a sequence similarity of 9.6% to those of other viruses, and proteins of Ebola virus have a sequence similarity of 10.9% to other viruses on average. Despite such a low sequence similarity of proteins in test datasets to those in training datasets, all prediction models trained with TR1-TR4 showed a relatively high performance in independent testing. Prediction models trained with host-virus PPIs (TR2 and TR4) showed a slightly better performance than those trained with human-virus PPIs (TR1 and TR3) in both H1N1 and Ebola viruses. The models showed a higher sensitivity for ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 94,
+                    "end": 101,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 215,
+                    "end": 222,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 853,
+                    "end": 860,
+                    "text": "Table 5",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Results of cross validation"
+        },
+        {
+            "text": "In order to examine the applicability of our prediction model to new hosts, we tested it on PPIs of viruses with new hosts, which were not used in training the model. As described earlier, the model trained with human-virus PPIs was tested on PPIs of viruses with non-human (i.e., non-human animal, plant and bacteria). As shown earlier in Table 2 , the average sequence similarity of human proteins to non-human animal, plant, and bacteria is 10.7%, 10.6%, and 10.4%, respectively. Despite the low sequence similarity, tests of the model on new hosts showed a reasonable good performance (Table 6 ), but its performance for new hosts was slightly lower than that for new viruses.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 340,
+                    "end": 347,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 589,
+                    "end": 597,
+                    "text": "(Table 6",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Applying the prediction model to new hosts"
+        },
+        {
+            "text": "The difference seems ascribed to the difference in the number of target proteins in test datasets and to the difference in the number of partner proteins of the target proteins, which are shared by training and test datasets. Test datasets TS1 and TS2 have 381 interactions of 11 H1N1 virus proteins and 150 interactions of 3 Ebola virus proteins with human proteins, respectively ( Fig. 1 and Table 2 ). Test datasets TS5.1, TS5. Table 2 ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 383,
+                    "end": 389,
+                    "text": "Fig. 1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 394,
+                    "end": 401,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 431,
+                    "end": 438,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Applying the prediction model to new hosts"
+        },
+        {
+            "text": "On average, a test dataset for new viruses has (381 + 150)/2 = 266 PPIs and a test dataset for new hosts has (488 + 17 + 143)/3 = 216 PPIs. Thus, the difference in the average number of PPIs of the two types of test datasets is not large. However, there is a big difference in the number of target proteins in the test datasets and in the number of proteins common to training and test datasets. The average number of virus proteins in a test dataset for new viruses is only (11+3)/2 = 7, whereas the average number of host proteins in the test datasets for new hosts is (368 + 13 + 106)/3 = 162. Thus, virus-host PPIs in the test datasets for new viruses share many host proteins in the training datasets (248 host proteins common to TR1 and TS1, 129 host proteins common to TR2 and TS2, 248 host proteins common to TR3 and TS1, and 129 host proteins common to TR4 and TS2) even though no virus proteins are shared by the test and the training datasets. In contrast, virus-host PPIs in the test datasets for new hosts share a much smaller number of virus proteins in the training datasets (85 virus proteins common to TR5 and TS5.1, 0 common to TR5 and TS5.2, 2 virus This is a known problem with pair-input methods, which was first reported by Park and Marcotte [13] , but not widely known to researchers. According to their study [13] , prediction methods that operate on pairs of objects such as PPIs perform much better for test pairs that share components with a training set than for those that do not. Thus, our prediction model showed a better performance in testing for new viruses which share more partner proteins (i.e., host proteins) with training datasets than in testing for new hosts which share fewer partner proteins (i.e., virus proteins) with training datasets.",
+            "cite_spans": [
+                {
+                    "start": 1264,
+                    "end": 1268,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 1333,
+                    "end": 1337,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Applying the prediction model to new hosts"
+        },
+        {
+            "text": "We compared our method with two other methods, DeNovo [6] and Barman's method [14] , using their datasets. For comparison with DeNovo's SVM model, we tested our SVM model on DeNovo's SLiM testing set, which contains 425 positive and 425 negative PPIs (Supplementary file S12 used in DeNovo's study ST6). While DeNovo's SVM model showed an accuracy of 81.90%, sensitivity of 80.71%, specificity of 83.06%, our SVM model achieved an accuracy of 84.47%, sensitivity of 80.00%, and specificity of 88.94% (Table 7) . Our model showed a slightly lower sensitivity, but showed a higher specificity and accuracy. The dataset used for comparison of our SVM model with DeNovo is available at http://bclab.inha.ac.kr/VirusHostPPI. In Barman's study [14] three machine learning methods (SVM, Na\u00efve Bayes, and Random Forest) were used to predict virus-host PPIs using several features such as domain-domain association in interacting protein pairs and composition of methionine, serine, and valine in viral proteins. In a 5-fold cross validation with virus-host PPIs from VirusMINT [15] , their SVM showed higher sensitivity and F1 score than Na\u00efve Bayes and Random Forest. Thus, we tested our SVM model on the same dataset used in Barman's study, which contains 1035 positive and 1,035 negative interactions between 160 virus proteins of 65 types and 667 human proteins. As shown in Table 8 ",
+            "cite_spans": [
+                {
+                    "start": 54,
+                    "end": 57,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 78,
+                    "end": 82,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 738,
+                    "end": 742,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1069,
+                    "end": 1073,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 500,
+                    "end": 509,
+                    "text": "(Table 7)",
+                    "ref_id": "TABREF7"
+                },
+                {
+                    "start": 1371,
+                    "end": 1378,
+                    "text": "Table 8",
+                    "ref_id": "TABREF8"
+                }
+            ],
+            "section": "Comparison to other methods"
+        },
+        {
+            "text": "Most computational methods of predicting PPIs are intended for interactions within a species rather than for interactions across different species such as interactions between virus and host cell proteins. A small number of computational methods which were recently developed for predicting PPIs between virus and host are limited to interactions of single virus or single host, and therefore a separate prediction model is required to predict PPIs of new viruses or hosts. However, proteins of new viruses or hosts often exhibit quite a low sequence similarity to proteins of known viruses or hosts, and little information is available for new viruses or hosts.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "In this study, we developed a prediction model of virushost PPIs, which is applicable to new viruses and hosts. We tested the prediction model on independent datasets of virus-host PPIs, which were not used in training the model and have a very low sequence similarity to any protein in training datasets of the model. Despite a low sequence similarity between proteins in training datasets and target proteins in test datasets, the prediction model showed a high performance comparable to the best performance of other methods for single virus-host PPIs. Our ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Ebola virus disease outbreak in West Africa",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Gatherer",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "The",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "J Gen Virol",
+            "volume": "95",
+            "issn": "",
+            "pages": "1619--1643",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "MERS-CoV outbreak following a single patient exposure in an emergency room in South Korea: an epidemiological outbreak study",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Cho",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Kang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ha",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Ko",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Kang",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jo",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Ryu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Choi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Huh",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Ki",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Kang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Peck",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Dhong",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Song",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Chung",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Lancet",
+            "volume": "388",
+            "issn": "",
+            "pages": "994--1001",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Stringent homology-based prediction of H. sapiens-M. tuberculosis H37Rv protein-protein interactions",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Nguyen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Fan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jin",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Xiong",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Wong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Biol Direct",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Stringent DDI-based prediction of H. sapiens-M. tuberculosis H37Rv protein-protein interactions",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Rezaei",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Hugo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jin",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Fan",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Yong",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Wozniak",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Wong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "BMC Syst Biol",
+            "volume": "7",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Prediction of protein-protein interactions between viruses and human by an SVM model",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Cui",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Han",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "BMC Bioinformatics",
+            "volume": "13",
+            "issn": "7",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "DeNovo: virus-host sequence-based protein-protein interaction prediction",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Eid",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Elhefnawi",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Heath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Bioinformatics",
+            "volume": "32",
+            "issn": "8",
+            "pages": "1144--50",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "CD-HIT Suite: a web server for clustering and comparing biological sequences",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Niu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Fu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Bioinformatics",
+            "volume": "26",
+            "issn": "5",
+            "pages": "680--682",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "EMBOSS: the European Molecular Biology Open Software Suite",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rice",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Longden",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bleasby",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Trends Genet",
+            "volume": "16",
+            "issn": "6",
+            "pages": "276--283",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Predictina protein-protein interactions based only on sequences information",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Luo",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Jiang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "104",
+            "issn": "11",
+            "pages": "4337--4378",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Predicting protein-protein interactions from primary protein sequences using a novel multi-scale local feature representation scheme and the random forest",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "You",
+                    "suffix": ""
+                },
+                {
+                    "first": "Kcc",
+                    "middle": [],
+                    "last": "Chan",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Plos ONE",
+            "volume": "10",
+            "issn": "5",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "An improved method for predicting interactions between virus and human proteins",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Alguwaizani",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Han",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "J Bioinforma Comput Biol",
+            "volume": "15",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "LIBSVM: A Library for support vector machines",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "ACM Trans Intell Syst Technol",
+            "volume": "2",
+            "issn": "3",
+            "pages": "1--27",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "A flaw in the typical evaluation scheme for pair-input computational predictions",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Marcotte",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nat Methods",
+            "volume": "9",
+            "issn": "12",
+            "pages": "1134--1140",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Prediction of interactions between viral and host proteins using supervised machine learning methods",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Barman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Saha",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Das",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Plos ONE",
+            "volume": "9",
+            "issn": "11",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "VirusMINT: a viral protein interaction database",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Chatr-Aryamontri",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ceol",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Peluso",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Nardozza",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Panni",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Sacco",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tinti",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Smolyar",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Castagnoli",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Vidal",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Cusick",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Cesareni",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nucleic Acids Res",
+            "volume": "37",
+            "issn": "",
+            "pages": "669--739",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "A Generalized Approach to Predicting Virus-Host Protein-Protein Interactions",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Choi",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Han",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Lect Notes Bioinforma",
+            "volume": "10330",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Training dataset 1 (TR1): 10,955 PPIs between human and any virus except H1N1. Test dataset 1 (TS1): 381 PPIs between human and H1N1 virus. Training dataset 2 (TR2): 11,341 PPIs between human and any virus except Ebola virus. Test dataset 2 (TS2): 150 PPIs between human and Ebola virus. b Training dataset 3 (TR3): 11,617 PPIs between any host and any virus except H1N1. Test dataset 1 (TS1): 381 PPIs between human and H1N1 virus. Training dataset 4 (TR4): 12,007 PPIs between any host and any virus except Ebola virus. Test dataset 2 (TS2): 150 PPIs between human and Ebola virus",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Training dataset 5 (TR5): 11,491 PPIs between human and any virus. Test dataset 5.1 (TS5.1): 488 PPIs between non-human animal and any virus. Test dataset 5.2 (TS5.2): 17 PPIs between plant and any virus. Test dataset 5.3 (TS5.3): 143 PPIs between bacteria and any virus. Test dataset 5.4 (TS5.4): 666 PPIs between non-human host and any virus (combined set of test datasets 5.1, 5.2, 5.3 and 18 PPIs with 15 other hosts) In this study, we represent six different features of a protein sequence in a feature vector. For representation, we fist clustered twenty amino acids into seven groups, {AGV}, {C}, {FILP}, {MSTY}, {HNQW}, {DE}, and {KR} based on the dipoles and volumes of the side chains of amino acids. The classification of amino acids is the same as that of Shen et al.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "An example of a feature vector for a pair of host and virus proteins. RFAT: relative frequency of amino acid triplets. FDAT: frequency difference of amino acid triplets between virus and host proteins. AC: amino acid composition. A pair of host and virus proteins is represented by a feature vector with 1175 elementsAccuracy = TP + TN TP + FP + TN + FN (6) PPV = TP TP + FP (7) NPV = TN TN + FN (8) MCC = (TP \u00d7 TN) \u2212 (FP \u00d7 FN) \u221a (TP + FP)(TP + FN)(TN + FP)(TN + FN)(9)In Eqs. 4-9 true positives (TP) are host proteins that are correctly predicted as interacting with a virus protein.True negatives (TN) are non-interacting host proteins that are correctly predicted as non-interacting with a virus protein. False positives (FP) are non-interacting host proteins that are incorrectly predicted as interacting with a virus protein. False negatives (FN) are interacting host proteins that are incorrectly predicted as non-interacting with a virus protein.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "368 non-human animal proteins, 17 interactions of 13 plant proteins and 143 interactions of 106 bacteria proteins with virus proteins, respectively (Fig. 2 and",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "SN: sensitivity, SP: specificity, ACC: accuracy, PPV: positive predictive value, NPV: negative predictive value, MCC: Matthews correlation coefficient, AUC: the area under the ROC, F1 = 2x(SNxPPV)/(SN+PPV), \"-\": not available prediction model will be useful in finding potential PPIs of new viruses with new hosts, for which little information is known.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Training (TR) and test (TS) sets for assessing the applicability to new viruses TR1: PPIs between human and any virus except H1N1 TR2: PPIs between human and any virus except Ebola virus TR3: PPIs between any host and any virus except H1N1 TR4: PPIs between any host and any virus except Ebola virus TS1: PPIs between human and H1N1 virus Table 1 The number of known host-virus PPIs and viruses interacting with a host PPIs between plant and any virus TS5.3: PPIs between bacteria and any virus TS5.4: PPIs between any non-human host and any virus",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "The average sequence similarity between proteins in training datasets and those in test datasets",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Results of 10-fold cross validation of SVM model on 12,157 PPIs between any host-virus PPIs with different ratios of positive to negative instances",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Results of 10-fold cross validation with datasets of virus-host PPIs using different combinations of features",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Results of testing the prediction model on PPIs of new viruses",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Results of testing the prediction models trained with human-virus PPIs (TR5) on PPIs of new hosts",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": ", our SVM model outperformed Barman's SVM model in all performance measures. The dataset used for comparison of our SVM model with Barman's SVM model is available at http://bclab.inha.ac.kr/VirusHostPPI.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF7": {
+            "text": "Results of testing our SVM and DeNovo's SVM [6] on DeNovo's dataset of 425 positive and 425 negative PPIs SN: sensitivity, SP: specificity, ACC: accuracy, PPV: positive predictive value, NPV: negative predictive value, MCC: Matthews correlation coefficient, AUC: the area under the ROC, \"-\": not available",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF8": {
+            "text": "Results of 5-fold cross validation of our SVM and Barman's SVM[14] with Barman's dataset of 1035 positive and 1035 negative PPIs",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The abridged abstract of this work was previously published in the Proceedings of the 13th International Symposium on Bioinformatics Research and Applications (ISBRA 2017), Lecture Notes in Computer Science: Bioinformatics Research and Applications [16] .",
+            "cite_spans": [
+                {
+                    "start": 249,
+                    "end": 253,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "This work was supported by the INHA University Research Grant. The publication costs for this article were funded by Inha University.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Funding"
+        },
+        {
+            "text": "The program and support data are available at http://bclab.inha.ac.kr/ VirusHostPPI.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "This article has been published as part of BMC Genomics Volume 19 Supplement 6, 2018: Selected articles from the 13th International Symposium on Bioinformatics Research and Applications (ISBRA 2017): genomics. The full contents of the supplement are available online at https://bmcgenomics. biomedcentral.com/articles/supplements/volume-19-supplement-6.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "About this supplement"
+        },
+        {
+            "text": "Authors' contributions XZ designed and implemented the prediction model and prepared the initial manuscript. BP implemented a program for extracting features and for analyzing the results, and helped web communication parts. DC assisted the work and examined the results. KH supervised the work and wrote the manuscript. All authors read and approved the final manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Ethics approval and consent to participate"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Publisher's Note"
+        }
+    ]
+}

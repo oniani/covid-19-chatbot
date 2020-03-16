@@ -1,0 +1,1927 @@
+{
+    "paper_id": "d7528a14c4876dbffb163105631a9dea22f20f83",
+    "metadata": {
+        "title": "Glycosylator: a Python framework for the rapid modeling of glycans",
+        "authors": [
+            {
+                "first": "Thomas",
+                "middle": [],
+                "last": "Lemmin",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Cinque",
+                "middle": [],
+                "last": "Soto",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Carbohydrates are a class of large and diverse biomolecules, ranging from a simple monosaccharide to large multi-branching glycan structures. The covalent linkage of a carbohydrate to the nitrogen atom of an asparagine, a process referred to as N-linked glycosylation, plays an important role in the physiology of many living organisms. Most software for glycan modeling on a personal desktop computer requires knowledge of molecular dynamics to interface with specialized programs such as CHARMM or AMBER. There are a number of popular web-based tools that are available for modeling glycans (e.g., GLYCAM-WEB (http://https://dev.glycam.org/gp/) or Glycosciences.db (http://www. glycosciences.de/)). However, these web-based tools are generally limited to a few canonical glycan conformations and do not allow the user to incorporate glycan modeling into their protein structure modeling workflow.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Results: Here, we present Glycosylator, a Python framework for the identification, modeling and modification of glycans in protein structure that can be used directly in a Python script through its application programming interface (API) or through its graphical user interface (GUI). The GUI provides a straightforward two-dimensional (2D) rendering of a glycoprotein that allows for a quick visual inspection of the glycosylation state of all the sequons on a protein structure. Modeled glycans can be further refined by a genetic algorithm for removing clashes and sampling alternative conformations. Glycosylator can also identify specific three-dimensional (3D) glycans on a protein structure using a library of predefined templates. Conclusions: Glycosylator was used to generate models of glycosylated protein without steric clashes. Since the molecular topology is based on the CHARMM force field, new complex sugar moieties can be generated without modifying the internals of the code. Glycosylator provides more functionality for analyzing and modeling glycans than any other available software or webserver at present. Glycosylator will be a valuable tool for the glycoinformatics and biomolecular modeling communities.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Glycosylation is an important post-translational modification of proteins, where a carbohydrate is covalently attached by an enzyme to specific amino acids motifs known as sequons space [1] [2] [3] [4] . Glycosylation has several principal structural and functional roles in biology, that include protein folding [5] , tissue repair [6] , and cell migration [7] . In eukaryotes, nearly 70% of the proteome is believed to be glycosylated [8] . More recently, glycosylation has been observed in bacteria where it has been associated with their virulence and the formation of biofilms [9] . For viruses, such as HIV and Influenza, glycosylation allows for evasion of the host's immune system [10, 11] . Thus, determining the role of glycan structure in biology is essential in order to understand pathogenesis. The diverse and dynamic nature of glycan structures makes it difficult to resolve their structure experimentally through traditional approaches (e.g., x-ray crystallography, cryogenic electron microscopy (cryo-EM) or nuclear magnetic resonance (NMR)). Computational methods, such as molecular dynamics (MD) can help resolve glycan dynamics but this method is computationally intensive and cannot be used for the rapid modeling of glycan structure. Complementary techniques that are more rapid and available through a graphical user interface (GUI) should allow users to gain new insights into glycanprotein structure.",
+            "cite_spans": [
+                {
+                    "start": 186,
+                    "end": 189,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 190,
+                    "end": 193,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 194,
+                    "end": 197,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 198,
+                    "end": 201,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 313,
+                    "end": 316,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 333,
+                    "end": 336,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 358,
+                    "end": 361,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 437,
+                    "end": 440,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 582,
+                    "end": 585,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 689,
+                    "end": 693,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 694,
+                    "end": 697,
+                    "text": "11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In silico modeling of glycoprotein is a tedious and time consuming process and tools, such as Carb-Builder [12] , POLYS [13] , doGlycans [14] , SWEET-II [15] , GLYCAM-Web [16] , Glycan Reader [17, 18] and CHARMM-GUI glycan modeler [19] were developed to facilitate the modeling of glycans. CarbBuilder, POLYS and doGlycans are open source programs that allow building glycan structures from their primary sequence of monosaccharide units. SWEET-II is part of the website Glycosciences.DB [20] and can be used to build 3D structures of glycans. Furthermore, the website provides a number of tools for manipulating and analyzing glycans. GLYCAM-Web offers several options that simplify the building and set-up of molecular dynamics simulations of glycoproteins. It uses the GLYCAM force field [21] that is compatible with the AMBER force field. Finally, Glycan Reader recognizes most types of glycans and their chemical modifications found in the Protein Data Bank (PDB), which are all available in the CHARMM force field [22] . It also provides the option for editing their threedimensional structure. Glycan Modeler generates complex glycans and glycoconjugates by searching templates from a fragment database. Glycan Reader and Modeler have both been integrated into CHARMM-GUI [23] , a powerful website widely employed for setting up molecular dynamics simulation. In addition, CHARMM-GUI provides the functionality for modelling glycolipids and lipopolysaccharides (LPS) and to combine them with complex biological membrane simulations [24] . While many of these tools are available as webservers making them ideal for their ease of use and distribution, this limits their ability to be customized for the specific needs of some users; for example, for tasks that require batch modeling of several glycoforms for a given protein or adding non-canonical saccharides to a protein structure.",
+            "cite_spans": [
+                {
+                    "start": 107,
+                    "end": 111,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 120,
+                    "end": 124,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 137,
+                    "end": 141,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 153,
+                    "end": 157,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 171,
+                    "end": 175,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 192,
+                    "end": 196,
+                    "text": "[17,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 197,
+                    "end": 200,
+                    "text": "18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 231,
+                    "end": 235,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 488,
+                    "end": 492,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 791,
+                    "end": 795,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1020,
+                    "end": 1024,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1279,
+                    "end": 1283,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1539,
+                    "end": 1543,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We describe here Glycosylator, a Python framework designed for the rapid modeling of glycoprotein. It can be used directly in a Python terminal or script to identify, manipulate, and build glycans. In addition, the GUI allows for the quick visualization and modification of glycosylated proteins (such as one downloaded directly from the PDB). The molecular description of glycans is based on the CHARMM force field [22] . New saccharides appearing in updated versions of the force field or defined by the user can easily be added. Modeled glycans can be further refined by removing clashes and sampling alternate conformations. Since Glycosylator is distributed as a Python package, users can easily adapt the code to meet their specific needs.",
+            "cite_spans": [
+                {
+                    "start": 416,
+                    "end": 420,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The Glycosylator framework is composed of 7 classes, several of which can be employed as standalone instances for other applications in molecular modeling (Additional file 1: Figure S1 in the Supporting Information (SI) section). At the core of Glycosylator is the Molecule class. A Molecule is defined as a single covalently linked set of atoms and is implemented around the ProDy [25] and NetworkX [26] packages. ProDy is widely used for studying biomolecules and offers several functions for storing and manipulating structures. The functions and classes provided are used in the Molecule class for saving and quickly accessing the structural data of a molecule. The topological properties of a molecule are represented here as a graph using the Net-workX package. A Molecule can be instantiated directly with a 3D structure (PDB) or using a MoleculeBuilder instance and the topology information provided for the CHARMM force field [22] . When loading a glycoprotein, Glycosylator will identify all Oand N-linked sequons and their glycans. The structure and topology of each of the glycans can then be modified. Clashes and alternative conformations for glycans can be optimized with the Sampler class. Finally, the graphical representation of glycans provided by the Drawer class makes use of Matplotlib [27] , a Python package used for plotting. Taken together, Glycosylator provides more functionality for analyzing and modeling glycans than many popular software packages and webservers ( Table 1 ). The main functions used for glycosylating a protein can be conveniently accessed through Glycosylator's GUI (Additional file 1: Figure S2 ).",
+            "cite_spans": [
+                {
+                    "start": 382,
+                    "end": 386,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 400,
+                    "end": 404,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 935,
+                    "end": 939,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1308,
+                    "end": 1312,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 175,
+                    "end": 184,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1496,
+                    "end": 1503,
+                    "text": "Table 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1635,
+                    "end": 1644,
+                    "text": "Figure S2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Implementation"
+        },
+        {
+            "text": "Below, we briefly describe each class. Detailed examples for the usage of each class are provided in the Supporting Information (Additional file 1: Example S1) section and on the Github repository.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Implementation"
+        },
+        {
+            "text": "CHARMM force field topology and parameter files are parsed using the CHARMMTopology and CHARMM-Parameters classes, respectively. The data is stored in a dictionary for a quick and easy access. The CHARMM-Topology class creates and stores an additional dictionary for looking up patches. The patches are used to define the glycosidic bonds between saccharide units and are required for modification (e.g., deleting atoms).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CHARMM classes"
+        },
+        {
+            "text": "The Molecule class is used for storing the coordinates (Prody's AtomGroup) and connectivity (NetworkX graph) of a molecule. The bonds, angles and dihedrals are assigned either by the user or automatically based on the distances between atoms. The molecule's connectivity is saved as a directed graph. The user can provide the root atom to define the direction of the connectivity graph; by default, the first atom of the molecule is chosen. Ring structures are automatically detected identifying all rotatable torsional angles that are not part of a cycle. These torsional angles can be measured, set to a specific value or rotated by a given amount. An interresidue graph is also built in order to quickly parse through a molecule composed of several residues.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Molecule class"
+        },
+        {
+            "text": "The MoleculeBuilder class is employed for building and editing molecules. Information about the connectivity and atoms of a molecule are extracted from a CHARMMTopology instance. This class allows for the initialization of a Prody residue (AtomGroup). Applying a patch (CHARMM) will modify one or several residues. For glycans, patches are typically used to define the glycosidic linkage. MoleculeBuilder interfaces directly with the Prody AtomGroup and returns all the information required for creating a Molecule instance.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MoleculeBuilder class"
+        },
+        {
+            "text": "Glycosylator class was designed to deal specifically with glycans/glycoprotein. It can import a PDB file and automatically extract all the Oand N-linked sequons and associated atoms. Each glycan is saved as a Molecule instance in a dictionary. The key of the dictionary is the residue number and chain of the sequon. Glycosylator uses an internal text representation for storing a topology tree for each glycan structure. These trees describe the connectivity and saccharide units that compose a polysaccharide. A library of these structures can be imported into a Glycosylator instance or saved as a simple text file or a SQL database. Glycosylator can then compare the extracted connectivity tree to the internal dataset of known glycans to identify them based on the glycosidic linkage and residue type. We do note that chemical post-modifications of glycans are not supported in the current version. Glycans can be extended, trimmed or modeled ab initio. This can be achieved by providing the identification of a known oligosaccharide (in the library) or with a topology tree describing the connectivity and glycan units of the desired oligosaccharide. The topology tree is a string representation of a glycan.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Glycosylator class"
+        },
+        {
+            "text": "Sampler class implements a genetic algorithm for removing clashes between Molecules and their environment (e.g., protein). The CHARMM force field energy function for the torsional angles will be used for biasing Table 1 List of functionalities offered by the available software and webservers for modeling glycans. CHARMM-GUI includes Glycan Reader and Modelers, as well as the glycolipid and LPS modelers the random number generator and to sample more energetically favorable torsional angles [22] . The generation of the initial population can be skewed towards the common co-dependence of angles. The fast clash detection algorithm is based on K-d trees for intra-and interclashes of glycans. Standard grid mapping is used for the detection of clashes between glycans and their environment. To reduce the search space, the genetic algorithm iteratively optimizes subsets of glycans with the highest number of steric clashes.",
+            "cite_spans": [
+                {
+                    "start": 494,
+                    "end": 498,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 212,
+                    "end": 219,
+                    "text": "Table 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Sampler class"
+        },
+        {
+            "text": "Drawer class is used for generating 2D symbolic representations of glycans according to the IUPAC standard. The inter-residue connectivity graph stored in a Molecule is used for drawing the connectivity of a glycan. The protein is represented as a ribbon, each sequon is highlighted and the linked glycans are shown as a tree topology. The graphical representation is produced with Matplotlib and can be further modified by the users (e.g., add text, rescale) and exported in various image formats.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Drawer class"
+        },
+        {
+            "text": "We compared the performance of Glycosylator and doGlycans, another Python framework for modeling glycans using three representative viral envelope glycoproteins, each containing different numbers of glycosylation sites and overall glycan density. The glycans on the surface of these proteins create a shield that helps them to evade the host's immune system [28] . For the benchmark, a mannose 9 was modeled at each sequon, mimicking the glycosylation state before exiting the endoplasmic reticulum [29] . The topology of the glycosylated structure was generated with the autopsf plug-in of VMD [30] . Each glycoprotein was then minimized with 5000 steps of conjugate gradient optimization in NAMD [31] . The resulting energy-minimized model was then submitted for a sanity check to pdb-care (http:// www.glycosciences.de/tools/pdb-care/), a powerful tool that checks the connectivity and nomenclature in glycoproteins [32] . We observed that all glycoproteins modeled with Glycosylator had a lower potential energy and were devoid of any steric clashes and topological errors ( Table 2) . For structures with a low density of sequons, such as Influenza's hemagglutinin, Glycosylator and doGlycans performed similarly. However, a simple minimization was insufficient for removing steric clashes from the HIV-1 Envelope trimer and Delta coronavirus spike protein structures using doGlycans. The density of sequons at the surface of these glycoproteins is high, requiring a more effective strategy for removing clashes, such as provided by Glycosylator's Sampler Class. The steric clashes present in the structures produced with doGlycans lead topological errors, such as ring puckering after minimizations. In order to solve this issue, the torsional angles would have to be manually adjusted by the user.",
+            "cite_spans": [
+                {
+                    "start": 358,
+                    "end": 362,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 499,
+                    "end": 503,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 595,
+                    "end": 599,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 698,
+                    "end": 702,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 919,
+                    "end": 923,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1079,
+                    "end": 1087,
+                    "text": "Table 2)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Benchmark on viral glycoproteins"
+        },
+        {
+            "text": "As an additional test case, we modeled the glycan shield of the HIV-1 Env trimer using Glycosylator. The HIV-1 Env trimer consists of 80-100 sequons making it one of the most highly glycosylated proteins currently known. We chose the BG505-SOSIP structure with PDB: ID 5fyl, [33] ) as the starting structure. First, all crystallographically-determined glycans were identified and hydrogenated (Fig. 1 , upper left triangle). The ribbon representation allowed for a quick visual inspection of the identified N-linked sequons and linked glycans. A combination of mannose 5, mannose 9 and complex glycans was then modeled ab initio or by extending existing glycans to produce a more biologically relevant glycoform of the HIV-1 Env trimer (Fig. 1, lower right  triangle) . The Sampler function in Glycosylator was then used to remove all major clashes, such that the Table 2 Benchmark comparing Glycosylator and doGlycans. The average minimum distance between sequons was computed between the closest pairs of asparagine C\u03b1 atoms. The number of issues accounts for errors in glycan connectivity and nomenclature due to steric clashes. The potential energy was calculated after 5000 steps of conjugate gradient energy minimization Better performance are highlighted in bold topology of the full glycoprotein could be generated directly with the autopsf plug-in of VMD [30] . The remaining clashes were quickly removed with 5000 steps of conjugate gradient energy minimization in NAMD [31] . The resulting model was then submitted to the pdb-care server [32] for a sanity check and we found no discrepancies in connectivity. The Python script used for this example is available in the GitHub repository. Two additional examples for building and identifying glycans can be found in the Supporting Information section (Additional file 1: Examples S1 and S2).",
+            "cite_spans": [
+                {
+                    "start": 275,
+                    "end": 279,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 1364,
+                    "end": 1368,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 1480,
+                    "end": 1484,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 1549,
+                    "end": 1553,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 393,
+                    "end": 400,
+                    "text": "(Fig. 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 736,
+                    "end": 767,
+                    "text": "(Fig. 1, lower right  triangle)",
+                    "ref_id": null
+                },
+                {
+                    "start": 864,
+                    "end": 871,
+                    "text": "Table 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Identifying and batch modeling N-linked glycans onto the HIV-1 Env trimer"
+        },
+        {
+            "text": "Glycosylator is a versatile Python framework for manipulating glycans and glycoproteins that facilitates the structural study of glycans. It will significantly improve the ability of the glycobiology community to model glycan structure without requiring advanced expertise in protein modeling or molecular dynamics. Glycosylator has already been successfully used for several studies investigating the dynamics of glycans over long timescales (500 ns to 2 \u03bcs) [33] [34] [35] . Glycosylator is a valuable asset for glycoinformatics and biomolecular modeling communities. Furthermore, it should be noted that Glycosylator can also be used to model other polymers (D09_polymer in Github).",
+            "cite_spans": [
+                {
+                    "start": 460,
+                    "end": 464,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 465,
+                    "end": 469,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 470,
+                    "end": 474,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "Project name: Glycosylator. Project home page: https://github.com/tlemmin/ glycosylator",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "Operating system(s): Platform independent.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "Programming language: Python.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "License: MIT.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "Supplementary information accompanies this paper at https://doi.org/10. 1186/s12859-019-3097-6.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supplementary information"
+        },
+        {
+            "text": "Additional file 1: Figure S1 . Architecture of Glycosylator, a Python framework for the rapid modeling of glycans. Each class is represented Fig. 1 Identification, visualization and modeling of N-linked glycans onto the HIV-1 Env trimer. Protein surface representation of the highmannose glycoform of the HIV-1 Env Trimer (PDB ID: 5fyl). Crystallographically-determined glycans are shown in Licorice representation. Each subunit (gp120 and gp41) is represented as a ribbon with sequons indicated with gray squares and the N-linked glycans shown above or below the sequon (upper left triangular panel). Glycosylator was used to produce a complex glycoform variant of the HIV-1 Env trimer by modeling glycans ab initio or extending existing glycans (lower right triangular panel) by a hexagon. Full circles connecting classes indicate a class that contains an instance of the previous one as an attribute, e.g. instances of Molecule and MoleculeBuilder are attributes of Glycosylator. Several attributes from Glycosylator can be directly shared with Drawer and Sampler (white squares). Glycosylator can parse a PDB file of a glycoprotein and identify all the sequons (orange rhombus). The glycans (blue squares and green circles) will be extracted and saved as Molecule instances. Glycans at each sequon can then be built, modified or identified. Figure S2 . Glycosylator Graphical User Interface. a) The main window is used to import a PDB file of a glycoprotein. Glycosylator will produce a symbolic representation (orange dashed line rectangle). A specific sequon can be selected in the right panel (purple dashed line rectangle). The glycan can be modified by clicking on the symbolic representation. b) The user can select a glycan from the common library or a library that they created. The selected glycan is highlighted with a red square. Example S1. Building a glycan. The structure of an N-Acetyl-D-Glucosamine will be imported as a Molecule instance. All missing atoms will be added according to the CHARMM force field. A second N-Acetyl-D-Glucosamine will then be linked through a 1-4 glycosidic bond.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 19,
+                    "end": 28,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 141,
+                    "end": 147,
+                    "text": "Fig. 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1345,
+                    "end": 1354,
+                    "text": "Figure S2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Supplementary information"
+        },
+        {
+            "text": "Finally, an Alpha-D-added according to the CHARMM force field. A second N-Acetyl-D-Glucosamine will then be linked through a 1-4 glycosidic bond. Finally, an Alpha-D-Mannosewill be built ab initio and saved to a PDB file. Example S2. Importing, identifying and editing of a glycan. The structure of a mannose 9 will be imported as a Molecule instance. A Glycosylator instance will then identify it against a database of known structures. Finally, the Molecule will be trimmed down to a mannose 6. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supplementary information"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "On the frequency of protein glycosylation, as deduced from analysis of the SWISS-PROT database",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Hermjakob",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Sharon",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Biochim Biophys Acta",
+            "volume": "1473",
+            "issn": "",
+            "pages": "4--8",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Unraveling the mechanism of protein N-glycosylation",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Yan",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lennarz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "J Biol Chem",
+            "volume": "280",
+            "issn": "",
+            "pages": "3121--3125",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Protein glycosylation: nature, distribution, enzymatic formation, and disease implications of glycopeptides bonds",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Spiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Glycobiology",
+            "volume": "12",
+            "issn": "",
+            "pages": "43--56",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Sequence differences between glycosylated and non-glycosylated Asn-X-Thr/Ser acceptor sites: implications for protein engineering",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Gavel",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Von Heijne",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "Protein Eng Des Sel",
+            "volume": "3",
+            "issn": "",
+            "pages": "433--475",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Glycosylation-directed quality control of protein folding",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Dtw",
+                    "middle": [],
+                    "last": "Ng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nat Rev Mol Cell Biol",
+            "volume": "16",
+            "issn": "",
+            "pages": "742--52",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Glycosylation as a main regulator of growth and death factor receptors signaling",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Ferreira",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pucci",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Venturi",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Malagolini",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Chiricolo",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Dall&apos;olio",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Int J Mol Sci",
+            "volume": "19",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3390/ijms19020580"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Cell migration-the role of integrin glycosylation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Janik",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lity\u0144ska",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Vereecken",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Biochim Biophys Acta Gen Subj",
+            "volume": "1800",
+            "issn": "",
+            "pages": "545--55",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Similarities and differences in the glycosylation mechanisms in prokaryotes and eukaryotes",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dell",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Galadari",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Sastre",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Hitchen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Int J Microbiol",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1155/2010/148178"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Insights into bacterial protein glycosylation in human microbiota",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Sci China Life Sci",
+            "volume": "59",
+            "issn": "",
+            "pages": "11--19",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Playing hide and seek: how glycosylation of the influenza virus hemagglutinin can modulate the immune response to infection",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Tate",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Job",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y-M",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Gunalan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Maurer-Stroh",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Reading",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Viruses",
+            "volume": "6",
+            "issn": "",
+            "pages": "1294--316",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Virus glycosylation: role in virulence and immune interactions",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Vigerust",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Shepherd",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Trends Microbiol",
+            "volume": "15",
+            "issn": "",
+            "pages": "211--219",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Implementation of GlycanBuilder to draw a wide variety of ambiguous glycans",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Tsuchiya",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Aoki",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Shinmachi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Matsubara",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Yamada",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Aoki-Kinoshita",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Carbohydr Res",
+            "volume": "445",
+            "issn": "",
+            "pages": "104--120",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "A molecular builder for carbohydrates: application to polysaccharides and complex carbohydrates",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Engelsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cros",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Mackie",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "P\u00e9rez",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "Biopolymers",
+            "volume": "39",
+            "issn": "",
+            "pages": "417--450",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "doGlycans-tools for preparing carbohydrate structures for atomistic simulations of glycoproteins, glycolipids, and carbohydrate polymers for GROMACS",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Danne",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Poojari",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Martinez-Seara",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Rissanen",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Lolicato",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "R\u00f3g",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "J Chem Inf Model",
+            "volume": "57",
+            "issn": "",
+            "pages": "2401--2407",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "SWEET -WWW-based rapid 3D construction of oligo-and polysaccharides",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bohne",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Lang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Von",
+                    "middle": [],
+                    "last": "Der Lieth",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Bioinformatics",
+            "volume": "15",
+            "issn": "",
+            "pages": "767--775",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "GLYCAM",
+            "authors": [],
+            "year": 2019,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Glycan reader: automated sugar identification and simulation preparation for carbohydrates and glycoproteins",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jo",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Song",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Desaire",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Mackerell",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Im",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Comput Chem",
+            "volume": "32",
+            "issn": "",
+            "pages": "3135--3176",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Glycan reader is improved to recognize most sugar types and chemical modifications in the protein data Bank",
+            "authors": [
+                {
+                    "first": "S-J",
+                    "middle": [],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Patel",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ma",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Bioinformatics",
+            "volume": "33",
+            "issn": "",
+            "pages": "3051--3058",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "CHARMM-GUI glycan modeler for modeling and simulation of carbohydrates and glycoconjugates",
+            "authors": [
+                {
+                    "first": "S-J",
+                    "middle": [],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Qi",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Kern",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2019,
+            "venue": "Glycobiology",
+            "volume": "29",
+            "issn": "",
+            "pages": "320--351",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "DB: an annotated data collection linking glycomics and proteomics data",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "B\u00f6hm",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bohne-Lang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Frank",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Loss",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rojas-Macias",
+                    "suffix": ""
+                },
+                {
+                    "first": "L\u00fctteke",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Glycosciences",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Nucleic Acids Res",
+            "volume": "47",
+            "issn": "",
+            "pages": "1195--201",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "GLYCAM06: A generalizable biomolecular force field. Carbohydrates",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Kirschner",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Yongye",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Tschampel",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gonzalez-Outeirino",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Daniels",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Foley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Comput Chem",
+            "volume": "29",
+            "issn": "",
+            "pages": "622--55",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "CHARMM additive all-atom force field for carbohydrate derivatives and its utility in polysaccharide and carbohydrate-protein modeling",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Guvench",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mallajosyula",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Raman",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Hatcher",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Vanommeslaeghe",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Foster",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Chem Theory Comput",
+            "volume": "7",
+            "issn": "",
+            "pages": "3162--80",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "CHARMM-GUI: a web-based graphical user interface for CHARMM",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jo",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Iyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Im",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Comput Chem",
+            "volume": "29",
+            "issn": "",
+            "pages": "1859--65",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "CHARMM-GUI membrane builder for complex biological membrane simulations with glycolipids and lipoglycans",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Patel",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "St\u00e5hle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S-J",
+                    "middle": [],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Kern",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                }
+            ],
+            "year": 2019,
+            "venue": "J Chem Theory Comput",
+            "volume": "15",
+            "issn": "",
+            "pages": "775--86",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Prody: protein dynamics inferred from theory and experiments",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bakan",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Meireles",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Bahar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Bioinformatics",
+            "volume": "27",
+            "issn": "",
+            "pages": "1575--1582",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Exploring network structure, dynamics, and function using NetworkX",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Hagberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Schult",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Swart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Proceedings of the 7th Python in Science Conference (SciPy2008), G\u00e4el Varoquaux",
+            "volume": "",
+            "issn": "",
+            "pages": "11--16",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Matplotlib: a 2D graphics environment",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hunter",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Comput Sci Eng",
+            "volume": "9",
+            "issn": "",
+            "pages": "90--95",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "A bioinformatics view of glycan-virus interactions",
+            "authors": [
+                {
+                    "first": "Le",
+                    "middle": [],
+                    "last": "Mercier",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Mariethoz",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lascano-Maillard",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bonnardel",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Imberty",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ricard",
+                    "middle": [
+                        "-"
+                    ],
+                    "last": "Blum",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2019,
+            "venue": "Viruses",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Comprehensive Glycoscience (From Chemistry to Systems Biology)",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Schierbaum",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Starch -St\u00e4rke",
+            "volume": "60",
+            "issn": "",
+            "pages": "48--57",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "VMD: visual molecular dynamics",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Humphrey",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dalke",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Schulten",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "J Mol Graph",
+            "volume": "14",
+            "issn": "",
+            "pages": "33--41",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Scalable molecular dynamics with NAMD",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Phillips",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Braun",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gumbart",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Tajkhorshid",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Villa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "J Comput Chem",
+            "volume": "26",
+            "issn": "",
+            "pages": "1781--802",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "pdb-care (PDB CArbohydrate REsidue check): A program to support annotation of complex carbohydrate structures in PDB files",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "L\u00fctteke",
+                    "suffix": ""
+                },
+                {
+                    "first": "Von",
+                    "middle": [],
+                    "last": "Der Lieth",
+                    "suffix": ""
+                },
+                {
+                    "first": "C-W",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Bioinformatics",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Trimeric HIV-1-Env structures define glycan shields from clades a, B, and G",
+            "authors": [
+                {
+                    "first": "Gbe",
+                    "middle": [],
+                    "last": "Stewart-Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Soto",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lemmin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G-Y",
+                    "middle": [],
+                    "last": "Chuang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Druz",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Kong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Cell",
+            "volume": "165",
+            "issn": "",
+            "pages": "813--839",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Insights from NMR spectroscopy into the conformational properties of Man-9 and its recognition by two HIV binding proteins",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Shahzad-Ul-Hussan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Sastry",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lemmin",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Soto",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Loesgen",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Scott",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Chembiochem",
+            "volume": "18",
+            "issn": "",
+            "pages": "764--71",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Microsecond dynamics and network analysis of the HIV-1 SOSIP Env trimer reveal collective behavior and conserved microdomains of the glycan shield",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lemmin",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Soto",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Stuckey",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Kwong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Structure",
+            "volume": "25",
+            "issn": "",
+            "pages": "1631--1639",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Publisher's Note",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "TABREF1": {
+            "text": "Abbreviations API: Application Programming Interface; GUI: Graphical User Interface; NMR: Nuclear Magnetic Resonance; PDB: Protein Data Bank; UIPAC: International Union of Pure and Applied Chemistry",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We would like to thank Dr. James E. Crowe for his support and comments on the manuscript, and Dr. Peter D. Kwong and Dr. Gwo-yu Chuang for their constructive feedback.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        },
+        {
+            "text": "Authors' contributions TL and CS conceived of the idea; TL designed and wrote the Glycosylator package; TL and CS wrote the paper. All authors read and approved the final manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "This work was supported by a grant from the Human Vaccines Project. TL would like to acknowledge the support of the Swiss National Science Foundation (grant P3P3PA_174356). The funding bodies Human Vaccines Project and Swiss National Science Foundation had no role in the design of the study; collection, analysis, and interpretation of data; or in writing the manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Funding"
+        },
+        {
+            "text": "Glycosylator is available from the following Github repository: https://github. com/tlemmin/glycosylator Ethics approval and consent to participate Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "The authors declare that they have no competing interests. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

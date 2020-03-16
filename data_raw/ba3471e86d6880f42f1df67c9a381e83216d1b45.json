@@ -1,0 +1,3856 @@
+{
+    "paper_id": "ba3471e86d6880f42f1df67c9a381e83216d1b45",
+    "metadata": {
+        "title": "From sequence to enzyme mechanism using multi-label machine learning",
+        "authors": [
+            {
+                "first": "De",
+                "middle": [],
+                "last": "Ferrari",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Bmc",
+                "middle": [
+                    "Bo"
+                ],
+                "last": "Mitchell",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "",
+                "middle": [],
+                "last": "Bioinformatics",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: In this work we predict enzyme function at the level of chemical mechanism, providing a finer granularity of annotation than traditional Enzyme Commission (EC) classes. Hence we can predict not only whether a putative enzyme in a newly sequenced organism has the potential to perform a certain reaction, but how the reaction is performed, using which cofactors and with susceptibility to which drugs or inhibitors, details with important consequences for drug and enzyme design. Work that predicts enzyme catalytic activity based on 3D protein structure features limits the prediction of mechanism to proteins already having either a solved structure or a close relative suitable for homology modelling.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "In this study, we evaluate whether sequence identity, InterPro or Catalytic Site Atlas sequence signatures provide enough information for bulk prediction of enzyme mechanism. By splitting MACiE (Mechanism, Annotation and Classification in Enzymes database) mechanism labels to a finer granularity, which includes the role of the protein chain in the overall enzyme complex, the method can predict at 96% accuracy (and 96% micro-averaged precision, 99.9% macro-averaged recall) the MACiE mechanism definitions of 248 proteins available in the MACiE, EzCatDb (Database of Enzyme Catalytic Mechanisms) and SFLD (Structure Function Linkage Database) databases using an off-the-shelf K-Nearest Neighbours multi-label algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "We find that InterPro signatures are critical for accurate prediction of enzyme mechanism. We also find that incorporating Catalytic Site Atlas attributes does not seem to provide additional accuracy. The software code (ml2db), data and results are available online at http://sourceforge.net/projects/ml2db/ and as supplementary files.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion:"
+        },
+        {
+            "text": "Previous research has already been very successful in predicting enzymatic function at the level of the chemical reaction performed, for example in the form of Enzyme Commission numbers (EC) or Gene Ontology terms. A much less researched problem is to predict by which mechanism an enzyme carries out a reaction. Differentiating enzymatic mechanism has important applications not only for biology and medicine, but also for pharmaceutical and industrial processes which include enzymatic catalysis. For example, biological and pharmaceutical research could leverage different mechanisms in host and pathogen for drug design, or to evaluate if antibiotic resistance is likely to appear in certain micro-organisms. And enzymes that perform the same reaction but require less costly cofactors can be more interesting candidates for industrial processes. Predicting the existence of a mechanism of interest in a newly sequenced extremophile, for example, could lead to applications in medicine or industry and to significant cost savings over non-biological industrial synthesis.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "An enzyme is any protein able to catalyse a chemical reaction. In this work we do not focus on the questions associated with defining or assigning enzyme mechanisms, but rather take our definitions and assignments directly from the MACiE (Mechanism, Annotation and Classification in Enzymes) database [1] [2] [3] . Version 3.0 of the MACiE database contains detailed information about 335 different enzymatic mechanisms. Thanks to this information manually derived from literature, it is possible in MACiE to compare exemplars of enzymes that accept the same substrate and produce the same product, but do so using a different chemical mechanism, intermediate activation step or cofactor. Unfortunately, http://www.biomedcentral.com/1471-2105/15/150 relatively few proteins are annotated with MACiE identifiers because confirming the exact mechanism of an enzyme requires significant effort by experimentalists and study of the literature by annotators.",
+            "cite_spans": [
+                {
+                    "start": 301,
+                    "end": 304,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 305,
+                    "end": 308,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 309,
+                    "end": 312,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Given the limited available examples, the aim of this work is to verify whether prediction of enzyme mechanism using machine learning is possible, and to evaluate which attributes best discriminate between mechanisms. The input is exclusively a protein sequence. The output, or predicted class labels, comprises zero or more MACiE mechanism identifiers, while the attributes used are sequence identity, InterPro [4] sequence signatures and Catalytic Site Atlas (CSA) site matches [5] .",
+            "cite_spans": [
+                {
+                    "start": 412,
+                    "end": 415,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 480,
+                    "end": 483,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "InterPro sequence signatures are computational representations of evolutionarily conserved sequence patterns. They vary from short, substitution-strict sets of amino acids representing binding sites to longer and substitution-relaxed models of entire functional domains or protein families. The Catalytic Site Atlas sites are akin to InterPro patterns, but they do not provide an evolutionary trace, more a record of an individual catalytic machinery, derived from a single Protein Data Bank [6] 3D structure which is transformed into a strict sequence pattern containing only the catalytic amino acids.",
+            "cite_spans": [
+                {
+                    "start": 492,
+                    "end": 495,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Only three proteins in our data have more than one mechanism label, because the current dataset privileges simple, one catalytic site enzymes. However, here we use a multi-label (and not only multi-class) machine learning scheme to be able to predict real life enzymes with multiple active sites or alternative mechanisms. Multilabel learning also provides flexibility by allowing seamless integration of additional labelling schemes. For example, Enzyme Commission numbers or Gene Ontology terms could be predicted together with mechanism. We evaluate the method by training a classifier on enzymes with known mechanisms. The classifier learns from the available attributes (for example sequence signatures) and then attempts to predict the mechanisms of a previously unseen test sequence. The quality of the predictions on the test set is evaluated using a number of metrics such as accuracy, precision, recall and specificity.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "To our knowledge, no previous research has attempted bulk prediction of enzymatic mechanism from sequence. However, past research has proved that the Enzyme Commission class of enzymes can be successfully predicted even for distantly related sequences using exclusively InterPro signatures [7] [8] [9] . Traube et al. [10] used QSAR and enzyme mechanism to predict and design covalent inhibitors for serine and cysteine proteases. Their method, like ours, does not require a solved protein structure, but its mechanism predictions are aimed at drug design and not easily portable to enzymes other than proteases. Choi et al. [11] use sequence to predict the existence and position of probable catalytic sites (grouped and aligned by Enzyme Commission number) with about 25% accuracy (approximately 8% better than random) but their prediction does not specify which mechanism the enzyme might be using in that active site. Other work tried to predict whether an amino acid is catalytic, and could in principle lead towards mechanism identification, but in practice has not been used to infer mechanism, only enzyme reaction. Using 3D structural information, Chea et al. [12] used graph theory to predict whether an amino acid is catalytic, followed by filtering using solvent accessibility and compatibility of residue identity since some amino acids are less likely to be involved in active catalysis. But their output is a binary label (catalytic or not) and not a prediction of mechanism. Using only sequence, Mistry et al. [13] have developed a strict set of rules to transfer experimentally determined active site residues to other Pfam family proteins, achieving a 3% FP rate, 82% specificity and 62% sensitivity. However, again, they do not link the active site residues to the mechanism performed.",
+            "cite_spans": [
+                {
+                    "start": 290,
+                    "end": 293,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 294,
+                    "end": 297,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 298,
+                    "end": 301,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 318,
+                    "end": 322,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 625,
+                    "end": 629,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1169,
+                    "end": 1173,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1526,
+                    "end": 1530,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Previous work"
+        },
+        {
+            "text": "Data were taken from MACiE (Mechanism, Annotation and Classification in Enzymes database) [3] version 3.0, EzCatDb (Enzyme Catalytic-mechanism Database) [14] , SFLD (Structure Function Linkage Database) [15] , UniProtKB [16] , InterPro [4] and Expasy Enzyme [17] in September 2013.",
+            "cite_spans": [
+                {
+                    "start": 90,
+                    "end": 93,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 153,
+                    "end": 157,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 203,
+                    "end": 207,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 220,
+                    "end": 224,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 236,
+                    "end": 239,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 258,
+                    "end": 262,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Database sources and datasets"
+        },
+        {
+            "text": "The complete data set includes 540 proteins that have been manually annotated with a MACiE mechanism in either MACiE, EzCatDb or SFLD, corresponding to 335 different MACiE mechanisms and 321 Enzyme Commission numbers. Three of these enzymes, the beta lactamases having UniProt entry name BLAB_SERMA from Serratia marcescens (beta-lactamase IMP-1, UniProt accession P5269), BLA1_STEMA from Stenotrophomonas maltophilia (metallo-beta-lactamase L1, P52700) and BLAB_BACFG from Bacteroides fragilis (beta-lactamase type II, P25910) have two MACiE mechanism labels in our dataset, due to the fact that EzCatDb does not distinguish between MACiE mechanisms M0015 and M0258. Both mechanisms are class B beta lactamase reactions, but performed with different catalytic machinery: M0015 uses an Asn residue, while M0258 uses Asp and Tyr. So the need for multi-label prediction is not strong for our dataset, however, multi-label classification is essential for mechanism prediction of real life multi-domain proteins. UniProt Swiss-Prot already contains 12,456 enzymes with more than one Enzyme Commission number. As just one example, the replicase polyprotein 1ab of the bat coronavirus (UniProt name R1AB_BC279 or accession number P0C6V) is cleaved into fifteen different chains, several http://www.biomedcentral.com/1471-2105/15/150 of which are enzymes with one or more EC numbers, thus totalling nine Enzyme Commission numbers for a single transcript, varying from cysteine endopeptidase to RNA-directed RNA polymerase activities.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Database sources and datasets"
+        },
+        {
+            "text": "An instance in our datasets is composed of a protein identifier (a UniProt accession number), a set of attributes (for example, the absence or presence of a sequence feature or the sequence identity with other sequences), and zero or more class labels representing the MACiE mechanisms of the enzyme, where available. Several MACiE mechanism entries can exist for one Enzyme Commission number. A MACiE mechanism identifier corresponds to a detailed mechanism entry modelled on one PDB [18] 3D structure and its associated literature. The entry describes not only the enzyme reaction, but also the catalytic machinery (reactive amino acids, organic and metal cofactors) used to perform the catalysis, down to the role of the individual amino acids, cofactor and molecular intermediates in each reaction step (such as proton or electron donor or acceptor and others) and the chemical mechanism steps (such as bond breaking, bond formation, electron transfer, proton transfer, tautomerisation and others) in temporal order.",
+            "cite_spans": [
+                {
+                    "start": 485,
+                    "end": 489,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "A detailed analysis of the false positives generated by an initial prediction test highlighted the presence of distinct and diverse enzyme moieties labelled with the same MACiE mechanism code. For example, MACiE code M0013 (amine dehydrogenase) is used in MACiE only to annotate the methylamine dehydrogenase light chain of Paracoccus denitrificans (DHML_PARDE, P22619). However, in the database EzCatDb, the Paracoccus denitrificans heavy chain (DHMH_PARDE, P29894) is also annotated with MACiE code M0013, possibly because the holoenzyme is a tetramer of two light and two heavy chains (with the light chain hosting the active site). There is little or no similarity between each light and heavy chain (sequence identity < 12%), while the light chains are highly conserved within related organisms (sequence identity > 90%).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "We thus proceeded to examine our training set to decide when the original MACiE mechanism code could be enriched with two or more sub-labels providing a better description of the underlying organisation of the enzyme chains. For all MACiE labels we did the following: 1. if the label annotates two or more proteins, we examined the \"subunit structure\" section of each UniProt protein, 2. if the section contained words such as heterodimer, heterotetramer or complex, we proceeded to split the MACiE label into two or more labels according to the enzyme complex subunits, and 3. we then re-annotated each protein with one of the new and more appropriate MACiE + subunit labels. We would like to stress that during this process the original MACiE mechanism annotations remain unchanged. The additional subunit information improves the learning, but, if the user so wishes, can easily be ignored simply by discarding any text beyond the 5th character (thus transforming, for example, M0314_component_I into M0314).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "To give an example of the procedure to generate the new labels, MACiE label M0314 (anthranilate synthase) annotates two proteins in MACiE: TRPE_SULSO from the bacterium Sulfolobus solfataricus (anthranilate synthase component I, Q06128) and TRPG_SULSO (anthranilate synthase component II, Q06129) also from Sulfolobus solfataricus. In addition, the database EzCatDb uses the same MACiE label to annotate the corresponding component I and II of another bacterium, Serratia marcescens (EzCatDb identifier D00526, UniProt accessions TRPE_SERMA, P00897 and TRPG_SERMA, P00900). The \"subunit structure\" section of these four proteins in UniProt specifies: \"Subunit structure: tetramer of two components I and two components II\". We thus proceed to re-annotate the four proteins as M0314_component_I (Sulfolobus Q06128 and Serratia P00897, both described as anthranilate synthase component I) and M0314_component_II (Sulfolobus Q06129 and Serratia P00900, both described as anthranilate synthase component II).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "The set of the old MACiE labels which did not require splitting and the new split labels (such as M0314_ component_I, M0314_component_II, M0013_light_chain, M0013_heavy_chain etc.) is referred to as MACiE + subunit labels or simply mechanism labels.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "As previously noted, in our current data most mechanisms only have one annotated protein exemplar and hence cannot be used for cross-validation or leave-oneout validation: the protein would always be either exclusively in the training set or exclusively in the testing set. This leaves us with only 82 MACiE + subunit mechanisms (corresponding to 73 classic MACiE mechanisms) having at least two protein examples, thus providing 248 enzyme sequences usable for cross-validation. This dataset is from now on referred to as the mechanism dataset. However, the proteins belonging to mechanisms having only one exemplar can still be pooled together and used as negative examples for the other mechanisms (negative dataset), and the resulting false positive predictions can be analysed to assess why the method makes certain mistakes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "Also, in nearest neighbours algorithms, an instance must necessarily have a closest neighbour. An instance having no attributes in common with any other instance will \"gravitate\" towards the shortest available instance in the set (the instance with the fewest attributes). In order to avoid these artefacts, two empty instances (instances with no attributes and no class labels) have been http://www.biomedcentral.com/1471-2105/15/150 added to the mechanism dataset for the training-testing experiments.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "The set of UniProt Swiss-Prot proteins lacking Enzyme Commission annotation has also been used (swissprot-non-EC) as a \"negative\" test set. This set contains 226,213 proteins (as of September 2013) which are most probably non-enzymes (or have a yet unknown catalytic activity or an enzymatic activity which was mistakenly overlooked by curators). Of these, only 68,677 share at least one InterPro signature with a protein in the mechanism or negative datasets and could hence be mispredicted as enzymes (all the other proteins in the swissprot-non-EC set are, by definition, automatically and correctly predicted as not having a mechanism when using the InterPro attributes).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Class labels"
+        },
+        {
+            "text": "Once defined the mechanism class labels to be predicted, we analysed which sequence-based attributes or features could be used for learning. More specifically, we have compared the accuracy of enzyme mechanism predictions when various different sets of attributes are used. The InterPro set of attributes includes the presence (1) or absence (0) of each InterPro signature for each sequence in the given protein dataset. InterPro is an extensive database of conserved sequence signatures and domains [4] that can be computed from sequence data alone and for any sequence using the publicly available InterProScan algorithm [4, 19] . The 248 proteins in the mechanism dataset, for example, have 444 distinct InterPro attribute values, with an average of 4.4 InterPro signatures per protein.",
+            "cite_spans": [
+                {
+                    "start": 500,
+                    "end": 503,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 623,
+                    "end": 626,
+                    "text": "[4,",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 627,
+                    "end": 630,
+                    "text": "19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "InterPro signatures are composed of one or several subsignatures provided by its repositories: GENE3D [20] , HAMAP [21] , PANTHER [22] , Pfam [23] , PIRSF [24] , PRINTS [25] , ProDom [26] , PROSITE patterns and profiles [27] , SMART [28] , SUPERFAMILY [29] and TIGR-FAM [30] . One or more of these sub-signatures usually correspond to one InterPro signature. However, some of these sub-signatures have not been integrated into Inter-Pro because they provide too many false positives, do not have enough coverage or do not pass other criteria fixed by InterPro. We have tried using all these sub-signatures (integrated or not) as attributes for learning, to understand if they could provide a more powerful and finely grained alternative to the classic InterPro signatures.",
+            "cite_spans": [
+                {
+                    "start": 102,
+                    "end": 106,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 115,
+                    "end": 119,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 130,
+                    "end": 134,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 142,
+                    "end": 146,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 155,
+                    "end": 159,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 169,
+                    "end": 173,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 183,
+                    "end": 187,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 220,
+                    "end": 224,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 233,
+                    "end": 237,
+                    "text": "[28]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 252,
+                    "end": 256,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 270,
+                    "end": 274,
+                    "text": "[30]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "Another set of attributes represents the presence (or absence) of a sequence match versus one of the Catalytic Site Atlas active sites (CSA 2D or simply CSA attributes). Each CSA 2D site is a tuple of active amino acids that must match the given sequence both for position and amino acid type.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "In order to compare learning by sequence with learning based on structure, we matched our dataset also against the Catalytic Site Atlas three dimensional templates [31] (CSA 3D). CSA templates store the geometrical position of exclusively the atoms of the residues involved in a catalytic site. A residue is considered catalytic if it is chemically involved in the catalysis, if it alters the pKa of another residue or water molecule, if it stabilises a transition state or if it activates a substrate, but not if it is involved solely in ligand binding. Each CSA template is matched against the protein structure using the JESS algorithm [32] .",
+            "cite_spans": [
+                {
+                    "start": 164,
+                    "end": 168,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 639,
+                    "end": 643,
+                    "text": "[32]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "To generate CSA 3D templates matches we first selected an exemplar (best) PDB X-ray structure for each UniProt protein in the mechanism dataset. To select the exemplar structure we collected all PDB structures for each UniProt record and chose the structures that covered the longest stretch of the protein sequence. If several structures of identical coverage and resolution existed, we chose the structure(s) with the best (highest) resolution. If several structures still existed, we chose the last when ordered alphabetically by PDB structure identifier. We then used the ProFunc service [33] to scan each exemplar PDB against CSA 3D templates (CSA 3D data set). For evaluation we also compare \"best\" matches against the MACiE dataset (having an E value below 0.1) versus all matches provided by ProFunc (E value below 10.0).",
+            "cite_spans": [
+                {
+                    "start": 592,
+                    "end": 596,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "The various sets of attributes above have been evaluated, alone or in combination, for their ability to predict enzyme mechanism in the datasets presented. Combining attribute sets such as InterPro and CSA (as in the InterPro+CSA attribute set) means that the dataset matrix will have, for each protein row, all CSA columns and all InterPro columns filled with either 1 (signature match) or 0 (no match). This provides a sparse data matrix particularly suitable for large datasets of millions of protein sequences.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "Considering though that our current dataset is not large, we have also created two more computationally intensive attribute sets. The first set (minimum Euclidean distance) involves calculating the Euclidean distance in the InterPro space between the protein of interest and all other proteins (sets of InterPro attributes). An attribute vector is then built with as many values as there are mechanisms. As each attribute value (that is, for each mechanism) we keep only the minimum Euclidean distance between the protein of interest and the proteins having that mechanism, giving:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "where a is the vector of attribute values composed of one value a m for each of the M mechanisms in the data, p is the protein of interest and p m is a protein having a mechanism m. The function Euclidean distance(p, p m ) returns the Euclidean distance between the InterPro set of signatures of protein p and the InterPro set of signatures of another protein p m having mechanism m. We can also http://www.biomedcentral.com/1471-2105/15/150 note that the k-Nearest Neighbour algorithm must calculate Euclidean distances, but, with the simpler aim of finding the closest instances, it does not usually need to store and manipulate the distances for every protein and mechanism combination.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "The second set of attributes (maximum sequence identity) is even more computationally intensive because it substitutes distance with sequence identity. It thus requires an alignment between each pair of proteins in the dataset. The sequence identity of each protein versus every other protein in the mechanism and negative datasets was calculated by downloading the FASTA sequences from UniProt in September 2013 and aligning each pair using the Emboss [34] implementation of the Needleman-Wunsch algorithm [35] . The algorithm was run with the default substitution matrix EBLOSUM62 with gap opening penalty of 10 and gap extension penalty of 0.5. The resulting maximum sequence identity vector of attributes is given by:",
+            "cite_spans": [
+                {
+                    "start": 453,
+                    "end": 457,
+                    "text": "[34]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 507,
+                    "end": 511,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "where b is the vector of attribute values in the data (composed of one value b m for each of the M mechanisms), p is the protein of interest and p m is a protein having a mechanism m. The function sequence identity(p, p m ) returns the sequence identity between the protein sequence p and another protein sequence p m having mechanism m (the emitted value can span from zero, if no amino acids could be aligned, to one, if the two sequences are identical).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Attributes"
+        },
+        {
+            "text": "Several algorithms [36] [37] [38] [39] [40] [41] [42] [43] [44] [45] [46] [47] [48] [49] [50] [51] were evaluated by comparing their precision, recall, accuracy and run time on a leave-one-out prediction of the mechanism dataset (see Additional file 1 for full results). The top two algorithms for accuracy (about 96%) and speed (about 24 seconds for 248 instances) are instance-based learning algorithms (Mulan's [46] BRkNN [45] and Weka's [50] IBk [36] with a label powerset multi-label wrapper). The Mulan Hierarchical Multi Label Classifier (HMC) [47] also performs well (96% accuracy, 28 seconds). Support vector machine [39, 42, 43] and Homer (Hierarchy Of Multi-labEl leaRners) [47] are only slightly less accurate (about 95%), but significantly slower (from 13 to 90 minutes), and they are followed by random forest [37] with about 94% accuracy and between 1 and 44 minutes run time.",
+            "cite_spans": [
+                {
+                    "start": 19,
+                    "end": 23,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 24,
+                    "end": 28,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 29,
+                    "end": 33,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 34,
+                    "end": 38,
+                    "text": "[39]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 39,
+                    "end": 43,
+                    "text": "[40]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 44,
+                    "end": 48,
+                    "text": "[41]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 49,
+                    "end": 53,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 54,
+                    "end": 58,
+                    "text": "[43]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 59,
+                    "end": 63,
+                    "text": "[44]",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 64,
+                    "end": 68,
+                    "text": "[45]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 69,
+                    "end": 73,
+                    "text": "[46]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 74,
+                    "end": 78,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 79,
+                    "end": 83,
+                    "text": "[48]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 84,
+                    "end": 88,
+                    "text": "[49]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 89,
+                    "end": 93,
+                    "text": "[50]",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 94,
+                    "end": 98,
+                    "text": "[51]",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 414,
+                    "end": 418,
+                    "text": "[46]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 425,
+                    "end": 429,
+                    "text": "[45]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 441,
+                    "end": 445,
+                    "text": "[50]",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 450,
+                    "end": 454,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 551,
+                    "end": 555,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 626,
+                    "end": 630,
+                    "text": "[39,",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 631,
+                    "end": 634,
+                    "text": "42,",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 635,
+                    "end": 638,
+                    "text": "43]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 685,
+                    "end": 689,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 824,
+                    "end": 828,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Algorithm"
+        },
+        {
+            "text": "We have thus used throughout this work the BRkNN [45] nearest neighbours implementation (as in our previous work on predicting Enzyme Commission classes [9] ), using the implementation available in the Mulan software library version 1.4 [46] . The nearest neighbours algorithm also provides an immediate visual representation of the clustering of the protein labels and their attributes.",
+            "cite_spans": [
+                {
+                    "start": 49,
+                    "end": 53,
+                    "text": "[45]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 153,
+                    "end": 156,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 237,
+                    "end": 241,
+                    "text": "[46]",
+                    "ref_id": "BIBREF46"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Algorithm"
+        },
+        {
+            "text": "BRkNN is a multi-label adaptation of the classic k-Nearest Neighbour algorithm. The best parametrisation for the data is k = 1, that is, only the closest ring of neighbour instances are used to predict the label of an instance. This suggests a pattern of local similarity among the instances causing efficient but local learning. Our ml2db Java code uses queries to generate a Mulan datafile from MySQL database. A Mulan datafile consists of an XML file for the class labels and a Weka ARFF (Attribute Relation File Format) file for the protein instances and their attributes. Where possible, a sparse ARFF format, parsimonious of disk space and computational power, was used. This was possible for the InterPro, CSA and InterPro+CSA attribute sets, given that most attribute values are zero for these attributes (most signatures have no match in a given sequence).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Algorithm"
+        },
+        {
+            "text": "We present results produced using the Euclidean distance in the chosen attribute space. Instances with exactly the same attribute set will have distance 0 (for example, two proteins having exactly the same InterPro features, if the attribute set of choice is InterPro signatures). If the instances differ in one attribute they will have a distance of one; if the two instance differ in x attributes, they will have a distance of \u221a x. The Jaccard distance [52] was also used but produces slightly worse accuracy (data not shown).",
+            "cite_spans": [
+                {
+                    "start": 455,
+                    "end": 459,
+                    "text": "[52]",
+                    "ref_id": "BIBREF53"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Algorithm"
+        },
+        {
+            "text": "Due to the limited number of examples available, we performed leave-one-out validation on the mechanism dataset (n-fold cross-validation with n equal to the number of instances). In short, we trained on all proteins but one, predicted the mechanism for the omitted protein, and then compared the predicted label(s) with the protein's true label(s). Considering the known shortcomings of leave one out validation (causing high variance when few instances are available for each class label [53] ), in a second experiment the entire mechanism dataset has also been used for training followed by testing on the negative set to examine the false positive cases in more detail. Also, the mechanism dataset together with all the non-enzymes in Swiss-Prot (swissprot-non-EC set) have been used in two-fold cross validation.",
+            "cite_spans": [
+                {
+                    "start": 489,
+                    "end": 493,
+                    "text": "[53]",
+                    "ref_id": "BIBREF54"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Evaluation"
+        },
+        {
+            "text": "To compare the predictive strength of the various attribute sets, we present the average value of the classification accuracy (also called subset accuracy), a strict measure of prediction success, as it requires the predicted set of class labels to be an exact match of the true set of labels [49] : ",
+            "cite_spans": [
+                {
+                    "start": 293,
+                    "end": 297,
+                    "text": "[49]",
+                    "ref_id": "BIBREF50"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Evaluation"
+        },
+        {
+            "text": "In this context micro averaging (averaging over the entire confusion matrix) favours more frequent mechanisms, while macro averaging gives equal relevance to both rare and frequent mechanism classes. Hence a protein will affect the macro-averaged metrics more if it belongs to a rare mechanism. Micro and macro specificity are not presented because these metrics never fall below 99.7%. For binary classification, Specificity = TN FP + TN , hence, because of the hundreds of possible mechanism labels, most prediction methods provide a very high proportion of true negatives in comparison with false positives, making specificity very close to 100% for any reasonable method and thus not particularly informative. All metrics are further defined and discussed in [46, 49, 54] . The best achievable value of all these measures is 100% when all instances are correctly classified.",
+            "cite_spans": [
+                {
+                    "start": 763,
+                    "end": 767,
+                    "text": "[46,",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 768,
+                    "end": 771,
+                    "text": "49,",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 772,
+                    "end": 775,
+                    "text": "54]",
+                    "ref_id": "BIBREF55"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Evaluation"
+        },
+        {
+            "text": "All experiments were run under a Linux operating system (Ubuntu 12.04 Precise Pangolin) using Oracle Java version 1.7, Python 2.7 and MySQL 5.5. All the Java code (ml2db) and data files used in this paper are available online at http://sourceforge.net/projects/ml2db/ and as Additional file 2 (code) and Additional file 3 (ARFF and XML data files). The full MySQL database dump of all the data and results is available on request. The graphs in Additional file 4 and Additional file 5 have been generated with PyGraphviz, a Python programming language interface to the Graphviz graph layout and visualization package, coded by Aric Hagberg, Dan Schult and Manos Renieri. Table 1 summarises the composition of the data sets used in terms of number of instances, attributes and class labels. As already described in the Methods section, each sequence in the mechanism + negative dataset (all the available MACiE mechanism annotations) was aligned with every other sequence and the percentage of sequence identity calculated. The resulting 126,499 couples are presented in Figure 1 , which provides an overview of the sequence identity and Euclidean distance (in the Inter-Pro attribute space) for each protein couple. As expected, most protein couples have low sequence identity (between 0% and 30%) and Euclidean distance between two and four, that is, have between four and sixteen differences in their InterPro signatures. This area seems to represent a very frequent sequence distance for protein couples with The table presents the number of instances (proteins), attributes (signatures or sequence identity values) and class values (mechanisms) for the datasets used in this work; for the swissprot-non-EC set we present the instances that need prediction (the ones sharing a signature with the mechanism set), while the total number of instances is shown between parentheses. http://www.biomedcentral.com/1471-2105/15/150 Figure 1 The sequence identity and Euclidean distance of enzymes with the same and different mechanism. The diagram presents, for every pair of proteins in the mechanism + negative datasets, the percentage of identity between the two proteins' sequences and also the Euclidean distance between their signature sets (in the InterPro attribute space). Protein couples having the same MACiE mechanism are represented as circles, while those with different MACiE mechanisms as triangles. The colour scale is logarithmic increasing from blue (for one instance) to light blue (2-3 instances), green (4-9), yellow (70-100), orange (250) and red (up to 433 instances) and represents the number of protein couples having that sequence identity and Euclidean distance. The dashed grey line shown, with equation Euclidean distance = 7 \u00d7 sequence identity, separates most same-mechanism couples (on its right) from an area dense with different-mechanism couples on its left. different function (triangle markers), but also contains a few couples of enzymes having the same mechanism (circle markers). The figure shows how enzymes having different mechanisms (triangle markers) concentrate in the upper left area of the plot, mostly having both low sequence identity (<30%) and high Euclidean distance between their signature sets (1.4 to 6, between 2 and 36 different signatures). In contrast, enzymes having the same mechanism form a long band across the figure, showing an extensive range of sequence identity, from about 18% to 100% but a lower and less varied Euclidean distance (0 to 2.2, that is, from having the same signatures to having 5 different signatures).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 671,
+                    "end": 678,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 1070,
+                    "end": 1078,
+                    "text": "Figure 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1927,
+                    "end": 1935,
+                    "text": "Figure 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 3371,
+                    "end": 3378,
+                    "text": "figure,",
+                    "ref_id": null
+                }
+            ],
+            "section": "Software code and graph layout"
+        },
+        {
+            "text": "Using the data in Figure 1 we evaluated whether a simple line separator could tell when a protein has the same label as another protein. To evaluate this simple form of learning (binary predictions in the form \"same mechanism\" or \"different mechanism\") we used a line passing through the origin and we varied the angle of the line between zero and ninety degrees, recording the number of correct and incorrect predictions for each line. As it is often the case, there is no absolute best line, some maximise precision, others recall. However, to give an example, the line passing Another way to read the equation Euclidean distance = 7 \u00d7 sequence identity is that for two proteins differing in two signatures, at least about 20% sequence identity is necessary for the proteins to have the same mechanism (about 25% sequence identity for three differences, 29% for four differences and so on). In addition, while the equation suggests that proteins having exactly the same signatures can have any level of sequence identity, in practice the sequence identity for couples having the same mechanism never falls below 18% in the data, possibly because two random sequences (of approximately the same length as our sequences) will have a minimum number of identical amino acids by chance alone. The couples having the same mechanism are almost homogeneously scattered above this 18% threshold, but with several couples having about 40% sequence identity and few having very high sequence identity (80% to 100%). The same result structure holds when sequence similarity is used instead of sequence identity (data not shown). http://www.biomedcentral.com/1471-2105/15/150",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 18,
+                    "end": 26,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Mechanism prediction from sequence identity and Euclidean distance"
+        },
+        {
+            "text": "In this section we use machine learning (k-Nearest Neighbour) to compare the ability of InterPro signatures and Catalytic Site Atlas (CSA) matches to predict enzyme mechanism on the basic mechanism dataset. Figure 2 presents an overview of the performance of different set of attributes in predicting the mechanism dataset. As an indicative baseline for prediction we used the labels predicted when mechanism is assigned simply by the presence of a certain set of InterPro domains (Inter-Pro direct transfer). For example, protein ODPB_GEOSE of Geobacillus stearothermophilus (pyruvate dehydrogenase E1 component subunit beta, P21874) is part of the dataset and has MACiE mechanism M0106 (pyruvate dehydrogenase) and InterPro IPR005475, IPR005476, IPR009014 and IPR015941. Hence, if we use direct transfer of mechanism labels, another protein such as ODBB_HUMAN (2-oxoisovalerate dehydrogenase subunit beta mitochondrial, P21953) which has exactly the same InterPro signatures will receive a M0106 label, thereby introducing an error, since ODBB_HUMAN's mechanism is in fact M0280 (or 3-methyl-2-oxobutanoate dehydrogenase). If several proteins in the training set have exactly the same InterPro attributes, the given test protein will be assigned all of their mechanism labels. The direct transfer method achieves 99.9% accuracy and 95.7% precision on the mechanism set, but only 76.6% recall. That is, when it assigns a label, it tends to be correct, but about a quarter of the proteins do not find another protein with exactly the same InterPro signatures in the training set, and so do not receive a prediction. The low recall is thus mainly caused by false negatives.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 207,
+                    "end": 215,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Mechanism prediction with InterPro and Catalytic Site Atlas sequence attributes"
+        },
+        {
+            "text": "If we use the BRkNN algorithm instead, as described in the Methods section, Figure 2 shows that InterPro attributes alone are very good predictors of mechanism and achieve 96.3% classification accuracy and microaveraged precision, and with a 99.9% macro-averaged recall. Using all InterPro signatures (including the so called \"non-integrated\" signatures) does not significantly improve nor degrade the overall InterPro result. CSA attributes are significantly worse than InterPro attributes at predicting mechanism on this dataset (60.6% classification accuracy and micro-averaged precision, 99.2% macro-averaged recall). Combining CSA attributes with InterPro attributes (InterPro+CSA attribute set) causes a slight degradation compared with using InterPro alone, achieving only 94.8% accuracy. Figure 3 presents an evaluation of predicting mechanism using Catalytic Site Atlas 3D template matches (CSA 3D), either alone or in combination with sequence based attributes. We note that CSA 3D attributes appear more accurate than CSA sequence attributes (CSA 2D) and that the integration of CSA sequence and 3D attributes generally improves prediction compared with using CSA 2D Figure 2 Predicting mechanism using InterPro and Catalytic Site Atlas attributes. A comparison of the predictive performance of various sets of attributes in a leave one out evaluation of the mechanism dataset. The x axis starts at 60% to better highlight the small differences between the top methods. http://www.biomedcentral.com/1471-2105/15/150 or CSA 3D alone. However, adding CSA 3D attributes to InterPro attributes does not provide an advantage and indeed degrades prediction.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 76,
+                    "end": 84,
+                    "text": "Figure 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 796,
+                    "end": 804,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1178,
+                    "end": 1186,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Mechanism prediction with InterPro and Catalytic Site Atlas sequence attributes"
+        },
+        {
+            "text": "The predictions based on CSA 3D templates mainly suffer from lack of coverage. The method generally predicts well, with few false positives, but it produces a high number of false negatives. This limitation is partly overcome by using all possible matches instead of only best matches (see Figure 3 ), but at the current state the method still appears to be less accurate than InterPro based methods. However, the current extension of CSA to CSA 2.0 [31] , and any future extension in the number of 3D templates may improve its performance.",
+            "cite_spans": [
+                {
+                    "start": 450,
+                    "end": 454,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 290,
+                    "end": 298,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Mechanism prediction from three-dimensional structure"
+        },
+        {
+            "text": "In order to define whether a set of attributes is a significantly better predictor than another set, we can imagine a random machine with characteristics similar to one of our predictors. Let us consider a method that emits either correct predictions with probability P or incorrect predictions with probability 1 \u2212 P. This method's percentage of correct predictions will have mean 100 \u00d7 P and standard deviation 100 ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Statistical significance of the results"
+        },
+        {
+            "text": "Using only the maximum sequence identities as attributes (the maximum identity of the protein to be predicted when compared with the set of proteins having each mechanism) achieves 87.9% classification accuracy and micro-averaged precision and 99.6% macro-averaged recall. The results moderately improve when the minimum Euclidean distance is used (the minimum distance between the set of InterPro signatures of the protein to be predicted and the signatures of the proteins having each mechanism). The classification accuracy and microaveraged precision grow from 87.9% to 92.3% and the macro-averaged recall from 99.6% to 99.8%. But it is the combination of the maximum sequence identity and minimum Euclidean distance that provides the best results within this style of data schema, with classification accuracy and micro-averaged precision reaching 95.5% while the macro-averaged recall remains at 99.8%. These results are not significantly worse than the results achieved by simply using InterPro signatures, but the method is much more computationally intensive. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence identity and minimum Euclidean distance"
+        },
+        {
+            "text": "Here we assess the predictive performance of the best method (InterPro attributes + k-Nearest Neighbour) on a separate test set and we examine the type of false positive mistakes that the method produces. We use here the negative set, which contains 290 enzymes with known MACiE labels, but impossible to use for cross validation as they have only one protein per label. We thus train on the mechanism set plus the non-enzymes in Swiss-Prot (swissprot-non-EC), to provide training examples for both proteins having and not having the mechanisms of interest and we test on the separate negative set. If the method behaved in an ideal way, all the enzymes in the negative set would be predicted to be without labels, because none of the labels available in the training set is appropriate for the negative enzymes. We also randomly partition the mechanism dataset into two folds (mech-fold1 and mech-fold2). Because many mechanisms in the mechanism set only have two proteins, we could not generate more than two folds without causing a further loss of mechanism labels and proteins. When training on fold 1 (mech-fold1 + half of swissprotnon-EC) and testing on fold 2 (mech-fold2 + the other half of swissprot-non-EC) there are only twelve false positive and twenty-three false negative predictions. Reversing the folds causes only six false positive and twenty-one false negative predictions. Thus even in such a vast test set, the mechanism training set only generates eighteen false positive predictions over more than 220,000 proteins. In addition, many of these false predictions are indeed very close to the mark. For example, Canis familiaris' Inactive Pancreatic Lipase-related Protein 1 (LIPR1_CANFA, P06857) is predicted as having MACiE mechanism M0218_pancreatic_lipase. In fact, as recorded in Swiss-Prot's annotation, this protein was originally thought to be a pancreatic lipase [55, 56] , but has been shown to lack lipase activity [57] . The same is true for the inactive pancreatic lipase-related proteins of Homo sapiens, Mus musculus and Rattus norvegicus which are also all predicted as M0218_pancreatic_lipase (UniProt accessions LIPR1_HUMAN/P54315, LIPR1_MOUSE/Q5BKQ4 and LIPR1_RAT, P54316 respectively). The method also predicts Legionella pneumophila's Protein DlpA (DLPA_LEGPH, Q48806) as citrate synthase (MACiE M0078), and the protein is in fact highly related to the citrate synthase family, but lacks the conserved active His at position 264 which is replaced by an Asn residue.",
+            "cite_spans": [
+                {
+                    "start": 1892,
+                    "end": 1896,
+                    "text": "[55,",
+                    "ref_id": "BIBREF56"
+                },
+                {
+                    "start": 1897,
+                    "end": 1900,
+                    "text": "56]",
+                    "ref_id": "BIBREF57"
+                },
+                {
+                    "start": 1946,
+                    "end": 1950,
+                    "text": "[57]",
+                    "ref_id": "BIBREF58"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Testing on negative sets"
+        },
+        {
+            "text": "The good accuracy, precision and recall obtained by the method are very encouraging but also highlight how similar in sequence many of the proteins belonging to one MACiE code are (as shown in Figure 1 ). This might be caused by strong conservation of many of these essential enzymes or, more prosaically, by a conservative manual annotation, which favours the transfer of labels among closely related orthologs. The consequence is a trusted but unchallenging data set for the methods presented.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 193,
+                    "end": 201,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Sequence identity and Euclidean distance"
+        },
+        {
+            "text": "In addition, even the performance of a simple line partition is reasonably high, provided that the Euclidean distance in the InterPro attributes space is used to further separate proteins, confirming the importance of using sequence signatures in addition to measures of sequence identity or similarity. Concluding, the InterPro based data schema seems to be essential to the good performance of: 1. machine learning over a sparse matrix (as presented using the k-Nearest Neighbour algorithm), 2. machine learning over a full matrix of sequence identity and Euclidean distance and even 3. simple regression (for example using the lines Euclidean distance = n \u00d7 sequence identity).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence identity and Euclidean distance"
+        },
+        {
+            "text": "At the current state of annotation, the small size of the training set makes the minimum Euclidean distance method look like a possible option for prediction. It is important to note though that a significant growth of the test or training sets will make a system based on alignments used to calculate the sequence identity (plus Euclidean distance calculation) much more computationally intensive than a machine learning algorithm (such as nearest neighbours) which relies on Euclidean distance alone.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence identity and Euclidean distance"
+        },
+        {
+            "text": "Additional file 4 is a graph of all enzymes in the mechanism dataset with their InterPro attributes and MACiE mechanism. The graph clearly shows that most clusters (proteins sharing a number of signatures) only have one MACiE mechanism, making predictions by k-Nearest Neighbour reasonably straightforward, as confirmed by the high accuracy, precision and recall of the leave one out evaluation on the mechanism dataset.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prediction quality"
+        },
+        {
+            "text": "In fact, no false positive predictions appear when training on the negative dataset and testing on the mechanism dataset, but a small number of false positives (sixteen) appear when training on the mechanism set and testing on the negative, as shown in Table 2 , which summarises the prediction errors for the training and testing evaluation experiments presented (a full list of the individual predictions can be found in Additional file 6).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 253,
+                    "end": 260,
+                    "text": "Table 2",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Prediction quality"
+        },
+        {
+            "text": "Additional file 5 contains a graph showing these sixteen false positive predictions in more detail. The clusters graphically show which protein neighbours caused the misprediction, and the signatures that these proteins share with the falsely predicted protein. For example, protein PABB_ECOLI has mechanism M0283: aminodeoxychorismate synthase (shown as a green oval), but it is predicted as M0314_component1_I: anthranilate synthase http://www.biomedcentral.com/1471-2105/15/150 One way to tease out the influence of these signatures that overlap across families is to introduce a larger sample of \"negative\" sequences. And this is what has been done in the two-fold cross evaluation experiment (mechanism plus swissprot-non-EC data sets). And, indeed, adding the non-enzymes keeps the number of false positive predictions extremely low (only 18 over 226,213 non-enzymes), but the split also somehow dilutes the informative signal of the mechanism dataset, causing a slightly larger number of false negative predictions (44 over 248 proteins).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prediction quality"
+        },
+        {
+            "text": "Hence, in general, the methods seem to perform well. For the use of enzyme researchers we thus provide a list of all mechanism predictions for all Swiss-Prot enzymes (proteins having an Enzyme Commission number) as Additional file 7.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prediction quality"
+        },
+        {
+            "text": "To provide correct neighbours for the instances currently receiving false negative or false positive predictions we would need to have either additional, more specific signatures in the set, or more proteins with the same signatures as the available instances. A detail of note is that the two best methods (InterPro and maximum sequence identity) label different proteins as false positives and false negatives. Hence by combining the predictions of the two methods (that is, accepting a label even if only one of the methods predicts it) we could reduce the number of false negatives to zero, but the number of false positive predictions would remain the same.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prediction quality"
+        },
+        {
+            "text": "The machine learning method proposed can be applied to any sequenced protein and can assign a mechanism that cannot be immediately inferred from the InterPro signatures present in the sequence.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "As future work it would be of interest to compare this approach with other representations of proteins, for example as discussed in [58] where protein sequences are described by fixed-length patterns with allowance for mutations, and the resulting mismatch string kernel is used with support vector machines to detect remote homology. These or other sequence features could be learned directly using a nearest neighbours algorithm or used as a kernel matrix for a support vector machine classifier, using a publicly available library such as libSVM which also allows for multi-label predictions.",
+            "cite_spans": [
+                {
+                    "start": 132,
+                    "end": 136,
+                    "text": "[58]",
+                    "ref_id": "BIBREF59"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "The method presented is currently limited only by the lack of available data. Only 335 mechanisms have been described in detail in MACiE, the richest publicly available mechanism database, out of the more than 4,000 existing fourth level Enzyme Commission numbers, each of which could have one or more different mechanisms existing in nature. And only 540 proteins have been annotated with a specific MACiE mechanism. Additionally, most mechanisms only have one protein exemplar annotated within the MACiE, SFLD or EzCatDb databases, and cannot therefore be used for cross-validation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Further validation will be needed when the dataset has grown, to clarify whether the best and fastest method remains the one we identified (InterPro attributes with k-Nearest Neighbour). However, the general indication is that mechanism prediction through sequence is possible, quick, accurate and produces a very limited number of false positives (just 0.00007% of 226,213 proteins) setting the foundations for further improvements to the methodology.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Additional file 1: Comparison of machine learning algorithms. Additional file comparison_of_machine_learning_algorithms.csv contains several evaluation metrics and run time for various machine learning algorithms when executing a leave-one-out experiment on the mechanism dataset. Additional file 2: Java code of ml2db. Additional file ml2db_code.tar.gz contains the Java source code to run the multi-label machine learning experiments and save the results to database. The code's Javadoc is included.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional files"
+        },
+        {
+            "text": "Additional file 3: ARFF and XML data files. Additional file arff_xml_files.tar.gz contains the ARFF and XML data files used in the machine learning experiments presented.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional files"
+        },
+        {
+            "text": "Additional file mechanism_set_neighbours.pdf is a graph of all enzymes in the mechanism dataset with InterPro attributes. The proteins are shown as blue squares (containing their UniProt entry name) connected to their signatures (black ovals containing the InterPro signature short name) and their mechanisms (green ovals containing the MACiE entry number and name). The graph was generated with PyGraphviz, a Python interface to Graphviz. http://www.biomedcentral.com/1471-2105/15/150",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional file 4: Neighbours clusters in the the mechanism dataset."
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "MACiE: a database of enzyme reaction mechanisms",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Holliday",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Bartlett",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Almonacid",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Boyle",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Murray-Rust",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Thornton",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Mitchell",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jbo",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "23",
+            "pages": "4315--4316",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/bti693"
+                ]
+            }
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "MACiE (mechanism, annotation and classification in enzymes): novel tools for searching catalytic mechanisms",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Holliday",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Almonacid",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Bartlett",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "O&apos;boyle",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Torrance",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Murray-Rust",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jbo",
+                    "middle": [],
+                    "last": "Mitchell",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Thornton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Nucleic Acids Res",
+            "volume": "35",
+            "issn": "",
+            "pages": "515--520",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkl774"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "MACiE: exploring the diversity of biochemical reactions",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Holliday",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Andreini",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Fischer",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rahman",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Almonacid",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Williams",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Pearson",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Nucleic Acids Res",
+            "volume": "2012",
+            "issn": "",
+            "pages": "783--789",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkr799"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "InterPro in 2011: new developments in the family and domain prediction database",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Hunter",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mitchell",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Attwood",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bateman",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bernard",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Binns",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bork",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Burge",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "De Castro",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Coggill",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Corbett",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Das",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Daugherty",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Duquenne",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Finn",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gough",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Haft",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Hulo",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kahn",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Kelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Letunic",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Lonsdale",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Lopez",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Madera",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Maslen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Mcanulla",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mcdowall",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "2012",
+            "issn": "",
+            "pages": "306--312",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkr948"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "The Catalytic Site Atlas: a resource of catalytic sites and residues identified in enzymes using structural data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Porter",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Bartlett",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Thornton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "",
+            "issn": "",
+            "pages": "129--133",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkh028"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "The RCSB protein data bank: new resources for research and education",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Rose",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bi",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Bluhm",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Christie",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dimitropoulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dutta",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Green",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Goodsell",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Prlic",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Quesada",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Quinn",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Ramos",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Westbrook",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Young",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Zardecki",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Berman",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Bourne",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Res",
+            "volume": "",
+            "issn": "",
+            "pages": "475--482",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gks1200"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "SVM-Prot: Web-based support vector machine software for functional classification of a protein from its primary sequence",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Cai",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Han",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ji",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nucleic Acids Res",
+            "volume": "31",
+            "issn": "13",
+            "pages": "3692--3697",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Enzyme family classification by support vector machines",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Cai",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Han",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ji",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proteins",
+            "volume": "55",
+            "issn": "",
+            "pages": "66--76",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/prot.20045"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "EnzML: Multi-label prediction of enzyme classes using InterPro signatures",
+            "authors": [
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Ferrari",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Aitken",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Van Hemert",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Goryanin",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "BMC Bioinformatics",
+            "volume": "13",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "EMBM -a new enzyme mechanism-based method for rational design of chemical sites of covalent inhibitors",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Traube",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Vijayakumar",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hirsch",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Uritsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Shokhen",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Albeck",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Chem Inf Model",
+            "volume": "50",
+            "issn": "12",
+            "pages": "2256--2265",
+            "other_ids": {
+                "DOI": [
+                    "10.1021/ci100330y"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Sequence-based enzyme catalytic domain prediction using clustering and aggregated mutual information content",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Choi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Bioinform Comput Biol",
+            "volume": "9",
+            "issn": "5",
+            "pages": "597--611",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "How accurate and statistically robust are catalytic site predictions based on closeness centrality?",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Chea",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Livesay",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC Bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-8-153"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Predicting active site residue annotations in the Pfam database",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mistry",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bateman",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Finn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC Bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-8-298"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "EzCatDB: the enzyme catalytic-mechanism database",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Nagano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "407--412",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gki080"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Using the structure-function linkage database to characterize functional domains in enzymes",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brown",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Babbitt",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Curr Protoc Bioinformatics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/0471250953.bi0210s13"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Update on activities at the universal protein resource (UniProt) in 2013",
+            "authors": [
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Consortium",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Res",
+            "volume": "",
+            "issn": "41",
+            "pages": "43--47",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "ExPASy: SIB bioinformatics resource portal",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Artimo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Jonnalagedda",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Arnold",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Baratin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Csardi",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "De Castro",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Duvaud",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Flegel",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Fortier",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Gasteiger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Grosdidier",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Hernandez",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Ioannidis",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kuznetsov",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Liechti",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Moretti",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Mostaguir",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Redaschi",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Rossier",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Xenarios",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Stockinger",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "",
+            "volume": "40",
+            "issn": "",
+            "pages": "597--603",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gks400"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "The protein data bank: a computer-based archival file for macromolecular structures",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Bernstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Koetzle",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Williams",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Meyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Brice",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Rodgers",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Kennard",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Shimanouchi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tasumi",
+                    "suffix": ""
+                }
+            ],
+            "year": 1977,
+            "venue": "J Mol Biol",
+            "volume": "112",
+            "issn": "3",
+            "pages": "535--542",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "InterPro and InterProScan: tools for protein sequence classification and comparison",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mulder",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Methods Mol Biol",
+            "volume": "396",
+            "issn": "",
+            "pages": "59--70",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Gene3D: Multi-domain annotations for protein sequence and comparative genome analysis",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Lees",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Studer",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Dawson",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Sillitoe",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Das",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Yeats",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Dessailly",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Rentzsch",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Orengo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nucleic Acids Res",
+            "volume": "42",
+            "issn": "",
+            "pages": "240--245",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkt1205"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Consortium U: HAMAP in 2013, new developments in the protein family classification and annotation system",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Pedruzzi",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Rivoire",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Auchincloss",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Coudert",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Keller",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "De Castro",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Baratin",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Cuche",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Bougueleret",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Poux",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Redaschi",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Xenarios",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bridge",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "584--589",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "PANTHER in 2013: modeling the evolution of gene function, and other gene attributes, in the context of phylogenetic trees",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Muruganujan",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Thomas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Res",
+            "volume": "",
+            "issn": "",
+            "pages": "377--386",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gks1118"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Pfam: the protein families database",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Finn",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bateman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Clements",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Coggill",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Eberhardt",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Heger",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Hetherington",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Holm",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mistry",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ell",
+                    "middle": [],
+                    "last": "Sonnhammer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tate",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Punta",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nucleic Acids Res",
+            "volume": "42",
+            "issn": "",
+            "pages": "222--230",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkt1223"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "PIRSF family classification system for protein functional and evolutionary analysis",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Nikolskaya",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Arighi",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Barker",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Evol Bioinform Online",
+            "volume": "2",
+            "issn": "",
+            "pages": "197--209",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "The PRINTS database",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Attwood",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Coletta",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Muirhead",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Pavlopoulou",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Philippou",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Popov",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Rom\u00e1-Mateo",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Theodosiou",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Mitchell",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "fine-grained protein sequence annotation and analysis resource-its status in 2012",
+            "authors": [],
+            "year": 2012,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/database/bas019"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "The ProDom database of protein domain families: more emphasis on 3D",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bru",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Courcelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Carr\u00e3\u013are",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Beausse",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dalmar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kahn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "212--215",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gki034"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "New and continuing developments at PROSITE",
+            "authors": [
+                {
+                    "first": "Cja",
+                    "middle": [],
+                    "last": "Sigrist",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "De Castro",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Cerutti",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Cuche",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Hulo",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bridge",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Bougueleret",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Xenarios",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Res",
+            "volume": "41",
+            "issn": "D1",
+            "pages": "344--347",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gks1067"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "SMART 7: recent updates to the protein domain annotation resource",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Letunic",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Doerks",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bork",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Nucleic Acids Res",
+            "volume": "2012",
+            "issn": "",
+            "pages": "302--305",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkr931"
+                ]
+            }
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Assignment of homology to genome sequences using a library of hidden Markov models that represent all proteins of known structure",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gough",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Karplus",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Hughey",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Chothia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "J Mol Biol",
+            "volume": "313",
+            "issn": "4",
+            "pages": "903--919",
+            "other_ids": {
+                "DOI": [
+                    "10.1006/jmbi.2001.5080"
+                ]
+            }
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "TIGRFAMs and genome properties in 2013",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Haft",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Selengut",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Richter",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Harkins",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Basu",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Beck",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Res",
+            "volume": "",
+            "issn": "",
+            "pages": "387--395",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gks1234"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "The Catalytic Site Atlas 2.0: cataloging catalytic sites and residues identified in enzymes",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Furnham",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Holliday",
+                    "suffix": ""
+                },
+                {
+                    "first": "Tap",
+                    "middle": [],
+                    "last": "De Beer",
+                    "suffix": ""
+                },
+                {
+                    "first": "Job",
+                    "middle": [],
+                    "last": "Jacobsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Pearson",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Thornton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nucleic Acids Res",
+            "volume": "42",
+            "issn": "",
+            "pages": "485--489",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkt1243"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "An algorithm for constraint-based structural template matching: application to 3D templates with statistical analysis",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Barker",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Thornton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Bioinformatics",
+            "volume": "19",
+            "issn": "13",
+            "pages": "1644--1649",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "ProFunc: a server for predicting protein function from 3D structure",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Laskowski",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Watson",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Thornton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "89--93",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gki414"
+                ]
+            }
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "EMBOSS: the European molecular biology open software suite",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rice",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Longden",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bleasby",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Trends Genet",
+            "volume": "16",
+            "issn": "6",
+            "pages": "276--277",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "A general method applicable to the search for similarities in the amino acid sequence of two proteins",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Needleman",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Wunsch",
+                    "suffix": ""
+                }
+            ],
+            "year": 1970,
+            "venue": "J Mol Biol",
+            "volume": "48",
+            "issn": "3",
+            "pages": "443--453",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Instance-based learning algorithms",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Aha",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kibler",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "Mach Learn",
+            "volume": "6",
+            "issn": "",
+            "pages": "37--66",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Random Forests",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Breiman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "",
+            "volume": "45",
+            "issn": "",
+            "pages": "5--32",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Multilabel classification via calibrated label ranking",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Fuernkranz",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Huellermeier",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Loza Mencia",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Brinker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Mach Learn",
+            "volume": "73",
+            "issn": "2",
+            "pages": "133--153",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Classification by pairwise coupling",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hastie",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Tibshirani",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Advances in Neural Information Processing Systems",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Very simple classification rules perform well on most commonly used datasets",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Holte",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Mach Learn",
+            "volume": "11",
+            "issn": "",
+            "pages": "63--90",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Estimating Continuous Distributions in Bayesian Classifiers",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "John",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Langley",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Eleventh Conference on Uncertainty in Artificial Intelligence",
+            "volume": "",
+            "issn": "",
+            "pages": "338--345",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Improvements to Platt's SMO Algorithm for SVM classifier design",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Keerthi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Shevade",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bhattacharyya",
+                    "suffix": ""
+                },
+                {
+                    "first": "Krk",
+                    "middle": [],
+                    "last": "Murthy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Neural Comput",
+            "volume": "13",
+            "issn": "3",
+            "pages": "637--649",
+            "other_ids": {
+                "DOI": [
+                    "10.1162/089976601300014493"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Fast training of support vector machines using sequential minimal optimization",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Platt",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Advances in Kernel Methods -Support Vector Learning",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "C4.5: Programs for Machine Learning",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Quinlan",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "An empirical study of lazy multilabel classification algorithms",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Spyromitros",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Tsoumakas",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Vlahavas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Artificial Intelligence: Theories, Models and Applications",
+            "volume": "",
+            "issn": "",
+            "pages": "401--406",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/978-3-540-87881-0_40"
+                ]
+            }
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Mining Multi-label Data",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Tsoumakas",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Katakis",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Vlahavas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Effective and efficient multilabel classification in domains with large number of labels",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Tsoumakas",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Katakis",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Vlahavas",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Proc",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Workshop on Mining Multidimensional Data",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Ecml/Pkdd",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "30--44",
+            "other_ids": {}
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "MULAN: A Java Library for Multi-Label Learning",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Tsoumakas",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Spyromitros-Xioufis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Vilcek",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Vlahavas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Mach Learn Res",
+            "volume": "12",
+            "issn": "",
+            "pages": "2411--2414",
+            "other_ids": {}
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Random k -Labelsets: an ensemble method for multilabel classification",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Tsoumakas",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Vlahavas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Data Mining -Practical machine learning tools and techniques with Java implementations",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Witten",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Frank",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Multilabel neural networks with applications to functional genomics and text categorization",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Zhou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Knowl Data Eng IEEE Trans on",
+            "volume": "18",
+            "issn": "10",
+            "pages": "1338--1351",
+            "other_ids": {}
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "The distribution of the flora in the alpine zone 1",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Jaccard",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "New Phytologist",
+            "volume": "1912",
+            "issn": "2",
+            "pages": "37--50",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1469-8137.1912.tb05611.x"
+                ]
+            }
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "Multiclass-multilabel classification with more classes than examples",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Dekel",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Shamir",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Proceedings of the 13 th International Conference on Artificial Intelligence and Statistics (AISTATS) 2010",
+            "volume": "9",
+            "issn": "",
+            "pages": "137--144",
+            "other_ids": {}
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "A systematic analysis of performance measures for classification tasks",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Sokolova",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Lapalme",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "",
+            "volume": "45",
+            "issn": "",
+            "pages": "427--437",
+            "other_ids": {}
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "Primary structures of canine pancreatic lipase and phospholipase A2 messenger RNAs",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Kerfelec",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Laforge",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Puigserver",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Scheele",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Pancreas",
+            "volume": "1986",
+            "issn": "5",
+            "pages": "430--437",
+            "other_ids": {}
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "Structure of the canine pancreatic lipase gene",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mickel",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Weidenbach",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Swarovsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Laforge",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Scheele",
+                    "suffix": ""
+                }
+            ],
+            "year": 1989,
+            "venue": "J Biol Chem",
+            "volume": "264",
+            "issn": "22",
+            "pages": "12895--12901",
+            "other_ids": {}
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "Reactivation of the totally inactive pancreatic lipase RP1 by structure-predicted point mutations",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Roussel",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "De Caro",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bezzine",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Gastinel",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "De Caro",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carri\u00e8re",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Leydier",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Verger",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cambillau",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Proteins",
+            "volume": "32",
+            "issn": "4",
+            "pages": "523--531",
+            "other_ids": {}
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "Mismatch string kernels for discriminative protein classification",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Leslie",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Eskin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cohen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Weston",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Noble",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Bioinformatics",
+            "volume": "20",
+            "issn": "4",
+            "pages": "467--476",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-15-150"
+                ]
+            }
+        },
+        "BIBREF60": {
+            "ref_id": "b60",
+            "title": "Submit your next manuscript to BioMed Central and take full advantage of: \u2022 Convenient online submission \u2022 Thorough peer review \u2022 No space constraints or color figure charges \u2022 Immediate publication on acceptance \u2022 Inclusion in PubMed, CAS, Scopus and Google Scholar \u2022 Research which is freely available for redistribution",
+            "authors": [
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Ferrari",
+                    "suffix": ""
+                },
+                {
+                    "first": "Mitchell",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "1) where I(true) = 1, I(false) = 0 and D is a dataset with |D| multi-label examples (proteins), each with a set Y i http://www.biomedcentral.com/1471-2105/15/150 of labels (enzyme mechanisms) taken from the set of all labels (MACiE mechanisms) L:(x i , Y i ), i = 1 . . . |D|, Y i \u2286 L.If we define as Z i the set of mechanisms predicted by the model h (for example the BRkNN classifier or direct assignment rule) for the i th protein (x i ): Z i = h(x i ), then the classification accuracy represents the percentage of proteins for which the model predicted the true, whole set of mechanisms.We also report micro and macro metrics (precision and recall) for completeness since the mechanism classes are long tail distributed. Consider a binary evaluation measure M(TP, FP, TN, FN)that is calculated based on the number of true positives (TP), false positives (FP), true negatives (TN), and false negatives (FN), such as Precision = TP TP + FP or Recall, Sensitivity = TP TP + FN . Let TP \u03bb , FP \u03bb , TN \u03bb and FN \u03bb be the number of TP, FP, TN and FN after binary evaluation for a label \u03bb. The macro-averaged and micro-averaged versions of measure M become:",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "through the origin with equation: Euclidean distance = 7 \u00d7 sequence identity provides a recall of 93.5%, while still conserving an accuracy of 99.8% and a precision of 93.2%. For this binary case accuracy is calculated with the usual formula TP + TN TP + FP + TN + FN , precision is TP TP + FP , and recall (or sensitivity) is TP TP + FN .",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Predicting mechanism using Catalytic Site Atlas 3D attributes. A comparison of the predictive performance of various sets of sequence based (2D) and structure based (3D) Catalytic Site Atlas attributes in a leave one out evaluation of the mechanism dataset. The x axis starts at 60%. http:",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "*Correspondence: ldeferr@staffmail.ed.ac.uk Biomedical Sciences Research Complex and EaStCHEM School of Chemistry, Purdie Building, University of St Andrews, North Haugh, St Andrews, Scotland KY16 9ST, UK",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Datasets statistics",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Prediction statisticsThis table presents the number of false positive and false negative predictions for the training + testing evaluations (using InterPro attributes), a detailed list of the predictions is available in Additional file6.    instead (shown as a red oval).The causes of the misprediction are signatures Anth_synth_I, ADC_synthase, Chorismate-bd_C and Anth_synth_I_N, which protein PABB_ECOLI shares with two anthranilate synthases (TRPE_SERMA and TRPE_SULSO). The two protein families are in fact very similar and the reactions' Enzyme Commission numbers only differ in the last (substrate) digit: anthranilate synthase has EC 4.1.3.27 and aminodeoxychorismate lyase has EC 4.1.3.38.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We thank the BBSRC for funding this research through grant BB/I00596X/1. JBOM thanks the Scottish Universities Life Sciences Alliance (SULSA) for financial support. Many thanks also to the Mulan mailing list members and to Lazaros Mavridis, Neetika Nath and to all the reviewers for their useful comments and suggestions. Special thanks to Roman Laskowski (EMBL-EBI) for his support in scanning structures using ProFunc and Catalytic Site Atlas 3D templates. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Additional file 5: Neighbours clusters of the false positive predictions when training on the mechanism set and testing on the negative set. Additional file graph_training_on_mechanism_testing_on_negative.pdf is a graph showing as red squares the proteins' false positive labels when training on the mechanism set and testing on the negative set (using InterPro attributes, shown here as green rectangles). The green ovals represent the protein's true mechanism, while the red ovals are the mistaken predictions. The yellow squares are neighbour proteins (proteins sharing some of the attributes) which caused the misprediction. The graph was generated with PyGraphviz, a Python interface to Graphviz. tar.gz contains a comma separated file of the mechanism predictions for all Swiss-Prot enzymes (proteins having an Enzyme Commission number). The training set used for prediction includes all mechanism labelled proteins (the mechanism and negative sets) and all Swiss-Prot non-enzymes (the swissprot-non-EC set) with their InterPro attributes and MACiE mechanism class labels. The predicted mechanism is presented alongside the protein's name, organism and Enzyme Commission number(s) taken from UniProt.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "LDF and JBOM designed the work and analysed the results. LDF collected the data, ran the experiments and wrote the initial draft of the manuscript. Both authors read and approved the final manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

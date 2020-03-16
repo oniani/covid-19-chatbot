@@ -1,0 +1,1767 @@
+{
+    "paper_id": "cf06138d477edd309f439ae40bf555d5bf63b173",
+    "metadata": {
+        "title": "Methods to infer transmission risk factors in complex outbreak data",
+        "authors": [
+            {
+                "first": "Simon",
+                "middle": [],
+                "last": "Cauchemez",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "MRC Centre for Outbreak Analysis and Modelling",
+                    "institution": "Imperial College London",
+                    "location": {
+                        "settlement": "London",
+                        "country": "UK"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Neil",
+                "middle": [
+                    "M"
+                ],
+                "last": "Ferguson",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "MRC Centre for Outbreak Analysis and Modelling",
+                    "institution": "Imperial College London",
+                    "location": {
+                        "settlement": "London",
+                        "country": "UK"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Data collected during outbreaks are essential to better understand infectious disease transmission and design effective control strategies. But analysis of such data is challenging owing to the dependency between observations that is typically observed in an outbreak and to missing data. In this paper, we discuss strategies to tackle some of the ongoing challenges in the analysis of outbreak data. We present a relatively generic statistical model for the estimation of transmission risk factors, and discuss algorithms to estimate its parameters for different levels of missing data. We look at the problem of computational times for relatively large datasets and show how they can be reduced by appropriate use of discretization, sufficient statistics and some simple assumptions on the natural history of the disease. We also discuss approaches to integrate parametric model fitting and tree reconstruction methods in coherent statistical analyses. The methods are tested on both real and simulated datasets of large outbreaks in structured populations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Data collected during field outbreak investigations are essential to better understand the clinical and epidemiological features of an infectious disease. They can also provide useful insights for outbreak management and control. For example, evaluating the risk factors governing transmission is important to design efficient control measures, and identify those individuals that are most at risk of infection or are the main contributors of infection and should therefore be targeted first.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "However, characterizing transmission from outbreak data can be challenging. First, the transmission process is usually imperfectly observed. For example, we may observe the date of symptoms onset of a case, but we rarely know where, when and by whom a case was infected. Inference, therefore, requires integrating over 'missing data', which may quickly become cumbersome. Over the last 15 years, data augmentation methods have been used to tackle this problem: data are augmented with missing data (e.g. dates of infection) that are needed to write down the likelihood; in a Bayesian setting, the joint posterior distribution of parameters and augmented data is explored usually via Markov chain Monte Carlo (MCMC) sampling [1] . This methodology is now well established in the field and has been successfully applied to analyse a range of complex datasets.",
+            "cite_spans": [
+                {
+                    "start": 724,
+                    "end": 727,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "However, for relatively large outbreaks with detailed data, this approach may require very long computational times. Interested readers can, for example, read references [2 -11] .",
+            "cite_spans": [
+                {
+                    "start": 170,
+                    "end": 177,
+                    "text": "[2 -11]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "The second challenge is that the type of dependency between observations that is typically observed in an outbreak (i.e. the risk of infection of an individual depends on the infection status of other individuals) is specific to communicable diseases and needs to be accounted for with dedicated methods. This usually requires that the statistical model used to analyse the data is explicitly based on a mechanistic model of disease spread [12] . Transmission parameters of interest, for example, the reproduction number (the number of individuals infected by a case), are usually mathematically defined in those models. Fitting such parametric mechanistic models to outbreak data can give useful insights on transmission [7, [13] [14] [15] , but is subject to the same limitations as parametric fitting in other fields. For example, although there are some exceptions [10] , the approach usually requires to predefine time intervals on which transmission rates are constant. This can sometimes be difficult to achieve in a non-ad hoc way.",
+            "cite_spans": [
+                {
+                    "start": 440,
+                    "end": 444,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 722,
+                    "end": 725,
+                    "text": "[7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 726,
+                    "end": 730,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 731,
+                    "end": 735,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 736,
+                    "end": 740,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 869,
+                    "end": 873,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "An alternative approach that has become increasingly popular is to reconstruct the transmission tree and derive important summary statistics from it, for example, the temporal trends in the reproduction number [16 -18] . This may give greater flexibility (for example, there is no need to specify time intervals with constant transmission rates), potentially at the cost of larger variance of the estimates [15, 18] . However, since these methods generally only consider disease *Author for correspondence (s.cauchemez@imperial.ac.uk). cases rather than the uninfected, but potentially susceptible bulk of the population, they can say little about the risk factors for infection or provide estimates of transmissibility in different contexts (e.g. households, schools or as a function of distance between a susceptible and an infected individual).",
+            "cite_spans": [
+                {
+                    "start": 210,
+                    "end": 218,
+                    "text": "[16 -18]",
+                    "ref_id": null
+                },
+                {
+                    "start": 407,
+                    "end": 411,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 412,
+                    "end": 415,
+                    "text": "18]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "Overall, the two methodologies (fitting of a parametric mechanistic model and tree-reconstruction methods) are largely complementary. Fitting a mechanistic model seems to be the only way to account for the depletion of susceptibles, the information on uninfected individuals leading to a quantification of relative risks; and it may ensure a better control of the variance of the estimates. Tree-reconstruction methods can provide further insights on what effectively happened during the outbreak with summary statistics on who was infected by whom, when and where and temporal change in the reproduction number. They can also provide a framework to detect abnormal features in the data that are not initially accounted for in a mechanistic model. It is therefore important that the two approaches can be integrated in a coherent way.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "In this paper, we discuss strategies to tackle some of the ongoing challenges in the analysis of outbreak data. We present a relatively generic statistical model for the estimation of transmission risk factors, and discuss algorithms to estimate its parameters for different levels of missing data. We look at the problem of computational times for relatively large datasets and show how they can be reduced by appropriate use of discretization, sufficient statistics and some simple assumptions on the natural history of the disease. We also discuss approaches to integrate parametric model fitting and tree reconstruction methods in coherent statistical analyses. The methods are tested on both real and simulated datasets of large outbreaks in structured populations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "Assume that we observe the spread of a disease in a population of size N from day 0 to day T. For each individual i \u00bc 1, . . . , N, let y T i \u00bc 1; if individual i is infected between 0 and T; 0 otherwise. Each individual i is characterized by a vector of Q covariates z i (t) \u00bc fz i 1 (t), . . . , z i Q (t)g such as age, gender, location, household ID, etc . . . that may vary with day t. We want to quantify the transmission risk factors.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "TRANSMISSION MODEL, DEPENDENCY AND COMPUTATIONAL TIMES"
+        },
+        {
+            "text": "We first consider the situation where day t i of infection of each case i is observed (by convention,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "TRANSMISSION MODEL, DEPENDENCY AND COMPUTATIONAL TIMES"
+        },
+        {
+            "text": ". This assumption is relaxed in \u00a75.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "TRANSMISSION MODEL, DEPENDENCY AND COMPUTATIONAL TIMES"
+        },
+        {
+            "text": "For a directly transmitted disease, the first step to estimate transmission risk factors is usually to propose a model for transmission hazard l i!j \u00f0tjQ\u00de from case i to subject j on day t, i.e. define l i!j \u00f0tjQ\u00de as a function of the individual covariates z i (t) and z j (t) and a set of parameters Q. For example, the transmission hazard l i!j \u00f0tjQ\u00de may depend on:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Transmission models"
+        },
+        {
+            "text": "-the time lag t-t i between day t and the day of infection t i of case i since infectiousness of a case may vary during the course of infection. The functional form between l i!j \u00f0tjQ\u00de and t-t i will depend on the assumed natural history of the disease; -the individual characteristics of subjects i and j. For example, some subjects may be more infectious while others are more susceptible; and -the type of interactions that exist between subjects i and j. The contact rate might, for example, depend on whether the subjects live in the same household or go to the same school, etc. It could also depend on the spatial distance between them.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Transmission models"
+        },
+        {
+            "text": "Examples of specifications for the transmission hazard l i!j \u00f0tjQ\u00de are given in \u00a7 \u00a76 and 7. The force of infection exerted on individual j on day t is then the sum:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Transmission models"
+        },
+        {
+            "text": "l i!j \u00f0tjQ\u00de:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Transmission models"
+        },
+        {
+            "text": "The contribution to the likelihood of case j is:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood and computational time"
+        },
+        {
+            "text": "where the first term is the probability of infection on day t, and the second term is the probability to escape infection up to day t (the link between the continuous time and discrete time transmission model is discussed in appendix A). The contribution of non-case j is:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood and computational time"
+        },
+        {
+            "text": "The log-likelihood is therefore: the number of pairs of farms to be considered per calculation of the likelihood is over 10 8 [19] . Even with the recent increase in computational power, brute force exploration of the system, though feasible, is very time consuming. Fast and efficient algorithms are necessary to provide real-time support to decision making.",
+            "cite_spans": [
+                {
+                    "start": 126,
+                    "end": 130,
+                    "text": "[19]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Likelihood and computational time"
+        },
+        {
+            "text": "Here, we explore the extent to which the discretization of the transmission risk factors can reduce the computational burden associated with the evaluation of equation (2.3). Therefore, we now restrict our analysis to the situation where each transmission risk factor takes a finite set of values. We will then explore how the approach can be used to investigate continuous risk factors.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCRETIZATION AND SUFFICIENT STATISTICS"
+        },
+        {
+            "text": "Assume that the transmission hazard between two individuals depends on K risk factors x \u00bc fx 1 , . . . ,x K g and that the k-th risk factor x k (k \u00bc 1, . . . , K ) takes a finite number (\u00bcC k ) of values fv k 1 ; . . . ; v k C k g. The set C of possible values for risk factor vector x \u00bc fx 1 , . . . , x K g has size Q K k\u00bc1 C k . For example, the list of risk factors might include the (discretized) distance between the individuals (either spatial or social, e.g. members of the same household), the time lag since infection or individual characteristics, such as age.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "We model the transmission hazard between a case and a susceptible individual in the population by:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "where the specific effect of x k on the transmission hazard is measured by function b k \u00f0x k ; u k \u00de ! 0, and u k \u00bc fu k 1 ; . . . ; u k L k g is a parameter vector of size L k . This expression makes the simplifying assumption that the effect of all risk factors on the hazard can be expressed as the product of the impacts of each factor. Parameters of the model are",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "Remembering that z i denotes data available for individual i, we assume here that risk factors for transmission from case i to individual j on day t are a function of triplet fz i , z j , tg: x \u00f0i;j;t\u00de \u00bc fx 1 \u00f0i;j;t\u00de ; . . . ; x K \u00f0i;j;t\u00de g, where for k \u00bc 1, . . . , K, x k \u00f0i;j;t\u00de \u00bc g k \u00f0fz i ; z j ; tg\u00de. The transmission hazard l i!j \u00f0t j jQ\u00de from case i to individual j on day t is therefore: l i! j \u00f0tjQ\u00de \u00bc b\u00f0x \u00f0i;j;t\u00de ; Q\u00de:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "The total hazard of infection for individual j on day t is then: where",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "Here d a,b is the Kronecker delta or identity function (\u00bc1 if a \u00bc b and 0 otherwise). M x counts the number of day-transmission events of type x, which might have occurred before time t but did not.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "Equation (3.2) has important implications in terms of computational speed since it shows that the computational burden can be substantially reduced without loss of information. The first term of equation (3.2) only involves disease cases; the second term characterizes the probability of escaping infection up to time t. So, data needs for inference reduce to:",
+            "cite_spans": [
+                {
+                    "start": 9,
+                    "end": 14,
+                    "text": "(3.2)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "-'case data'; -table fM x g x[C of sufficient statistics that characterize the interaction of cases with any individual of the population. It can be pre-computed and stored once, given they do not functionally depend on the parameters.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discretization"
+        },
+        {
+            "text": "Tree reconstruction [7, [16] [17] [18] is a useful complement to the likelihood-based estimates of the parameters derived from equation (3.2) . Here, we present and discuss different strategies to perform tree reconstruction and parameter estimation in a coherent statistical framework.",
+            "cite_spans": [
+                {
+                    "start": 20,
+                    "end": 23,
+                    "text": "[7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 24,
+                    "end": 28,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 29,
+                    "end": 33,
+                    "text": "[17]",
+                    "ref_id": null
+                },
+                {
+                    "start": 34,
+                    "end": 38,
+                    "text": "[18]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 136,
+                    "end": 141,
+                    "text": "(3.2)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "EXPLORATION OF THE PARAMETER SPACE AND TREE RECONSTRUCTION"
+        },
+        {
+            "text": "Given parameter Q and given that case j was infected on day t j , the probability that case j was infected by case i (t i , t j ) is simply (see appendix A):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tree reconstruction"
+        },
+        {
+            "text": "A natural way to integrate tree reconstruction and parameter estimation in a coherent setting is to proceed sequentially. For example, in a Bayesian setting, a sample fQ m g m\u00bc1;...;M can be drawn from the posterior distribution of Q via MCMC sampling relying on equation (3.2) . Then, for each parameter value in the sample m \u00bc 1, . . . ,M, a source of infection r j can be drawn from its distribution f p i!j \u00f0t j jQ m \u00deg i for each case j. This gives a sample of M transmission trees drawn from their predictive distribution. For example, we used this strategy when analysing detailed data from an influenza outbreak in a school [7] .",
+            "cite_spans": [
+                {
+                    "start": 272,
+                    "end": 277,
+                    "text": "(3.2)",
+                    "ref_id": null
+                },
+                {
+                    "start": 632,
+                    "end": 635,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sequential approach"
+        },
+        {
+            "text": "Here, we explore an alternative strategy where the two tasks are performed simultaneously. The method formalizes those introduced in work undertaken in 2001 on the UK FMD epidemic of that year [13] . The idea is that the source of infection r j for each case j is considered as 'augmented' data. The augmented loglikelihood is:",
+            "cite_spans": [
+                {
+                    "start": 193,
+                    "end": 197,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simultaneous inference"
+        },
+        {
+            "text": "In many situations, where the force of infection exerted on individuals is relatively small, the likelihood simplifies to:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Simultaneous inference"
+        },
+        {
+            "text": "The analysis of the augmented likelihood can be performed in a frequentist or in a Bayesian setting. In the frequentist setting, it is straightforward to implement an expectation conditional maximization (ECM) algorithm [20, 21] to both derive maximum-likelihood estimates of the parameters of the model and reconstruct the transmission tree. The pseudo-code for this algorithm is given in box 1. In the common situation, where one is interested in relative risks (i.e. comparison with a reference group) and where the force of infection exerted on individuals is relatively small, no maximization routine is needed since the maximum value is simply a ratio of two sums (appendix A) [13] . Confidence intervals can be obtained from the Fisher information matrix derived at the maximum value for the incomplete log-likelihood (equation 3.2). The approach, therefore, requires that the second derivative of the log-likelihood with respect to Q exists.",
+            "cite_spans": [
+                {
+                    "start": 220,
+                    "end": 224,
+                    "text": "[20,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 225,
+                    "end": 228,
+                    "text": "21]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 683,
+                    "end": 687,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simultaneous inference"
+        },
+        {
+            "text": "Alternatively, inference can be performed in a Bayesian setting via MCMC [1] , with a pseudo-code presented in box 2. The key difference is in the way missing data are handled: in the Bayesian approach, one realization of the missing data is drawn from its expected distribution; by contrast in the EM algorithm, the whole expected distribution of the missing data is used in the expression of the augmented likelihood.",
+            "cite_spans": [
+                {
+                    "start": 73,
+                    "end": 76,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simultaneous inference"
+        },
+        {
+            "text": "Often, the day of symptom onset s j of case j is observed but not the day of infection t j . As a consequence, Box 1. The EM algorithm when the days of infection are observed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "Assume that at the beginning of iteration n, parameter vector is Q n21 : -expectation step:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "(i) for each case j, compute probabilities f p i!j \u00f0t j \u00deg i given Q n21 (equation 4.1; see appendix A), and (ii) for x in C, compute the expected number of transmission events of type x :",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "other parameters being fixed (see appendix A):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "Bayesian algorithm when the days of infection are observed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "At iteration n:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "-update missing data: (i) for each case j, compute probabilities f p i!j \u00f0t j \u00deg i given Q n21 (equation 4.1; see appendix A), (ii) for each case j, draw the source r j of case j from distribution f p i!j \u00f0t j \u00deg i , and (iii) for x in C, compute the number of transmission events of type x:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "-update parameters: (i) for k \u00bc 1, . . . , K, and (ii) for j \u00bc 1, . . . , L k : MCMC update u k j relying on the augmented likelihood L C (see appendix A):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "Methods to infer transmission risk factors S. Cauchemez and N. M. Ferguson 459 likelihood as shown in equation (3.2) is no longer available. If the incubation period (time lag between the day of infection and the day of symptoms onset) has a known density f (s j jt j ), a common strategy to tackle the problem is to augment the data with the day of infection of each case. A particular computational burden is then that updating the day of infection of a single case may require re-calculation of the whole likelihood as the update may affect the risk of infection of all other individuals. In order to avoid this computational cost, we introduce the additional assumption: (H1) Given the day of symptoms onset s j , infectiousness over time is independent of the day of infection t j . This is, for example, the case if infectiousness starts with symptom onset. This assumption seems acceptable for a relatively wide range of diseases since infectivity is often triggered or influenced by symptoms. Under H1, there is no need to re-compute the whole likelihood each time a day of infection is updated.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "It would be possible to extend the EM approach to the situation when the days of infection are unobserved. Inference would work as in the previous section except that one would have to take the expectation on both the contact tracing information and the day of infection. However, for this second application, it is no longer possible to easily derive the variance of the estimates. This is because, although maximum-likelihood point estimates could be derived from the likelihood for the 'complete' dataset, estimation of the variance of the estimates has to rely on the likelihood of the observed dataset (equation 3.2). This expression cannot be computed here since days of infection are not observed. The Bayesian approach does not suffer from this limitation and makes it possible to easily obtain Bayesian credible intervals (box 3). ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SITUATION WHEN THE DAYS OF INFECTION ARE UNOBSERVED"
+        },
+        {
+            "text": "We explore how the discretization of risk factors and the algorithms introduced in \u00a74 can reduce the computational burden of inference. For simplicity, farms are partitioned into three groups on the basis of the number of cattle n c and the number of sheep 3n s : cattle (cattle farm: n c ! n s ), sheep (sheep farm: n s . n c ) and small (small farm: n c \u00fe n s , 100) [13] . We assume that the latent period of FMD is 3 days and that infectious farms remain so until the time of slaughter. The transmission hazard b between case farm i and susceptible farm j that is introduced in equation (3.1) is modelled as a function of the following characteristics:",
+            "cite_spans": [
+                {
+                    "start": 369,
+                    "end": 373,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "-the type (cattle, sheep or small) of case farm i. We estimate the relative infectivity of sheep farms \u00f0g sh I \u00de and small farms \u00f0g sm I \u00de relative to cattle Box 3. Bayesian algorithm when only days of symptom onset are observed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "At iteration n:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "-Gibbs sampling for missing data: (i) for each case j, compute probabilities f p j \u00f0t\u00deg t for the day of infection of the case given Q n21 (see appendix A), (ii) for each case j, draw the day t j of infection of the case from distribution f p j \u00f0t\u00deg t , (iii) for each case j, compute probabilities f p i!j \u00f0t j \u00deg i given Q n21 (equation 4.1; see appendix A), (iv) for each case j, draw the source r j of case j from distribution f p i!j \u00f0t j \u00deg i , and (v) for x in C, compute the number of transmission events of type x:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "-update parameters: (i) for k \u00bc 1, . . . , K, and (ii) for j \u00bc 1, . . . , L k : MCMC update u k j relying on the augmented likelihood. The augmented likelihood is slightly different from the case when days of infection are known (equation 3.2). In particular, since days of infection of cases change during the inference procedure, it is no longer possible to pre-compile and store the contribution of cases to matrix fM x g (i.e. number of day-transmission events of type x that could have occurred but did not); but one can still pre-compile and store the contribution fMM x g of non-cases, which is usually the key computational burden. The augmented likelihood is:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "farms. So the multiplicative term on the transmission hazard is g sh I ; if case farm is a sheep farm, g sm I if it is a small farm and 1 if it is a cattle farm; -the type (cattle, sheep or small) of susceptible farm j. We estimate the relative susceptibility of sheep farms \u00f0g sh S \u00de and small farms \u00f0g sm S \u00de relative to cattle farms; and -the distance d ij between farm i and farm j. Two models are considered: M1: discrete model. We assume that the transmission kernel is a step function with K \u00fe 1 change points fd k g k\u00bc0, . . . ,K and where the multiplicative term on the transmission hazard is g k D if d k21 , d ij d k . In practice, we take 18 change points f0, 0.5, 1, 1. \u00f06:1\u00de where q\u00f0a; b\u00de \u00bc 1= \u00d0 2000 d\u00bc0 \u00f01 \u00fe u=a\u00de \u00c0b du is a normalizing constant. Here, we introduce a discretized version of this kernel. Consider K \u00fe 1 change points fd k g k\u00bc0, . . . ,K . We define d k ; the mean distance between farms i and j satisfying d k21 , d ij d k :",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "The transmission kernel is the step function:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "In For the ECM algorithm, we consider that convergence is achieved at iteration n if the relative change in parameter values between iteration n and iteration n \u00fe 1 is smaller than 10 27 for all parameters. In the Bayesian implementation of the model, we specify the following priors for our parameters. Parameters g sh I ; g sm I ; g sh S ; g sm S ; g 1 D ; . . . ; g K D all have a gamma prior G(a, a) with a \u00bc 10 22 . We also do a sensitivity analysis for a \u00bc 10 21 , 1. For model M2, we specify a uniform prior U [0,100] for kernel parameters a and b and a   gamma prior G(a, a) for parameter c. The MCMC is run for 8000 iterations with a burn in of 500 iterations.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 517,
+                    "end": 582,
+                    "text": "[0,100] for kernel parameters a and b and a   gamma prior G(a, a)",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "Transmission parameters are estimated for time interval 23rd February (when the national ban on animal movements was introduced) to 5th October 2001, conditional on the state of the epidemic on 23rd February. Computation times are given for single threaded code running on an Intel Xeon x5570 system.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "We first use the ECM algorithm (box 1) to estimate model M1 (table 1) . Convergence is achieved in only 91 iterations (figure 1). Total computational time is 1 min 14 s with most of the time (58 s) spent reading the data and computing the table fM x g x[C of sufficient statistics (equation 3.2). In particular, there is no need to use maximization routines since there is an analytical solution to the conditional maximization step (see appendix A). Computational times are also very short (4 min 28 s) for the Bayesian algorithm (box 2).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 60,
+                    "end": 69,
+                    "text": "(table 1)",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "Estimates of transmission kernel M2 are obtained in 6 min 41 s (table 2) . Those computational times contrast with those needed through brute calculation of the likelihood (equation 2.3). Replacing model M2 by the exact continuous parametric kernel (equation 6.1) and using equation (2.3) does not affect estimates (table 2); but computational times move to a month for the same number of iterations of the MCMC, on the same machine and with no serious attempt to optimize the code. While algorithmic optimization and parallel programming allows this to be reduced to a few days [19] , the algorithms presented here still give comparable estimates two orders of magnitude more rapidly than brute force approaches.",
+            "cite_spans": [
+                {
+                    "start": 579,
+                    "end": 583,
+                    "text": "[19]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 63,
+                    "end": 72,
+                    "text": "(table 2)",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "We simulate an epidemic in a city that is structured in households and hospitals and where community transmission can happen. Table 3 summarizes the structure of the city. We consider a city of size 400 000 with an average household size of 2.2 persons and with household demographics consistent with the 1999 French census [22] . The city has three hospitals with 2240 staff members and 800 beds each, a bed occupancy of 70 per cent outside the epidemic period for a duration of hospitalization of 10 days. We simulate the spread of a disease in this population and would like to assess how the techniques described above can be used to evaluate and monitor transmission in the different settings (community, hospital and household), infectivity and susceptibility of different types of individuals (here: children versus adults) along with the efficacy of the interventions that are put in place in the different settings. We are interested in a scenario like the severe acute respiratory syndrome (SARS) rather than, for example, an influenza scenario; that is a disease for which it is possible to detect and identify a substantial proportion of cases.",
+            "cite_spans": [
+                {
+                    "start": 324,
+                    "end": 328,
+                    "text": "[22]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 126,
+                    "end": 133,
+                    "text": "Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Simulations"
+        },
+        {
+            "text": "We assume that the incubation period of the disease has a geometric distribution (with probability 0.3, truncated after 10 days); that individuals start to be infectious on the day of symptoms onset with an infectivity profile following that time which has an exponential shape with mean 3 days (truncated after 20 days). We assume that 20 per cent of cases are hospitalized with equal probability of hospitalization occurring 1 or 2 days after symptoms onset. We assume that children are 1.5-fold more susceptible and more infectious than adults. Following Cauchemez et al. [8] , we assume that the person-to-person household transmission rate is inversely proportional to the size of the household. The epidemic starts with five cases infected on day 0. Control measures targeting community, household and hospital transmission each with an efficacy of reducing transmission of 50 per cent are implemented on day 60 of the outbreak. We consider different scenarios for the proportion of cases that are detected in the population. Initially, we assume that all cases are detected. In alternative scenarios, we investigate the situations where 50 or 25 per cent of cases are randomly detected in the community/hospital, but where follow-up of households with detected cases is good (90%) and, last, the situation where detection of cases among household members is of the same quality as detection of cases in the community and in hospitals.",
+            "cite_spans": [
+                {
+                    "start": 575,
+                    "end": 578,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simulations"
+        },
+        {
+            "text": "The transmission hazard b between case i and individual j that is introduced in equation (3.1) depends on the following characteristics:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "-setting, i.e. whether individuals i and j are (i) members of the same household, (ii) have visited the same hospital or (iii) other (i.e. community transmission)-the multiplicative term on the transmission hazard is b Hous /n (n: size of the household), b Hosp /N Hosp (N Hosp : number of staff members plus average hospital occupancy outside an epidemic) and b Com /N Com (N Com : size of the city). We specify a gamma prior G(10 25 , 10 23 ) for b Hous , b Hosp and b Com ; -infectivity profile from symptom onset of case imodelled with a normalized discretized exponential distribution with a mean to be estimated. We specify a uniform prior U [1,10] for the mean value; -whether or not case i is a child-we estimate the infectivity of children relative to adults. We specify a lognormal prior distribution with log-mean 0 and log-variance 1 for the relative infectivity of children g I . This ensures that g I has the same prior as 1/g I ; -whether or not individual j is a child-we estimate the susceptibility of children relative to adults, g S , assuming a lognormal prior distribution with log-mean 0 and log-variance 1; and -efficacy of interventions implemented in the different settings (i.e. household, hospital and community). After implementation of the intervention (day 60), the transmission rate in the household, hospital and community is multiplied by parameter g Hous , g Hosp and g Com , respectively; where g Hous , g Hosp and g Com have the same prior as the relative infectivity and susceptibility of children. Figure 2 summarizes the data that would need to be collected during the outbreak with the age and dates of symptom onset of cases (figure 2a), a follow-up of households with cases and tracking of hospitalizations and more generally of hospital occupancy (figure 2b) and a follow-up of epidemics in hospitals (figure 2c). Inference also requires having information on the age distribution of the population. In the simulated outbreak, there were a total of 1842 cases with 631 (34%) child cases.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1536,
+                    "end": 1544,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Specification of the statistical model"
+        },
+        {
+            "text": "In the scenario, where all cases are identified, figure 3 shows how estimates change in real-time. On day 20, only 31 cases have been detected and credible intervals of parameters are therefore wide. The credible interval includes the true value for all parameters except the relative infectivity of children. On day 30, with 80 cases detected, posterior means are always relatively close to the true simulation value although credible intervals remain wide for some parameters like the relative infectivity and susceptibility of children and the mean generation time. On day 40 (182 cases detected), we would rightly conclude that children are more infectious and susceptible than adults although here again the credible intervals remain relatively wide. Properly characterizing the infectivity profile requires substantially more data (849 cases detected by day 60). Only 10 days after control measures are implemented, fairly accurate estimation of the efficacy of interventions in different settings becomes possible.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "When only 50 per cent of cases in the community and in hospitals are detected, performance of the approach remains satisfying although as expected credible intervals are wider and it takes longer for accuracy to be acceptable (figure 4). When 25 per cent of cases in the community and in hospitals are detected, precision of estimates starts to break down (electronic supplementary material, figure S1 ). Although estimates of transmission rates in the community and the hospital are not strongly affected by under-reporting in those settings, this is not true of estimates of transmission rates in small closed settings such as households (electronic supplementary material, figure S2 ). The method also allows disaggregated monitoring of the reproduction number and the number of cases infected in different settings (figure 5).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 392,
+                    "end": 401,
+                    "text": "figure S1",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 676,
+                    "end": 685,
+                    "text": "figure S2",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "In this paper, we have presented strategies to tackle some of the challenges associated with the estimation of transmission characteristics of infectious diseases and the risk factors affecting transmission patterns.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "The dependency that is typically observed in outbreak data (i.e. the risk of infection for an individual depends on the infection status of other individuals) can potentially lead to long computational times. We showed that if risk factors are discretized, the inferential problem can be simplified to the analysis of (i) a dataset on cases only and (ii) a pre-compiled summary table on interactions between individuals of the population and cases. In the FMD application, discretization reduced the computational time from few weeks to few minutes with no change in the estimates of the transmission kernel. It is likely that with substantial effort and parallel programming, we could have reduced the computation time of brute force approach by one or two orders of magnitude. Even so, it seems unlikely that computational times could have gone much below few days. This has to be compared with the few minutes needed to run our algorithms on the FMD dataset. For small datasets, discretization may provide no computational gain if it takes longer to explore the set C of transmission risk factors than to sum over the pairs fcase i, individual jg. Discretization may be difficult to implement on particularly complex transmission models [19, 23] in which case brute force calculation of the likelihood may be needed.",
+            "cite_spans": [
+                {
+                    "start": 1240,
+                    "end": 1244,
+                    "text": "[19,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1245,
+                    "end": 1248,
+                    "text": "23]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "We presented two strategies to perform parameter estimation and tree reconstruction in a coherent way. The first one is a sequential approach that we used to analyse data from an influenza school outbreak [7] . Here, we implemented an alternative strategy where transmission parameters and the transmission tree are estimated simultaneously. There are pros and cons for each of those strategies. A nice feature of simultaneous inference is that the information on the transmission For situations when the dates of infection are unknown, we presented models which assumed that infectivity depends on the time elapsed since symptom onset, and is independent of the time of infection. This assumption reduces the computational burden since it implies that the infection hazard an individual is exposed to solely depends on measured quantities plus the parameters of the model, rather than on the unobserved days of infection of other cases. In practice, assumption H1 seems acceptable for a relatively wide range of diseases since infectivity is often triggered or influenced by symptoms. However, where the assumption is invalid, more computationally intensive methods accounting for the unobserved times of infection become necessary [23] .",
+            "cite_spans": [
+                {
+                    "start": 205,
+                    "end": 208,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1233,
+                    "end": 1237,
+                    "text": "[23]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "In the simulation study, we considered an epidemic for which it would be possible to detect and identify a substantial proportion of cases; this would therefore be more applicable to a SARS-like scenario rather than pandemic influenza. The simulation study showed that even in situations where under-reporting is substantial (e.g. 50%), it would still be possible to obtain informative estimates of key characteristics. We found that estimates of the transmission rate in the community and in the hospital were relatively robust to under-reporting in those settings. This can be explained by the fact that in a large population, the exponential growth rate of the epidemic is not affected by under-reporting. But estimates of transmission rates in small social units such as households were-as might be expected-strongly affected by under-ascertainment of cases. Estimates of relative infectivity were particularly sensitive to underreporting, with large variance and sometimes important bias. Estimating relative infectivity is in general quite challenging because it requires that one can compare the offspring of one group of individuals (e.g. adults) with that of another group (e.g. children) and this becomes very difficult as under-reporting increases. It is likely that estimates would be less robust to underreporting, if reporting rates changed over time, as probably happens in real epidemics.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "Here, we have presented relatively simple approaches to reduce computational burden in the estimation of transmission parameters and to integrate parameter estimation and tree reconstruction in a coherent way. However, the analysis of outbreak data is subject to many other challenges. For example, it may be difficult to infer which parametric distribution should be used for the infectivity profile and the incubation period; data augmentation strategies may fail in a context when data are not missing at random or when there are false-positives or false-negatives [23] . A particular challenge in outbreak data is that they are rarely informative about the incubation period of the disease. In the simulations study, for example, we made the assumption that the distribution of the incubation period of the disease was known. If it was not the case, one would require extra data to estimate it. For example, in the past, data from outbreaks in an aeroplane [24] or in a bus [25] were used to estimate the incubation period of influenza.",
+            "cite_spans": [
+                {
+                    "start": 568,
+                    "end": 572,
+                    "text": "[23]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 961,
+                    "end": 965,
+                    "text": "[24]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 978,
+                    "end": 982,
+                    "text": "[25]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "A key practical challenge to implement the methods presented here in real time is the rapid collection and digitization of sufficiently detailed epidemiological data. However, recent experience demonstrates that it is possible to collect very detailed epidemiological data even during large outbreaks [10, [13] [14] [15] 25, 26] . Cleaning and processing those data so that they are ready for analysis close to real-time remain a huge challenge, but the recent examples of the 2001 FMD outbreak in the UK [13, 14] , the 2003 SARS epidemic [15, 26] and the 2009 H1N1 pandemic [25] show that this is increasingly feasible. However, reporting delays should always be expected and it will be important to account for those delays in future developments of the statistical method presented here.",
+            "cite_spans": [
+                {
+                    "start": 301,
+                    "end": 305,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 306,
+                    "end": 310,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 311,
+                    "end": 315,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 316,
+                    "end": 320,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 321,
+                    "end": 324,
+                    "text": "25,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 325,
+                    "end": 328,
+                    "text": "26]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 505,
+                    "end": 509,
+                    "text": "[13,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 510,
+                    "end": 513,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 539,
+                    "end": 543,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 544,
+                    "end": 547,
+                    "text": "26]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 575,
+                    "end": 579,
+                    "text": "[25]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "Last, a key limit on the more widespread use of the type of methods presented in this paper is the relatively high technical hurdle to implement them, given there is currently no user-friendly statistical software package that allows easy implementation of this type of analysis. Developing such tools is therefore a priority.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "We thank the MRC Methodology Programme, the NIGMS MIDAS initiative, the EU FP7 EMPERIE consortium and Research Council UK for research funding.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "We explain here the link between the continuous time and discrete time transmission models. At any (continuous) time point u during day t (i.e. u [ [t;t \u00fe 1)), the instantaneous hazard of infection exerted on individual j is l \u00c3 j \u00f0u\u00de \u00bc l j \u00f0t\u00de for t u , t \u00fe 1; where l j (t) is defined in the main text. So, we make the assumption that the instantaneous hazard of infection is a step function with daily steps. Conditional on the fact that individual j has not been infected up to day t, the probability that individual j is infected on day t is equal to",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A.1. Link between the continuous and the discrete time transmission models"
+        },
+        {
+            "text": "In the continuous time model, conditional on the (continuous) time of infection u j of case j with u j [ [t j ; t j \u00fe 1), the probability that case i is the case source is: p \u00c3 i!j \u00f0u j jQ\u00de \u00bc l i!j \u00f0u j jQ\u00de P k:t k ,t j l k!j \u00f0u j jQ\u00de \u00bc l i!j \u00f0t j jQ\u00de P k:t k ,t j l k!j \u00f0t j jQ\u00de :",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A.1. Link between the continuous and the discrete time transmission models"
+        },
+        {
+            "text": "And we note that this probability is constant for u j [ [t j ; t j \u00fe 1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A.1. Link between the continuous and the discrete time transmission models"
+        },
+        {
+            "text": "Conditional on the day t j of infection, the probability that case i is the case source given in equation (4.1) is:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A.1. Link between the continuous and the discrete time transmission models"
+        },
+        {
+            "text": "u j \u00bct j p \u00c3 i!j \u00f0u j jQ\u00deP\u00f0u j jt j \u00dedu j and p i!j \u00f0t j jQ\u00de \u00bc l i!j \u00f0t j jQ\u00de P k:t k ,t j l k!j \u00f0t j jQ\u00de \u00f0 t j \u00fe1 u j \u00bct j P\u00f0u j jt j \u00dedu j \u00bc l i!j \u00f0t j jQ\u00de P k:t k ,t j l k!j \u00f0t j jQ\u00de :",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A.1. Link between the continuous and the discrete time transmission models"
+        },
+        {
+            "text": "Let consider the common situation where -we are interested in relative risks (i.e. comparison with a reference group). For example, the population is partitioned in C k groups fn k 1 ; . . . ; n k C k g on the basis of risk factor k so that the multiplicative term associated with risk factor k in equation ( For the conditional maximization of the likelihood with respect to u k m in the ECM algorithm (box 1), the log-likelihood can be re-written:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A.2. Simplified routines for relative risks in a context of small forces of infection"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Markov Chain Monte Carlo in practice",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Gilks",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Richardson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Spiegelhalter",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Stochastic epidemic models and their statistical analysis",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Andersson",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Britton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Statistical studies of infectious disease incidence",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Becker",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Britton",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J. R. Stat. Soc. B",
+            "volume": "61",
+            "issn": "",
+            "pages": "287--307",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/1467-9868.00177"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "A tutorial introduction to Bayesian inference for stochastic epidemic models using Markov chain Monte Carlo methods",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "O&apos;neill",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Math. Biosci",
+            "volume": "180",
+            "issn": "",
+            "pages": "103--114",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S0025-5564(02)00109-8"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Analyses of infectious disease data from household outbreaks by Markov chain Monte Carlo methods",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "O&apos;neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Balding",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Becker",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Eerola",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Mollison",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "J. R. Stat. Soc. C",
+            "volume": "49",
+            "issn": "",
+            "pages": "517--542",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/1467-9876.00210"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Bayesian inference for partially observed stochastic epidemics",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "O&apos;neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Roberts",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J. R. Stat. Soc. A",
+            "volume": "162",
+            "issn": "",
+            "pages": "121--129",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/1467-985X.00125"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Role of social networks in shaping disease transmission during a community outbreak of 2009 H1N1 pandemic influenza",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Proc. Natl Acad. Sci. USA",
+            "volume": "108",
+            "issn": "",
+            "pages": "2825--2830",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.1008895108"
+                ]
+            }
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A Bayesian MCMC approach to study transmission of influenza: application to household longitudinal data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carrat",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Viboud",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Boelle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Stat. Med",
+            "volume": "23",
+            "issn": "",
+            "pages": "3469--3487",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.1912"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Investigating heterogeneity in pneumococcal transmission: a Bayesian-MCMC approach applied to a follow-up of schools",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Temime",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Guillemot",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Varon",
+                    "suffix": ""
+                },
+                {
+                    "first": "A.-J",
+                    "middle": [],
+                    "last": "Valleron",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "P.-Y",
+                    "middle": [],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "J. Am. Stat. Assoc",
+            "volume": "101",
+            "issn": "",
+            "pages": "946--958",
+            "other_ids": {
+                "DOI": [
+                    "10.1198/016214506000000230"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Temporal variability and social heterogeneity in disease transmission: the case of SARS in Hong Kong",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cori",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Boelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Plos Comput. Biol",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1000471"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Statistical inference and model selection for the 1861 Hagelloch measles epidemic",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Neal",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Roberts",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Biostatistics",
+            "volume": "5",
+            "issn": "",
+            "pages": "249--261",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/biostatistics/5.2.249"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Infectious diseases of humans: dynamics and control",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "May",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Transmission intensity and impact of control policies on the foot and mouth epidemic in Great Britain",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Nature",
+            "volume": "413",
+            "issn": "",
+            "pages": "542--548",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/35097116"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Dynamics of the 2001 UK foot and mouth epidemic: stochastic dispersal in a heterogeneous landscape",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Keeling",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Science",
+            "volume": "294",
+            "issn": "",
+            "pages": "813--817",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1065973"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Transmission dynamics of the etiological agent of SARS in Hong Kong: impact of public health interventions",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Science",
+            "volume": "300",
+            "issn": "",
+            "pages": "1961--1966",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1086478"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Estimating in real time the efficacy of measures to control emerging communicable diseases",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Boelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "detection of SARS. Emerg. Infect. Dis",
+            "volume": "164",
+            "issn": "",
+            "pages": "110--113",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwj274"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Different epidemic curves for severe acute respiratory syndrome reveal similar impacts of control measures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Teunis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Am. J. Epidemiol",
+            "volume": "160",
+            "issn": "",
+            "pages": "509--516",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwh255"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Transmission parameters of the 2001 foot and mouth epidemic in Great Britain",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Chis-Ster",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "PLoS ONE",
+            "volume": "2",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0000502"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Maximum likelihood from incomplete data via the EM algorithm (with discussion)",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Dempster",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Laird",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Rubin",
+                    "suffix": ""
+                }
+            ],
+            "year": 1977,
+            "venue": "J. R. Stat. Soc. B",
+            "volume": "39",
+            "issn": "",
+            "pages": "1--38",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Maximum-likelihoodestimation via the ECM algorithm-a general framework",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Meng",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Rubin",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Biometrika",
+            "volume": "80",
+            "issn": "",
+            "pages": "267--278",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/biomet/80.2.267"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Estimating the impact of school closure on influenza transmission from Sentinel data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Boelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Flahault",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature",
+            "volume": "452",
+            "issn": "",
+            "pages": "750--754",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nature06732"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Epidemiological inference for partially observed epidemics: the example of the 2001 foot and mouth epidemic in Great Britain",
+            "authors": [
+                {
+                    "first": "Chis",
+                    "middle": [],
+                    "last": "Ster",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Singh",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Epidemics",
+            "volume": "1",
+            "issn": "",
+            "pages": "21--34",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.epidem.2008.09.001"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "An outbreak of influenza aboard a commercial airliner",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Moser",
+                    "suffix": ""
+                }
+            ],
+            "year": 1979,
+            "venue": "Am. J. Epidemiol",
+            "volume": "110",
+            "issn": "",
+            "pages": "1--6",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "The early transmission dynamics of H1N1pdm influenza in the United Kingdom. Version 19",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ghani",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS Currents: Influenza",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "PMCID": [
+                    "PMC2780827"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Transmission dynamics and control of severe acute respiratory syndrome",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                }
+            ],
+            "year": 1966,
+            "venue": "Science",
+            "volume": "300",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1086616"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "reanalyse the 2001 UK FMD dataset presented by Chi-Ster & Ferguson [19]. The dataset contains information on 131 243 farms of which 2013 were IPs, between 7 February 2001 and 5 October 2001. For each farm, the dataset contains the location of the farm and the number of cattle and sheep in each farm. In addition, the data give the estimated time of infection of the farm (if infected) and the removal time (when animals of the farm were slaughtered). Details on the data can be found in Chi-Ster & Ferguson[19].",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "20, 40, 60, 100, 200, 400, 10 4 g (km). M2: 'parametric' step function. A continuous transmission kernel often used in the field is f c \u00f0dja; b; c\u00de \u00bc q\u00f0a; b\u00de c \u00f01 \u00fe \u00f0d\u00de=\u00f0a\u00de\u00de b ;",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "practice, interval 0-2000 km is partitioned in 250 intervals of length 0.25, 0.5, 1, 2, 5, 10, 20 and 40 km between 0-5, 5-15, 15-65, 65-165, 165-415, 415-815, 815-1015 and 1015-1415 km, respectively.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Convergence of the ECM algorithm for model M1.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Simulated epidemic and information collected during the epidemic. (a) Epidemic curve. (b) Follow-up of households. (c) Follow-up of outbreaks in hospitals. Pink, child; light blue, adult. Methods to infer transmission risk factors S. Cauchemez and N. M. Ferguson 463",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Estimates of transmission rates and relative transmission risk factors as a function of the number of days since the outbreak started when all cases are detected. Solid line, posterior mean; dashed line, 95% Credible Interval; dotted line, simulation value. For parameters used to compare groups (e.g. relative susceptibility, efficacy of interventions, etc.), we have also added a thin horizontal line y \u00bc 1. Top row gives estimates of the transmission rates in the different settings. Middle row gives estimates of the relative infectivity and relative susceptibility of children and the mean duration characterizing the infectivity profile. Bottom row gives the estimates of the efficacy of intervention to reduce transmission rates in the different settings.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Estimates of transmission rates and relative transmission risk factors as a function of the number of days since the outbreak started when 50% of cases are detected in the community and in the hospital, and when 90% of cases among household contacts of detected cases are detected. Solid line, posterior mean; dashed line, 95% credible interval; dotted line, simulation value. For parameters used to compare groups (e.g. relative susceptibility, efficacy of interventions, etc.), we have also added a thin horizontal line y \u00bc 1. Top row gives estimates of the transmission rates in the different settings. Middle row gives estimates of the relative infectivity and relative susceptibility of children and the mean duration characterizing the infectivity profile. Bottom row gives the estimates of the efficacy of intervention to reduce transmission rates in the different settings.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Summary statistics derived from the tree reconstruction. (a) Disaggregated monitoring of the reproduction number in the community, the household and the hospital based on the reconstructed transmission tree. Blue point, posterior mean; light blue line, 95% credible interval; red line, time when control measures were implemented. (b) Reconstructed cumulated number of cases infected in the different settings. (c) Reconstructed weekly proportion of cases infected in the different settings. (b,c) Solid line, community; dashed line, household; dotted line, hospital.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "2.4) is: b k \u00f0n k m ; u k \u00de \u00bc u k m if m , C k 1 if m \u00bc C k-the force of infection exerted on individuals is relatively small so that the log-log\u00f0b\u00f0x; Q\u00de\u00de \u00c0 M x b\u00f0x; Q\u00deg:",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "The dependency between observations (i.e. the risk of infection of an individual depends on the infection status of other individuals) that is apparent in equation (2.3) means that computational times required to calculate the likelihood explode with the size of the outbreak. For example, for the 2001 UK foot and mouth disease (FMD) outbreak (about 2000 infected premises (IPs) among 130 000 farms), Methods to infer transmission risk factors S. Cauchemez and N. M. Ferguson 457",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Estimates of relative infectivity and susceptibility of sheep and small farms relative to cattle farms for model M1 with the EM and the MCMC algorithm.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Estimates of relative infectivity and susceptibility of sheep and small farms relative to cattle farms, parameters of the transmission kernel for discretized kernel, f and the continuous kernel, f c.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "If that happens, the chain may then be stuck at a local maximum where the infectivity of cases of type B is very close to 0. The EM algorithm does not suffer from that problem on small datasets; but has the disadvantage that it cannot be used when dates of infection are missing. The sequential Bayesian approach presented in Cauchemez et al.[7] may therefore be the most robust strategy, as it can be used in small datasets and when dates of infection are missing; but it requires extra work to tune the variance of the Metropolis-Hastings proposals to ensure satisfactory mixing.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": []
+}

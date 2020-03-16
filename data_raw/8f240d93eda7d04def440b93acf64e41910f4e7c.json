@@ -1,0 +1,909 @@
+{
+    "paper_id": "8f240d93eda7d04def440b93acf64e41910f4e7c",
+    "metadata": {
+        "title": "SOFTWARE Open Access plethy: management of whole body plethysmography data in R",
+        "authors": [
+            {
+                "first": "Daniel",
+                "middle": [],
+                "last": "Bottomly",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Beth",
+                "middle": [],
+                "last": "Wilmot",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Shannon",
+                "middle": [
+                    "K"
+                ],
+                "last": "Mcweeney",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Characterization of respiratory phenotypes can enhance complex trait and genomic studies involving allergic/autoimmune and infectious diseases. Many aspects of respiration can be measured using devices known as plethysmographs that can measure thoracic movement. One such approach (the Buxco platform) performs unrestrained whole body plethysmography on mice which infers thoracic movements from pressure differences from the act of inhalation and exhalation. While proprietary software is available to perform basic statistical analysis as part of machine's bundled software, it is desirable to be able to incorporate these analyses into high-throughput pipelines and integrate them with other data types, as well as leverage the wealth of analytic and visualization approaches provided by the R statistical computing environment. Results: This manuscript describes the plethy package which is an R/Bioconductor framework for pre-processing and analysis of plethysmography data with emphasis on larger scale longitudinal experiments. The plethy package was designed to facilitate quality control and exploratory data analysis. We provide a demonstration of the features of plethy using a dataset assessing the respiratory effects over time of SARS and Influenza infection in mice.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "The plethy package provides functionality for users to import, perform quality assessment and exploratory data analysis in a manner that allows interoperability with existing modelling tools. Our package is implemented in R and is freely available as part of the Bioconductor project",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "The ability to characterize phenotypes related to respiration is of vital importance to many areas of biomedicine ranging from pulmonary and infectious disease to drug discovery and biodefense. Although such devices can be applied clinically [1] , plethysmographs designed for small animals provides an effective means to study phenotypes that can be expensive or impossible to carry out in humans. There are several variants of plethysmographs which differ in whether the animal is wholly contained within the chamber and whether they are restrained during the measurements [2] . For whole body plethysmographs [3] a common parameter of interest is enhanced *Correspondence: bottomly@ohsu.edu Oregon Clinical and Translational Research Institute, Oregon Health and Science University, 3181 SW Sam Jackson Park Rd, 97239 Portland, Oregon, US pause (Penh), which can be considered a measure of airway resistance [4] . Some examples of the applications of these devices include studies in asthma [5] , sleep apnea [6] , cystic fibrosis [7] , respiratory viral infection after radiation injury [8] as well as the assessment of host immune response to Respiratory Syncytial Virus after vaccination [9] .",
+            "cite_spans": [
+                {
+                    "start": 242,
+                    "end": 245,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 575,
+                    "end": 578,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 612,
+                    "end": 615,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 911,
+                    "end": 914,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 994,
+                    "end": 997,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 1012,
+                    "end": 1015,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1034,
+                    "end": 1037,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1091,
+                    "end": 1094,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 1194,
+                    "end": 1197,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In order to easily analyze and share data from a large scale experiment utilizing unrestrained whole body plethysmographs we developed plethy. The plethy package is an R/SQLite based framework that enables the storage and retrieval of subsets of whole body plethysmography data for visualization and analysis. In addition, other measures that can be exported in a similar format, such as metabolic parameters, can also be utilized.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The plethy package provides an infastructure for parsing, loading and querying plethysmography data utilizing SQLite databases. Currently, we provide parsing code designed to handle files exported from the Finepointe software suite bundled with the Buxco Whole Body Plethysmographer. An example of such a file is given as part of the example data (plethy.example.file) available at the github repository https://github.com/ dbottomly/plethyData. These files are read into memory all at once or in chunks and loaded into an SQLite database. The user can control the number of lines read in at a given time. Although this can be useful for limiting the memory consumption of the program at the expense of runtime, there is a limit to its benefit as the data for several entire file sections are currently held in memory at a given time.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Program design and data structures"
+        },
+        {
+            "text": "The use of SQLite provides several benefits in terms of simplicity and portability. These databases can be easily transfered amongst collaborators as stand alone files or as part of an encapsulating R package (see the 'Parsing' section of Additional file 1). This paradigm is one that has been utilized successfully by the Bioconductor project for distributing annotations [10] . In addition, the data contained within the database can be queried using SQLite's own client or through drivers for most programming languages including R. The current schema for these databases is provided in Additional file 2.",
+            "cite_spans": [
+                {
+                    "start": 373,
+                    "end": 377,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Program design and data structures"
+        },
+        {
+            "text": "The resulting database can be accessed conveniently through an S4 object oriented interface where a BuxcoDB object can be created and accessed through several defined methods. A listing of the available methods is provided in Additional file 3.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Program design and data structures"
+        },
+        {
+            "text": "Retrieving data for analysis is done most conveniently through the retrieveData method. This method without any arguments will retrieve all the data and return it in a data.frame. This can take a lot of memory and will be a little slower than specifying the data subsets the user is interested in. By passing in character or numeric variables as arguments to the method (as shown in the 'Data retrieval' section of Additional file 1) smaller subsets of the data can be retrieved quickly and then be used for downstream statistical or graphical analysis. The form of the data.frame is described in Table 1 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 597,
+                    "end": 604,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Program design and data structures"
+        },
+        {
+            "text": "Multiple files can be imported to the database by simply running the parse.buxco function again and specifying the same database path. Alternatively, data.frames generated by retrieveData can be used to create a new database or be merged in with an existing plethy database using the dbImport method. This allows plethy to be extensible enough to be used in a collaborative multi-lab setting where data sharing is essential.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Program design and data structures"
+        },
+        {
+            "text": "Parsing and data retrieval is demonstrated in Additional file 1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Program design and data structures"
+        },
+        {
+            "text": "As a demonstration of the plethy package we used a plethysmography dataset derived from the longitudinal assessment of C57BL/6J mice after Influenza (Flu), Severe Acute Respiratory Syndrome Coronavirus (SARS) or mock infection (Menachery VD, Gralinski LE, Baric RS, Ferris MT: New metrics for evaluating respiratory pathogenesis, in preparation). This dataset is available as an R package at https://github.com/dbottomly/plethyData. Demonstration of these features and reproduction of the tables and figures is shown in Additional file 1 and Additional file 4. As is described in the 'Parsing' section of Additional file 1, the plethysmography files we work with are large and structured. Previously sections of these files would be loaded and manipulated in Excel by investigators, a process which was both tedious and error prone. The plethy package simplifies this process and enables efficient exploration and analysis of the data with only a handful of R functions. Assuming the data has been loaded into a database and a BuxcoDB object exists, we can first perform QA/QC of the data followed by exploratory data analysis and model fitting. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Dataset"
+        },
+        {
+            "text": "The factor provided by the experimentalist in the 'Phase' column",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Rec_exp_date"
+        },
+        {
+            "text": "The number of the current 'break' observed in the file as described above",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Break_number"
+        },
+        {
+            "text": "The value of the current variable",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Value"
+        },
+        {
+            "text": "Currently our quality control procedures are centered around finding deviations from the expected number and duration of the measurements. For example, the expectation is that the Flu, SARS and mock infected animals were first allowed an acclimation period of 30 minutes in the chamber followed by 5 minutes of experimental readings. As shown in Additional file 1, these data can be labeled with their inferred run type (acclimation or experimental) and these labels can then be checked for similarity to the experimental design. If deviations are detected, the data can be re-labeled, keeping the old labels for provenance. The plethy package comes with procedures to provide basic checks of the measurement timestamps. One such check is performed internally while parsing and loading the data. This check emits a warning if observed experimental time intervals are greater than a specified tolerance. Similarly, the exact timepoint of an experiment can be computed from the measurement timestamps which are captured in the SQLite database. This enables automatic checking of the labeled experimental timepoint. In the case of the SARS, Flu and mock data, no such anomalies exist but we provide a simulated dataset where they do in the 'Quality Control' section in Additional file 1. These data can then be visualized using several built in methods as well as other visualization functionality in R.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Quality control"
+        },
+        {
+            "text": "Visualization is key for plethysmography data as many measurements can be produced for each animal for each time point. This results in a very rich multivariate experimental dataset which is also potentially longitudinal in nature. As our main use case is the change in respiration measurements over time, we provide two key plotting methods for longitudinal data: tsplot and mvtsplot.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Visualization"
+        },
+        {
+            "text": "Arguably the most common way to visualize longitudinal data is using a simple line plot of the mean response per each animal and time point as is shown in Figure 1 for the Penh phenotype which can be produced using the tsplot method. Additionally, the mvtsplot method produces an adaptation of the multivariate time series plot [11] which combines a heatmap with boxplot-like summaries and a basic line plot to provide a detailed overview of a given experiment (Figure 2 ). Note that as is shown in both Figures 1 and 2 , one of the SARS samples (908_L_s) appears to be anomalous compared to the others in terms of its Penh measurements and bears a greater similarity to the mock samples.",
+            "cite_spans": [
+                {
+                    "start": 328,
+                    "end": 332,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 155,
+                    "end": 163,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 461,
+                    "end": 470,
+                    "text": "(Figure 2",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 504,
+                    "end": 519,
+                    "text": "Figures 1 and 2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Visualization"
+        },
+        {
+            "text": "The simplest approach to analyzing longitudinal data is to summarize the data as a single value for each animal and then perform a T-test or analysis of variance, termed a 'summary measures' analysis [12] . We provide a summaryMeasures method which can compute a wide variety of summaries for each curve as demonstrated for animal '907_B_f ' below in Table 2 . Also as mentioned above, retrieveData can provide the user with a data.frame and similarly data can also be returned in matrix form using the retrieveMatrix method. Importantly, either data.frames or matrices can serve as the input to almost all modelling functions in R. For example, we may be interested in assessing the effect of time and infection status on Penh values. As shown in Figures 1 and 2 , the Penh response over time is nonlinear showing a peak around Day 7 for Flu and 3 for SARS followed by a decline to roughly the level shown by the mock infected animals. An initial model for this might involve infection status and polynomial terms for time. Any such model should also account for the presence of many technical measurements for each sample.",
+            "cite_spans": [
+                {
+                    "start": 200,
+                    "end": 204,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 351,
+                    "end": 358,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 748,
+                    "end": 763,
+                    "text": "Figures 1 and 2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Interface to modeling utilities"
+        },
+        {
+            "text": "For the example code below we make the initial assumption that samples will differ only in terms of the intercept. Assuming bux.db refers to a BuxcoDB object we can fit a cursory mixed effects model [13] (only keeping the last 30 seconds of measurements) as: As the goal of this section of the manuscript is only to highlight how plethy could be used in conjunction with other R packages we make no claims as to the efficacy of this particular model for a given analysis. As another example of utilizing the data retrieval functions to simplify analysis we can also perform classification. If more samples were accrued, we may also be interested in predicting Flu, SARS and Mock status given measurements from mutliple plethysmography outputs. One approach to this could be the use of linear discriminant analysis [14] . This could be carried out as below by first summarizing each sample by the mean phenotype for a given informative day, say Day 4, and running a procedure similar to below to train our model: The predictions and assements of this model could then be carried out using utilities provided in one of many R packages.",
+            "cite_spans": [
+                {
+                    "start": 199,
+                    "end": 203,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 814,
+                    "end": 818,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Interface to modeling utilities"
+        },
+        {
+            "text": "Our software provides a convenient framework for storage and retrieval of whole body plethysmography data in R. Currently we support import of data from the FinePointe software of Buxco, however the basic framework is amendable to data produced from other vendors. As the software is open source, such support can be requested via the Bioconductor mailing list or contributed via the github site (https://github.com/dbottomly/plethy) for the project. R in conjunction with SQLite allows efficient exploration and summarization of the data. Future releases of plethy will include additional built-in plotting and summarization tools. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Body plethysmography-its principles and clinical use",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cri\u00e9e",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sorichter",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Kardos",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Merget",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Heise",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Respir Med",
+            "volume": "105",
+            "issn": "7",
+            "pages": "959--71",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Invasive and noninvasive methods for studying pulmonary function in mice",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Glaab",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Taube",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Braun",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Mitzner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Respir Res",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Noninvasive measurement of airway responsiveness in allergic mice using barometric plethysmography",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Hamelmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Schwarze",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Takeda",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Oshiba",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Larsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Irvin",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Am J Respir Crit Care Med",
+            "volume": "156",
+            "issn": "3",
+            "pages": "766--75",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Interpreting penh in mice",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Mitzner",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Tankersley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "J Appl Physiol",
+            "volume": "94",
+            "issn": "2",
+            "pages": "828--860",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Tlr-2 activation induces regulatory t cells and long-term suppression of asthma manifestations in mice",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Nawijn",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Motta",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gras",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Shirinbak",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Maazi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Van Oosterhout",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PloS one",
+            "volume": "8",
+            "issn": "2",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Rodent models of sleep apnea",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Davis",
+                    "suffix": ""
+                },
+                {
+                    "first": "O&apos;",
+                    "middle": [],
+                    "last": "Donnell",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Respir Physiol Neurobiol",
+            "volume": "188",
+            "issn": "3",
+            "pages": "355--61",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Ventilatory pattern and energy expenditure are altered in cystic fibrosis mice",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Darrah",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Bederman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Mitchell",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Hodges",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Campanaro",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Drumm",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J Cystic Fibros",
+            "volume": "12",
+            "issn": "4",
+            "pages": "345--51",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Exacerbation of lung radiation injury by viral infection: The role of clara cells and clara cell secretory protein",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Manning",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Johnston",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Hernady",
+                    "suffix": ""
+                },
+                {
+                    "first": "J-Nh",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Reed",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Lawrence",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Radiat Res",
+            "volume": "179",
+            "issn": "6",
+            "pages": "617--646",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Cutting edge: Eosinophils do not contribute to respiratory syncytial virus vaccine-enhanced disease",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Castilow",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Legge",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Varga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Immunol",
+            "volume": "181",
+            "issn": "10",
+            "pages": "6692--6698",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Software for computing and annotating genomic ranges",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lawrence",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Huber",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Pages",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Aboyoun",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Carlson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gentleman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS Comput Biol",
+            "volume": "9",
+            "issn": "8",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003118"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Code Snippet: a Method for Visualizing Multivariate Time Series Data",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Peng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Stat Softw",
+            "volume": "25",
+            "issn": "",
+            "pages": "1--17",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Analysis of serial measurements in medical research",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Matthews",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Altman",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Campbell",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Royston",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "Br Med J",
+            "volume": "300",
+            "issn": "6719",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Mixed-effects Models in S and S-PLUS",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Pinheiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bates",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Modern Applied Statistics with S, 4th edn",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Venables",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Ripley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Line plot of the Penh phenotype. The mean log(Penh) response per animal per day is shown colored by the infection category (Flue, SARS or mock infection).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "A multivariate time series plot of the Penh phenotype. A multivariate time series plot as defined in the plethy package combines a heatmap-like depiction of the variable distribution (middle; green is high, purple is low) for each sample along with a grouped trend line representing the median value colored by group (bottom). On the right is a boxplot summary of the phenotypic distribution.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Description of the fields in the data.frame returned by retrieveData",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Summary measures for animal '907_B_f' for several Buxco whole body plethysmography phenotypes",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We acknowledge Marty Ferris for providing data and comments on the program. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Project name: plethy Project home page: http://www.bioconductor.org/packages/ release/bioc/html/plethy.html Operating system(s): Platform independent Programming language: R Other requirements: R >3.1.2, plethy \u2265 1.5.10 License: GPL-3 Any restrictions to use by non-academics: N/A",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "Additional file 1: Sweave PDF vignette demonstrating manuscript analyses. PDF demonstrating code from the plethy package including how to replicate the figures and tables using the example data.Additional file 2: The current database schema used by plethy. A PNG file depicting the tables and relationships utilized by the parsing and data retrieval functions of plethy. Table summarizing plethy's API. A CSV file listing the name, brief description and category of each of the currently defined functions/methods for plethy.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 371,
+                    "end": 388,
+                    "text": "Table summarizing",
+                    "ref_id": null
+                }
+            ],
+            "section": "Additional files"
+        },
+        {
+            "text": "Additional file 4: Rnw file corresponding to Additional file 1. Rnw file used to produce the Additional file 1 PDF. The R code itself can be extracted using: R CMD Stangle plethy_supp.Rnw.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional file 3:"
+        },
+        {
+            "text": "The authors declare that they have no competing interests. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

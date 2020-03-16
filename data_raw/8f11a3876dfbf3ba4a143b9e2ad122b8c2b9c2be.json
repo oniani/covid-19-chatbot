@@ -1,0 +1,2914 @@
+{
+    "paper_id": "8f11a3876dfbf3ba4a143b9e2ad122b8c2b9c2be",
+    "metadata": {
+        "title": "An ensemble strategy that significantly improves de novo assembly of microbial genomes from metagenomic next-generation sequencing data",
+        "authors": [
+            {
+                "first": "Xutao",
+                "middle": [],
+                "last": "Deng",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Blood Systems Research Institute",
+                    "location": {
+                        "postCode": "94118",
+                        "settlement": "San Francisco",
+                        "region": "CA",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Samia",
+                "middle": [
+                    "N"
+                ],
+                "last": "Naccache",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of California at San Francisco",
+                    "location": {
+                        "postCode": "94107",
+                        "settlement": "San Francisco",
+                        "region": "CA",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Terry",
+                "middle": [],
+                "last": "Ng",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Blood Systems Research Institute",
+                    "location": {
+                        "postCode": "94118",
+                        "settlement": "San Francisco",
+                        "region": "CA",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Scot",
+                "middle": [],
+                "last": "Federman",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of California at San Francisco",
+                    "location": {
+                        "postCode": "94107",
+                        "settlement": "San Francisco",
+                        "region": "CA",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Linlin",
+                "middle": [],
+                "last": "Li",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Blood Systems Research Institute",
+                    "location": {
+                        "postCode": "94118",
+                        "settlement": "San Francisco",
+                        "region": "CA",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Charles",
+                "middle": [
+                    "Y"
+                ],
+                "last": "Chiu",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of California at San Francisco",
+                    "location": {
+                        "postCode": "94107",
+                        "settlement": "San Francisco",
+                        "region": "CA",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Eric",
+                "middle": [
+                    "L"
+                ],
+                "last": "Delwart",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Blood Systems Research Institute",
+                    "location": {
+                        "postCode": "94118",
+                        "settlement": "San Francisco",
+                        "region": "CA",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Next-generation sequencing (NGS) approaches rapidly produce millions to billions of short reads, which allow pathogen detection and discovery in human clinical, animal and environmental samples. A major limitation of sequence homology-based identification for highly divergent microorganisms is the short length of reads generated by most highly parallel sequencing technologies. Short reads require a high level of sequence similarities to annotated genes to confidently predict gene function or homology. Such recognition of highly divergent homologues can be improved by reference-free (de novo) assembly of short overlapping sequence reads into larger contigs. We describe an ensemble strategy that integrates the sequential use of various de Bruijn graph and overlap-layout-consensus assemblers with a novel partitioned sub-assembly approach. We also proposed new quality metrics that are suitable for evaluating metagenome de novo assembly. We demonstrate that this new ensemble strategy tested using in silico spike-in, clinical and environmental NGS datasets achieved significantly better contigs than current approaches.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "With rapidly declining cost, next-generation sequencing (NGS) approaches have become common for comprehensive pathogen identification in clinical and environmental samples. This powerful technology has numerous applications in diagnosis of infectious diseases, environmental surveillance, metagenomic analysis of human and animal microbiomes, and novel pathogen discovery (1) (2) (3) (4) (5) . Us-ing bioinformatics, microbial sequences are identified by comparing millions of NGS reads to sequences in publicly available reference databases. One crucial step in the analysis is de novo metagenome assembly of short overlapping reads into longer contigs. Successful assembly can generate long contigs or even complete genomes, which has two major advantages: (i) enhance the sensitivity to detect novel pathogens with only weak sequence homology to known pathogens by generation of long contigs (6) ; and (ii) reduce the cost and labor needed to manually extend new microbial genomes with polymerase chain recation.",
+            "cite_spans": [
+                {
+                    "start": 372,
+                    "end": 375,
+                    "text": "(1)",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 376,
+                    "end": 379,
+                    "text": "(2)",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 380,
+                    "end": 383,
+                    "text": "(3)",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 384,
+                    "end": 387,
+                    "text": "(4)",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 388,
+                    "end": 391,
+                    "text": "(5)",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 895,
+                    "end": 898,
+                    "text": "(6)",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "Many assemblers have been recently categorized in a review by Miller et al. (7) . One school of assemblers such as AMOS (8) , CAP3 (9) , Celera (10), VCAKE (11) and Newbler (12) use traditional olconsensus (OLC) algorithms which identify overlaps between various long reads and subsequently merge the read fragments into longer sequences. This approach requires pairwise evaluation of a large number of reads, which is computationally intensive. Another group of assemblers, such as SOAPdenovo2 (13) , ABySS (14) , Velvet (15) , MetaVelvet (16) and ALLPATHS-LG (17) speed up assembly by using de Bruijn graph (DBG) algorithms. DBG methods leverage graph theory by using strings of a particular length (k-mer) to generate a sequence graph where each node is a (k-1)-mer and each edge is a k-mer which connects suffix and prefix nodes. For example, a 4-mer edge ATTG in a DBG connects prefix node ATT and suffix node TTG. To generate a DBG, each read is mapped as a path of k-mers, one base at a time. Sequence redundancy is naturally handled by the graph without affecting the number of nodes. Much greater speed over OLC assemblers is thus achieved by the DBG algorithm by avoiding pairwise comparison of all reads, which can be highly redundant. Assemblers have also been developed for specific genomic applications, such as Trinity (18) , a DBGbased de novo transcriptome assembler, Masurca (19) a hy-brid assembler that combines the concept of DBG and OLC methods and IDBA-UD, an assembler designed for uneven metagenomic applications (20) . In addition to DBG and OLC approaches, other assembly algorithms have been reported, including MIRA4 (21) and Omega (22) .",
+            "cite_spans": [
+                {
+                    "start": 76,
+                    "end": 79,
+                    "text": "(7)",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 120,
+                    "end": 123,
+                    "text": "(8)",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 131,
+                    "end": 134,
+                    "text": "(9)",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 156,
+                    "end": 160,
+                    "text": "(11)",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 173,
+                    "end": 177,
+                    "text": "(12)",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 495,
+                    "end": 499,
+                    "text": "(13)",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 508,
+                    "end": 512,
+                    "text": "(14)",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 522,
+                    "end": 526,
+                    "text": "(15)",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 540,
+                    "end": 544,
+                    "text": "(16)",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 561,
+                    "end": 565,
+                    "text": "(17)",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1334,
+                    "end": 1338,
+                    "text": "(18)",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1393,
+                    "end": 1397,
+                    "text": "(19)",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 1538,
+                    "end": 1542,
+                    "text": "(20)",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1646,
+                    "end": 1650,
+                    "text": "(21)",
+                    "ref_id": null
+                },
+                {
+                    "start": 1661,
+                    "end": 1665,
+                    "text": "(22)",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "Many de novo assemblers were comprehensively evaluated by the Assemblathon1 (23), Assemblathon2 (24) and GAGE (Genome Assembly Assessment Project) (25) projects. The key lessons learned from these projects are that there is a lack of consensus from assemblies generated by different assemblers, and that there are no universal winners across different datasets. In many cases, the assemblers are able to generate good-sized contigs up to hundreds of kb. However, the tested datasets focused on NGS assembly of large human, animal or bacterial genomes from pure samples and cultures and at a high depth of coverage, whereas metagenomic samples present greater challenges because they contain a complex mixture of sequence fragments from multiple viruses, bacteria and animal/human host DNA. Based on published data from our group (1) and others (26) , DBG assemblers rarely generate contigs more than a few kb in real-world metagenomic samples. Given the lack of a 'best' assembler, the Assemblathon papers advised against relying solely on a single assembler for any given dataset of interest. One recent paper presents a tool for comparing the performance of assemblers by scoring each assembly based on the consistency between assemblies and input reads and read pairs (27) . However, it is still not clear how to optimally integrate results from multiple assemblers and derive better contigs based on a combined approach.",
+            "cite_spans": [
+                {
+                    "start": 96,
+                    "end": 100,
+                    "text": "(24)",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 147,
+                    "end": 151,
+                    "text": "(25)",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 844,
+                    "end": 848,
+                    "text": "(26)",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 1271,
+                    "end": 1275,
+                    "text": "(27)",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "In this study, our goal was to evaluate current assemblers and to create a de novo assembly strategy tailored for analysis of metagenomic samples. In our previous report (1), we found empirically that a sequential DBG and OLC method that also incorporates partitioning was more efficient at contig assembly of viral genomes from metagenomic NGS data. Here, we formally extend these findings by rigorous comparison of common DBG and OLC assemblers and show that a two-step ensemble assembly strategy generates contigs of much higher quality than those achieved from single assemblers alone. The ensemble strategy is thus directly applicable for assembly of small viral, bacterial and eukaryotic mitochondrial genomes from a wide variety of NGS metagenomic datasets as well as from pure cultures.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "Three groups of datasets named 'in silico-virus spiked', 'pooled virus standard' and 'human/animal pathogens', were used to evaluate the ensemble strategy. All datasets contained at least one target pathogen with a fully sequenced reference genome, which was used as the standard to evaluate contig size and degree of misassembly.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Datasets"
+        },
+        {
+            "text": "The 'in silico-virus spiked' datasets contain sequences from Bas-Congo virus (BASV), a novel rhabdovirus associated with hemorrhagic fever cases in central Africa (28) . In silico-generated BASV sequences were computationally spiked at various read lengths and depths of coverage (Table 1) into a complex in silico metagenomic background consisting of 10 million human reads, 2.5 million bacterial reads and 0.5 million viruses, generating sets A through J. The in silico background reads were generated from the National Center for Biotechnology Information (NCBI) hg19, bacterial RefSeq and viral RefSeq databases, as described previously (1) . In addition, two of the datasets contained in silico BASV reads that were computationally spiked into human metagenomic background NGS datasets generated from nasal swabs from patients with respiratory infection (n = 3 845 484 reads) and stool samples from patients with diarrheal disease (n = 9 652 958 reads), respectively. The two human background NGS datasets were obtained by Illumina HiSeq sequencing and were constructed as previously described (1) . All in silico reads were paired-end reads and generated at a 2% error rate using the wgsim program in the SAMtools software package (29) .",
+            "cite_spans": [
+                {
+                    "start": 163,
+                    "end": 167,
+                    "text": "(28)",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 641,
+                    "end": 644,
+                    "text": "(1)",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 1099,
+                    "end": 1102,
+                    "text": "(1)",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 1237,
+                    "end": 1241,
+                    "text": "(29)",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Datasets"
+        },
+        {
+            "text": "The 'pooled virus standard' dataset corresponds to a biological reagent provided by the National Institute for Biological Standards and Control (NIBSC). This reagent is assembled from clinical specimens and egg-and cell-cultured passaged viruses and consists of a pool of 25 human viral pathogens from two DNA and seven RNA viral families, including adenovirus 2 and 41, herpesviruses 1-5, rotavirus A, astrovirus, norovirus GI and GII, sapovirus C12, coronavirus 229E, parechovirus 3, rhinovirus A39, coxsackievirus B4, influenza viruses A(H1N1), A(H3N2) and B, human metapneumovirus, respiratory syncytial virus and parainfluenzaviruses 1-4. The genome sizes of the reagent viruses ranged from \u223c6 to \u223c234 kb. The NGS dataset generated from Illumina MiSeq sequencing of the reagent contained \u223c20 million raw 250 base pair (bp) paired-end reads.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Datasets"
+        },
+        {
+            "text": "The eight 'human/animal pathogen' datasets include a variety of pathogens of different types and genome sizes sequenced using the Illumina MiSeq or HiSeq platform from human and animal metagenomic samples (Table 2) . Datasets I-IV contain NGS reads from four selected viral metagenomic libraries (human blood, human stool, animal tissue and animal stool) generated using the Nextera XT kit and sequenced as 250 bp Paired-end reads on the Illumina MiSeq platform (30) . The four datasets contain 0.28-1.37 million raw NGS reads each and include sequences representing four viral genomes. Dataset V (virus) was generated from pooled pediatric diarrheal stool (1,31) and included sequences representing two viral genomes. Dataset VI (bacteria) was generated from a plasma sample from a patient from Africa with typhoid fever from Salmonella typhi bacteremia generated using a Truseq adapted method as described previously (n = 16 540 336 reads) (1). In addition, to compare the performance of the various de novo assembly approaches in traditional assembly of bacterial and eukaryotic pathogens from pure cultures, we also analyzed NGS datasets corresponding to cultured isolates of Staphylococcus aureus prepared using a Truseq DNA library preparation kit (Dataset VII, n = 1 million reads) and Naegleria fowleri (32) (Dataset VIII, n = 10 million reads), a parasitic amoeba that causes primary amebic meningoencephalitis.",
+            "cite_spans": [
+                {
+                    "start": 462,
+                    "end": 466,
+                    "text": "(30)",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 205,
+                    "end": 214,
+                    "text": "(Table 2)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Datasets"
+        },
+        {
+            "text": "Raw reads obtained from Illumina sequencing were preprocessed before assembly as follows. Human host reads were subtracted by mapping the reads with human reference Isolation from the cerebrospinal fluid (CSF) of a patient genome hg19 using bowtie2 (33) . Reads that were identical from nucleotide positions 5-45 were considered clonal reads and only one random copy of clonal reads was retained. The other clonal sequences were replaced with sequence 'A' as a place holder; thus the original order of the pairedend files was preserved. A paired-end sequence record was removed only if both ends were replaced. Low-quality sequences were trimmed using a Phred quality score 10 as the threshold. Adaptor and primer sequences were trimmed using the BLAST-based VecScreen at default parameters (34) .",
+            "cite_spans": [
+                {
+                    "start": 249,
+                    "end": 253,
+                    "text": "(33)",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 791,
+                    "end": 795,
+                    "text": "(34)",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Preprocessing"
+        },
+        {
+            "text": "As a proof of concept that longer viral contigs can be better detected, sequences of various lengths (200, 500, 1000 and 2000 bp) were extracted from Virus RefSeq (Release 61) and mutated at various probabilities (0, 0.1, 0.2, 0.3, 0.4, 0.5) for each base. We then applied blastx and blastn with E-value 0.01 as cutoff on the simulated contigs against Virus RefSeq protein or nucleotide database. Figure 1A shows that longer contigs clearly have a better chance to be detected by blastx, which is especially true for highly divergent contigs. Figure  1B shows the same pattern using blastn. However, amino acid-based search shows better detection rate for highly divergent organisms than nucleotide-based homology search. We sampled commonly used assemblers including SOAP-denovo2 r240 (S), ABySS 1. ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 397,
+                    "end": 406,
+                    "text": "Figure 1A",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 543,
+                    "end": 553,
+                    "text": "Figure  1B",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Ensemble assemblers"
+        },
+        {
+            "text": "Trinity r20140717 (T). Partitioning was performed by randomly splitting original sequences into chunks of 100K reads each. The de novo assembly was then performed on each chunk separately. Resultant contigs from each chunk were then combined as output. We use 's', 'a' and 'v', to represent partitioned assembly for SOAPdenovo2, ABySS and MetaVelvet respectively. Figure 1C outlines the ensemble assembly strategy, which can be viewed as a 3-step process. The first step is to perform S, A, V and their corresponding partitioned versions s, a, v individually. The second step is to combine one or more output contigs from the first step and use a length filter (e.g. 300 bp used here) to only retain longer contigs above a certain threshold. The purpose of the length filtering is to eliminate smaller contig fragments that can significantly slow down the final step. The final step is to apply O or C on the combined contigs to generate final contigs. We also tested whether using T or M at the second assembly step can produce performance advantages, although T and M are technically not OLC assemblers. The ensemble assembly algorithms are labeled by their components. For example, SC represents S followed by C; SAVaO represents first combining the outputs of S, A, V and a, and then applying O as the last step.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 364,
+                    "end": 373,
+                    "text": "Figure 1C",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "1(I) and"
+        },
+        {
+            "text": "The main conventional quality metric for de novo assembly is the contig size. We initially evaluated the commonly applied N50 or N95 metrics (data not shown), but The ensemble assembler that integrates DBG assemblers and OLC assemblers. The cleaned reads were first assembled individual DBG assemblers, partitioned assemblers or Mira4. The output of the first step is combined, length filtered and feed into the OLC assemblers for final assembly. The choice of individual assemblers as components can generate a number of ensemble assembly strategies. decided that they are not applicable here, because N50 and N95 can be significantly skewed if the assembly output contains a large number of small fragments, as is frequently the case for metagenomic data. Furthermore, N50 and N95 do not specifically address assembly of small target genomes within a complex metagenomic background (a 'needle-in-a-haystack' problem). Direct measurements of the sizes of contigs aligning to known target microbial genomes and of the degree of misassembly are more relevant for metagenomic samples. Thus, we defined three alignment-based parameters as metrics for the efficiency of de novo assembly of target genomes: (1) Figure S1 shows an example how these metrics were computed.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1206,
+                    "end": 1215,
+                    "text": "Figure S1",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "1(I) and"
+        },
+        {
+            "text": "Determination of the exact alignment between contigs and target genome was performed using the stringent alignment program MegaBLAST (34) at default parameters. We also recorded timing performance metrics for each run. All assembly runs were executed on identical Intel R 8-core Xeon servers each with 32 GB memory and 1 TeraBytes direct attached storage. The S, A, V, M, W, T, X, s, a, v assemblies were all executed using 8-threads, whereas O and C only support single-thread processing.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "1(I) and"
+        },
+        {
+            "text": "We generated comparative performance metrics for the different assemblers by normalizing each metric into a range of 0-5, with larger values representing better performance. For example, given the C1000 metric, the corresponding normalized ratio, denoted as C1000 NR for a specific target genome, can be defined as: The composite performance metric (CPM) is the weighted average of four metrics about contig qualities. We assign equal weights to alignment size and accuracy:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Composite performance metric and ranking of assemblers"
+        },
+        {
+            "text": "Based on CPMs calculated for each assembler and target genome, we can rank the assemblers based on the average CPMs across all target genomes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Composite performance metric and ranking of assemblers"
+        },
+        {
+            "text": "Most DBG assemblers require that a k-mer size be provided as a configurable parameter. As the choice of an optimal kmer value is not clear with metagenome assembly, we tested (Figure 2A ). K-mer values ranging from 31 to 61 have previously been shown to be useful for DBG assemblers, whereas shorter k-mer values below 31 seem to generate shorter contigs (35) . Using the 'in silico-virus spiked' dataset, A performed better than S or V. For the S or A algorithms, no significant differences were observed by varying the k-mer values from 31 to 61 ( P > 0.05, Kraskal-Wallis test). Since k-mer values must be smaller than the read length, we chose k = 31 as providing the greatest flexibility in analysis of very short reads and keeping the parameter constant for comparative benchmarking of the S, A and V algorithms. It should be noted that the choice of optimal k-mer depends on the data being applied. Here we use k = 31 for this study, but it may not be optimal on other datasets.",
+            "cite_spans": [
+                {
+                    "start": 355,
+                    "end": 359,
+                    "text": "(35)",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 175,
+                    "end": 185,
+                    "text": "(Figure 2A",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Determination of optimal k-mer size for DBG assemblers"
+        },
+        {
+            "text": "With the in silico-virus spiked datasets, we tested a number of different assembly strategies: (i) individual assembly with S, A, V, M, G, T, X and W alone; (ii) two-step assemblies with SC, AC, VC, SO, AO or VO; (iii) partitioning schemes with AaC, SsC, VvC, AaO and SsO, (iv) combining multiple DBG assemblers with SAVC and SAVO; (v) combining multiple DBG assemblers and partitioning with SAVaC and SAVaO; (vi) adding M and T to other assembly schemes with SAVMC, SAVMO, SAVMaC, SAVMaO and SAVTaC; and (vii) using M or T at the second step as a replacement for OLC assembly rather than at the first step with SAVaM or SAVaT.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using various assembly strategies to test 'in silico-virus spiked' datasets"
+        },
+        {
+            "text": "To calculate the MACRP, C1000 and chimera index metrics, contigs were aligned to the target in silico-spiked viral genome, BASV, using MegaBLAST ( Figure 2B-G) . Here we chose to use BASV for our spiked viral genome because it is a novel, highly divergent virus with a uniquely identifiable sequence and has no known close viral relatives (28) . Widely different results were observed across the various assembly strategies after analysis of the in silico-virus spiked datasets using different read lengths and depths of BASV coverage ( Figure 2B , sets A-J) and two clinical sample backgrounds ( Figure 2B , 'Nasal' and 'Stool'). Performance improvements were observed with the inclusion of M or partitioning scheme 'a', with the best ensemble combinations assembling the nearly complete genome (\u223c12 kb) in a single contig that is significantly larger than what was achieved with DBG assemblers alone ( Figure 2C ). The individual DBG assemblers A, S, V, T and OLC assembler W all generated typically poor-sized contigs even in highcoverage datasets ( Figure 2C , setA, 200x coverage; setF, 60x coverage). M was the only individual assembler found to produce good-sized contigs in certain cases (setA, set F-H). Many simple combinations, such as SC, AO and VC, did not result in an improvement in overall performance.",
+            "cite_spans": [
+                {
+                    "start": 339,
+                    "end": 343,
+                    "text": "(28)",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 147,
+                    "end": 159,
+                    "text": "Figure 2B-G)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 537,
+                    "end": 546,
+                    "text": "Figure 2B",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 597,
+                    "end": 606,
+                    "text": "Figure 2B",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 904,
+                    "end": 913,
+                    "text": "Figure 2C",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1053,
+                    "end": 1062,
+                    "text": "Figure 2C",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Using various assembly strategies to test 'in silico-virus spiked' datasets"
+        },
+        {
+            "text": "Not surprisingly, increasing coverage resulted in better assembly in terms of greater MACR for all assembly methods ( Figure 2C ). With setA, setB, setF and setG, all containing in silico BASV reads at >20\u00d7 coverage, nearly 100% of the genome could be obtained for some of the assembly combinations. With datasets at <15\u00d7 coverage, none of the methods produced contigs >5 kb in length. Notably, SsC, SsO, VvO and VvC did not perform nearly as well as AaO and AaC, suggesting that partitioning is most advantageous when using A. Using M as the final assembler (SAVaM) appeared to generate slightly worse contigs than using C (SAVaC), O (SAVaO) or T(SAVaT), although SAVaM was also slightly faster than the others ( Figure 2C and E) . Although the number and distribution of BASV 'spike-in' reads were identical for the nasal and stool datasets, de novo assembly of BASV in the nasal dataset was consistently better than in the stool dataset, indicating that a less complex background (as is the case for respiratory secretions relative to stool) is a favorable factor for assembly. All of the assembly combinations yielded very low levels of misassemblies on analysis of the in silico-spiked virus datasets, with a chimera index consistently <0.15%, except for a few datasets analyzed using W and T in which the chimera index was as high as 0.8% ( Figure 2D) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 118,
+                    "end": 127,
+                    "text": "Figure 2C",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 714,
+                    "end": 730,
+                    "text": "Figure 2C and E)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1347,
+                    "end": 1357,
+                    "text": "Figure 2D)",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Using various assembly strategies to test 'in silico-virus spiked' datasets"
+        },
+        {
+            "text": "When comparing the timing for each assembler ( Figure  2E ), we found that assemblers A, S, V and T were relatively fast, typically finishing within seconds to minutes. As expected, OLC assembler W took longer to complete than e46 Nucleic Acids Research, 2015, Vol. 43, No. 7",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 47,
+                    "end": 57,
+                    "text": "Figure  2E",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Using various assembly strategies to test 'in silico-virus spiked' datasets"
+        },
+        {
+            "text": "A, S and V. Among all individual assemblers, M took the longest to run on average, taking anywhere from a few minutes to a few hours to finish. Thus, any ensemble assembly with M as a component took significantly longer to run.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "PAGE 6 OF 11"
+        },
+        {
+            "text": "The total run-time corresponding to ensemble strategies is the sum of the run-time for each individual component assembly: (i) an individual assembly (A, S, V, M and T), (ii) a partitioned assembly (a, s, v) and (iii) the OLC step (C, O, M and T). We executed the components of ensemble assemblers sequentially on a single server and recorded the total run-time for all datasets ( Figure 2E ). In practice, however, the timing performance of an ensemble assembly method can be improved by executing the first-step assemblies (A, S, V, M, a, s, v) in parallel, provided that multiple servers are available. To test whether the second OLC assembly step is an execution bottleneck, the relative percentage time spent on the second assembly step was calculated ( Figure 2F ). In most cases, the second OLC step did not appear to be a significant bottleneck (<\u223c20% of the execution step). Nevertheless, in the worse-case scenario, more than 80% of the execution step was spent on the second OLC assembly step.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 381,
+                    "end": 390,
+                    "text": "Figure 2E",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 759,
+                    "end": 768,
+                    "text": "Figure 2F",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "PAGE 6 OF 11"
+        },
+        {
+            "text": "Mapping of the contigs produced by the S, A, V, M, SAVaC and three different partitions on the BASV genome revealed that distinct albeit short contigs are produced by the three individual DBG assemblers and by partitioning ( Figure 2G ). When combined, these distinct contigs may help to form overlaps, fill gaps and facilitate the construction of much larger contigs, suggesting the utility of combining DBG assemblers with partitioning for the first assembly step.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 225,
+                    "end": 234,
+                    "text": "Figure 2G",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "PAGE 6 OF 11"
+        },
+        {
+            "text": "When benchmarking the performance of various assembly strategies with the 'pooled virus standard' dataset, we observed that the ranking of assemblers by C1000 and MACRP was similar to those in the 'in silico-virus spiked' datasets ( Figure 3A and B). The assembler T, however, performs surprisingly well for this dataset in terms of MACR and C1000, unlike what was observed in the 'in silico-virus spiked' datasets ( Figure 2B and C). The best assembly strategies, except T individually, were all found to be ensemble assembly combinations with partitioning or including M or both. One of the best ensemble assembly methods, SAVaC, produced a median MACRP of 17.5%, a 7fold improvement over S alone (2.4%). Heat map analysis of the MACPR parameter for the top 20 viruses with contig alignments ( Figure 3B ) showed the superiority of the ensemble assembly strategies SAVaC and AaO (>20% of the target genome assembled for eight viruses) over the individual DBG assemblers (>20% of the target genome assembled for only two viruses). M, T and combinations with M or T showed an elevated level of chimeric assembly as compared to strategies using other assemblers, in which the chimeras index for most viruses was <1% ( Figure 3C ). Timing analysis revealed that the ensemble combination AaO was almost two-fold faster than SAVaC, while maintaining almost equivalent contig quality for this dataset (Figure 3A and B). However, the three slowest ensemble assembly strategies were also found to use O, suggesting that O may not scale well with the larger input sizes generated using multiple DBG assembly combinations (SAVO and SAVaO) or inefficient DBG assemblers (SsO) ( Figure 3D ). For this large dataset with 20 million reads, the percentage time spent on OLC step is 29% for SAVaC and 4% for AaO respectively ( Figure 3E ), suggesting that the ensemble assemblers are relatively efficient in their handling of larger datasets.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 233,
+                    "end": 242,
+                    "text": "Figure 3A",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 417,
+                    "end": 426,
+                    "text": "Figure 2B",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 796,
+                    "end": 805,
+                    "text": "Figure 3B",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 1217,
+                    "end": 1226,
+                    "text": "Figure 3C",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 1396,
+                    "end": 1406,
+                    "text": "(Figure 3A",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 1668,
+                    "end": 1677,
+                    "text": "Figure 3D",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 1812,
+                    "end": 1821,
+                    "text": "Figure 3E",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Using various assembly strategies to test 'pooled virus standard' dataset"
+        },
+        {
+            "text": "To extensively test these assembly strategies across multiple datasets, eight metagenomic 'human/animal pathogen' datasets containing nine target genomes (feline sakobuvirus (NC 022802), unclassified phage 8L3, parvovirus B19, Enhydra lutris papillomavirus 1 (NC 023873), human parechovirus (KJ152442), human sapovirus (AY646853), S. typhi (CP002099), S. aureus (HF937103) and N. fowleri mitochondrion (NC 021104)) were tested using various assembly strategies (Figure 4 ). Similar to the C1000 and MACP distributions in the 'in silico-virus spiked' datasets and the 'pooled virus standard' dataset (Figures 2 and 3) , the strategies that employ M or T generated the largest contig alignments ( Figure 4A and B) . However, these strategies also resulted in the highest level of misassemblies, with significant increases in the average chimera index to 5% or higher (Figure 4C ). Ensemble assembly strategies without M or T, such as SAVaC, showed much lower levels of misassembly, with a chimera index typically under 5%. Similar to the other datasets, the assembly performance of the individual DBG Note that certain assemblers such as G, W, X and SAVaM failed to finish in many of the datasets due to software issues. assemblers was limited, with only 3-10% of target genomes being successfully de novo assembled versus >20% of target genomes for the top ensemble strategies. For example, heat map analysis of multiple microbial genome targets confirmed the superiority of ensemble strategies such as SAVaC and SAVTaC ( Figure 4A and B) . Notably, SAVaC achieved a C1000 metric of >80% in four of nine target genomes, versus only zero or one of nine genomes for the S, A, V and M algorithms run individually. The timing data ( Figure 4D ) showed that using M individually or as a component in the first assembly takes a significantly longer time to execute than other methods. While the timing differences were not as pronounced as in the 'pooled virus standard' dataset, the AaO strategy, as well as the related AaC and VvO strategies, were overall faster than SAVaC but resulted in the generation of shorter contigs. The percentage of time spent in the OLC step was also found to be acceptable, with average case below 50%, in these very diverse metagenomic datasets ( Figure 4E ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 461,
+                    "end": 470,
+                    "text": "(Figure 4",
+                    "ref_id": "FIGREF6"
+                },
+                {
+                    "start": 599,
+                    "end": 616,
+                    "text": "(Figures 2 and 3)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 695,
+                    "end": 711,
+                    "text": "Figure 4A and B)",
+                    "ref_id": "FIGREF6"
+                },
+                {
+                    "start": 865,
+                    "end": 875,
+                    "text": "(Figure 4C",
+                    "ref_id": "FIGREF6"
+                },
+                {
+                    "start": 1521,
+                    "end": 1537,
+                    "text": "Figure 4A and B)",
+                    "ref_id": "FIGREF6"
+                },
+                {
+                    "start": 1728,
+                    "end": 1737,
+                    "text": "Figure 4D",
+                    "ref_id": "FIGREF6"
+                },
+                {
+                    "start": 2272,
+                    "end": 2281,
+                    "text": "Figure 4E",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Using various assembly strategies to test the 'human/animal pathogen' datasets"
+        },
+        {
+            "text": "To summarize the results from the three datasets, we calculated the average normalized performance metrics MACR NR , C1000 NR , Accuracy NR , Speed NR and composite performance metrics CPM across target genomes in all datasets for each assembler ( Figure 5 ). For individual assemblers, I and T clearly produced the best C1000 NR among individual assemblers; whereas A, S V W, G produced poor sized contigs ( Figure 5A ). Ensemble strategies including partitioning or M or T produced the best C1000 NR . The MACR NR is highly correlated with C1000 NR ( Figure 5D ). T, M, I and ensemble methods using them as a component, however, are among the worst assembler in Accuracy NR ( Figure 5B ). M and methods with M as a component, are the slowest (Figure 5E ), indicating they are not suitable for time-critical diagnosis applications. According to CPM which measures overall contig qualities, the highest ranked assemblers were SAVaC, SAVTaC, SAVaO (Figure 5C ). The best individual assembler is I but its CPM is still significantly lower than the best ensemble assemblers. SAVTaC achieved very high C1000 NR and MACR NR , but its Accuracy NR and Speed NR were below average. SAVaC and SAVaO achieved better Accuracy NR and competitive C1000 NR and MACR NR . Figure 6 shows the relationship of the normalized measures. Figure 6A shows that assemblers fall in a curved belt, indicating a reciprocal relationship between Accuracy NR and C1000 NR . Ensemble methods with M or T as a component in the first assembly had the largest C1000 NR and poorest Accuracy NR , suggesting these assemblers may be overly aggressive in assembly of larger contigs. On the side of the curve were DBG assemblers which may be overly conservative in extending contigs. SAVaO and SAVaC are closest to the ideal upper right corner, indicating they achieved balance overall performance. Figure 6B shows that C1000 NR is negatively correlated with Speed NR . C1000 NR and MACR NR are both contig size measures and they are closely correlated ( Figure 6C ). Figure 6D shows positive correlation between Accuracy NR and Speed NR , indicating faster assemblers are generally conservative and thus generate lower level of chimeric contigs. Table 3 compares MACR for DBG assemblers A, V, S with our ensemble assemblers, AaO and SAVaC across all datasets. It was observed that SAVaC produced MACR that are 7.3, 11.9 and 13.6 fold as large as those produced by A, V and S. SAVaC also produced contigs that are 60% larger than AaO on average. Tables 4 and 5 show detailed descriptions and command-line parameters/configurations for preprocessing and running de novo assemblers respectively.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 248,
+                    "end": 256,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF7"
+                },
+                {
+                    "start": 409,
+                    "end": 418,
+                    "text": "Figure 5A",
+                    "ref_id": "FIGREF7"
+                },
+                {
+                    "start": 553,
+                    "end": 562,
+                    "text": "Figure 5D",
+                    "ref_id": "FIGREF7"
+                },
+                {
+                    "start": 678,
+                    "end": 687,
+                    "text": "Figure 5B",
+                    "ref_id": "FIGREF7"
+                },
+                {
+                    "start": 744,
+                    "end": 754,
+                    "text": "(Figure 5E",
+                    "ref_id": "FIGREF7"
+                },
+                {
+                    "start": 947,
+                    "end": 957,
+                    "text": "(Figure 5C",
+                    "ref_id": "FIGREF7"
+                },
+                {
+                    "start": 1257,
+                    "end": 1265,
+                    "text": "Figure 6",
+                    "ref_id": "FIGREF8"
+                },
+                {
+                    "start": 1317,
+                    "end": 1326,
+                    "text": "Figure 6A",
+                    "ref_id": "FIGREF8"
+                },
+                {
+                    "start": 1860,
+                    "end": 1869,
+                    "text": "Figure 6B",
+                    "ref_id": "FIGREF8"
+                },
+                {
+                    "start": 2016,
+                    "end": 2025,
+                    "text": "Figure 6C",
+                    "ref_id": "FIGREF8"
+                },
+                {
+                    "start": 2029,
+                    "end": 2038,
+                    "text": "Figure 6D",
+                    "ref_id": "FIGREF8"
+                },
+                {
+                    "start": 2208,
+                    "end": 2215,
+                    "text": "Table 3",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 2507,
+                    "end": 2521,
+                    "text": "Tables 4 and 5",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Normalized and composite performance metrics"
+        },
+        {
+            "text": "Here we introduced an ensemble strategy that sequentially integrates DBG and OLC assemblers and leverages the use of a partitioning approach for de novo genome assembly of pathogens in metagenomic NGS data. By benchmarking of the strategy using test datasets that include both in silico-generated and 'real-life' clinical and environmental metagenomic data, we demonstrated that ensemble assembly strategies produced accurate contigs that were significantly larger than those obtained by individual assemblers alone. Furthermore, the degree of misassembly for most of the ensemble strategies generally remained below 5%. Taken together, our data suggests that the best ensemble assembly strategy among those tested may be SAVaC (SoapDenovo2, ABySS, MetaVelvet, partitioned ABySS followed by Cap3), with AaO (Abyss, partitioned AbySS followed by Minimo) or AaC (Abyss, partitioned AbySS followed by Cap3) a reasonable alternative if fast execution time is of importance. Although the performance of some individual assemblers, such as M (Mira4) and T (Trinity) was comparable, the percentage of chimeric contigs was also high, and M (Mira4) was also computationally slow relative to the other assembly methods. IDBA-UD may be the best with respect to speed and contig alignment size among individual assemblers, despite its higher percentage of chimeras. Reads that were identical from nucleotide positions 5-45 were considered clonal reads, and only one random copy of clonal reads was retained. The other clonal sequences were replaced with sequence 'A' as a place holder; thus the original order of the paired-end files was preserved. dedup input1.fastq deduped2.fastq (The program dedup is provided with the main program) 3. Adaptor and quality trimming blastn -task blastn -evalue 1 -gapopen 5 -gapextend 3 -penalty -5 -max target seqs 100 000 000 -outfmt 6 -query adaptor.fa -num threads 8 -db reads.db -out reads.tab",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "Adaptor and primer sequences were trimmed using the BLAST-based VecScreen at default parameters. Low-quality sequences were trimmed using a Phred quality score 10 as the threshold. The poor performance of individual DBG assemblers in general for metagenome assembly can likely be attributed to (i) the use of k-mers instead of single reads which discards key layout and position information and (ii) the optimization of DBG methods for assembly of bacterial and eukaryotic genomes from pure cultures and not for metagenome assembly. Although the latest version of V (MetaVelvet/Velvet) was specifically developed for metagenomes by decomposing initial graphs into subgraphs representing isolated species (16) , it did not perform well individually in our testing. To our surprise, Celera (W), despite being an OLC assembler, generated poor, small contigs and the highest percentage of chimeric sequences. Another recently published assembler, G (Omega) (22) , neither a DBG assembler nor an OLC assembler, did not perform well in the 'in silico-virus spiked' datasets ( Figure 2 ). The MaSuRCA assembler (X) (19) , which is a recent hybrid DBG and OLC assembler, did not generate large contigs as we would expected.",
+            "cite_spans": [
+                {
+                    "start": 704,
+                    "end": 708,
+                    "text": "(16)",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 953,
+                    "end": 957,
+                    "text": "(22)",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1108,
+                    "end": 1112,
+                    "text": "(19)",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1070,
+                    "end": 1078,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "Because of the need to perform all potential pairwise alignments between reads and calculate overlaps (7), OLC assemblers are computationally impractical when applied directly to a large set of raw NGS sequences. Our ensemble strategy leverages fast DBG assemblers to quickly reduce the original NGS reads to a much smaller, non-redundant set of intermediate contigs. Our results suggest that partitioning is an indispensable part of the ensemble strategy. The use of a partitioning method produces additional distinct, albeit short contigs that can be used to fill gaps in coverage. The much slower OLC assemblers are used only in the final step to extend the contigs, thereby achieving much longer contigs than possible with DBG or OLC assemblers alone. Because the number of contigs is typically only 1-3% of the number of raw reads, the timing for the second OLC step is usually not a performance bottleneck. We note, however, that a second round of OLC assembly has the potential to introduce additional misassemblies, and indeed, the misassembly level of the ensemble strategies, although remaining <5% in general, is still higher than that of most of the individual DBG assemblers.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "For metagenome de novo assembly, it is important to use alignment-based quality measures such as C1000, rather than more common N50 or N95, because of the 'needlein-a-haystack' nature of metagenomic data. As we have demonstrated in Figures 2-4 , these performance measures were generally consistent across datasets. These metrics can be efficiently calculated using MegaBLAST, which is used by Chimera.slayer (36) .",
+            "cite_spans": [
+                {
+                    "start": 409,
+                    "end": 413,
+                    "text": "(36)",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 232,
+                    "end": 243,
+                    "text": "Figures 2-4",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "When directly comparing the stool and nasal samples in the 'in silico-virus spiked' datasets, we find that the more complex background in the stool sample resulted in performance degradation in de novo assembly of the target BASV genome. Thus, rapid and efficient computational subtraction of human host reads (1) will likely remain a critical step in pathogen assembly from metagenomic data. Our analysis of the 'in silico-virus spiked' datasets also shows that an average sequence depth of at least 20\u00d7 (10\u00d7 in each direction for paired-end sequencing) is needed to recover 100% of a target genome from metagenomic NGS data. The actual minimum sequence depth required may be higher than 20\u00d7 due to biases in the actual coverage achieved. Finally, although we have demonstrated the utility of the ensemble assembly strategy for the relatively small genomes corresponding to viruses, bacteria and the mitochondrial genome of the eukaryotic pathogen N. fowleri, this approach may not be suitable for much larger eukaryotic genomes, mainly because OLC assemblers such as Minimo and Cap3 will likely be unable to handle the increased computational load. As datasets become increasingly larger, the OLC assembly step may become the speed bottleneck, since the DBG assemblers and partitioning scheme are amenable to parallel computing with multi-core processors. The full results in tabular format were included in Supplementary Table S1 . A diagram illustrating the calculation of performance metrics was included as Supplementary Figure S1 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1424,
+                    "end": 1432,
+                    "text": "Table S1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1513,
+                    "end": 1536,
+                    "text": "Supplementary Figure S1",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "The source code of our method can be obtained at http: //ensembleassembly.sourceforge.net, or https://github.com/ xutaodeng/EnsembleAssembler.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AVAILABILITY"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "A cloud-compatible bioinformatics pipeline for ultrarapid pathogen identification from next-generation sequencing of clinical samples",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Naccache",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Federman",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Veeraraghavan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zaharia",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Samayoa",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bouquet",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Greninger",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Luk",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Enge",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Genome Res",
+            "volume": "24",
+            "issn": "",
+            "pages": "1180--1192",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Viral pathogen discovery",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Chiu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Curr. Opin. Microbiol",
+            "volume": "16",
+            "issn": "",
+            "pages": "468--478",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "A roadmap to the human virome",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Delwart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS Pathog",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Next-generation and whole-genome sequencing in the diagnostic clinical microbiology laboratory",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dunne",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Jr",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Westblade",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Ford",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Eur. J. Clin. Microbiol. Infect. Dis",
+            "volume": "31",
+            "issn": "",
+            "pages": "1719--1726",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Divergent picobirnaviruses in human feces",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Ng",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Vega",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Kondov",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Markey",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Gregoricus",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Vinje",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Delwart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Genome Announc",
+            "volume": "2",
+            "issn": "",
+            "pages": "415--429",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Metagenomics: read length matters",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Wommack",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bhavsar",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ravel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Appl. Environ. Microbiol",
+            "volume": "74",
+            "issn": "",
+            "pages": "1453--1463",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Assembly algorithms for next-generation sequencing data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Koren",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Sutton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Genomics",
+            "volume": "95",
+            "issn": "",
+            "pages": "315--327",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Next generation sequence assembly with AMOS",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Treangen",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Sommer",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Angly",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Koren",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pop",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Curr. Protoc. Bioinformatics, Chapter",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "CAP3: a DNA sequence assembly program",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Madan",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Genome Res",
+            "volume": "9",
+            "issn": "",
+            "pages": "868--877",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "A whole-genome assembly of Drosophila",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Sutton",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Delcher",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dew",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Fasulo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Flanigan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Kravitz",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Mobarry",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Reinert",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Remington",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Science",
+            "volume": "287",
+            "issn": "",
+            "pages": "2196--2204",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Extending assembly of short DNA sequences to handle error",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Jeck",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Reinhardt",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Baltrus",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Hickenbotham",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Magrini",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Mardis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Dangl",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bioinformatics",
+            "volume": "23",
+            "issn": "",
+            "pages": "2942--2944",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Genome sequencing in microfabricated high-density picolitre reactors",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Margulies",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Egholm",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Altman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Attiya",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Bader",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bemben",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Berka",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Braverman",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nature",
+            "volume": "437",
+            "issn": "",
+            "pages": "376--380",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "SOAPdenovo2: an empirically improved memory-efficient short-read de novo assembler",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Luo",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Xie",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Yuan",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Pan",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "ABySS: a parallel assembler for short read sequence data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Simpson",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Jackman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Schein",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Birol",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Genome Res",
+            "volume": "19",
+            "issn": "",
+            "pages": "1117--1123",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Velvet: algorithms for de novo short read assembly using de Bruijn graphs",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Zerbino",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Birney",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Genome Res",
+            "volume": "18",
+            "issn": "",
+            "pages": "821--829",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "MetaVelvet: an extension of Velvet assembler to de novo metagenome assembly from short sequence reads",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Namiki",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hachiya",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Tanaka",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sakakibara",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nucleic Acids Res",
+            "volume": "40",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "ALLPATHS: de novo assembly of whole-genome shotgun microreads",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Butler",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Maccallum",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kleber",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Shlyakhter",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Belmonte",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lander",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Nusbaum",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Jaffe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Genome Res",
+            "volume": "18",
+            "issn": "",
+            "pages": "810--820",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Full-length transcriptome assembly from RNA-Seq data without a reference genome",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Grabherr",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Haas",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Yassour",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Levin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Thompson",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Amit",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Adiconis",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Fan",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Raychowdhury",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Zeng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nat. Biotechnol",
+            "volume": "29",
+            "issn": "",
+            "pages": "644--652",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "The MaSuRCA genome assembler",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Zimin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Marcais",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Puiu",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Roberts",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Yorke",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Bioinformatics",
+            "volume": "29",
+            "issn": "",
+            "pages": "2669--2677",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "IDBA-UD: a de novo assembler for single-cell and metagenomic sequencing data with highly uneven depth",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Peng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Yiu",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Chin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Bioinformatics",
+            "volume": "28",
+            "issn": "",
+            "pages": "1420--1428",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Omega: an Overlap-graph de novo Assembler for Metagenomics",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Haider",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Ahn",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Bushnell",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Chai",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Copeland",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Pan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Bioinformatics",
+            "volume": "30",
+            "issn": "",
+            "pages": "2717--2722",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Assemblathon 1: a competitive assessment of de novo short read assembly methods",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Earl",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Bradnam",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "St John",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Darling",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Fass",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Buffalo",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Zerbino",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Diekhans",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Genome Res",
+            "volume": "21",
+            "issn": "",
+            "pages": "2224--2241",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Assemblathon 2: evaluating de novo methods of genome assembly in three vertebrate species",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Bradnam",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Fass",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Alexandrov",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Baranay",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bechner",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Birol",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Boisvert",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Chapman",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Chapuis",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Chikhi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "GAGE: a critical evaluation of genome assemblies and assembly algorithms",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Phillippy",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Zimin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Puiu",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Magoc",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Koren",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Treangen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Schatz",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Delcher",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Roberts",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Genome Res",
+            "volume": "22",
+            "issn": "",
+            "pages": "557--567",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Comparison of different assembly and annotation tools on analysis of simulated viral metagenomic communities in the gut",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Vazquez-Castellanos",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Garcia-Lopez",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Perez-Brocal",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pignatelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Moya",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Genomics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Automated ensemble assembly and validation of microbial genomes",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Koren",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Treangen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Hill",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pop",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Phillippy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "A novel rhabdovirus associated with acute hemorrhagic fever in central Africa",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Grard",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Fair",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Slikas",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Steffen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Muyembe",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Sittler",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Veeraraghavan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Ruby",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS Pathog",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "The sequence alignment/map format and SAMtools",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Handsaker",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Wysoker",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Fennell",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ruan",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Homer",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Marth",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Abecasis",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Durbin",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Genome Project Data Processing Subgroup",
+            "volume": "25",
+            "issn": "",
+            "pages": "2078--2079",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Feline fecal virome reveals novel and prevalent enteric viruses",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Ng",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Mesquita",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Nascimento",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Kondov",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Reuter",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Knowles",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Vega",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Esona",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Vet. Microbiol",
+            "volume": "171",
+            "issn": "",
+            "pages": "102--111",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Discovery of a novel polyomavirus in acute diarrheal samples from children",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Greninger",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Isa",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Phan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Martinez",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Sanchez",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Contreras",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Santos-Preciado",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Parsonnet",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS One",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "The mitochondrial genome and a 60-kb nuclear DNA segment from Naegleria fowleri, the causative agent of primary amoebic meningoencephalitis",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Herman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Greninger",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Visvesvara",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Marciano-Cabral",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Dacks",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Chiu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J. Eukaryot. Microbiol",
+            "volume": "60",
+            "issn": "",
+            "pages": "179--191",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Fast gapped-read alignment with Bowtie 2",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Langmead",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nat. Methods",
+            "volume": "9",
+            "issn": "",
+            "pages": "357--359",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "BLAST: at the core of a powerful and diverse set of sequence analysis tools",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mcginnis",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Madden",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "",
+            "pages": "20--25",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Informed and automated k-mer size selection for genome assembly",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Chikhi",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Medvedev",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Bioinformatics",
+            "volume": "30",
+            "issn": "",
+            "pages": "31--37",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Introducing mothur: open-source, platform-independent, community-supported software for describing and comparing microbial communities",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Schloss",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Westcott",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Ryabin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hartmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Hollister",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lesniewski",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Oakley",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Parks",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Robinson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Appl. Environ. Microbiol",
+            "volume": "75",
+            "issn": "",
+            "pages": "7537--7541",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "3.7 (A), MetaVelvet 1.2.10 (V), OLC assemblers including Celera wgs-8.1 (W), Cap3 (C) and Minimo amos-3.1.0 (O) and other assemblers includ-ing Omega v1.0.2 (G), Mira 4.0.2 (M),MaSuRCA-2.2.0 (X), IDBA-UD 1.1.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Motivation and design of the ensemble assembly strategy. (A) Detection rates using blastx at various sequence lengths and mutation rates. Sequences were randomly extracted from virus RefSeq at various lengths (200 bp, 500 bp, 1000 bp, 2000 bp). Each base were mutated at different probability (P = 0, 0.1, 0.2, 0.3, 0.4, 0.5) to simulate various degrees of divergence. (B) Detection rates using blastn at various sequence lengths and mutation rates. (C)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "the 'Max Aligned Contig Region (MACR)' or 'Max Aligned Contig Region Percentage (MACRP)', the size (bp) or percent coverage (%) of the target genome achieved by the single longest local alignment between any contig and that genome; (2) the 'C1000', the size (bp) or percent coverage (%) of the target genome covered by alignments 1000 bp or larger; and (3) the 'chimera index', the percentage of unaligning regions within all contigs that align to the target genome. Specifically, for a given target genome of size R, the definitions of MACR, MACRP, C1000 and chimera index are as follows: CT: the full set of contigs that can be aligned to the target genome AL: all aligned regions in CT AL1000: all aligned regions in CT that are 1000 bp or greater UA: all unaligned regions in CT M: summed length of AL (bp) N: summed length of UA (bp) C1000: union of AL1000 by merging the overlapped regions MACR (bp) = max (AL) MACRP (%) = max (AL)/R \u00d7 100% Chimera Index (%) = N/(M+N) \u00d7 100% MACR and MACRP measure single largest alignment size, C1000 measures collectively the size of large alignments and chimera index measures the percentage of incorrect contig formation. Supplementary",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Time/max(Time of all assemblers)).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Comparison of different assembly strategies using the in silicovirus spiked BASV datasets. (A) Comparing MACR for different K-mer size using A, V and S on the in silico-virus spiked BASV dataset (SetA-SetJ). Note that V only supports K \u2264 31. The bottom and top of the box are always the first and third quartiles, and the band inside the box is the median; (B) C1000 distribution for each assembler; (C) MACR for each dataset; (D) chimera index; (E) execution time; (F) percentage of execution time spent on OLC final assembly; and (G) contig formation for setB: the blue line represents the 12 648 bp BASV genome. The red lines are contigs that are aligned to the BASV genome. The assemblers of Figure B, D, E and F were ordered by average values. Individual assemblers A, S, V, M, T, W were executed using eight threads and O and C were executed using single thread. S and A using the 'in silico-virus spiked' datasets at increasing k-mer values of 31, 41, 51 and 61 (V does not support k-mer values >31)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Comparison of different assembly strategies using the 'pooled virus standard' dataset: (A) C1000 for each assembler; (B) MACRP for each assembler; (C) chimera index as a heatmap; (D) execution time; and (E) percentage of execution time on the OLC step. All boxplot figures were ordered by average values on the y-axis.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Comparison of different assembly strategies using the 'human/animal pathogens' eight pathogen datasets: (A) C1000 distribution; (B) MACRP distribution; (C) chimera index distribution; (D) execution time; and (E) percentage of execution time on the OLC step. All boxplot figures were ordered by average values on the y-axis.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "Normalized measures and CPMs averaged over all target genomes for each assembler: (A) C1000 NR distribution; (B) Accuracy NR distribution; (C) CPM distribution; (D) MACR NR distribution; and (E) Speed NR distribution. These measures are in the range of 0-5 with higher values representing better performance. Numbers in parentheses are numbers of target genomes evaluated for each method. Genomes that no assembler could generate MACR > 1 kb were excluded in the calculation.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Relationship of normalized performance metrics: (A) Accuracy NR versus C1000 NR ; (B) Speed NR versus C1000 NR ; (C) MACR NR versus C1000 NR ; and (D) Speed NR versus Accuracy NR . In all of the four plots, upper right corner represent ideal performance. The quadratic regression curves were computed without including the method W.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "BASV sequences representing varying degree of read length and coverage were spiked into synthetic background (setA to setJ) or real metagenomic background (Nasal, Stool) to create 'in silico-virus spiked' datasets",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "MACR (bp) of ensemble assemblers (SAVaC and AaO) and individual assemblers",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Preprocessing procedures and parameters for metagenomic datasets Pre-processing Example command Description/configuration 1. Host sequence subtraction bowtie2 -quiet -local -no-hd -reorder -p 8 -x human bac bowtie -U raw read.fq.gz -S read.sam Human host reads were subtracted by mapping the reads with human reference genome hg19 using bowtie2 2. Sequence De-duplication dedup input1.fastq deduped2.fastq",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Parameters and configurations for de novo assembly experiments Ensemble Assembler1.0 ensembleAssembly./config.txt PE = 260 30 read1.fq read2.fq ./ensemble.sh NUM THREADS = 8 SOAP KMER = 31 ABYSS KMER = 31 METAVELVET KMER = 31 CON LEN DBG = 150 CON LEN OLC = 300 ASSEMBLY MODE = VO, AaC, ... Cap3 (C) cap3 input.fasta Minimo amos-3.1.0 (O) Minimo input.fasta -D FASTA EXP = 1 SOAPdenovo2 r240 (S) SOAPdenovo-63mer all -K 31 -s read soap.config -R -o read soap max rd len = 600 read2.fq ABySS 1.3.7 (A) abyss-pe -C read abyss name = read abyss k = 31 in = 'read1.fq read2.fq' MetaVelvet 1.2.10 (V) velveth read velvet 31 -shortPaired -fastq read1.fq read2.fq && velvetg read velvet -exp cov auto -ins length 260 && meta-velvetg read velvet -ins length 260 Mira 4.0.2 (M) mira -t 8 read mira.conf project = setAHumBac parameters = -GE:not = 8 -DI:trt = /home/user/ -OUTPUT:rtd = yes job = genome,denovo,accurate readgroup = DataIlluminaPairedLib autopairing data = read1.fq read2.fq technology = solexa IDBA-UD 1.1.1(I) idba -r read.fa -o read idba Omega v1.0.2 (G) omega -se 1 read.fq -l 60 -f read omega Celera wgs-8.1 (W) fastqToCA -libraryname read celera -technology none -mates read1.fq,read2.fq > read.frg runCA -d read celera -p read celera read.frg MaSuRCA-2.2.0 (X) masurca config.txt && assemble.sh DATA PE = pe 260 30 read1.fq read2.fq END PARAMETERS GRAPH KMER SIZE = auto USE LINKING MATES = 1 LIMIT JUMP COVERAGE = 60 CA PARAMETERS = ovlMerSize = 30 cgwErrorRate = 0.25 ovlMemory = 4GB KMER COUNT THRESHOLD = 1 NUM THREADS = 8 JF SIZE = 100000000 DO HOMOPOLYMER TRIM = 0 END Trinity r20140717 (T)Trinity -seqType fq -JM 25G -output read trinity -left read1.fq -right read2.fq -CPU 8",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We thank Gilda Grard, Eric Leroy, Joseph Fair, and Bradley Schneider for providing the hemorrhagic fever serum sample from a patient with S. typhi for analysis. We also thank Miguel A. Mart\u00ednez and Pavel Isa for providing the pools from children with diarrhea containing parechovirus and sapovirus sequences. We thank Guixia Yu and Jerome Le Goff for generating datasets used as respiratory and stool backgrounds respectively for in silico spiking of BASV reads. We thank Dylan Pillai and Govinda Visvesvara for providing pure cultures of S. aureus and N. fowleri, respectively, and Alexander Greninger for generating the N. fowleri dataset. We thank Jo\u00e3o Rodrigo Mesquitac, Maria S\u00e3o Jos\u00e9 Nascimentod, Everardo Vegag, Jan Vinj\u00e9, Melissa Miller, Erin Dodd, Sally Baylis, Philip Minor, Edward Mee, and Rob Anderson for providing samples. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ACKNOWLEDGEMENTS"
+        },
+        {
+            "text": "Supplementary Data are available at NAR Online.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SUPPLEMENTARY DATA"
+        }
+    ]
+}

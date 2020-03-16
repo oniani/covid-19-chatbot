@@ -1,0 +1,2336 @@
+{
+    "paper_id": "2759426af4c8df595f4b5e76b614712fda6da5d3",
+    "metadata": {
+        "title": "K-Pax2: Bayesian identification of cluster-defining amino acid positions in large sequence datasets",
+        "authors": [
+            {
+                "first": "Alberto",
+                "middle": [],
+                "last": "Pessia",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Helsinki",
+                    "location": {
+                        "country": "Finland"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Yonatan",
+                "middle": [],
+                "last": "Grad",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Harvard T.H. Chan School of Public Health",
+                    "location": {
+                        "settlement": "Boston",
+                        "region": "Massachusetts",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Sarah",
+                "middle": [],
+                "last": "Cobey",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Chicago",
+                    "location": {
+                        "settlement": "Chicago",
+                        "region": "Illinois",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Juha",
+                "middle": [
+                    "Santeri"
+                ],
+                "last": "Puranen",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "\u00c5 bo Akademi University",
+                    "location": {
+                        "settlement": "Turku",
+                        "country": "Finland"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Jukka",
+                "middle": [],
+                "last": "Corander",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Helsinki",
+                    "location": {
+                        "country": "Finland"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "The recent growth in publicly available sequence data has introduced new opportunities for studying microbial evolution and spread. Because the pace of sequence accumulation tends to exceed the pace of experimental studies of protein function and the roles of individual amino acids, statistical tools to identify meaningful patterns in protein diversity are essential. Large sequence alignments from fast-evolving micro-organisms are particularly challenging to dissect using standard tools from phylogenetics and multivariate statistics because biologically relevant functional signals are easily masked by neutral variation and noise. To meet this need, a novel computational method is introduced that is easily executed in parallel using a cluster environment and can handle thousands of sequences with minimal subjective input from the user. The usefulness of this kind of machine learning is demonstrated by applying it to nearly 5000 haemagglutinin sequences of influenza A/H3N2.Antigenic and 3D structural mapping of the results show that the method can recover the major jumps in antigenic phenotype that occurred between 1968 and 2013 and identify specific amino acids associated with these changes. The method is expected to provide a useful tool to uncover patterns of protein evolution.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "The growth in microbial genome sequence data, driven by decreasing sequencing costs and the integration of sequencing into routine clinical microbiology (K\u00f6ser et al., 2012; Reuter et al., 2013) , has begun to revolutionize our understanding of microbial evolution and spread. However, the pace of sequence accumulation generally exceeds the pace of experimental studies of protein function.",
+            "cite_spans": [
+                {
+                    "start": 153,
+                    "end": 173,
+                    "text": "(K\u00f6ser et al., 2012;",
+                    "ref_id": null
+                },
+                {
+                    "start": 174,
+                    "end": 194,
+                    "text": "Reuter et al., 2013)",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "This relationship holds not only for recently emerged pathogens (Cotten et al., 2013; Gire et al., 2014) , but also for intensively studied pathogens, such as influenza (Gong & Bloom, 2014; Worobey et al., 2014) . Tools to analyse such large datasets and provide targeted guidance in inferring phenotypically meaningful groups can therefore be useful to identify amino acid sites and proteins that play critical roles in pathogen biology and evolution. These sites are potential targets for diagnostics, therapeutics and vaccines.",
+            "cite_spans": [
+                {
+                    "start": 64,
+                    "end": 85,
+                    "text": "(Cotten et al., 2013;",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 86,
+                    "end": 104,
+                    "text": "Gire et al., 2014)",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 169,
+                    "end": 189,
+                    "text": "(Gong & Bloom, 2014;",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 190,
+                    "end": 211,
+                    "text": "Worobey et al., 2014)",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Large sequence alignments are challenging to dissect using standard tools from phylogenetics and multivariate statistics. When the datasets comprise hundreds to thousands of sequences, trees become increasingly crowded and identifying meaningful information is difficult. In contrast, basic statistical procedures such as principal components analysis, hierarchical clustering or k-means (Hastie et al., 2009) can provide a compressed view into the data with relative ease. However, the use of such unfocused methods for extracting information is problematic when the biologically relevant signals are masked by noise introduced due to sequencing errors or functionally neutral variation. This is the situation for fast-evolving organisms where many changes rapidly accumulate across proteins but only a subset of them actually show signs of selection.",
+            "cite_spans": [
+                {
+                    "start": 388,
+                    "end": 409,
+                    "text": "(Hastie et al., 2009)",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Model-based statistical methods have a clear advantage over the generic approaches when the model is structured to infer biologically relevant information. For microbial proteins one important question is which isolates or strains constitute phenotypically distinct groups, distinguished by specific amino acids fixed by selection. It is also useful to know which positions and amino acids are probably directly under selection. Statistically, these questions correspond to the task of simultaneously clustering a protein sequence alignment in two ways, by the rows to identify the relevant groups of strains and by the columns to identify which amino acid positions define the clusters. As both the number of groups and the relevant sequence positions are often unknown, statistical inference is required. Bayesian modelling is particularly well suited for such model selection problems, as by specifying probabilistic prior information for the unknowns in the model, one can efficiently focus the search and avoid overfitting.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Previous studies (Aguas & Ferguson, 2013; Meroz et al., 2011) have partially solved the above-discussed problem by supervised machine learning techniques. Within this related setting, genetic determinants are identified conditional on a known classification of the sequences. To our knowledge, no statistical machine learning method has yet addressed the problem of identifying most relevant sites and amino acids without knowing a priori how the sequences are grouped.",
+            "cite_spans": [
+                {
+                    "start": 17,
+                    "end": 41,
+                    "text": "(Aguas & Ferguson, 2013;",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 42,
+                    "end": 61,
+                    "text": "Meroz et al., 2011)",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "We introduce here a Bayesian method (K-Pax2) that can handle thousands of sequences with minimal subjective input from the user. Our approach is based on a twoway clustering model inspired by an earlier method (K-Pax) for clustering single protein sequence alignments from distant homologues to identify substructure within a protein superfamily (Marttinen et al., 2006) . Our current method possesses two significant improvements over the original K-Pax, one related to accuracy and the other to the technical specifications of the priors and model. These changes permit the method to be used to study a large number of closely related sequences as well as several proteins simultaneously. A useful feature of our model definition is that it enables an analytically obtainable Bayesian score of model fitness. This feature permits the use of parallel computation in model optimization, as the scores are directly comparable from independent optimization runs without approximation errors caused by, for example, Monte Carlo methods.",
+            "cite_spans": [
+                {
+                    "start": 346,
+                    "end": 370,
+                    "text": "(Marttinen et al., 2006)",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The haemagglutinin (HA) of influenza A/H3N2 possesses features that make it an ideal test case to demonstrate the function and applicability of K-Pax2 to large alignments. Thousands of A/H3N2 HA sequences are available in public databases (Bao et al., 2008; Benson et al., 2005; Bogner et al., 2006; Squires et al., 2012) . In addition, the detailed structure and evolution of HA have been investigated by phylogenetic inference and direct experiments (Bedford et al., 2014; Bizebard et al., 1995; Fleury et al., 1999; Knossow et al., 2002; Koel et al., 2013; Smith et al., 2004; Suzuki, 2006; Wolf et al., 2006) .",
+            "cite_spans": [
+                {
+                    "start": 239,
+                    "end": 257,
+                    "text": "(Bao et al., 2008;",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 258,
+                    "end": 278,
+                    "text": "Benson et al., 2005;",
+                    "ref_id": null
+                },
+                {
+                    "start": 279,
+                    "end": 299,
+                    "text": "Bogner et al., 2006;",
+                    "ref_id": null
+                },
+                {
+                    "start": 300,
+                    "end": 321,
+                    "text": "Squires et al., 2012)",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 452,
+                    "end": 474,
+                    "text": "(Bedford et al., 2014;",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 475,
+                    "end": 497,
+                    "text": "Bizebard et al., 1995;",
+                    "ref_id": null
+                },
+                {
+                    "start": 498,
+                    "end": 518,
+                    "text": "Fleury et al., 1999;",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 519,
+                    "end": 540,
+                    "text": "Knossow et al., 2002;",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 541,
+                    "end": 559,
+                    "text": "Koel et al., 2013;",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 560,
+                    "end": 579,
+                    "text": "Smith et al., 2004;",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 580,
+                    "end": 593,
+                    "text": "Suzuki, 2006;",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 594,
+                    "end": 612,
+                    "text": "Wolf et al., 2006)",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "HA is a homotrimeric integral membrane protein on the surface of the influenza virion and the primary target of the neutralizing immune response against influenza. HA binds sialic acid receptors on the surface of cells and, once bound, promotes viral entry by fusion of the viral envelope with the endosome membrane. The tertiary structure of HA indicates that there are two main domains: a variable globular head (HA1) that contains the sialic acid binding sites and a conserved stalk region (HA2) involved in membrane fusion (Skehel & Wiley, 2000) .",
+            "cite_spans": [
+                {
+                    "start": 527,
+                    "end": 549,
+                    "text": "(Skehel & Wiley, 2000)",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Since its introduction in 1968, the A/H3N2 HA has undergone rapid evolution that is associated with short coalescent times, a ladder-like phylogeny and regular antigenic",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Large sequence databases have introduced new opportunities to explore patterns of microbial evolution. This paper introduces the first fast modelbased machine learning method targeted to identify genomic positions that are likely to display nonsynonymous variation due to selection pressure. The method is widely applicable to aid in generation of hypotheses for experimental work and to pinpoint plausible candidates for further study and data acquisition. Results on influenza A/H3N2 highlight the potential to significantly advance the process towards understanding the mechanisms linked to the success of major pathogens.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Impact Statement"
+        },
+        {
+            "text": "A. Pessia and others change (Bedford et al., 2014; Fitch et al., 1991; Smith et al., 2004) . The HA1 domain is the predominant site of influenza's antigenic evolution. Mutations in exposed epitopes demonstrate strong selective pressure to escape antibodies (Fitch et al., 1991; Suzuki, 2006) , and tend to predominate along the trunk of the phylogenetic tree. However, there is also evidence of positive selection at CD4+ and CD8+Tcell epitopes (Suzuki, 2006) and for the addition of Nlinked glycosylation sites (Suzuki, 2011) . Here, we use the K-Pax2 method to analyse thousands of influenza A/ H3N2 HA sequences to evaluate the success of the algorithm in identifying amino acid positions known to play key roles in the function of HA.",
+            "cite_spans": [
+                {
+                    "start": 28,
+                    "end": 50,
+                    "text": "(Bedford et al., 2014;",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 51,
+                    "end": 70,
+                    "text": "Fitch et al., 1991;",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 71,
+                    "end": 90,
+                    "text": "Smith et al., 2004)",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 257,
+                    "end": 277,
+                    "text": "(Fitch et al., 1991;",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 278,
+                    "end": 291,
+                    "text": "Suzuki, 2006)",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 445,
+                    "end": 459,
+                    "text": "(Suzuki, 2006)",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 512,
+                    "end": 526,
+                    "text": "(Suzuki, 2011)",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Impact Statement"
+        },
+        {
+            "text": "A two-way clustering model for identifying groups of viral strains under diversifying or directional selection Let S5(s 1 , . . . , s n ) denote a multiple sequence alignment of concatenated amino acid sequences for the coding regions extracted from n virus samples. Each alignment element thus belongs to the alphabet A representing the set of amino acids, including the gap symbol. The length of the aligned sequences is denoted by L. For the purpose of obtaining a model family and an inference algorithm that can efficiently capture signals of diversifying and directional selection from S, we transform the multiple sequence alignment into an n \u00a3 LjAj binary matrix, where each column corresponds to an indicator variable of a particular element in A being observed at position l. Prior to any inference, all columns with exclusively zero elements are removed from the analysis because they are uninformative for the statistical model introduced here. The resulting binary matrix X is assumed to be of dimension n|m.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "In a set notation, let N \u00bc {1; . . . ; n} denote the collection of integer labels for the n virus strains. Let W5{w 1 , . . . , w K } denote an assignment of the n strains into K mutually disjoint non-empty clusters, where w K represents the set of labels of the units associated with cluster k. Formally, the K non-empty subsets w 1 , . . . ,w K define a partition of the sequences such that k <w k \u00bc N and w k > w k9 \u00bc {B}, ;k -k9. In our model formulation each of the K clusters is assumed to correspond to a group of strains that has evolved under diversifying or directional selection pressure and consequently proliferated given the fitness improvements induced by nonsynonymous changes that are of functional importance at the protein level. The sequence locations of such changes, the number of groups K and the explicit assignment of strains into the groups are all unknown parameters of our model to be inferred from the matrix X.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "Non-synonymous changes in viral strains that are free from diversifying selection pressure will fluctuate in frequency in the population due to drift, but they are not in general expected to be rapidly driven to fixation unless they are tightly linked to other sites that are under selection. We assume that the non-synonymous mutations that do not induce fitness changes will occur at a constant rate throughout the population. This can be translated into the statistical approximation that for the n sampled strains, functional neutrality corresponds to a fixed probability of observing a particular residue in a given sequence position across all the K clusters:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "and for all k51, . . . , K. Thus, from the clustering perspective, any column j ( j51, . . . , m) in X is considered as 'noise' if the above probability is constant across groups. Conversely, we define a column j to represent a putative 'selection signal' if there are at least two groups for which the corresponding probability is different:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "for all i [ w k , and i9 [ w k9 and for some k ? k9. Such signals are only putative, as random drift could still explain a difference in the residue composition between two clusters. In addition, more rigid probabilistic restrictions must be imposed on the model structure to ensure that the grouping W and the identities of the selected sites become jointly identifiable and convey a biologically meaningful extraction of information from the alignment S. Note that residues that remain unchanged in the whole virus population over long periods of time ostensibly due to strict functional constraints on the protein structure are also uninformative for the purpose of identification of sequence clusters, as they correspond to fully conserved sites in the alignment S.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "Under relatively strong selection pressure, non-synonymous changes that are associated with an increase in fitness should rapidly rise in frequency, leading to the formation of a novel group of strains. Similar to the neutral changes considered previously, this assumption can be translated into a statistical approximation that implies that we expect for each cluster k at least a single column j to be present in X such that",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "These residues are defined as 'characteristic' for cluster k and represent significant signals of selection. In summary, a site-amino acid pair (column of X) can then be considered either noise (h51), a weak signal (h52) or a strong signal (h53). It can be further classified as of no particular status (r51) or characteristic (r52) for a cluster.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "Column classification can accordingly be encoded by a collection of binary variables z jhrk attaining value 1 if and only if column j ( j51, . . . ,m) has property h (h51, 2, 3) with status r (r51, 2) in cluster k (k51, . . ., K), and attaining value 0 otherwise. Let the array Z represent the collection of binary variables z jhrk over all the index values. The pair (W,Z) then contains all the main parameters of inter-est in our model. However, its full probabilistic characterization requires a set of additional nuisance parameters that are defined below.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Theory and Implementation"
+        },
+        {
+            "text": "Assuming conditional independence of the elements of X given both the main and the nuisance parameters of the model, we obtain the following expressions:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "where X k is the binary data matrix associated with cluster k of size n k , and subsequently",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "where x kj is the binary vector for cluster k at column j, while Z jk is a 3 \u00a3 2 binary matrix such that h P r P z jhrk \u00bc 1. Defining the columns as statistically independent may be interpreted as a very strong assumption. However, note that their stochastic nature is already addressed through the prior distribution. Concern could arise for phenomena such as hitchhiking, where sites could be genetically linked and thus present at similar frequencies. Such cases can be easily addressed when postprocessing the results from model optimization.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "We define the (prior) predictive probability",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "where g\u00f0xjh\u00de is the Bernoulli distribution and p\u00f0hjZ jk \u00de is the conjugate Beta distribution for its parameter h, which is explicitly conditioned on the property and status of column j in cluster k. All these Bernoulli parameters are nuisance parameters in the model, as their explicit values are not a target of inference. Hence, in accordance with standard conventions in Bayesian statistics, they are integrated out from the likelihood to obtain the marginal posterior distribution for the parameters of interest. Note that according to this formulation sequences belonging to the same cluster are not statistically independent, whereas sequences belonging to different groups are. For z jhrk \u00bc 1, standard Bayesian calculation (Bernardo & Smith, 2000) shows that equation 2 is equal to the ratio of Beta functions",
+            "cite_spans": [
+                {
+                    "start": 731,
+                    "end": 755,
+                    "text": "(Bernardo & Smith, 2000)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "where a jhrk and b jhrk are the hyperparameters of the Beta distribution and y kj \u00bc",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "x ij is the number of values equal to unity observed in cluster k at column j.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "To simplify the notation, we denote the probability in equation 2 as p jhrk . The likelihood function can now be compactly rewritten as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "Prior distributions Let p\u00f0W ; Z\u00de \u00bc p W \u00f0 \u00dep\u00f0ZjW \u00de be the joint prior distribution for the partition W and the column classification Z. For computational simplicity, similar to Marttinen et al. (2006 Marttinen et al. ( , 2009 , we define the prior distribution for W as the uniform distribution for which p\u00f0W \u00de / 1",
+            "cite_spans": [
+                {
+                    "start": 176,
+                    "end": 198,
+                    "text": "Marttinen et al. (2006",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 199,
+                    "end": 224,
+                    "text": "Marttinen et al. ( , 2009",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "There are alternative prior distributions for data partitions that directly penalize an increase in the number of clusters, such as a uniform distribution for the number of clusters K used in the hierBAPS software (Cheng et al., 2013) or the Dirichlet process prior (Jain & Neal, 2007; Neal, 2000) . However, because we use a strongly informative prior distribution for the parameters in Z, which penalizes spurious clusters, the uniform prior on W does not lead to problems with overestimation of K, as illustrated for a related clustering model by Marttinen et al. (2009) .",
+            "cite_spans": [
+                {
+                    "start": 214,
+                    "end": 234,
+                    "text": "(Cheng et al., 2013)",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 266,
+                    "end": 285,
+                    "text": "(Jain & Neal, 2007;",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 286,
+                    "end": 297,
+                    "text": "Neal, 2000)",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 550,
+                    "end": 573,
+                    "text": "Marttinen et al. (2009)",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "To define the conditional prior distribution for Z, we follow a hierarchical approach. Let c5(c 1 , c 2 , c 3 ) T denote our prior probabilities for a column to represent noise, weak signal or strong signal, respectively. Then, c h \u00a2 0 and h P c h \u00bc 1\u00f0h \u00bc 1; 2; 3\u00de. Note that these properties are column-specific and they are not affected by any particular partition under consideration. Also, note that the array Z satisfies ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "where Z jh is a 2 \u00a3 K binary matrix satisfying equation 5. The matrix Z jh is then modelled by K independent multi-A. Pessia and others nomial distributions",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "where v hr is the prior probability of observing status r when a column has property h. Inserting equation 7 into equation 6, we finally obtain",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "where we used the equality z jh:: z jhrk \u00bc Kz jhrk .",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Likelihood function"
+        },
+        {
+            "text": "By multiplying the right-hand side of equation 4 and equation 8, we obtain the joint posterior distribution of the main parameters up to a normalizing constant",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Posterior inference"
+        },
+        {
+            "text": "We estimate the pair (W, Z) using the mode of the posterior distribution",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Posterior inference"
+        },
+        {
+            "text": "which is equivalently obtained by maximizing the log posterior while ignoring the constant term:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Posterior inference"
+        },
+        {
+            "text": "Let W represent the set of all the possible partitions of N and let Z W denote the set of all the possible classifications of the columns (conditional on the underlying partition). The cardinality of the parameter space is easily determined, as W j j is equal to the Bell number B n , whereas Z W j j \u00bc \u00f02 \u00fe 2 K \u00de m . For a discrete posterior distribution over a space of such high cardinality and complex topology, it is unlikely that any standard Markov chain Monte Carlo approach would be able to efficiently explore the distribution and estimate the mode using a reasonable amount of computational time. Therefore, we have developed a greedy optimization algorithm for fitting the model to a multiple sequence alignment. An advantage of the analytical tractability of the model is that any two model structures can be compared using the difference in log posterior, and hence estimates from multiple independent parallel or sequential algorithm runs can be ranked in a straightforward manner. Similarly, posterior uncertainty around the mode estimate can be easily numerically summarized, for example using Bayes factors against neighbouring model configurations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Posterior inference"
+        },
+        {
+            "text": "An explanation of how to obtain default values for the prior hyperparameters and a description of the greedy algorithm can be found in Supplementary Text S1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Posterior inference"
+        },
+        {
+            "text": "Data collection followed a multi-stage approach. First, 12 295 A/H3N2 HA protein sequences were downloaded from three different search engines: NCBI's Influenza Virus Resource (Bao et al., 2008) , GISAID EpiFlu Database (Bogner et al., 2006) and Influenza Research Database (Squires et al., 2012) . Our search query consisted of fulllength A/H3N2 HA proteins, collected from human hosts in any country, excluding laboratory strains and mixed subtypes. In the second stage, we scanned the data for duplicates and low-quality reads and, after removing them from the collection, we aligned the data using MUSCLE (Edgar, 2004) . After again removing duplicates, the dataset consisted of 4898 unique strains of 567 amino acids. The complete list of accession numbers is given in Table S1 . ",
+            "cite_spans": [
+                {
+                    "start": 176,
+                    "end": 194,
+                    "text": "(Bao et al., 2008)",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 220,
+                    "end": 241,
+                    "text": "(Bogner et al., 2006)",
+                    "ref_id": null
+                },
+                {
+                    "start": 274,
+                    "end": 296,
+                    "text": "(Squires et al., 2012)",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 609,
+                    "end": 622,
+                    "text": "(Edgar, 2004)",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 774,
+                    "end": 782,
+                    "text": "Table S1",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Data collection"
+        },
+        {
+            "text": "The amino acid positions that correspond to characteristic amino acid changes were mapped to the crystal structure of the influenza virus HA (PDB ID 1HA0). Structurally relevant mutations occurring between two consecutive clusters are shown as yellow spheres. The resulting sequence of mapping images were rendered in PyMol and the image sequence was then encoded into a video file using MEncoder v.4.8.3 and the H.264 compression format.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "3-D mapping of characteristic amino acid changes"
+        },
+        {
+            "text": "To obtain a reliable estimate of the model parameters, we ran the optimization algorithm 100 times from different starting points and chose the solution with the highest posterior probability. The starting points were created by randomly modifying, through merging and splitting operations, a common k-medoids partition (Hastie et al., 2009) . The value for k was chosen according to the highest posterior probability score. This procedure generated initial partitions lying in a neighbourhood of the optimal solution and allowed the algorithm to converge in less than 6 h (2.6 GHz processor with 2 GB RAM). The optimal model allocated the 4898 sequences into 57 different groups while simultaneously detecting 117 (out of 567 possible) cluster-defining sites. As a comparison, the adjusted Rand index between our solution and the kmedoids partition with the same number of clusters is 0.824. The two partitions are very similar and their discrepancy is completely explained by a small rearrangement of the units. This result can be interpreted by noting that Kpax2 gives different weights to matrix columns, whereas standard clustering techniques do not make any distinction between noise and signal sites.",
+            "cite_spans": [
+                {
+                    "start": 320,
+                    "end": 341,
+                    "text": "(Hastie et al., 2009)",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Broad overview of K-Pax2 output"
+        },
+        {
+            "text": "To understand the groups' chronologies, we first selected, within each group, only those strains possessing the whole set of characteristic amino acids. We will call these strains the 'consensus sequences' of the cluster, as they represent the molecular variation most relevant for selection. Based on the earliest year in which the consensus sequence was identified, we ordered the groups according to their appearance. Fig. 1 summarizes the temporal distribution within each cluster, showing a clear relationship between cluster associations and sampling time. A similar temporal pattern can be observed by overlaying the clusters on a maximum-likelihood phylogenetic tree (Fig. 2) . Because more samples are available from the recent past, we achieve higher resolution clustering of samples from the past several years compared with, for example, samples from 1968 to 1972. Table S2 , each virus group is associated with a particular subset of the 117 sites. The cluster-defining amino acids can be interpreted as a fingerprint of the fitness change that did lead to proliferation of the lineage represented by the cluster.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 421,
+                    "end": 427,
+                    "text": "Fig. 1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 675,
+                    "end": 683,
+                    "text": "(Fig. 2)",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 877,
+                    "end": 885,
+                    "text": "Table S2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Broad overview of K-Pax2 output"
+        },
+        {
+            "text": "To facilitate comparison with HA evolution, we performed a phylogenetic analysis of the fingerprint amino acid 1968 1973 1980 1990 1996 2001 2005 A. Pessia and others change patterns discovered by the method. There can exist, in particular with densely sampled data from cocirculating groups of strains, multiple clusters of which only one successfully seeds the next cluster. Therefore, we identified a parsimonious 'core' set of groups defined to have the following characteristics. First, their age or time of emergence is determined by the first sampling date of their consensus sequence (as previously defined). Second, a core cluster can have only a single ancestral core cluster but potentially multiple descendant clusters, some of Identification of cluster-defining positions in protein sequences which may not be core clusters themselves. Third, a core cluster can descend only from an ancestral core cluster that precedes it by at least 1 year. In addition, we assumed that no recombination has occurred.",
+            "cite_spans": [
+                {
+                    "start": 111,
+                    "end": 145,
+                    "text": "1968 1973 1980 1990 1996 2001 2005",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Core evolution of the HA protein"
+        },
+        {
+            "text": "The above criteria led to the discovery of 23 core clusters among the 57 clusters present in the K-Pax2 output.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Core evolution of the HA protein"
+        },
+        {
+            "text": "We computed the genetic distance between clusters as the average distance between their consensus sequences using the corrected distance proposed by Tamura & Kumar (2002) and the usual p-distance (Nei & Kumar, 2000) . Both measures agreed. The tree in Fig. 3 was reconstructed by choosing, for each group, the ancestor associated with the minimum distance. The core clusters can be interpreted as the backbone clades of the A/H3N2 HA phylogeny, connecting the viruses observed in 1968 to the most recent ones. The classical ladder shape of the phylogenetic tree is conserved when only one consensus sequence per core cluster is used (Fig. 4) . These cluster transitions closely resemble those reported by Smith et al. (2004) based on a carefully curated set of sequences, which represents less than 10 % of the data analysed here. The evolutionary relationships among all the 57 clusters are shown in Fig. S1 . Figure 5 shows how the characteristic sites of the core clusters have evolved over time. This reflects the dominant role of the B-cell epitopes in contrast to T-cell epitopes (Suzuki, 2006) . To quantify the distribution of these changes over time, we calculated unadjusted estimates of mutation A. Pessia and others rates in each epitope and elsewhere in HA1 (Table 1) . Antigenic drift is thought to occur when an average of four amino acid changes accumulates over time (Koel et al., 2013) . Many of the cluster transitions in Fig. 5 agree with this definition, but some carry fewer substitutions, which illustrates the usefulness of more flexible, statistical Rates have been estimated as y=\u00f0lt\u00de, where y is the total number of amino acid changes, l is the length of the region and t is the time difference in years between two clusters. Independence between sites and homogeneous rates per region are assumed.",
+            "cite_spans": [
+                {
+                    "start": 149,
+                    "end": 170,
+                    "text": "Tamura & Kumar (2002)",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 196,
+                    "end": 215,
+                    "text": "(Nei & Kumar, 2000)",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 705,
+                    "end": 724,
+                    "text": "Smith et al. (2004)",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 1086,
+                    "end": 1100,
+                    "text": "(Suzuki, 2006)",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 1384,
+                    "end": 1403,
+                    "text": "(Koel et al., 2013)",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 252,
+                    "end": 258,
+                    "text": "Fig. 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 633,
+                    "end": 641,
+                    "text": "(Fig. 4)",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 901,
+                    "end": 908,
+                    "text": "Fig. S1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 911,
+                    "end": 919,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1271,
+                    "end": 1280,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 1441,
+                    "end": 1447,
+                    "text": "Fig. 5",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Core evolution of the HA protein"
+        },
+        {
+            "text": "Year Identification of cluster-defining positions in protein sequences model-based rules to pinpoint potential targets for further attention and experimental work. The inferred changes are not uniformly distributed over the five epitopes (chisquared test, x 2 519.665, df54, Pv0.001); instead changes in epitopes B and A are over-represented (in decreasing order), which matches well with current understanding of their relative functional importance (Koel et al., 2013) . Figure 6 shows how the core clusters relate to each other in antigenic space, based on haemagglutination inhibition assays (Bedford et al., 2014) . Many clusters are clearly distinct from each other, supporting the conclusion that K-Pax2 successfully identifies meaningful phenotypes. The pairs of clusters where an overlap occurs represent core clusters that arise in succession in Fig. 4 . This suggests that our method has high sensitivity to detect changes that relate to early antigenic separation of strains, making it potentially also useful for continuous semi-automated screening of novel antigenic types from sequenced strains.",
+            "cite_spans": [
+                {
+                    "start": 451,
+                    "end": 470,
+                    "text": "(Koel et al., 2013)",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 596,
+                    "end": 618,
+                    "text": "(Bedford et al., 2014)",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 473,
+                    "end": 481,
+                    "text": "Figure 6",
+                    "ref_id": "FIGREF6"
+                },
+                {
+                    "start": 856,
+                    "end": 862,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Core evolution of the HA protein"
+        },
+        {
+            "text": "While K-Pax2 can generate hypotheses about which amino acids are under selection simply on the basis of sequence data, the integration of K-Pax2 output and other data can yield additional hypotheses. Video S1 displays the characteristic amino acid changes in core clusters mapped to the 3D structure of HA. The most comprehensive transition occurs in the 1996 group where changes occurred in all five epitopes, shown as a pronounced jump in antigenic space (Fig. 6) . Interestingly, sequential changes in core characteristic sites rarely occur in close proximity, even when within the same epitope. This raises the possibility that selection tends to favour alternation across the protein surface, even within a single domain. Such patterns are consistent with the idea that HA evades immunity through sequential mutations that enable escape from different subpopulations (Linderman et al., 2014; Sato et al., 2004) .",
+            "cite_spans": [
+                {
+                    "start": 872,
+                    "end": 896,
+                    "text": "(Linderman et al., 2014;",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 897,
+                    "end": 915,
+                    "text": "Sato et al., 2004)",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 457,
+                    "end": 465,
+                    "text": "(Fig. 6)",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Core evolution of the HA protein"
+        },
+        {
+            "text": "There is a widening gap between the number of experimentally validated evolutionary mechanisms and the abundance of sequence data. Hence, there is demand for computational tools that can aid in harvesting biologically meaningful signals from data to guide further research.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Using thousands of publicly available HA sequences from A/H3N2 since 1968, we demonstrated that a Bayesian modelling approach can identify patterns of sequence variation that reflect known existing drivers of A/H3N2 evolution. These results suggest the power of K-Pax2 to extract evolutionary signals from microbial sequence collections and to provide a critically needed tool to guide studies of protein function and evolution.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Despite the demonstrated ability of our method to successfully explore sequence variation without imposing an explicit dynamic evolutionary model, there are caveats to be aware of. Like most statistical methods, the modelbased clustering can be affected by sampling biases of various kinds. Highly uneven sampling over space and time will both reduce the power to detect novel variants and inflate the false positive rate of functionally critical residue changes. Furthermore, certain evolutionary processes such as episodic selection can create a pattern that resembles those implied by positive selection, and hence the inferred clusters may lack meaningful interpretation in phenotype space. Furthermore, hitchhiking phenomena due to genetic linkage may confound the identification of the causal variants as characteristic sites.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "K-Pax2 has been implemented as an R package and is freely available at http://www.helsinki.fi/bsg/software/kpax2/ and at https://github.com/alberto-p/kpax2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Feature selection methods for identifying genetic determinants of host species in RNA viruses",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "References Aguas",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLOS Comput Biol",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "The influenza virus resource at the National Center for Biotechnology Information",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Bao",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bolotov",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dernovoy",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Kiryutin",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Zaslavsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tatusova",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ostell",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Lipman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Virol",
+            "volume": "82",
+            "issn": "",
+            "pages": "596--601",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Integrating influenza antigenic dynamics with molecular evolution",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bedford",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Suchard",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Lemey",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Dudas",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Gregory",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hay",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Mccauley",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Russell",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Structure of influenza virus haemagglutinin complexed with a neutralizing antibody",
+            "authors": [],
+            "year": null,
+            "venue": "Nature",
+            "volume": "376",
+            "issn": "",
+            "pages": "92--94",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "A global initiative on sharing avian flu data",
+            "authors": [],
+            "year": null,
+            "venue": "Nature",
+            "volume": "442",
+            "issn": "",
+            "pages": "981--981",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Hierarchical and spatially explicit clustering of DNA sequences with BAPS software",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Cheng",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Connor",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sir\u00e9 N",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Aanensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Corander",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Mol Biol Evol",
+            "volume": "30",
+            "issn": "",
+            "pages": "1224--1228",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Transmission and evolution of the Middle East respiratory syndrome coronavirus in Saudi Arabia: a descriptive genomic study",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Cotten",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Watson",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Kellam",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Al-Rabeeah",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Makhdoom",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Assiri",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Al-Tawfiq",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Alhakeem",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Madani",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Lancet",
+            "volume": "382",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "MUSCLE: multiple sequence alignment with high accuracy and high throughput",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Edgar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "",
+            "pages": "1792--1797",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Positive Darwinian evolution in human influenza A viruses",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Fitch",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leiter",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Palese",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "88",
+            "issn": "",
+            "pages": "4270--4274",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "A complex of influenza hemagglutinin with a A. Pessia and others neutralizing antibody that binds outside the virus receptor binding site",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Fleury",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Barr\u00e8 Re",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bizebard",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Daniels",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Skehel",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Knossow",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Nat Struct Biol",
+            "volume": "6",
+            "issn": "",
+            "pages": "530--534",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Genomic surveillance elucidates Ebola virus origin and transmission during the 2014 outbreak",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Gire",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Goba",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Andersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S G"
+                    ],
+                    "last": "Sealfon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Kanneh",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jalloh",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Momoh",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fullah",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Science",
+            "volume": "345",
+            "issn": "",
+            "pages": "1369--1372",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Epistatically interacting substitutions are enriched during adaptive protein evolution",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Gong",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Bloom",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS Genet",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "The Elements of Statistical Learning",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hastie",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Tibshirani",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Friedman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Splitting and merging components of a nonconjugate Dirichlet process mixture model",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jain",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Neal",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bayesian Anal",
+            "volume": "2",
+            "issn": "",
+            "pages": "445--472",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Mechanism of neutralization of influenza virus infectivity by antibodies",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Knossow",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gaudier",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Douglas",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Barr\u00e8 Re",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bizebard",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Barbey",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Gigant",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Skehel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Virology",
+            "volume": "302",
+            "issn": "",
+            "pages": "294--298",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Substitutions near the receptor binding site determine major antigenic change during influenza virus evolution",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Koel",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Burke",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bestebroer",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Van Der",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Vliet",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "C M"
+                    ],
+                    "last": "Zondag",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Vervaet",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Skepner",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lewis",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Spronken",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J. & other authors",
+            "volume": "342",
+            "issn": "",
+            "pages": "976--979",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Routine use of microbial whole genome sequencing in diagnostic and public health microbiology",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Bentley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS Pathog",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Potential antigenic explanation for atypical H1N1 infections among middle-aged adults during the 2013-2014 influenza season",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Linderman",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Chambers",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Zost",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Parkhouse",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Herrmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Ellebedy",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Carter",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Andrews",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "& other authors",
+            "volume": "111",
+            "issn": "",
+            "pages": "15798--15803",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Bayesian search of functionally divergent protein subgroups and their function specific residues",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Marttinen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Corander",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "T\u00f6 R\u00f6 Nen",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Holm",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Bioinformatics",
+            "volume": "22",
+            "issn": "",
+            "pages": "2466--2474",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Bayesian clustering and feature selection for cancer tissue samples",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Marttinen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Myllykangas",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Corander",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Bioinformatics",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Putative amino acid determinants of the emergence of the 2009 influenza A (H1N1) virus in the human population",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Meroz",
+                    "suffix": ""
+                },
+                {
+                    "first": "S.-W",
+                    "middle": [],
+                    "last": "Yoon",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Ducatez",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Fabrizio",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Webby",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hertz",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Ben-Tal",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "108",
+            "issn": "",
+            "pages": "13522--13527",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Markov chain sampling methods for Dirichlet process mixture models",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Neal",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "J Comput Graph Stat",
+            "volume": "9",
+            "issn": "",
+            "pages": "249--265",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Molecular Evolution and Phylogenetics",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Nei",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kumar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Rapid bacterial whole-genome sequencing to enhance diagnostic and public health microbiology",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Reuter",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Ellington",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "J P"
+                    ],
+                    "last": "Cartwright",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "U"
+                    ],
+                    "last": "K\u00f6 Ser",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "T\u00f6 R\u00f6 K",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Gouliouris",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Harris",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Brown",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "T G"
+                    ],
+                    "last": "Holden",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "& other authors",
+            "volume": "173",
+            "issn": "",
+            "pages": "1397--1404",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Amino-acid change on the antigenic region B1 of H3 haemagglutinin may be a trigger for the emergence of drift strain of influenza A virus",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Morishita",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Nobusawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Tonegawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sakae",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Nakajima",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Nakajima",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Epidemiol Infect",
+            "volume": "132",
+            "issn": "",
+            "pages": "399--406",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Receptor binding and membrane fusion in virus entry: the influenza hemagglutinin",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Skehel",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wiley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Annu Rev Biochem",
+            "volume": "69",
+            "issn": "",
+            "pages": "531--569",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Mapping the antigenic and genetic evolution of influenza virus",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lapedes",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "De Jong",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bestebroer",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Rimmelzwaan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D M E"
+                    ],
+                    "last": "Osterhaus",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A M"
+                    ],
+                    "last": "Fouchier",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Science",
+            "volume": "305",
+            "issn": "",
+            "pages": "371--376",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Influenza research database: an integrated bioinformatics resource for influenza research and surveillance",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Squires",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Noronha",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Hunt",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Garc\u00eda-Sastre",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Macken",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Baumgarth",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Suarez",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Pickett",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Influenza Other Respi Viruses",
+            "volume": "6",
+            "issn": "",
+            "pages": "404--416",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Natural selection on the influenza virus genome",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Suzuki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Mol Biol Evol",
+            "volume": "23",
+            "issn": "",
+            "pages": "1902--1911",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Positive selection for gains of N-linked glycosylation sites in hemagglutinin during evolution of H3N2 human influenza A virus",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Suzuki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Genes Genet Syst",
+            "volume": "86",
+            "issn": "",
+            "pages": "287--294",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Evolutionary distance estimation under heterogeneous substitution pattern among lineages",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Tamura",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kumar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Mol Biol Evol",
+            "volume": "19",
+            "issn": "",
+            "pages": "1727--1736",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Long intervals of stasis punctuated by bursts of positive selection in the seasonal evolution of influenza A virus",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Wolf",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Viboud",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Holmes",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Koonin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lipman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Biol Direct",
+            "volume": "1",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "A synchronized global sweep of the internal genes of modern avian influenza virus",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Worobey",
+                    "suffix": ""
+                },
+                {
+                    "first": "G.-Z",
+                    "middle": [],
+                    "last": "Han",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nature",
+            "volume": "508",
+            "issn": "",
+            "pages": "254--257",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Temporal distribution of influenza A/H3N2 HA within each K-Pax2 cluster. Groups are sorted by sampling year of the earliest consensus sequence.Identification of cluster-defining positions in protein sequences",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Maximum-likelihood phylogenetic tree of influenza A/H3N2 HA. K-Pax2 clusters are denoted in the tree as different colours. The scale bar indicates the expected number of substitutions per site.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Phylogeny of influenza A/H3N2 HA as a phylogeny of K-Pax2 clusters. Ancestors are defined as the minimum (average) genetic distance groups, at least 1 year older. Each cluster is labelled by its earliest consensus sequence. Highlighted clusters connecting the viruses observed in 1968 to the most recent ones are the 'core' clusters. The scale bar indicates the expected number of substitutions per site.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Maximum-likelihood phylogenetic tree of influenza A/H3N2 HA, restricted to core cluster consensus sequences. The 23 strains are the core clusters' earliest consensus sequences. The scale bar indicates the expected number of substitutions per site.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "HA1 chain characteristic sites and their changes across the 23 core clusters. Vertical grey bars indicate cases where the previous characteristic amino acid in the sequence position has not mutated to a new value. White in any position indicates that the amino acid is not determined as characteristic. All other colours correspond to specific amino acids. Abscissae indicate residues' position along the HA protein.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Mutations since 2010. \u2020 It is unknown which of the two 2012 co-circulating groups will go extinct. The global rate has been computed by arbitrarily choosing cluster 2012(a).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Core clusters in antigenic space. Polygon shapes and sizes are dependent on the availability of inhibition assay data.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF2": {
+            "text": "Unadjusted mutation rate estimates, as observed on the HA1 of influenza A/H3N2, by B cell epitope(BCE)",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We acknowledge the authors, and originating and submitting laboratories of the sequences from GISAID EpiFlu Database on which this research is based (the list is detailed in Table S3 ). We thank Trevor Bedford for kindly providing us with the data points used to create Fig. 6 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 174,
+                    "end": 182,
+                    "text": "Table S3",
+                    "ref_id": null
+                },
+                {
+                    "start": 270,
+                    "end": 276,
+                    "text": "Fig. 6",
+                    "ref_id": null
+                }
+            ],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": " 122  124  126  130  131  132  133  135  137  138  140  142  143  144  145  146  150  152  168   44   57  59  62  63  67  75  78  80  81  82  83  86  87  88  91  92 128 129 155 156 157 158 159 160 163 164 165 186 187 188 189 190 192 193 194 196 197 198 ",
+            "cite_spans": [
+                {
+                    "start": 225,
+                    "end": 252,
+                    "text": "190 192 193 194 196 197 198",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1,
+                    "end": 164,
+                    "text": "122  124  126  130  131  132  133  135  137  138  140  142  143  144  145  146  150  152  168   44   57  59  62  63  67  75  78  80  81  82  83  86  87  88  91  92",
+                    "ref_id": null
+                }
+            ],
+            "section": "annex"
+        }
+    ]
+}

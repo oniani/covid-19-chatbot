@@ -1,0 +1,1972 @@
+{
+    "paper_id": "a286d1120f3b36b22f1b9e4e6409cad9b8471370",
+    "metadata": {
+        "title": "Recognizing flu-like symptoms from videos",
+        "authors": [
+            {
+                "first": "Tuan",
+                "middle": [
+                    "Hue"
+                ],
+                "last": "Thi",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Li",
+                "middle": [],
+                "last": "Wang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Ning",
+                "middle": [],
+                "last": "Ye",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jian",
+                "middle": [],
+                "last": "Zhang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Sebastian",
+                "middle": [],
+                "last": "Maurer-Stroh",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Li",
+                "middle": [],
+                "last": "Cheng",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Vision-based surveillance and monitoring is a potential alternative for early detection of respiratory disease outbreaks in urban areas complementing molecular diagnostics and hospital and doctor visit-based alert systems. Visible actions representing typical flu-like symptoms include sneeze and cough that are associated with changing patterns of hand to head distances, among others. The technical difficulties lie in the high complexity and large variation of those actions as well as numerous similar background actions such as scratching head, cell phone use, eating, drinking and so on. Results: In this paper, we make a first attempt at the challenging problem of recognizing flu-like symptoms from videos. Since there was no related dataset available, we created a new public health dataset for action recognition that includes two major flu-like symptom related actions (sneeze and cough) and a number of background actions. We also developed a suitable novel algorithm by introducing two types of Action Matching Kernels, where both types aim to integrate two aspects of local features, namely the space-time layout and the Bag-of-Words representations. In particular, we show that the Pyramid Match Kernel and Spatial Pyramid Matching are both special cases of our proposed kernels. Besides experimenting on standard testbed, the proposed algorithm is evaluated also on the new sneeze and cough set. Empirically, we observe that our approach achieves competitive performance compared to the state-of-the-arts, while recognition on the new public health dataset is shown to be a non-trivial task even with simple single person unobstructed view. Conclusions: Our sneeze and cough video dataset and newly developed action recognition algorithm is the first of its kind and aims to kick-start the field of action recognition of flu-like symptoms from videos. It will be challenging but necessary in future developments to consider more complex real-life scenario of detecting these actions simultaneously from multiple persons in possibly crowded environments.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "While the recent swine flu pandemic was luckily less severe than initially thought, there remains a constant threat of mutated or reassorted influenza strains that give rise to new outbreaks that could range from small local clusters [1] to seasonal epidemics [2] or even global pandemics [3, 4] . Similarly, history has also shown us that previously unknown pathogens such as the SARS coronavirus could emerge and cause serious outbreaks [5] . Just in 2012 and 2013, there were 2 new outbreaks of different viruses with pandemic potential, MERS-CoV [6] and H7N9 [7] , triggering increased surveillance alerts. Respiratory diseases often manifest themselves through similar flu-like symptoms and early detection of new outbreaks *Correspondence: chengli@bii.a-star.edu.sg 3 Bioinformatics Institute, A*STAR, Singapore, Singapore 7 School of Computing, National University of Singapore, Singapore, Singapore Full list of author information is available at the end of the article is of central importance in order to delay or prevent their escalation and wider spread. However, classical surveillance systems are mostly relying on time-delayed and costly virological tests requiring hospital or physician visits [8] [9] [10] .",
+            "cite_spans": [
+                {
+                    "start": 234,
+                    "end": 237,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 260,
+                    "end": 263,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 289,
+                    "end": 292,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 293,
+                    "end": 295,
+                    "text": "4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 439,
+                    "end": 442,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 550,
+                    "end": 553,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 563,
+                    "end": 566,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1210,
+                    "end": 1213,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 1214,
+                    "end": 1217,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 1218,
+                    "end": 1222,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "One potential alternative is to detect typical flu-like symptom in human behaviors, by automatically analyzing video footage from public areas such as airports, bus stations, which exploits the existing vision-based surveillance infrastructure in public venues. This will provide a unique valuable source of information that is complementary to the existing public health monitoring network. Under this context, we make a first attempt on the recognition of typical flu-like symptoms: sneeze and cough actions, and propose a novel discriminative approach which is further evaluated on a new Sneeze-Cough action dataset. http://www.biomedcentral.com/1471-2105/15/300 Major contributions Our first contribution is a new video action dataset a dedicated towards the problem of flu-like symptoms detection that is of central importance in early surveillance of respiratory disease outbreaks. A series of experiments are conducted with performance analysis that reveals some of the characteristics of this dataset. Our second contribution is two novel types of Action Matching Kernels (AMKs) that are shown to perform competitively comparing to the state-of-the-art methods. In particular, we show that Pyramid Match Kernel [11] and Spatial Pyramid Matching [12] are both special cases of the proposed kernels. The kernels are also closely connected to the recent developments in Hough transform [13, 14] .",
+            "cite_spans": [
+                {
+                    "start": 1219,
+                    "end": 1223,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1253,
+                    "end": 1257,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1391,
+                    "end": 1395,
+                    "text": "[13,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 1396,
+                    "end": 1399,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Related work Current respiratory disease surveillance systems are known to lag significantly behind the onset of outbreaks [15, 16] , mostly due to their heavy reliance on virological and clinical data including physician visits. Very recently a web-based surveillance tool has been developed by Google [17] , which is made possible through search engines by taking advantage of the social health-seeking behavior of patients. There are nonetheless concerns that there sometimes exists non-negligible bias in the detection results driven by disease publicity rather than the disease itself. The work presented in this paper, to our best knowledge, is the first to examine this problem with the help of vision-based surveillance and analysis.",
+            "cite_spans": [
+                {
+                    "start": 123,
+                    "end": 127,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 128,
+                    "end": 131,
+                    "text": "16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 303,
+                    "end": 307,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Research on video action recognition and retrieval [18] has recently witnessed a dramatic increase, mainly due to the vast demand to analyze and understand human actions from video footage of everyday life, and from web hosts such as YouTube, MySpace Videos, Flickr, and ScienceStage. Established methods for modeling and analyzing human actions are often generative statistical approaches, especially the Markov models e.g. [19, 20] . Recently, the discriminative learning scheme has also been extended to allow structured predictions, e.g. Conditional Random Fields [21] . They nevertheless often rely on learning with sophisticated parametric models.",
+            "cite_spans": [
+                {
+                    "start": 51,
+                    "end": 55,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 425,
+                    "end": 429,
+                    "text": "[19,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 430,
+                    "end": 433,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 568,
+                    "end": 572,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Similar to a number of recent works [22] [23] [24] [25] , we also assume a human action can be sufficiently described by a set of local features in space-time. A local feature typically comes with two aspects: a descriptor vector and its space-time location. As the number and locations of the local features are usually not fixed, often a bag-of-words (BoW) method is utilized to map the feature descriptors to a histogram vector in the space spanned by codewords, as in [11, 24, 26] , or hierarchical codewords as described in the Pyramid Match Kernel [11] . The BoW representation has demonstrated impressive performance on image and action analysis tasks. Nevertheless it does not retain information regarding space-time layout of the local features.",
+            "cite_spans": [
+                {
+                    "start": 36,
+                    "end": 40,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 41,
+                    "end": 45,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 46,
+                    "end": 50,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 51,
+                    "end": 55,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 472,
+                    "end": 476,
+                    "text": "[11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 477,
+                    "end": 480,
+                    "text": "24,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 481,
+                    "end": 484,
+                    "text": "26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 554,
+                    "end": 558,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "On the other hand, the spatial (or space-time) layout of local features has long been regarded as an important cue to infer the existence of a global object from local features. The elegant Hough transform [27] is originally devised to detect lines and circles. An important generalization is developed by Ballard [28] to detect objects of arbitrary shapes. Leibe et al. in their seminal work [13] consider a probabilistic variant of the Hough transform, where the BoW model is integrated into the voting space by means of conditional and posteriori probabilities. This is further followed by [14] where a dedicated max-margin learning method is developed. Throughout these methods, a crucial step is the construction of a voting space, where all local features are made to vote for the existence and if so, the location of the global object they belong to. An interesting observation is that this voting space is employed by [14] in an implicit manner. As clearly revealed from Equations (12) and (13) of [14] , the model or the parameter vector W is implicitly related to the voting space: W is interpreted as weights for the activations of codewords, where influence from the voting space is implicitly carried out via the activations. A latent variant has also been used for object detection [29] .",
+            "cite_spans": [
+                {
+                    "start": 206,
+                    "end": 210,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 314,
+                    "end": 318,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 358,
+                    "end": 370,
+                    "text": "Leibe et al.",
+                    "ref_id": null
+                },
+                {
+                    "start": 393,
+                    "end": 397,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 593,
+                    "end": 597,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 926,
+                    "end": 930,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 989,
+                    "end": 993,
+                    "text": "(12)",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1006,
+                    "end": 1010,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1296,
+                    "end": 1300,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Recently there have been attempts to integrate the two sources of information: BoW and the space-time layout. The Spatial Pyramid Matching [12] , a probabilistic variant of Hough transform (also called Implicit Shape Model) [13] , and utilizing the skeleton structure of human body [30] , are such examples. In the next section, we show that our AMK explicitly incorporates the space-time layout and the BoW model. We will also show that the Pyramid Match Kernel and the Spatial Pyramid Matching are special cases of our proposed AMKs with proper feature extensions. Section 'Sneeze-Cough: a public health surveillance dataset' will describe our new Sneeze-Cough dataset in details, and followed the experimental results in Section 'Results and discussion'.",
+            "cite_spans": [
+                {
+                    "start": 139,
+                    "end": 143,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 224,
+                    "end": 228,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 282,
+                    "end": 286,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In this section, we propose two types of Action Matching Kernels (AMKs) that integrate both BoW and space-time layout. The first type is by means of unary and binary extensions, while the second type is a modification of the successful Pyramid Match Kernel. As shown in Figure 1 , an action can be naturally depicted by a set of local features within a space-time action volume (the green cube illustrated in Figure 1 (a) bottom left), which we also refer to as action volume or simply volume when there is no confusion. In both cases, an input action corresponds to both a BoW model consisting of K codewords, as well as the features' locations in the space-time volume. http://www.biomedcentral.com/1471-2105/15/300 Here local features ('+'s) of an action is contained in a space-time volume displayed as a green cube. Besides residing in this local coordinate, each feature also has a descriptor that is further mapped to the histogram of codewords representation using the bag-of-words model. This figure displays two examples of the proposed Type I Kernels. (a) presents a unary extension where the local volume is further partitioned into concentric layers. (b) demonstrates a binary extension scheme that considers the distance and codeword entries of feature pairs. Note other extension schemes are also possible.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 270,
+                    "end": 278,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 409,
+                    "end": 417,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "Presented with such an action, below we describe a set of kernel design recipes that are able to integrate both the BoW representation and the space-time locations of local features.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AMK Type I: unary and binary extensions"
+        },
+        {
+            "text": "Unary extensions A unary extension partitions the volume into disjoint parts. One such scheme is to partition into concentric layers, as displayed in Figure 1 (a). By pooling the codeword assignments of these features in their BoW representation, one partition is characterized by a histogram of length K when K codewords are used. A length K \u00d7 S vector is thus produced as a unary extension, by concatenating over S partitions.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 150,
+                    "end": 158,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "AMK Type I: unary and binary extensions"
+        },
+        {
+            "text": "Other partition schemes are also possible. For example, partitioning the volume into half in each dimension results in 2 \u00d7 2 \u00d7 2 blocks, and is denoted as S = 8. We can further partition each block into smaller ones, where each block has its own histogram. Interestingly, this is the same three-layer spatial pyramid as depicted in Figure 1 of Spatial Pyramid Matching [12] . The only difference is that here we consider a 3D space-time volume instead of a 2D image space. By summing all the histograms over layers with proper weights, and by using histogram intersection similarity measure, we get back exactly the Spatial Pyramid Matching [12] .",
+            "cite_spans": [
+                {
+                    "start": 369,
+                    "end": 373,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 641,
+                    "end": 645,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 332,
+                    "end": 340,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "AMK Type I: unary and binary extensions"
+        },
+        {
+            "text": "In fact, the degenerate case of unary extensions by setting S to 1 returns the original BoW model. Meanwhile, by fixing S to 1, considering a BoW model with hierarchical codewords, and by using histogram intersection similarity measure, the Pyramid Match Kernel [11] is recovered.",
+            "cite_spans": [
+                {
+                    "start": 262,
+                    "end": 266,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "AMK Type I: unary and binary extensions"
+        },
+        {
+            "text": "Binary extension Different from the unary extensions, a binary extension considers the interactions between a pair of features in space-time. Figure 1 (b) provides such an example, where similar to the concept of co-occurrence matrix, a 3-dimensional array or 3-tensor is used to accumulate the counts of feature pairs using both volume and BoW representations, indexed by (codewords, codewords, distance). Naively this leads to a vector of length K \u00d7K \u00d7S, by accumulating the quantized distance of each feature pair with S possible outcomes. In practice it is further summarized into a more compact vector representation: For a fixed distance, (a) a K-dim vector is extracted from the diagonal elements. (b) a K-dim vector is obtained by summing over all the off-diagonal elements row-wise. For both cases the output vectors are normalized to sum to 1. As each case ends up giving a K \u00d7 S vector, a concatenation of both finally leads to a vector representation of length 2K \u00d7 S.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 142,
+                    "end": 150,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "AMK Type I: unary and binary extensions"
+        },
+        {
+            "text": "From feature extensions to kernels It is straightforward to carry on and build a kernel from the extended vectors mentioned above. In fact, a kernel can be built by considering different feature extension, by examining on a variety of similarity measures (e.g. linear, \u03c7 2 , histogram http://www.biomedcentral.com/1471-2105/15/300 intersection, radial basis function), and by choosing from hierarchical vs. standard codeword representations. A family of kernels can thus be devised using the above recipes, where the examples we illustrate in the paper comprise only a small fraction.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AMK Type I: unary and binary extensions"
+        },
+        {
+            "text": "Original pyramid match kernels In the original Pyramid match kernel paper [11] , a video action is represented as a set of local features descriptors excluding their spacetime location information. Therefore, an action of interest is represented as P = p i \u2208 R d m i=1 . This is followed by building hierarchical codewords using e.g. hierarchical Kmeans. In each scale l \u2208 0, . . . , L \u2212 1, a histogram H l of codewords can be computed. Note the length of corresponding histogram decreases as we navigate to the upper layers of the hierarchy. By concatenating these histograms, the action P is then characterized as a feature vector (P) = (H 0 (P), . . . , H L\u22121 (P)). As in [11] , The kernel function between two actions P and Q is thus defined by",
+            "cite_spans": [
+                {
+                    "start": 74,
+                    "end": 78,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 675,
+                    "end": 679,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "Here w l is used to limit the contribution from a particular scale of histogram, as inversely proportional to its scale, w l = 2 \u2212l . N l is the partial increment from level l \u2212 1 to level l,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "\u03c4 denotes the histogram intersection:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "which can be equivalently written as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "where ID(\u00b7) stores the codeword index of a local feature, \u03b4 is the indicator function, and k is an index of the set of codewords.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "AMK type II As illustrated in Figure 2 , instead of using histogram intersection of Eq. (3), we consider a matching function by modifying Eq. (4) to incorporate space-time locations of local features: ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 30,
+                    "end": 38,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "where M l (p, q) is a geometric measure of the feature pair and is computed as their affinity in the space-time volume,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "As shown in Figure 2 , (b l x , b l y , b l t ) refers to its quantized 3D location in the volume, while D x , D y , and D t denote the number of quantization levels on each of the dimensions, respectively. It is easy to check that for the trivial case D x = D y = D t = 1, Eq. (3) is recovered from Eq. (5). In other words, the Pyramid Match Kernel [11] can be http://www.biomedcentral.com/1471-2105/15/300 regarded as a special case of AMK Type II when no spatial and temporal constraints are enforced.",
+            "cite_spans": [
+                {
+                    "start": 350,
+                    "end": 354,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 12,
+                    "end": 20,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "AMK Type II: a modified pyramid match kernel"
+        },
+        {
+            "text": "Action matching kernels are Mercer kernels It is easy to check that AMKs Type I are Mercer kernels (i.e. the kernel matrix is positive semi-definite (p.s.d.) [31, 32] ) as long as proper similarity measures such as \u03c7 2 , and histogram intersection are utilized. An important property of AMK Type II as defined by Eqs. (1), (2), (5) and (6) is that it is a Mercer kernel. This is clear from the fact that Eq. (6) is a p.s.d, as well as the fact that Mercer kernels are closed under positive scaling and summation operations [31] and the weights w l are always positive. Endowed with a Mercer kernel, the induced convex optimization problem is guaranteed to produce a unique optimal solution using the support vector machine (SVM) classifiers [31] . In practice, we use the binary/multiclass algorithms of LibSVM [33] with customized kernels.",
+            "cite_spans": [
+                {
+                    "start": 158,
+                    "end": 162,
+                    "text": "[31,",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 163,
+                    "end": 166,
+                    "text": "32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 328,
+                    "end": 331,
+                    "text": "(5)",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 523,
+                    "end": 527,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 741,
+                    "end": 745,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 811,
+                    "end": 815,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Mercer kernels and the action volume"
+        },
+        {
+            "text": "space-time, as e.g. illustrated in Figure 1 (a) bottom left. In fact this is a property inherit in the problems regarding action recognition and retrieval. In a typical recognition dataset such as KTH [22] , where there is only one person performing an action in a video, the action is bounded by the size of the frames. One possible scheme is to consider a local coordinate with its origin fixed to the center of these features, and to explicitly examine all possible scales in a manner similarly to that of the Hough voting space. A simple scheme is instead considered in this paper, where the action volume is determined by aligning the bounding boxes detected using a human detector [34] . As a result, its scale is also implicitly decided.",
+            "cite_spans": [
+                {
+                    "start": 201,
+                    "end": 205,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 687,
+                    "end": 691,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 35,
+                    "end": 43,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "The action volume An action is naturally bounded in 3D"
+        },
+        {
+            "text": "We describe here the new Sneeze-Cough video dataset that tailors to the specific challenges and characteristics of recognizing flu-like behavior symptoms in public areas. Note written consent on publication and use of the video data was obtained from each volunteer and the study was cleared by the Bioinformatics Institute ethics committee represented by the executive director. This dataset contains 960 color video clips of imitated surveillance video settings, collected from 20 human subjects (8 females and 12 males) of 20 to 50 years old using a Canon VIXIA HF20 camcorder. A gallery of sample frames are displayed in Figure 3 . The data acquisition process is carried out in an indoor environment with semi-controlled lighting condition (sun lights through windows are present in some of the videos), and the camera is mounted on a tripod mimicking the relative height of a typical surveillance camera. Each clip contains one specific action performed by one subject in a particular view and pose. Video shots are normalized at 480 \u00d7 290 resolution, with stream rate of 5 frame per second, each lasts for around 15 seconds. In addition to the two flu-like behaviors, namely sneeze and cough, six common background action types are also included: drinking, phone calling, scratching head, stretching arms, wiping glasses and waving hands. Note we deliberately cover a spectrum of possible background action types that are relatively close to our actions of interest. In addition, each human subject performs each action six times under 2 different poses (standing and walking) and 3 different views (roughly frontal/left/right). We also perform horizontal flip on each video to produce an additional video set of reflective views, which results in a final set of 1920 videos.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 625,
+                    "end": 633,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Sneeze-Cough: a public health surveillance dataset"
+        },
+        {
+            "text": "Throughout the experiments, the following parameters are used: For AMK Type I and II, the number of codewords is fixed to K = 1024. By default, \u03c7 2 similarity measure is used for AMK Type I; Meanwhile AMK Type II employs histogram intersection, together with a hierarchical codewords of 4 levels. These two different similarity measures are utilized here to showcase the flexibility of incorporating various similarity measures into the proposed AMKs. LibSVM [33] is used with the trade-off parameter C = 10. To verify that the proposed AMKs are able to accommodate different local features, two publicly available local feature detectors & descriptors are considered, namely HOGHOF (also called Space Time Interest Point) [22] , and cuboid [23] .",
+            "cite_spans": [
+                {
+                    "start": 459,
+                    "end": 463,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 723,
+                    "end": 727,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 741,
+                    "end": 745,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results and discussion"
+        },
+        {
+            "text": "Accuracy measures For KTH we use the standard accuracy measure by averaging the diagonal values from the row-normalized confusion matrix. For binary classification, this becomes TP+TN ALL b , which however is problematic for datasets with imbalanced class distributions such as Sneeze-Cough: As 3/4 of the Sneeze-Cough examples belongs to background actions category, and using the standard accuracy measure, a rate of 75% is reached when a classifier is biased towards blindly assigning every example to background actions. This leads to the utilization of precision and recall, which are computed by TP TP+FP and TP TP+FN , respectively. We thus adopt a different accuracy measure of TP TP+FP+FN for this binary classification task, which can be regarded as a lower-bounding summary of the (precision, recall) pair.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results and discussion"
+        },
+        {
+            "text": "KTH The KTH dataset [22] contains 2391 video shots from 25 actors repeatedly performing 6 different action types under 4 different background contexts. The actions include boxing, handclapping, handwaving, jogging, running, and walking. To facilitate direct comparison, the same split scheme of [22] is adopted in our experiments, http://www.biomedcentral.com/1471-2105/15/300 ",
+            "cite_spans": [
+                {
+                    "start": 20,
+                    "end": 24,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 295,
+                    "end": 299,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results and discussion"
+        },
+        {
+            "text": "For the Sneeze-Cough dataset, we use 15 persons for training, and retain the rest 5 persons for testing. We would like to emphasize that this dataset is significantly different and is more challenging comparing to the KTH dataset. First, the actions in this dataset, except for hand-waving, are usually of short time-span, in contrast to actions such as walk or boxing that usually consist of a good number of repetitive action cycles. Second, there exist large variations within the sneeze and cough actions over e.g. different genders, ages, and views. This is further complicated by the fact that the background actions commonly seen in public areas (such as phone calling, scratching head) are often very similar in appearance to flu-like symptoms. Meanwhile these 6 background actions by themselves are highly complex and exhibit large variations as well, as indicated in the sample frames of Figure 3 . By experimenting with 8-class recognition tasks, confusion matrices are obtained to facilitate our investigation into the inter-and cross-actions pattern of this new dataset. Figure 4 presents the confusion matrices obtained using baseline method (BoW+ \u03c7 2 ) and the proposed AMK type II kernel. When comparing the confusion matrices to the counterparts from KTH dataset, Figure 4 (a) vs. Figure 5 (a) and Figure 4 (b) vs. Figure 5(b) , it can be seen that the two baseline methods perform much worse on the Sneeze-Cough dataset than on the KTH dataset. This loss in accuracy suggests that the Sneeze-Cough dataset is much more challenging than the KTH dataset.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 898,
+                    "end": 906,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1084,
+                    "end": 1092,
+                    "text": "Figure 4",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1281,
+                    "end": 1289,
+                    "text": "Figure 4",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1298,
+                    "end": 1306,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1315,
+                    "end": 1323,
+                    "text": "Figure 4",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1332,
+                    "end": 1343,
+                    "text": "Figure 5(b)",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Sneeze-Cough"
+        },
+        {
+            "text": "Meanwhile, the actions of sneeze and cough seems to be more correlated with the subset of actions {call, drink, scratch}, rather than the rest ones of {stretch, wave, wipe}. This might due to the fact that for the action subset {sneeze, cough, call, drink, scratch}, hands are usually placed near the face; While for {stretch, wave, wipe}, hands are often placed further away from the face. The gain in accuracy by adopting the AMK II kernel is also evident, when we compare the matrices (c) and (a) (or (d) and (b)) in Figure 5 for the KTH dataset, as well as by comparing the same two pair of matrices in Figure 4 for the Sneeze-Cough dataset. For KTH, an improvement of around five points has been observed for the averaged diagonal elements; As for Sneeze-Cough, this improvement is around ten points. These observations hold valid for both features.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 520,
+                    "end": 528,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 607,
+                    "end": 615,
+                    "text": "Figure 4",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Sneeze-Cough"
+        },
+        {
+            "text": "Our major interest in this dataset is to recognize flulike symptoms (sneeze and cough) from the background actions. Therefore, binary classification experiments are conducted to examine the performance of the proposed AMK kernels, and the results are listed in Table 2 . For each AMK kernel type, in addition to the (precision, recall) pair, the accuracy measure provides an easy-to-compare summary of its performance. On average, we can see that this dataset is rather challenging. The best method merely reach an accuracy of around 44.4%, which can be partially explained by the large variations within cough/sneeze over various genders/ages/views, as well as their similar spacetime appearances to those of the background actions. For both cuboid and HOGHOF local features, we see significant improvement in accuracy by using specific AMKs compared to baseline methods. Take cuboid feature for example, we observe that using the AMK type I kernel with U b and S = 27 leads to an increase of accuracy by 12.5 points. Interestingly, although the best results (i.e., 43.4% vs. 44.4%) are similar for both local features, they are in fact obtained from different type of AMK kernels.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 261,
+                    "end": 268,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Sneeze-Cough"
+        },
+        {
+            "text": "In this paper, we develop a new family of kernels in the proposed approach that explicitly integrates the two important aspects of action local features: space-time layout and BoW representations. Meanwhile, a new public health action dataset is introduced in this paper, to facilitate the study of detecting typical flu-like symptoms in public areas. This dataset is shown to be significantly different from and is more challenging than established datasets such as the KTH dataset. We demonstrate that our approach, while achieving competitive performance on the well-studied KTH dataset, produces reasonable results for this unique and challenging sneeze-cough dataset.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "For ongoing work, we would extend the current approach to retrieve flu-like behavior symptoms from video archives, which often contain multiple persons simultaneously performing a series of actions, often in crowded environments. In particular, we plan to work with real surveillance datasets and test correlation of daily or weekly average sneeze/cough incidence with public health records of respiratory disease trends over time to show utility of the approach and if it is following or preceding reported peaks from hospital or doctor visit-based reporting systems. We envision that this approach can also be useful for detection of a variety of emergency situations triggering respiratory symptoms such as fires, gas leaks or chemical spills from accidents or even terrorist attacks.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "FAO-OIE-WHO joint technical consultation on avian influenza at the human-animal interface",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Capua",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Dauphin",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Donis",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Fouchier",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Mumford",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Peiris",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Swayne",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Thiermann",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Influenza Other Respi Viruses",
+            "volume": "2010",
+            "issn": "",
+            "pages": "1--29",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "The global circulation of seasonal influenza A (H3N2) viruses",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Russell",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Barr",
+                    "suffix": ""
+                },
+                {
+                    "first": "Al",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Science",
+            "volume": "5874",
+            "issn": "320",
+            "pages": "340--346",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Swine flu goes global",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Butler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature",
+            "volume": "7242",
+            "issn": "458",
+            "pages": "1082--1083",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Virus of the year. The novel H1N1 influenza",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Enserink",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Cohen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Science",
+            "volume": "5960",
+            "issn": "326",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Seasonality of infectious diseases and severe acute respiratory syndrome-what we don't know can hurt us",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dowell",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ho",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Lancet Infect Dis",
+            "volume": "11",
+            "issn": "4",
+            "pages": "704--708",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Alarm bells over MERS coronavirus",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Bennet",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Lancet Infect Dis",
+            "volume": "13",
+            "issn": "7",
+            "pages": "573--577",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Global concerns regarding novel influenza A (H7N9) virus infections",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Uyeki",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Cox",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "N Engl J Med",
+            "volume": "368",
+            "issn": "20",
+            "pages": "1862--1866",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Epidemiology of seasonal influenza: use of surveillance data and statistical models to estimate the burden of disease",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Thompson",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Comanor",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Shay",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "J Infect Dis",
+            "volume": "194",
+            "issn": "2",
+            "pages": "82--91",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Lessons from 40 years' surveillance of influenza in England and Wales",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Fleming",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Elliot",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Epidemiol Infect",
+            "volume": "136",
+            "issn": "7",
+            "pages": "868--875",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "A process evaluation of an active surveillance system for hospitalized 2009-2010 H1N1 influenza cases",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Barr",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Hoefer",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Cherry",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Noyes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Public Health Manag Pract",
+            "volume": "17",
+            "issn": "",
+            "pages": "4--11",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "The pyramid match kernel: discriminative classification with sets of image features",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Grauman",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Darrell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "ICCV",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Beyond bags of features: spatial pyramid matching for recognizing natural scene categories",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lazebnik",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Schmid",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ponce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "CVPR",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Combined object categorization and segmentation with an implicit shape model",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Leibe",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Leonardis",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Schiele",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "ECCV Workshop on Statistical Learning in Computer Vision",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Object detection using a max-margin hough transform",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Maji",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Malik",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "CVPR",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "WHO consultation on priority public health interventions before and during an influenza pandemic",
+            "authors": [],
+            "year": 2004,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Information technology and global surveillance of cases of 2009 H1N1 influenza",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Brownstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Freifeld",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Chan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Keller",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sonricker",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mekaru",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Buckeridge",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "N Engl J Med",
+            "volume": "362",
+            "issn": "18",
+            "pages": "1731--1735",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Detecting influenza epidemics using search engine query data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ginsberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Mohebbi",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Patel",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Brammer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Smolinski",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Brilliant",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature",
+            "volume": "7232",
+            "issn": "457",
+            "pages": "1012--1014",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A survey of advances in vision-based human motion capture and analysis",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Moeslund",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Hilton",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Kruger",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "104",
+            "issn": "",
+            "pages": "90--126",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Coupled hidden, Markov models for complex action recognition",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Brand",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Oliver",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Pentland",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "In CVPR. USA",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Recognition and segmentation of 3-D human action using, HMM and multi-class AdaBoost",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Lv",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Nevatia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "ECCV",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Conditional models for contextual human motion recognition",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Sminchisescu",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kanaujia",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Metaxas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "ICCV",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "USA: International Association for Pattern Recognition",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Schuldt",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Laptev",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Caputo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "ICPR",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Behavior recognition via sparse spatio-temporal features",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Dollar",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Rabaud",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Cottrell",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Belongie",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "IEEE workshop on VSPETS",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Learning realistic human actions from movies",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Laptev",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Marszalek",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Schmid",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rozenfeld",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "CVPR",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Representing videos using mid-level discriminative patches",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Jain",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gupta",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Rodriguez",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Davis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "CVPR",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Recognition with local features: the kernel recipe",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wallraven",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Caputo",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Graf",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "ICCV",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Use of the Hough transformation to detect lines and curves in pictures",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Duda",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Hart",
+                    "suffix": ""
+                }
+            ],
+            "year": 1972,
+            "venue": "Commun ACM",
+            "volume": "15",
+            "issn": "",
+            "pages": "11--15",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Generalizing the Hough transform to detect arbitrary shapes",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Ballard",
+                    "suffix": ""
+                }
+            ],
+            "year": 1981,
+            "venue": "Patt Rec",
+            "volume": "13",
+            "issn": "2",
+            "pages": "111--122",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Latent, Hough transform for object detection",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Razavi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gall",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Kohli",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Gool",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "ECCV",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "An approach to pose-based action recognition",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Yuille",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "CVPR",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Smola A: Learning with Kernels",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Sch\u00f6lkopf",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Hilbertian metrics and positive definite kernels on probability measures",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hein",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Bousquet",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "In AI & Statistics. USA: Society for AI and Statistics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "LIBSVM: a Library for Support Vector Machines. China: Personal website",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Discriminatively trained deformable part models",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Felzenszwalb",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Girshick",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Mcallester",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Evaluation of local spatio-temporal features for action recognition",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ullah",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Klaser",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Laptev",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Schmid",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMVC",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Learning motion categories using both semantic and structural information",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Cipolla",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "CVPR",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Convolutional learning of spatio-temporal features",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Taylor",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Fergus",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Lecun",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bregler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "ECCV",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-15-300"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Recognizing flu-like symptoms from videos",
+            "authors": [
+                {
+                    "first": "Hue",
+                    "middle": [],
+                    "last": "Thi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "The unary and binary feature extensions. An illustration of the unary and binary feature extensions for the proposed Type I Kernels.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "A toy example. A toy example to illustrate the geometric measure M l (p, q) of Eq. (5) for a feature pair (p, q) at codeword k, and with H k (P) = H k (Q) = 1. Pyramid Match Kernel[11] returns 1, since it ignores feature space-time locations; Our AMK Type II returns a matching score using Eq. (6) as: .5 * 0.75 * 0.5 = 0.1875, which indicates the geometric affinity of the two features.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Snapshots of Sneeze-Cough action recognition videos. Snapshots of Sneeze-Cough action recognition videos. From left to right shows eight actions: answer phone call, cough, drink, scratch face, sneeze, stretch arm, wave hand and wipe glasses. From top to bottom shows six pose-and-view variations: stand-front, stand-left, stand-right, walk-front, walk-left, and walk-right. http:",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Confusion matrices of Sneeze-Cough 8-class recognition. Confusion matrices of Sneeze-Cough 8-class recognition. http:",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Confusion matrices of KTH 6-class recognition. Confusion matrices of KTH 6-class recognition. http:",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Comparisons of recognition accuracies on KTH dataset",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Comparisons of recognition accuracies on Sneeze-Cough datasetComparisons of recognition accuracies on Sneeze-Cough dataset. Here shorthands of AMK I and II are used for AMK type I and type II kernels, respectively. U c (U b ) refers to the concentric (block) partition scheme in unary extension. B is for binary extension. Note a different accuracy measure of TP TP+FP+FN is used here.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The project is partially supported by A*STAR JCO and IAF grants in the data collection.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Endnotes a The dataset is made available at http://web.bii.a-star. edu.sg/~chengli/FluRecognition.htm. b TP, TN, FP, and FN refer to True Positive, True Negative, False Positive and False Negative, respectively.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "The authors have not received funding from commercial bodies, and declare no competing interests. The commercial institute where some of the authors are affiliated with had no influence in the study design and interpretation of data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "The principal idea for the project was conceived by SMS and the study design was conceived by LC, THT, SMS, and JZ. The new algorithm was conceived by THT, JZ, and LC. THT and LW implemented, and carried out the empirical experiments with the help of NY. NY helped with recording the images. The paper was written by all authors together. All authors read and approved the final manuscript. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

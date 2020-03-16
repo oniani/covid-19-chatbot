@@ -1,0 +1,2705 @@
+{
+    "paper_id": "362f9e6b508a42ffebfd1a95d146955d59c7cea0",
+    "metadata": {
+        "title": "Quantitative prediction of mouse class I MHC peptide binding affinity using support vector machine regression (SVR) models",
+        "authors": [
+            {
+                "first": "Wen",
+                "middle": [],
+                "last": "Liu",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Minnesota",
+                    "location": {
+                        "postCode": "55455",
+                        "settlement": "Minneapolis",
+                        "region": "MN",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Xiangshan",
+                "middle": [],
+                "last": "Meng",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Minnesota",
+                    "location": {
+                        "postCode": "55455",
+                        "settlement": "Minneapolis",
+                        "region": "MN",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Qiqi",
+                "middle": [],
+                "last": "Xu",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Minnesota",
+                    "location": {
+                        "postCode": "55455",
+                        "settlement": "Minneapolis",
+                        "region": "MN",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Darren",
+                "middle": [
+                    "R"
+                ],
+                "last": "Flower",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Oxford",
+                    "location": {
+                        "postCode": "RG20 7NN",
+                        "settlement": "Compton",
+                        "region": "Berkshire",
+                        "country": "UK"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Tongbin",
+                "middle": [],
+                "last": "Li",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Minnesota",
+                    "location": {
+                        "postCode": "55455",
+                        "settlement": "Minneapolis",
+                        "region": "MN",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "The binding between peptide epitopes and major histocompatibility complex proteins (MHCs) is an important event in the cellular immune response. Accurate prediction of the binding between short peptides and the MHC molecules has long been a principal challenge for immunoinformatics. Recently, the modeling of MHC-peptide binding has come to emphasize quantitative predictions: instead of categorizing peptides as \"binders\" or \"non-binders\" or as \"strong binders\" and \"weak binders\", recent methods seek to make predictions about precise binding affinities.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "We developed a quantitative support vector machine regression (SVR) approach, called SVRMHC, to model peptide-MHC binding affinities. As a non-linear method, SVRMHC was able to generate models that out-performed existing linear models, such as the \"additive method\". By adopting a new \"11-factor encoding\" scheme, SVRMHC takes into account similarities in the physicochemical properties of the amino acids constituting the input peptides. When applied to MHC-peptide binding data for three mouse class I MHC alleles, the SVRMHC models produced more accurate predictions than those produced previously. Furthermore, comparisons based on Receiver Operating Characteristic (ROC) analysis indicated that SVRMHC was able to outperform several prominent methods in identifying strongly binding peptides.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "As a method with demonstrated performance in the quantitative modeling of MHCpeptide binding and in identifying strong binders, SVRMHC is a promising immunoinformatics tool with not inconsiderable future potential.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "The T cell, a specialized type of immune cell, continuously searches out proteins originating from pathogenic organisms, such as viruses, bacteria, fungi, or parasites. The T cell surface is enriched in a particular receptor protein: the T cell receptor or TCR, which binds to major histocompatibility complex proteins (MHCs) expressed on the sur-faces of other cells. MHCs bind small peptide fragments derived from both host and pathogen proteins. It is the recognition of such complexes that lies at the heart of the cellular immune response. These short peptides are known as epitopes. Although the significance of non-peptide epitopes, such as lipids and carbohydrates, is now understood increasingly well, peptidic B cell and T cell epitopes (as mediated by the humoral and cellular immune systems respectively) remain the primary tools by which the intricate complexity of the immune response might be examined. While the prediction of B-cell epitopes remains primitive [1] , a multiplicity of sophisticated methods for the prediction of T-cell epitopes has developed [2] .",
+            "cite_spans": [
+                {
+                    "start": 976,
+                    "end": 979,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 1074,
+                    "end": 1077,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The earliest efforts in predicting the binding of short peptides to MHC molecules focused on identifying peptide sequence motifs that were characteristic of binding to MHC [3] . This motif approach assumed that the presence of certain residues at specific positions (which are referred to as \"anchor\" positions) critically defined the binding ability of the peptide to the MHC. This somewhat simplistic assumption rendered the motif approach prone to false predictions. Later methods adopted more informative representations of peptide binding and more sophisticated modeling strategies such as position-specific scoring matrices (PSSM) [4] [5] [6] [7] , artificial neural networks (ANN) [8] [9] [10] , hidden Markov model (HMM) [11] and support vector machine (SVM) classification [12, 13] . With increasing amounts of MHC-peptide binding data available to facilitate their optimization, these methods have become increasingly effective in making predictions about whether a given peptide binds to a particular MHC molecule, and -when it does bind -whether the binding is strong or weak.",
+            "cite_spans": [
+                {
+                    "start": 172,
+                    "end": 175,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 637,
+                    "end": 640,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 641,
+                    "end": 644,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 645,
+                    "end": 648,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 649,
+                    "end": 652,
+                    "text": "[7]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 688,
+                    "end": 691,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 692,
+                    "end": 695,
+                    "text": "[9]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 696,
+                    "end": 700,
+                    "text": "[10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 729,
+                    "end": 733,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 782,
+                    "end": 786,
+                    "text": "[12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 787,
+                    "end": 790,
+                    "text": "13]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Recently, the modeling of MHC-peptide binding has come to emphasize quantitative predictions: instead of categorizing peptides as \"binders\" or \"non-binders\" or as \"strong binders\" and \"weak binders\", several new methods make predictions about the precise binding affinities (usually expressed as pIC 50 , the negative logarithm of the IC 50 ). The additive method developed by Doytchinova et al. is a representative example of this trend. In this method, the binding affinity of the MHC-peptide interaction is modeled as the sum of peptide background contribution (a constant term), the amino acid contributions at each position, and (optionally) the adjacent peptide side-chain interaction [14] . The additive method has been shown to be effective in modeling MHC-peptide binding for a range of human and mouse class I MHC molecules, and, using an iterative extension, also a set of human and mouse Class II alleles [14] [15] [16] [17] . Additive method models not only provide more precise information about the binding reactions, but also demonstrated enhanced accuracy in the prediction of untested peptides compared to other prediction methods such as SYFPEITHI, BIMAS and RANKPEP [16, 17] .",
+            "cite_spans": [
+                {
+                    "start": 691,
+                    "end": 695,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 917,
+                    "end": 921,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 922,
+                    "end": 926,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 927,
+                    "end": 931,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 932,
+                    "end": 936,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1186,
+                    "end": 1190,
+                    "text": "[16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1191,
+                    "end": 1194,
+                    "text": "17]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In this paper, we shall explore how potential improvements might be made in quantitative immunoinformatic techniques, such as the additive method. First, utilizing non-linearity, since properly chosen non-linear models can, in describing complex systems, often out-perform linear models. Second, the use of a more informative scheme for encoding amino acids since most immunoinformatic methods encode amino acids by their identities using indicator variables, information concerning similarities in physicochemical properties between the 20 amino acids is typically neglected. Support Vector Machines (SVMs) are a class of learning based non-linear modeling techniques with proven performance in a wide range of practical applications [18] . Originally, SVMs were developed for classification or qualitative modeling problems. With the introduction of an \u03b5-insensitive loss function, SVMs have been extended to solve nonlinear regression (or quantitative modeling) problems. In this study, we employed the SVM regression (SVR) technique to model MHC-peptide binding affinities for three mouse class I MHC alleles (H2-Db, H2-Kb and H2-Kk). We name this new modeling method SVRMHC. In SVRMHC models, peptides were described using a new 11-factor encoding scheme. This takes into account a number of important physicochemical parameters of the 20 amino acids (including hydrophobicity scale, polarity, isoelectric point, and accessible surface area). These SVRMHC models demonstrated consistently better performance than linear methods in terms of describing power, self-consistency, and prediction accuracy. Moreover, comparisons between our SVR models and several other popular prediction tools indicated that the SVRMHC models performed best in identifying strong binders to mouse class I MHC molecules.",
+            "cite_spans": [
+                {
+                    "start": 735,
+                    "end": 739,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The datasets used in this study, and the online implementation of the SVRMHC models for the three mouse class I alleles, can be accessed on the supplementary web site [19] .",
+            "cite_spans": [
+                {
+                    "start": 167,
+                    "end": 171,
+                    "text": "[19]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "For the training of the SVR models, one kernel parameter (\u03b3), and two kernel-independent parameters (\u03b5 and C) need to be determined (Eq. (5)). There are no commonly agreed methods for determining optimal SVR model parameters. In most published SVR studies we have examined, these model parameters were determined one at a time, by first fixing all other parameters, then letting the parameter take a range of different values, and thus identifying the value that corresponds to the best model performance assessed by cross-validation [20, 21] . This method, though efficient in terms of execution time, disregards potential interactions between different model parameters. Cherkassky and Ma [22] advocated picking two of the three SVR model parameters (\u03b5 and C) from training data based on characterizations of the data, such as noise level and sample number. This method, though theoretically sound, did not, in our hands, always find the best set of parameters. In this study, we adopted a parameter selection procedure that combines the method of Cherkassky and Ma's with a grid-search. For \u03b5 and C, we first calculated the \"recommended value\" using Cherkassky and Ma's formulas, then searched a parameter range from 1/10th of the recommended value to 10 times the recommended value. The kernel parameter\u03b3 does not depend on the datasets. We picked a search range for \u03b3 as [0.001, 1], which safely covered the \u03b3 ranges commonly used in the literature [20, 21, 23] . After setting search ranges for the three parameters, we undertook a gridsearch through the three-dimensional parameter space. For each parameter, four, six or eight equal-sized steps (on logarithm scale) were taken in the grid-search.",
+            "cite_spans": [
+                {
+                    "start": 534,
+                    "end": 538,
+                    "text": "[20,",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 539,
+                    "end": 542,
+                    "text": "21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 691,
+                    "end": 695,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1454,
+                    "end": 1458,
+                    "text": "[20,",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1459,
+                    "end": 1462,
+                    "text": "21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1463,
+                    "end": 1466,
+                    "text": "23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SVR model parameter optimization"
+        },
+        {
+            "text": "The H2-Kk dataset includes a large number of peptides (154 octamers), and five-fold cross-validation was performed to find the optimal parameters for the H2-Kk model ( Figure 1 ). The other two datasets -H2-Db and H2-Kb -contain fewer peptides (65 nonamers and 62 octamers, respectively), thus a finer grained (and computationally more expensive) LOO cross-validation was used to search for optimal parameters for the models of these two MHC molecules. This LOO cross-validation is part of the model parameter search, and it should not be confused with the LOO cross-validation used in assessing the model performance (see Methods). The combination of the three parameters, \u03b3, \u03b5 and C that leads to the smallest root mean square (RMS) error was taken as the optimal parameter combination. The RMS error is calculated as the following:",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 168,
+                    "end": 176,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "SVR model parameter optimization"
+        },
+        {
+            "text": "A schematic diagram of the five-fold cross-validation scheme for the training and testing of the SVRMHC model constructed for H2-Kk (154 peptides), with enclosing parameter searching modules in which leave-one-out (LOO) cross-validation was used Figure 1 A schematic diagram of the five-fold cross-validation scheme for the training and testing of the SVRMHC model constructed for H2-Kk (154 peptides), with enclosing parameter searching modules in which leave-one-out (LOO) cross-validation was used. The models for the other two datasets (for H2-Db and H2-Kb) were constructed similarly, with the exception that the computationally more expensive LOO cross-validation (rather than five-fold cross-validation) was used on the outer-loop model training and testing procedure.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 246,
+                    "end": 254,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "SVR model parameter optimization"
+        },
+        {
+            "text": "where n is the number of peptides in the dataset, pIC50 i and are the predicted and experimentally measured pIC50 values for the ith peptide, respectively. The final model parameters for the three MHC molecules were determined via voting among the set of optimal parameters during cross-validated model training. These parameters are presented in Table 1 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 347,
+                    "end": 354,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "SVR model parameter optimization"
+        },
+        {
+            "text": "The SVRMHC models constructed for the three MHC molecules demonstrated consistently better performance than linear models built from the same datasets.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SVRMHC models performed better than linear models in quantitative predictions"
+        },
+        {
+            "text": "The H2-Db dataset consisted of 65 nonamer peptides and associated binding affinities. We compared the SVRMHC method to the additive model, taken as typical of linear methods, as shown in Table 2 . Following a step-wise outlier exclusion procedure, the SVRMHC method determined and removed 3 outliers at a 2.0 log unit residual cut-off (see Methods), while the additive method removed 6. The smaller number of outliers determined by the SVRMHC method suggests that this method has more \"descriptive power\" than the additive method. The selftesting model constructed using the SVRMHC method resulted in an r 2 of 0.749 when the entire dataset was considered (including outliers), and an r 2 of 0.983 was obtained after the outliers were removed, compared to additive model r 2 values of 0.602 and 0.946, respectively.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 187,
+                    "end": 194,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "SVRMHC models performed better than linear models in quantitative predictions"
+        },
+        {
+            "text": "The AR values of the SVRMHC model with and without outliers were 0.170 and 0.043 respectively, smaller than the corresponding additive AR values of 0.403 and 0.187. The most interesting performance metric is perhaps the LOO cross-validated q 2 , as it is more indicative of prediction performance when tested on unseen data. q 2 for the SVRMHC method was 0.456. This is higher than the additive LOO cross-validated q 2 value of 0.401.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SVRMHC models performed better than linear models in quantitative predictions"
+        },
+        {
+            "text": "The H2-Kb dataset consisted of 62 octamer peptides and associated binding affinities ( Table 2 ). With SVRMHC, the step-wise outlier exclusion procedure determined and excluded 6 outliers, compared to 7 outliers removed by the additive method. The self-testing model constructed using the SVRMHC method produced an r 2 of 0.568 for the entire dataset (including outliers), in contrast to the r 2 of 0.370 produced by the additive model. An r 2 of 0.970 was obtained with SVRMHC after the 6 outliers were excluded, which was lower than the r 2 obtained by the additive model (0.989) after the exclusion of 7 outliers. The AR of the SVRMHC model for the entire dataset (including outliers) was 0.382 and the AR of the additive method was 0.443. However, the AR of the SVM model after the 6 outliers were removed (0.130) was higher than the AR of the additive model after 7 outliers were removed (0.095). The LOO cross-validated q 2 of the model constructed with SVRMHC was 0.486, slightly higher than the additive LOO cross-validated q 2 of 0.454. These results indicated that for the H2-Kb dataset, SVRMHC produced models that had higher descriptive power and prediction accuracy, though the self-testing model exhibited lower level of self-consistency after the outliers were removed.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 87,
+                    "end": 94,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "SVRMHC models performed better than linear models in quantitative predictions"
+        },
+        {
+            "text": "The H2-Kk dataset is the largest of the three datasets, consisting of 154 octamers and associated binding affinities. No outliers were excluded compared to 2 outliers using the additive method. This, again, suggests that the SVRMHC method has higher \"descriptive power\" than linear methods. The self-testing additive model produced an r 2 of 0.849 (whole dataset) and 0.933 (2 outliers excluded). The self-testing SVRMHC model gave an r 2 of 0.973. Since no outlier was determined, there is only one r 2 calculated. The AR for the SVRHMC model was 0.039, compared to the additive model, which gave 0.178 for the entire dataset and 0.151 after the outliers were removed. The LOO cross-validated q 2 for SVRMHC was 0.721, compared to an additive LOO cross-validated q 2 of 0.456.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SVRMHC models performed better than linear models in quantitative predictions"
+        },
+        {
+            "text": "We compared the performance of SVRMHC to that of existing prediction tools for MHC-peptide binding: the additive method, SYFPEITHI [5] , BIMAS [6] , RANKPEP [7] , and SVMHC [12] . At first, we attempted a strategy described in [16, 17] : trying to find recent literature reports of new peptide binding experiments for the three mouse class I MHC molecules. The hope was that predictions could be made for these binding experiments using both the SVRMHC model and the other methods, and a concomitant comparison in prediction accuracy could be made. However, this strategy was not successful, because in most recently-published binding experiments prescreening with prediction tools was used. This was most often SYFPEITHI and sometimes BIMAS [24] [25] [26] [27] [28] [29] . Only the peptides predicted to be strong binders were tested experimentally, and peptides not predicted to be strong binders were disregarded. Moreover, false predictions (peptides predicted by SYFPEITHI or BIMAS to be strong binders but which were determined experimentally to be weak binders or non-binders) were sometimes not reported [24, 26, 27] . It is not surprising that prediction tools used in pre-screening (SYFPEITHI or BIMAS) always performed better in identifying good binders in these published studies (results not shown).",
+            "cite_spans": [
+                {
+                    "start": 131,
+                    "end": 134,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 143,
+                    "end": 146,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 157,
+                    "end": 160,
+                    "text": "[7]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 173,
+                    "end": 177,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 227,
+                    "end": 231,
+                    "text": "[16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 232,
+                    "end": 235,
+                    "text": "17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 742,
+                    "end": 746,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 747,
+                    "end": 751,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 752,
+                    "end": 756,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 757,
+                    "end": 761,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 762,
+                    "end": 766,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 767,
+                    "end": 771,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 1112,
+                    "end": 1116,
+                    "text": "[24,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 1117,
+                    "end": 1120,
+                    "text": "26,",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 1121,
+                    "end": 1124,
+                    "text": "27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SVRMHC models out-performed other methods in identifying strong binders"
+        },
+        {
+            "text": "Thus, we applied another scheme for making comparisons between the SVRMHC method and other prediction methods -by using Receiver Operating Characteristic (ROC) analysis [30, 31] . The prediction performance of any classification-type model can be assessed using the combination of two properties -specificity and sensitivity. Predictions were made for each peptide sequence using the corresponding SVRMHC model, the corresponding additive model, as well as the four online predicting tools SYFPEITHI, BIMAS, RANKPEP and SVMHC, and the scores were used to make the ROC plots ( Figure 2 ). The SVRMHC models for the H2-Kb and H2-Db molecules rendered A ROC of 0.738 and 0.834, respectively, higher than the A ROC of any of the other predicting methods, indicating that, in this test, the SVRMHC models performed best compared to the other four prediction methods in identifying strong binding peptides for the mouse class I MHC molecules. ",
+            "cite_spans": [
+                {
+                    "start": 169,
+                    "end": 173,
+                    "text": "[30,",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 174,
+                    "end": 177,
+                    "text": "31]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 576,
+                    "end": 584,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "SVRMHC models out-performed other methods in identifying strong binders"
+        },
+        {
+            "text": "Accurately predicting the binding between short peptides and MHC molecules remains a major task for immunoinformatics. Quantitative prediction of exact peptide binding affinity represents the most recent development in the field. Quantitative prediction is a finer-scale description of binding, and the ability to construct effective quantitative models manifests an improved understanding of the mechanism of MHC-peptide interactions. There have been two reported approaches to quantitative prediction of MHC-peptide binding. The first approach makes use of 3D QSAR (quantitative structure-activity relationship) techniques, and models the interaction between the peptide and the MHC molecule using CosMSIA (Comparative Molecular Similarity Indices Analysis) [33, 34] . This approach, though accurate, requires structural knowledge about how the peptide and the MHC molecule interact with each other in 3D space. The second approach to quantitative modeling is the bioinformatics approach, including the additive method and the SVRMHC method presented here. In contrast to 3D-QSAR, this approach uses only peptide sequences as their input, and does not require any 3D structural information. This property makes the bioinformatics methods more straightforward and generally applicable. Particularly, they are more suitable for modeling the binding of less studied MHC molecules for which no 3D structural information is available.",
+            "cite_spans": [
+                {
+                    "start": 760,
+                    "end": 764,
+                    "text": "[33,",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 765,
+                    "end": 768,
+                    "text": "34]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Linear models, as exemplified here by the additive method, has previously demonstrated impressive performance in modeling a variety of MHC-peptide binding systems: the human class I allele HLA-A*0201 [14] , the mouse Class I MHC alleles [17] and the human class II allele DRB1*0401 [15, 16] . However, as is generally known, properly chosen non-linear models can often outperform linear models in describing complex systems, although linear models can often be more intuitive and easily understood. Also, in many immunoinformatic techniques, including the additive method, amino acid residues are encoded by their identities, and the physicochemical properties of the amino acids are ignored. In this study, we have addressed both problems. The use of a non-linear SVR technique leads to an enhancement in predictivity. Meanwhile, the adoption of an 11-factor encoding of amino acids renders the resultant models sensitive to similarities in important physicochemical properties among the residues in the peptides being modeled.",
+            "cite_spans": [
+                {
+                    "start": 200,
+                    "end": 204,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 237,
+                    "end": 241,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 282,
+                    "end": 286,
+                    "text": "[15,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 287,
+                    "end": 290,
+                    "text": "16]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Support vector machines (SVMs) are a new class of learning machines motivated by statistical learning theory [35] , and they are gaining popularity because of their theoretically attractive features and profound empirical performance. Several reports have been seen in the literature where SVM classification models were developed to analyze peptide binding profiles qualitatively [12, 13, 36] ; yet, to our knowledge, the current report is the first reported quantitative modeling study in which the SVR technique has been applied to model peptide binding.",
+            "cite_spans": [
+                {
+                    "start": 109,
+                    "end": 113,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 381,
+                    "end": 385,
+                    "text": "[12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 386,
+                    "end": 389,
+                    "text": "13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 390,
+                    "end": 393,
+                    "text": "36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In this study, we constructed SVRMHC models using the binding data of three mouse class I alleles (H2-Db, H2-Kb and H2-Kk), and compared the resulting models to a linear models, built using the additive method, constructed using the same datasets. The models constructed with SVRMHC have been shown to be superior to those constructed with linear methods, in terms of descriptive power (as shown by a smaller number of \"outliers\"), prediction accuracy (manifest as a higher cross-validated correlation coefficient q 2 ), self-consistency (higher noncross-validated explained variance r 2 ), and overall precision in prediction (lower average residual of the prediction). Although an improved performance was seen in all three SVRMHC models, the levels of improvement differed between the models constructed for the three MHC alleles. There seems to be a positive correlation between The LOO cross-validated q 2 increased from 0.456 to 0.721. With the two smaller datasets -the H2-Db dataset (65 peptides) and the H2-Dk dataset (62 peptides) -the LOO cross-validated q 2 increased from 0.401 and 0.454 for the additive models to 0.456 and 0.486 for the SVRMHC models, respectively, marking a smaller improvement than for H2-Kk. When we looked at the selfconsistency measure, with the two larger datasets (H2-Kk and H2-Db), the SVRMHC models consistently demonstrated higher levels of self-consistency than the linear models for the entire datasets as well as for the datasets after removal of outliers. For the smallest dataset, H2-Dk, although the SVRMHC model produced a higher r 2 than the corresponding linear model for the entire dataset (0.568 vs. 0.370); after outliers were removed, the SVRMHC model produced a lower r 2 than the additive model did (0.970 vs. 0.989). The same trend is true for the AR measurement. For the two larger datasets (H2-Kk and H2-Db), the SVRMHC models consistently produced lower AR values than the additive models for both the entire datasets and for the datasets after removal of outliers. However, for the smallest dataset (H2-Dk), the SVRMHC model produced a lower AR than the additive model for the entire dataset (0.382 vs. 0.443), but a higher AR than the additive model after the removal of outliers (0.130 vs. 0.095). These observations suggest that the SVRMHC approach may become more accurate as datasets grow.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In constructing the SVRMHC models, we applied the same step-wise outlier determination and exclusion scheme as used in [34] to ease the comparison between the SVRMHC and the additive methods. There are disagreements in the outliers determined by the two methods following the same step-wise outlier determining procedure (Table 4 ): 4 out of the 6 \"outliers\" determined by SVRMHC were also identified as \"outliers\" by the additive method for H2-Kb; only 1 out of the 3 \"outliers\" determined by SVRMHC was classified as an \"outlier\" by the additive method for H2-Db. These disagreements suggest that this outlier detection procedure may not be most accurate in identifying \"true outliers\" that reflect experimental errors. However, the main focus of this study is to demonstrate the performance of the SVRMHC method in comparison with other methods, therefore, it is justifiable to follow the same data pre-processing procedure as for the additive method for the sake of performance comparison. It is worth noting that after the model construction, the performance of the models was also examined on the whole dataset with the \"outliers\" added back, and SVRMHC consistently demonstrated higher accuracy than the linear method in the models constructed for all three alleles (see Average Residual (entire dataset), Table 2 ). It is interesting to investigate whether the performance improvement of SVRMHC over the additive method is primarily due to the SVR modeling technique, or it is primarily attributed to the 11-factor encoding scheme for the peptide sequences. We constructed SVR models with the \"sparse encoding\" scheme following the same outlier exclusion procedure as used in the additive models and the SVRMHC models, and compared the three in their performance. As shown in Table 5 , the \"SVR + sparse encoding\" method showed prediction performance that is between those of the additive and the SVRMHC methods for two of the three alleles -H2-Db and H2-Kk. For H2-Db, \"SVR + sparse encoding\" achieved a similar LOO cross-validated q 2 (0.459) to that of SVRMHC (0.456), but it excluded a larger number of outliers than SVRMHC (5 vs. 3). For H2-Kk, \"SVR + sparse encoding\" achieved a LOO cross-validated q 2 of 0.523, which is between the LOO cross-validated q 2 values of the additive (0.456) and SVRMHC method (0.721); and it excluded 1 outlier, also between the additive method (2 outliers excluded) and SVRMHC (no outlier excluded). This seems to suggest that both the SVR modeling technique and the 11-factor encoding scheme contributed to the superior performance of SVRMHC. However, we were surprised to see that the \"SVR + sparse encoding\" model for H2-Kb performed worse than both the SVRMHC model and the additive model (LOO cross-validated q 2 = 0.352, with 8 outliers removed), which is difficult to interpret. In order to be conclusive on this issue, models for a larger number of alleles need to be constructed and used in comparison; and this we intend to do in the near future.",
+            "cite_spans": [
+                {
+                    "start": 119,
+                    "end": 123,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 321,
+                    "end": 329,
+                    "text": "(Table 4",
+                    "ref_id": "TABREF4"
+                },
+                {
+                    "start": 1313,
+                    "end": 1320,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 1784,
+                    "end": 1791,
+                    "text": "Table 5",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "The ROC analysis allows us to compare of several prediction tools for MHC-peptide binding: SVRMHC, the additive method, SYFPEITHI, BIMAS, RANKPEP and SVMHC. Our ROC analysis indicated that the SVRMHC method, with an average A ROC of 0.786, was the most accurate in identifying strong binders for the two mouse MHC molecules H2-Db and H2-Kb. It is followed by SYFPEITHI and the additive method (with average A ROC = 0.727 and 0.726, respectively). SVMHC (average A ROC = 0.704), BIMAS (average A ROC = 0.695) and RANKPEP (average A ROC = 0.621) were less accurate than the other three methods we compared. We need to stress, though, that this comparison is based on the models constructed for only two MHC molecules, and this rank order may not be true in the general case.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Questions may be raised about the fairness of the ROCbased comparison, because there are overlaps between the MHCBN data used in the ROC analysis and the data used in model construction for all five methods we compared. Ideally, a comparison based on a totally independent dataset, one with no overlaps with the data used in the model construction of any of the five methods, would be desirable. However, without information about what peptides were used in the model construction of the SYF-PEITHI, BIMAS, RANKPEP and SVMHC methods, we believe it likely that there are higher levels of overlaps between the datasets used in model construction of the three qualitative models than those used for the two quantitative methods -additive and SVRMHC -because qualitative data are much more abundant than quantitative binding data. Nevertheless, we removed all peptides in the test datasets that overlapped with the datasets used in the construction of the additive and SVRMHC models (15 peptides for H2-Db, and 11 peptides for H2-Kb) and conducted a ROC-based comparison using the remaining data (Table 6 ). This is a very \"unfair\" comparison, because overlapped peptides for the additive and SVRMHC models were removed, but those for the other methods were not. Yet, the results indicated that the SVRMHC model for H2-Kb (A ROC = 0.83) still out-performed the models for all other methods; and the SVRMHC model for H2-Db, though did not achieve as high A ROC as BIMAS (0.66) or RANKPEP (0.677), but was still close to them (0.658).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1092,
+                    "end": 1100,
+                    "text": "(Table 6",
+                    "ref_id": "TABREF6"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Despite their encouraging performance, SVR-based models reported here also exhibit some disadvantages. Most notably, these models are \"black box\" models, and are poorly interpretable. We cannot infer, for example, which peptide positions are the most important in determining the strength of the MHC-peptide binding. Not that this necessarily obviates the utility of SVRMHC models as an immunological tool.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Currently, we are working to improve further SVR-based modeling methods, focusing on testing different combinations of physicochemical properties in the feature encoding scheme. We also plan to construct MHC-peptide binding models for other MHC molecules hosted in the AntiJen database [37, 38] and to make these prediction models available online. In the next phase of this project, we will adapt the SVR-based methodology to the more challenging task of predicting the MHC-peptide binding of class II MHCs.",
+            "cite_spans": [
+                {
+                    "start": 286,
+                    "end": 290,
+                    "text": "[37,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 291,
+                    "end": 294,
+                    "text": "38]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In this paper, we demonstrated SVRMHC, a SVR-based quantitative modeling approach to model peptide-MHC binding affinities, and showed that SVRMHC is a promising immunoinformatics tool with not inconsiderable future potential. With the ongoing, rapid development of high-throughput functional proteomics technologies, such as peptide microarray technology, the SVR modeling approach is expected to see broader use in modeling MHC-peptide binding, and protein-peptide binding reactions in general.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "Support Vector Machines (SVMs) are a class of learning machines based on statistical learning theory [18, 35] . With the introduction of an \u03b5-insensitive loss function, SVMs have been extended to solve nonlinear regression estimation [35] . In SVR, with input data set (where x i is the input vector, d i is the desired real-valued labeling, and n is the number of the input records), x is first mapped into a higher-dimension feature space F via a nonlinear mapping\u0398, then linear regression is performed in this space. In other words, SVR approximate a function using the following equation",
+            "cite_spans": [
+                {
+                    "start": 101,
+                    "end": 105,
+                    "text": "[18,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 106,
+                    "end": 109,
+                    "text": "35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 234,
+                    "end": 238,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Support Vector Machine Regression (SVR) overview"
+        },
+        {
+            "text": "The coefficients wand b are estimated by minimizing where L \u03b5 (d, y) is the empirical error measured by \u03b5-insensitive loss function and the term 1/2||w|| 2 is a regularization term. The constant C is specified by the user, and it determines the trade-off between the empirical risk and the regularization term. \u03b5 is also specified by the user, and it is equivalent to the approximation accuracy of the training data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Support Vector Machine Regression (SVR) overview"
+        },
+        {
+            "text": "The estimations of w and b are obtained by transforming Eq. (3) into the primal function:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Support Vector Machine Regression (SVR) overview"
+        },
+        {
+            "text": "By introducing Lagrange multipliers, the optimization problem can be transformed into a quadratic programming problem. The solution takes the following form:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Support Vector Machine Regression (SVR) overview"
+        },
+        {
+            "text": "where K is the kernel function K(x, x i ) = \u0398(x) T \u0398(x i ) By using of a kernel function, we can deal with problems of arbitrary dimensionality without having to compute the mapping \u0398 explicitly. Commonly used kernels include the linear kernel, polynomial kernel, and the radial basis function (RBF) kernel. In this exploration, we chose to use the RBF (radial basis function) kernel as recommended in Chang and Lin [39] . The RBF kernel takes the following form:",
+            "cite_spans": [
+                {
+                    "start": 416,
+                    "end": 420,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Support Vector Machine Regression (SVR) overview"
+        },
+        {
+            "text": "We constructed SVRMHC models using three MHC-peptide binding datasets for mouse Class I MHC alleles. These sets have been used previously to construct models using the additive method [17] , facilitating comparison between the two methods. The data consists of peptide sequences and experimentally measured binding affinities (expressed numerically as pIC50). The first dataset contains 65 nonamer peptides (H2-Db allele), the second dataset 62 octamers (H2-Kb), and the third dataset 154 octamer peptides (H2-Kk).",
+            "cite_spans": [
+                {
+                    "start": 184,
+                    "end": 188,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data description"
+        },
+        {
+            "text": "The most widely-used representation of an amino acid sequence in immunoinformatic modelling is the \"sparse encoding\" scheme [12, 40] . However, such an encoding scheme does not account for any similarity in physicochemical properties between amino acids. We developed a new encoding method. First, from AA-index [41] , we picked a list of what we considered as important general physicochemical properties (e.g., polarity, isoelectric point, and accessible surface area). Into this list, we added a number of properties that were identified in 3-D QSAR analysis [34] as key determinants of peptide-MHC interaction (volume, number of hydrogen bond donors, hydrophobicity). This led to a list of properties that consists of 17 physicochemical indices. We calculated the pair-wise correlation coefficients (r 2 ) of these 17 factors. For any pair of factors with r 2 > 0.8, we eliminated one of the two factors. In the end, a list of 11 factors was obtained. The values of the 11 physicochemical parameters were linearly scaled to the range [0, 1] for the 22 amino acids ( Table 5 ). The list of the 17 factors and their pair-wise r 2 are presented in online supplementary material [19] . As input to the SVRMHC models, a given octamer or nonamer peptide sequence is represented as a long vector concatenated from the eight or nine numerical vectors (each of length 11) encoding the corresponding residue in the sequence. We name this encoding scheme the \"11-factor encoding\".",
+            "cite_spans": [
+                {
+                    "start": 124,
+                    "end": 128,
+                    "text": "[12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 129,
+                    "end": 132,
+                    "text": "40]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 312,
+                    "end": 316,
+                    "text": "[41]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 562,
+                    "end": 566,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 1179,
+                    "end": 1183,
+                    "text": "[19]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1070,
+                    "end": 1077,
+                    "text": "Table 5",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Encoding scheme of peptide sequences"
+        },
+        {
+            "text": "To ease comparison of SVRMHC models and those constructed previously using the additive method, we applied the same step-wise outlier determination and exclusion scheme as used in [34] . For each dataset, a SVRMHC model was first constructed using the whole dataset, and prediction was made for each sequence in the whole dataset. We called this model the \"self-testing model\". If at least one sequence in the dataset produced a residual self-testing model\" (the residual value is defined as the absolute value of the difference between the predicted affinity and true affinity on logarithm scale), then the sequence with the maximum residual value was excluded as an outlier, and a replacement self-testing model was constructed using the remaining sequences. This procedure was repeated until all sequences in the dataset had residual values < 2.0 log units.",
+            "cite_spans": [
+                {
+                    "start": 180,
+                    "end": 184,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Outlier determination and exclusion"
+        },
+        {
+            "text": "The performance of the SVRMHC models was assessed using several metrics. The number of outliers determined and excluded can be considered as a measurement of \"descriptive power\" of a model: a model that excludes a smaller number of outliers is better at describing the dataset as a whole than a model that excludes a greater number of outliers. For the final self-testing model (the self-testing model after all outliers are removed), we can assess its \"self-consistency\" using the explained variance (or squared correlation coefficient) r 2 (see [17] ).",
+            "cite_spans": [
+                {
+                    "start": 547,
+                    "end": 551,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Assessment of model performance"
+        },
+        {
+            "text": "The most important measure of a model's performance is its prediction accuracy, which can be assessed by the crossvalidated correlation coefficient, q 2 , of the model:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Assessment of model performance"
+        },
+        {
+            "text": "where n is the number of peptides in the dataset, pIC50 i and are the predicted and experimentally measured pIC50 values for the ith peptide, respectively, and is the mean of the experimentally measured pIC50 values. As in [17] , we used leave-one-out (LOO) cross-validation to check our models' prediction performance. ing and computing. QX participated in the performance assessment work and comparisons between SVRMHC and other methods, and constructed the supplementary web site with online SVRMHC implementation. DRF provided the data for constructing the SVRMHC models, as well as significant assistance and advice on essential issues of the model construction, and participated in the writing of the manuscript. TL conceived of and coordinated the study, participated in the design, and drafted the manuscript.",
+            "cite_spans": [
+                {
+                    "start": 223,
+                    "end": 227,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Assessment of model performance"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Benchmarking B cell epitope prediction: underperformance of existing methods",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Blythe",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Protein Sci",
+            "volume": "14",
+            "issn": "1",
+            "pages": "246--248",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "K: Computational Vaccine Design",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Paine",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Blythe",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lamponi",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Zygouri",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Mcsparron",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Drug Design: Cutting Edge Approaches Edited by: Flower DR",
+            "volume": "",
+            "issn": "",
+            "pages": "136--180",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Prediction of major histocompatibility complex binding regions of protein antigens by sequence pattern analysis",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sette",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Buus",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Appella",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Chesnut",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Miles",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Colon",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Grey",
+                    "suffix": ""
+                }
+            ],
+            "year": 1989,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "86",
+            "issn": "9",
+            "pages": "3296--3300",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Improved prediction of MHC class I and class II epitopes using a novel Gibbs sampling approach",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Nielsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lundegaard",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Worning",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Hvid",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Lamberth",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Buus",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brunak",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Lund",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Bioinformatics",
+            "volume": "20",
+            "issn": "9",
+            "pages": "1388--1397",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "SYFPEITHI: database for MHC ligands and peptide motifs",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Rammensee",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bachmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Emmerich",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bachor",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Stevanovic",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Immunogenetics",
+            "volume": "50",
+            "issn": "3-4",
+            "pages": "213--219",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Scheme for ranking potential HLA-A2 binding peptides based on independent binding of individual peptide side-chains",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Parker",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bednarek",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Coligan",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Prediction of MHC class I binding peptides using profile motifs",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Reche",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Glutting",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Reinherz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Hum Immunol",
+            "volume": "63",
+            "issn": "9",
+            "pages": "701--709",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Reliable prediction of T-cell epitopes using neural networks with novel sequence representations",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Nielsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lundegaard",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Worning",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Lauemoller",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Lamberth",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Buus",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brunak",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Lund",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Protein Sci",
+            "volume": "12",
+            "issn": "5",
+            "pages": "1007--1017",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Prediction of MHC class II-binding peptides using an evolutionary algorithm and artificial neural network",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Brusic",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Rudy",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Honeyman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hammer",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Harrison",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Bioinformatics",
+            "volume": "14",
+            "issn": "2",
+            "pages": "121--130",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Neural networkbased prediction of candidate T-cell epitopes",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Honeyman",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Brusic",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Stone",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Harrison",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Nat Biotechnol",
+            "volume": "16",
+            "issn": "10",
+            "pages": "966--969",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Predicting peptides that bind to MHC molecules using supervised learning of hidden Markov models",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mamitsuka",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Proteins",
+            "volume": "33",
+            "issn": "4",
+            "pages": "460--474",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Prediction of MHC class I binding peptides, using SVMHC",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Donnes",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Elofsson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "BMC Bioinformatics",
+            "volume": "3",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "SVM based method for predicting HLA-DRB1*0401 binding peptides in an antigen sequence",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bhasin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Raghava",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "",
+            "volume": "20",
+            "issn": "",
+            "pages": "421--423",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Additive method for the prediction of protein-peptide binding affinity. Application to the MHC class I molecule HLA-A*0201",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Blythe",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "J Proteome Res",
+            "volume": "1",
+            "issn": "3",
+            "pages": "263--272",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Class II Mouse Major Histocompatibility Complex Peptide Binding Affinity: In Silico bioinformatic prediction using robust multivariate statistics",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Hattotuwagama",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Toseland",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Taylor",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hemsley",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "J Chem Inf Mod",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Towards the in silico identification of class II restricted T-cell epitopes: a partial least squares iterative self-consistent algorithm for affinity prediction",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Bioinformatics",
+            "volume": "19",
+            "issn": "17",
+            "pages": "2263--2270",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "New horizons in mouse immunoinformatics: reliable in silico prediction of mouse class I histocompatibility major complex peptide binding affinity",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Hattotuwagama",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Org Biomol Chem",
+            "volume": "2",
+            "issn": "22",
+            "pages": "3274--3283",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "An introduction to support vector machines and other kernel-based learning methods",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Cristianini",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shawe-Taylor",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "SVRMHC supplementary web site",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Support vector machines-based quantitative structure-property relationship for the prediction of heat capacity",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Xue",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Fan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Chem Inf Comput Sci",
+            "volume": "44",
+            "issn": "4",
+            "pages": "1267--1274",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Comparative study of QSAR/QSPR correlations using support vector machines, radial basis function neural networks, and multiple linear regression",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Yao",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Panaye",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Doucet",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Fan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Chem Inf Comput Sci",
+            "volume": "44",
+            "issn": "4",
+            "pages": "1257--1266",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Practical selection of SVM parameters and noise estimation for SVM regression",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Cherkassky",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Ma",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Neural Netw",
+            "volume": "17",
+            "issn": "1",
+            "pages": "113--126",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Prediction of the isoelectric point of an amino acid based on GA-PLS and SVMs",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Yao",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Fan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Chem Inf Comput Sci",
+            "volume": "44",
+            "issn": "1",
+            "pages": "161--167",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Induction of mucosal and systemic immune responses against human carcinoembryonic antigen by an oral vaccine",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Fayad",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Smock",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ullrich",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Qiao",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Cancer Res",
+            "volume": "65",
+            "issn": "15",
+            "pages": "6990--6999",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Identification of Chlamydia pneumoniae-derived mouse CD8 epitopes",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Saren",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Pascolo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Stevanovic",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Dumrese",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Puolakkainen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Sarvas",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Rammensee",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Vuola",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Infect Immun",
+            "volume": "70",
+            "issn": "7",
+            "pages": "3336--3343",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Characterization of homologous and heterologous rotavirus-specific T-cell responses in infant and adult mice",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Jaimes",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Feng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Greenberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "J Virol",
+            "volume": "79",
+            "issn": "8",
+            "pages": "4568--4579",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Paraflagellar rod protein-specific CD8+ cytotoxic T lymphocytes target Trypanosoma cruzi-infected host cells",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Wrightsman",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Luhrs",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Fouts",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Manning",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Parasite Immunol",
+            "volume": "24",
+            "issn": "8",
+            "pages": "401--412",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Development of a DNA vaccine targeting human papillomavirus type 16 oncoprotein E6",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Peng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ji",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Trimble",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Tsai",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Yeatermeyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Boyd",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Hung",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Virol",
+            "volume": "78",
+            "issn": "16",
+            "pages": "8468--8476",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Identification of murine CD8 T cell epitopes in codon-optimized SARS-associated coronavirus spike protein",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhi",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Kobinger",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Jordan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Suchma",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Weiss",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Schumer",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Boyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Crystal",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Wilson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Virology",
+            "volume": "335",
+            "issn": "1",
+            "pages": "34--45",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Structure-based prediction of binding peptides to MHC class I molecules: application to a broad range of MHC alleles",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Schueler-Furman",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Altuvia",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sette",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Margalit",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Protein Sci",
+            "volume": "9",
+            "issn": "9",
+            "pages": "1838--1846",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Transporter associated with antigen processing preselection of peptides binding to the MHC: a bioinformatic evaluation",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Hemsley",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Immunol",
+            "volume": "173",
+            "issn": "11",
+            "pages": "6813--6819",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "MHCBN: a comprehensive database of MHC binding and non-binding peptides",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bhasin",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Singh",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Raghava",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Bioinformatics",
+            "volume": "19",
+            "issn": "5",
+            "pages": "665--666",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Toward the quantitative prediction of T-cell epitopes: coMFA and coMSIA studies of peptides with affinity for the class I MHC molecule HLA-A*0201",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "J Med Chem",
+            "volume": "44",
+            "issn": "22",
+            "pages": "3572--3581",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Physicochemical explanation of peptide binding to HLA-A*0201 major histocompatibility complex: a three-dimensional quantitative structure-activity relationship study",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Proteins",
+            "volume": "48",
+            "issn": "3",
+            "pages": "505--518",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Vapnik V: Statistical Learning Theory",
+            "authors": [],
+            "year": 1998,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Application of support vector machines for T-cell epitopes prediction",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Pinilla",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Valmori",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Martin",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Simon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "",
+            "volume": "19",
+            "issn": "",
+            "pages": "1978--1984",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "MHCPred: A server for quantitative prediction of peptide-MHC binding",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Zygouri",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nucleic Acids Res",
+            "volume": "31",
+            "issn": "13",
+            "pages": "3621--3624",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Anti-Jen: a quantitative immunology database integrating functional, thermodynamic, kinetic, biophysical, and cellular data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Toseland",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Clayton",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mcsparron",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hemsley",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Blythe",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Paine",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doytchinova",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Hattotuwagama",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Flower",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Immunome Res",
+            "volume": "1",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "A practical guide to SVM classification, Lib-SVM documentation",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Bioinformatics: the machine learning approach",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Baldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brunak",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "AAindex: Amino Acid Index Database",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kawashima",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ogata",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kanehisa",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Nucleic Acids Res",
+            "volume": "27",
+            "issn": "1",
+            "pages": "368--369",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "SYFPEITHI",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF1": {
+            "text": "Comparison of the six predicting methods -SVRMHC, addi-tive, SYFPEITHI, BIMAS, RANKPEP and SVMHC by ROC analysis (for H2-Db and H2-Dk)Figure 2Comparison of the six predicting methods -SVRMHC, additive, SYFPEITHI, BIMAS, RANKPEP and SVMHC by ROC analysis (for H2-Db and H2-Dk). The ROC curves of different predicting methods are plotted in different colors. A ROC (area underneath the ROC curve) is provided following the label of each predicting method. of improvement achieved by the SVRMHC models and dataset size. With the largest of the three datasets -the H2-Kk dataset (154 peptides), the SVRMHC method demonstrated the greatest level of improvement.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "The parameters recommended by Cherkassky and Ma (2004) (\u03b5 and C) and the final optimized parameters (\u03b5, C and \u03b3) of the SVRMHC models constructed for the three mouse class I alleles.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "The sensitivity vs. (1-specificity) relationship is referred to as the ROC relationship (see Methods). In a ROC curve, the two axes both have a range of [0, 1], therefore the area under a ROC curve (A ROC ) also takes a range of [0, 1]. A purely \"random guess\" prediction model would have an A ROC of 0.5. For better models, A ROC would be higher than 0.5. The closer A ROC is to 1, the better the performance is for the predicting model.In the MHC ligand database MHCBN[32], we downloaded all nomamer ligands for the H2-Db molecule and all octamer ligands for H2-Kb and H2-Kk. These peptides were grouped into two groups: \"strong binders\" and \"weak binders\" (see Methods). For H2-Db, there were 28 strong binders and 44 weak binders, and for H2-Kb, there were 22 strong binders and 24 weak binders. No weak binders were retrieved for the H2-Kk, thus no ROC analysis was conducted for this allele. The scores generated by these different prediction methods have very different meanings. The scores produced by the SVRMHC models and the additive models are predicted pIC50 values, while scores from BIMAS are predicted half lives. RANKPEP outputs scores calculated from a PSSM (position-specific score matrix) profile. The scores produced by SYFPEITHI are nominal scores. They are generated by differentially scoring matches, within an individual peptide, to primary and secondary anchors within the target motif. Thus, they represent how close a particular peptide is to the expected pattern of a motif. The scores produced by SVMHC, on the other hand, are the distances between the peptides and the separating hyperplane defined by the SVM model. Despite the different meanings of these scores, they all roughly approximate increasing functions of predicted binding strength, therefore the areas under the ROC curves can be used as an objective measure of prediction performance.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Comparison between the additive method and the SVRMHC method in models constructed with the H2-Db, H2-Kb and H2-Kk datasets.Additive Method SVRMHC Method Additive Method SVRMHC Method Additive Method SVRMHC Method",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "The scores used in the 11-factor encoding for the 20 amino acids, after scaling to the range [0, 1].",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "The outliers determined by the additive method and the SVRMHC method for H2-Db, H2-Kb and H2-Kk. Common outliers determined by both methods are italicized.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Comparison of performance between the additive method, SVRMHC, and SVR models with sparse encoding scheme for H2-Db, H2-Kb and H2-Kk.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "ROC-based comparison of the five predicting methods -SVRMHC, additive, SYFPEITHI, BIMAS, RANKPEP and SVMHC, after overlapped peptides were removed for SVRMHC and additive methods, but not for the four qualitative methods.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We thank F. Xiao, Q. Su and Z. Zhang for their assistance in earlier phases of this work. Dr I.A. Doytchinova, Medical University, Sofia provided considerable help and advice in model development. This project was supported by the Department of Neuroscience and the Graduate School, University of Minnesota.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Another metric that can be used to assess the performance of the models is the average residual (AR), defined simply asThe AR is a measure of the overall precision of the prediction made by the model. A model with a lower AR overall makes more precise prediction than a model with a higher AR.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "Prediction performance of any classification-type model can be assessed by the combination of two parameters: \"false positive rate\" and the \"false negative rate\" or, equivalently, specificity and sensitivity. Sensitivity is defined as 1-\"false negative rate\", and specificity is defined as the 1-\"false positive rate\". A plot of sensitivity vs. (1-specificity) is known as the ROC curve.In the MHC ligand database MHCBN [32] , all nomamer ligands for the H2-Db molecule and all octamer ligands for H2-Kb and H2-Kk were downloaded. In the MHCBN database, the peptide ligands are classified into five categories: \"high binding\", \"moderate binding\", \"low binding\", \"no-binding\" and \"unknown\". We grouped all peptides in the \"high binding\" and \"moderate binding\" categories together as \"strong binders\", all peptides in the \"low binding\" and \"no-binding\" categories together as \"weak binders\", and discarded the peptides in the \"unknown\" category. All ligands for the H2-Kk molecule downloaded from MHCBN were \"strong binders\", therefore the ROC analysis was not performed with H2-Kk.The scores used for the SVRMHC method in the ROC analysis were the predicted pIC 50 values of the test ligands for the final SVRMHC models. The scores used for the additive method [42], SYFPEITHI [43] , BIMAS [44] , RANKPEP [45], and SVMHC [46] were obtained by querying the corresponding online predicting servers. Default parameters were used when making the queries. After the scores of all peptides for a MHC molecule (H2-Db or H2-Kb) were obtained, each score value was used in turn as a cut-off point. At each cut-off point , the true positive rate was calculated as where s i is the predicted score for peptide i, and S is the set of all \"strong binders\". The false positive rate was calculated as where W is the set of all \"weak binders\". The ROC curve was plotted as r f,p vs. r t,p .",
+            "cite_spans": [
+                {
+                    "start": 420,
+                    "end": 424,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 1276,
+                    "end": 1280,
+                    "text": "[43]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 1289,
+                    "end": 1293,
+                    "text": "[44]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "ROC analysis and comparisons of SVR models with other predicting tools"
+        },
+        {
+            "text": "WL carried out the detailed design for the major components of this study, and participated in the coding and computing work. XM executed the major parts of the cod- ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

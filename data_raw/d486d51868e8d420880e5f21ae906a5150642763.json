@@ -1,0 +1,4377 @@
+{
+    "paper_id": "d486d51868e8d420880e5f21ae906a5150642763",
+    "metadata": {
+        "title": "Bayesian inference of transmission chains using timing of symptoms, pathogen genomes and contact data",
+        "authors": [
+            {
+                "first": "Finlay",
+                "middle": [],
+                "last": "Campbell Id",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "MRC Centre for Global Infectious Disease Analysis",
+                    "institution": "Imperial College London",
+                    "location": {
+                        "country": "United Kingdom"
+                    }
+                },
+                "email": "*f.campbell15@imperial.ac.ukfc"
+            },
+            {
+                "first": "Anne",
+                "middle": [],
+                "last": "Cori",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "MRC Centre for Global Infectious Disease Analysis",
+                    "institution": "Imperial College London",
+                    "location": {
+                        "country": "United Kingdom"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Neil",
+                "middle": [],
+                "last": "Ferguson Id",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "MRC Centre for Global Infectious Disease Analysis",
+                    "institution": "Imperial College London",
+                    "location": {
+                        "country": "United Kingdom"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Thibaut",
+                "middle": [],
+                "last": "Jombart",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "MRC Centre for Global Infectious Disease Analysis",
+                    "institution": "Imperial College London",
+                    "location": {
+                        "country": "United Kingdom"
+                    }
+                },
+                "email": "thibautjombart@gmail.com"
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "There exists significant interest in developing statistical and computational tools for inferring 'who infected whom' in an infectious disease outbreak from densely sampled case data, with most recent studies focusing on the analysis of whole genome sequence data. However, genomic data can be poorly informative of transmission events if mutations accumulate too slowly to resolve individual transmission pairs or if there exist multiple pathogens lineages within-host, and there has been little focus on incorporating other types of outbreak data. We present here a methodology that uses contact data for the inference of transmission trees in a statistically rigorous manner, alongside genomic data and temporal data. Contact data is frequently collected in outbreaks of pathogens spread by close contact, including Ebola virus (EBOV), severe acute respiratory syndrome coronavirus (SARS-CoV) and Mycobacterium tuberculosis (TB), and routinely used to reconstruct transmission chains. As an improvement over previous, ad-hoc approaches, we developed a probabilistic model that relates a set of contact data to an underlying transmission tree and integrated this in the outbreaker2 inference framework. By analyzing simulated outbreaks under various contact tracing scenarios, we demonstrate that contact data significantly improves our ability to reconstruct transmission trees, even under realistic limitations on the coverage of the contact tracing effort and the amount of non-infectious mixing between cases. Indeed, contact data is equally or more informative than fully sampled whole genome sequence data in certain scenarios. We then use our method to analyze the early stages of the 2003 SARS outbreak in Singapore and describe the range of transmission scenarios consistent with contact data and genetic sequence in a probabilistic manner for the first time. This simple yet flexible model can easily be incorporated into existing tools for outbreak reconstruction and should permit a better integration of genomic and epidemiological data for inferring transmission chains.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "PLOS Computational Biology | https://doi.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Introduction Inferring chains of transmission in an infectious disease outbreak can provide valuable epidemiological insights into transmission dynamics, which can be used to guide infection control policy. For example, reconstructed outbreaks have been used to identify drivers of ongoing infection [1] , characterize heterogeneous infectiousness in a population [2] , evaluate the effectiveness of interventions [3] and determine transmission mechanisms [4] . Consequently there has been increased interest in developing statistical and computational tools for inferring such 'transmission trees' from various types of data, including times of symptom onset, contact tracing data, spatial data and, increasingly frequently, pathogen whole genome sequence (WGS) data [5] [6] [7] [8] [9] [10] [11] [12] [13] .",
+            "cite_spans": [
+                {
+                    "start": 300,
+                    "end": 303,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 364,
+                    "end": 367,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 414,
+                    "end": 417,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 456,
+                    "end": 459,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 768,
+                    "end": 771,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 772,
+                    "end": 775,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 776,
+                    "end": 779,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 780,
+                    "end": 783,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 784,
+                    "end": 787,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 788,
+                    "end": 792,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 793,
+                    "end": 797,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 798,
+                    "end": 802,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 803,
+                    "end": 807,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "Most state of the art outbreak reconstruction tools aim at approximating a posterior distribution of likely transmission trees in a Bayesian MCMC framework. Two major approaches have emerged, which can be defined by their treatment of genetic data [14] . The 'pairwise approach' begins with a model of disease transmission and attaches to this a genetic model that describes the pairwise genetic distance between putative transmission pairs [6] [7] [8] [9] . The 'phylogenetic approach' uses genetic data to infer the unobserved history of coalescent events between sampled pathogen genomes in the form of a phylogenetic tree and infers transmission trees consistent with this phylogeny using epidemiological data. Such methods either use a fixed phylogeny inferred a priori [10, 15] or jointly infer the phylogeny alongside the transmission tree itself [11] [12] [13] .",
+            "cite_spans": [
+                {
+                    "start": 248,
+                    "end": 252,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 441,
+                    "end": 444,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 445,
+                    "end": 448,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 449,
+                    "end": 452,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 453,
+                    "end": 456,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 775,
+                    "end": 779,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 780,
+                    "end": 783,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 854,
+                    "end": 858,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 859,
+                    "end": 863,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 864,
+                    "end": 868,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "These methodologies differ in their ability to identify unobserved or imported cases, accurately describe evolutionary behavior in the presence of multiple dominant strains within-host or incomplete transmission bottlenecks and accommodate multiple genetic sequences per host. However, a notable similarity between these studies is the fact that they generally only consider temporal and genetic data. Accordingly, such approaches rely heavily on highly informative genetic sequence data for identifying likely transmission pairs, as temporal data is generally consistent with a large number of potential ancestries [16] .",
+            "cite_spans": [
+                {
+                    "start": 616,
+                    "end": 620,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "However, WGS are not always informative of the transmission route of an epidemic. Firstly, genetic diversity across most outbreaks is low and a significant portion of genetic sequences expected to be identical [17] , most prominently if the pathogen genome is small (e.g. human influenza [18] ), the mutation rate low (e.g. Mycobacterium tuberculosis [19] ), or the generation time (delay between primary and secondary infection) short (e.g. Streptococcus pneumoniae [20] ). In these cases, transmission pairs cannot be accurately identified by genetic data alone, resulting in an overall poorly resolved transmission tree. The informativeness of genetic sequence data is also limited by complex evolutionary behavior. Didelot et al. demonstrated that realistic genetic models accounting for within-host diversity, in which several strains coexist inside a host and can be transmitted and sampled, place significant uncertainty around ancestry allocation even when genetic diversity across the outbreak is high, as multiple transmission scenarios are consistent with the genetic data [15] . Pathogens displaying significant within-host diversity include those with long periods of carriage (e.g. Staphylococcus aureus [21] ) or a propensity for super-infections (Streptococcus pneumoniae [22] ). WGS is also uninformative of the direction of transmission between donor-recipient pairs if multiple sequences per host are not available [23] . Finally, WGS will generally not be available for all infected individuals, especially in resource poor settings. In the 2014 Ebola outbreak in West Africa, for example, sequences were collected in only 5% of cases [24] . Genetic data is therefore frequently of limited use in reconstructing transmission trees, and inference methods that rely heavily on it will perform poorly in such circumstances.",
+            "cite_spans": [
+                {
+                    "start": 210,
+                    "end": 214,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 288,
+                    "end": 292,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 351,
+                    "end": 355,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 467,
+                    "end": 471,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1084,
+                    "end": 1088,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1218,
+                    "end": 1222,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1288,
+                    "end": 1292,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1434,
+                    "end": 1438,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1655,
+                    "end": 1659,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "Integrating other types of outbreak data is therefore necessary for inferring transmission trees in realistic outbreak situations. A frequently collected and highly informative source of data on likely transmission routes is contact data, an integral component of early outbreak response that describes the network of reported contacts with infected individuals. Contact data provided most of the information used to reconstruct transmission chains during Severe Acute Respiratory Syndrome (SARS) [25] , Middle East Respiratory Syndrome (MERS) [26] and Ebola [1, 27, 28] epidemics, and is routinely collected in outbreaks of HIV [29] and Tuberculosis [30] . Contact data can be classified as 'exposure' data and or 'contact tracing' data. Exposure data describes contacts between a given case and their potential infectors and is an intrinsic part of case definition in diseases with person-to-person transmission. Contact tracing data describes contacts between confirmed/probable cases and individuals they could have infected: it is used for active case discovery and rapid isolation and is an integral part of containment strategy. Importantly, both types of contact data potentially contain information on the topology of the transmission tree.",
+            "cite_spans": [
+                {
+                    "start": 497,
+                    "end": 501,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 544,
+                    "end": 548,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 559,
+                    "end": 562,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 563,
+                    "end": 566,
+                    "text": "27,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 567,
+                    "end": 570,
+                    "text": "28]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 629,
+                    "end": 633,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 651,
+                    "end": 655,
+                    "text": "[30]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "Here, we introduce a model which exploits contact data alongside dates of symptom onset, information on the incubation period (delay between infection and symptom onset) and generation time, and pathogen WGS to reconstruct transmission chains. Our methodology extends the outbreaker model introduced by Jombart et al. [6] with a contact model that accounts for partial sampling and the presence of non-infectious contacts between cases. As an improvement over other approaches, the integration of a full contact model reduces the reliance on high quality genetic data for accurate inference. We evaluate the performance of this new model and compare the value of the different types of data for inferring who infects whom, using a variety of simulated outbreak scenarios. We then apply our approach to the early stages of the 2003 SARS outbreak in Singapore, integrating the available data on contact structures and genome sequences in a single statistical framework for the first time. The inference tool presented in this study is freely available as the package outbreaker2 for the R software [31] .",
+            "cite_spans": [
+                {
+                    "start": 318,
+                    "end": 321,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1096,
+                    "end": 1100,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "We tested our new model on simulated outbreaks of two pathogens with well-defined epidemiological and evolutionary parameters, namely EBOV and SARS-CoV [27, 32] . As SARS-CoV WGS generally contain greater genetic diversity between transmission pairs and are therefore more informative of transmission events than Ebola WGS [17] , we describe contrasting outbreak settings where the added value of incorporating contact data may vary. Outbreaks were simulated using empirical estimates of the generation time distribution, the incubation period distribution and the basic reproduction number R 0 (i.e. the average number of secondary infections caused by an index case in a fully susceptible population [33] ). To reflect observed heterogeneities in infectiousness, outbreaks were simulated under strong super-spreading tendencies, where a small number of individuals account for a high number of cases [2, 25, 34] . Genetic sequence data was simulated using estimates of the genome length and genome wide mutation rate.",
+            "cite_spans": [
+                {
+                    "start": 152,
+                    "end": 156,
+                    "text": "[27,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 157,
+                    "end": 160,
+                    "text": "32]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 323,
+                    "end": 327,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 702,
+                    "end": 706,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 902,
+                    "end": 905,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 906,
+                    "end": 909,
+                    "text": "25,",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 910,
+                    "end": 913,
+                    "text": "34]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Algorithm performance on simulated outbreaks"
+        },
+        {
+            "text": "To describe contact tracing efforts in various outbreak scenarios, contact data was simulated using two parameters (for a full description of the model, see Methods). Briefly, the probability of a contact being reported is described by \u03b5, the contact reporting coverage. Noninfectious mixing between cases that obscures the topology of the underlying transmission network is described using the non-infectious contact probability \u03bb, defined as the probability of contact occurring between two sampled cases that do not constitute a transmission pair. A useful corollary term to \u03bb is the expected number of non-infectious contacts per person, \u03c8, as this accounts for the size of the outbreak and describes the amount of non-infectious mixing in terms of numbers of contacts.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Algorithm performance on simulated outbreaks"
+        },
+        {
+            "text": "We investigated the effect of the coverage of contact tracing efforts and the probability of non-infectious contact on our ability to reconstruct transmission trees using using a grid of values for \u03b5 and \u03c8. The informativeness of different types of outbreak data was determined by reconstructing each outbreak four times, using combinations of times of sampling (T), contact tracing data (C) and genetic sequence data (G): T, TC, TG and TCG. For an example of a simulated transmission network, contact network and reconstructed transmission tree, see S1 Fig. Transmission tree reconstruction was essentially impossible using only times of sampling, with on average only 9% and 10% of infectors correctly identified in the consensus transmission tree for EBOV and SARs-CoV outbreaks, respectively (Fig 1) . Statistical confidence in ancestry allocation as defined by the average Shannon entropy of the posterior distribution of potential infectors for each case, for which a value of 0 indicates complete posterior support for a given ancestry and higher values indicates lower statistical confidence, was also low (S2 Fig) . Including genetic data improved both the accuracy of inference and the statistical confidence in these assignments. However, even in the idealized scenario of error free sequencing and WGS for all cases, this data was insufficient for complete outbreak reconstruction under our genetic likelihood, with on average only 29% and 70% of transmission pairs correctly inferred in in EBOV and SARS-CoV outbreaks, respectively.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 554,
+                    "end": 558,
+                    "text": "Fig.",
+                    "ref_id": null
+                },
+                {
+                    "start": 796,
+                    "end": 803,
+                    "text": "(Fig 1)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1118,
+                    "end": 1122,
+                    "text": "Fig)",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Algorithm performance on simulated outbreaks"
+        },
+        {
+            "text": "Incorporating contact tracing data using our new contact model improved the accuracy of transmission tree reconstruction across all simulations, with the magnitude of improvement dependent on the values of \u03b5 and \u03c8 (Fig 1) . Unsurprisingly, accuracy of inferred ancestries increased with coverage \u03b5, as a greater number infectious contacts were reported, and decreased with the number of non-infectious contacts \u03c8, as these reduced the proportion of contacts informative of transmission events. In the idealized scenario of complete contact tracing coverage and zero non-infectious contacts, outbreaks were reconstructed with near perfect accuracy, even in the absence of genetic data, with the few incorrectly assigned ancestries attributable to misinformative sampling times. Encouragingly, improvements in accuracy persisted in more realistic contact tracing scenarios with partial coverage and large numbers of non-infectious contacts. For example, consider the contact tracing scenario with only 60% coverage and on average two non-infectious contacts per person. When adding this data to the purely temporal outbreaker model, the accuracy in reconstructing EBOV outbreaks increased from 9% to 44%. Though more than half of ancestries remained incorrectly assigned, outbreaks were in fact reconstructed with greater accuracy than when using WGS from Ebola cases, for which accuracy was only 28%.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 214,
+                    "end": 221,
+                    "text": "(Fig 1)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Algorithm performance on simulated outbreaks"
+        },
+        {
+            "text": "When comparing the informativeness of contact data and genetic data across all simulations, we found that information on contact structures was frequently equally or more informative than fully sampled and error-free genetic sequence data, even under limitations of partial coverage and significant levels of non-infectious contact (Fig 2) . For example, contact data with only 40% coverage and 4 non-infectious contacts per person was as informative as fully sampled Ebola genetic data. Similarly, if the reporting coverage was 100%, contact data was as informative as Ebola WGS even when individuals reported 10 non-infectious contacts with other cases on average, meaning that only 17% of reported contacts represented true transmission pairs. Though contact data was generally less informative than SARS-CoV WGS in most scenarios, it still provided comparable increases in accuracy when coverage was high (\u03b5 > 0.6) and contact of non-infectious contact low (\u03c8 < 2).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 332,
+                    "end": 339,
+                    "text": "(Fig 2)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Algorithm performance on simulated outbreaks"
+        },
+        {
+            "text": "As expected, accuracy of outbreak reconstruction was highest when using contact, temporal and genetic data at the same time. Notably, contact data was able to correct a significant portion of ancestries falsely assigned using only temporal data and WGS. For example, incorporating contact data with 80% coverage and 2 non-infectious contacts per person lead to an increase in average accuracy of outbreak reconstruction from 28% to 79% for EBOV outbreaks ( Fig 1) . Contact data therefore contained significant additional information on likely transmission routes not available from pathogen WGS, which was successfully integrated in our inference framework.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 457,
+                    "end": 463,
+                    "text": "Fig 1)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Algorithm performance on simulated outbreaks"
+        },
+        {
+            "text": "In addition to the transmission tree itself, we inferred the model parameters \u03b5 and \u03bb under uninformative priors and observed accurate estimates of the simulated values for both EBOV and SARS-CoV outbreaks (S3 and S4 Figs). When using temporal and contact data, the mean posterior estimates of \u03b5 and \u03bb across 100 outbreaks were generally distributed around the true simulated value, and with low variance especially when the coverage \u03b5 was high. Only when \u03bb was high were the estimates slightly off-centered from the true value. Including genetic data improved parameter inference across all scenarios, resulting in correctly centered estimates with a reduced variance. \u03b5 and \u03bb are therefore identifiable in our contact likelihood and generally well estimated by our inference framework, allowing appropriate probabilistic weighting of contact data in the allocation of ancestries.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Algorithm performance on simulated outbreaks"
+        },
+        {
+            "text": "We applied our method to the early stages of the 2003 SARS outbreak in Singapore, for which dates of symptom onset, whole genome sequences and contact information were collected for Inferring transmission chains from temporal, genetic and contact data the first 13 cases [35, 36] . Previous attempts to infer the transmission tree from these data either reconstructed probable lineages by manual inspection [35, 36] , or entirely discarded information on the six reported contacts between cases [6, 37] , even though they were all thought to be epidemiologically significant [36] .",
+            "cite_spans": [
+                {
+                    "start": 271,
+                    "end": 275,
+                    "text": "[35,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 276,
+                    "end": 279,
+                    "text": "36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 407,
+                    "end": 411,
+                    "text": "[35,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 412,
+                    "end": 415,
+                    "text": "36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 495,
+                    "end": 498,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 499,
+                    "end": 502,
+                    "text": "37]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 575,
+                    "end": 579,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SARS outbreak in Singapore"
+        },
+        {
+            "text": "Using outbreaker2, we were able to infer the range of transmission histories consistent with the temporal, genomic and contact data in a probabilistic manner. We analyzed the outbreak several times using different settings; with and without contact data and using different priors on \u03bb (Fig 3) . Under the assumption that the reported contacts were very likely to be epidemiologically relevant, by fixing the non-transmission contact rate \u03bb at 1e-4, contact data significantly changed the posterior distribution of ancestries (Fig 3B and 3C ). As expected under these assumptions, transmission links in line with reported contacts were better supported. For example, the most likely infector of cases sin2677 and sin2774 was sin2500 when including contact data (Fig 3C) , instead of sin2748 in the default analysis ( Fig  3B) . Even though these transmission events were less likely under the genetic likelihood, as they implied the accumulation of 2 and 3 mutations, respectively, rather than 1 and 2 mutations, these ancestries were supported by the contact data and were therefore credible under our model. Importantly, the original transmission pathway inferred in the absence of genetic data (sin2748 infecting sin2677 and sin2774) also remained plausible. Further novel infection routes supported by contact data were sin849 infecting sin848, and sin848 infecting sin852.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 286,
+                    "end": 293,
+                    "text": "(Fig 3)",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 526,
+                    "end": 540,
+                    "text": "(Fig 3B and 3C",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 761,
+                    "end": 769,
+                    "text": "(Fig 3C)",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 817,
+                    "end": 825,
+                    "text": "Fig  3B)",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "SARS outbreak in Singapore"
+        },
+        {
+            "text": "However, not all ancestries supported by contact data received significant posterior support. Even though sin849 was in contact with and therefore a likely infector of sin848, sin847 remained the consensus ancestor of sin848 with 78% posterior support, as it is separated from sin848 by only 1 mutation, which is far more favorable under the genetic likelihood compared to the 7 mutations separating sin849 and sin848. Furthermore, though sin850 and sin848 had a reported contact, an infectious relationship between the two received no posterior support due to the large number of mutations (10) separating the two. Therefore, while the contact model generally provided support for transmission histories in line with epidemiological observations of contacts, each ancestry allocation was the result of weighing the evidence provided by all three, potentially conflicting, data sources.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SARS outbreak in Singapore"
+        },
+        {
+            "text": "Interestingly, incorporating contact data in our analysis affected ancestry allocations not directly referenced in the contact network. For example, sin848 was suggested as a novel infector of sin847 with 22% posterior support, though these cases are not linked by a reported contact. This is explained by a change in the inferred infection times (S5 Fig). sin848 infecting sin852, as suggested by the contact data, resulted in an earlier inferred infection time for sin848, which in turn made it a plausible infector of sin847. A similar change in the inferred infection times of sin2500 and sin2748, driven by the contact data, reversed the directionality of their consensus infectious relationship, even though this directionality was not provided in the contact data. Incorporating the contact model alongside the genetic and temporal model therefore allowed for high level interactions, beyond simply providing support for ancestries indicated in the contact data.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 351,
+                    "end": 356,
+                    "text": "Fig).",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "SARS outbreak in Singapore"
+        },
+        {
+            "text": "We also analyzed the dataset using a weaker prior on \u03bb (Beta(1, 10)) and an uninformative prior. However, the resulting posterior ancestries were essentially identical to those inferred in the absence of contact data (S6 Fig). We then reconstructed the outbreak under the assumption that all reported contacts necessarily occurred between direct transmission pairs by fixing \u03bb at a value of 0 ( Fig 3D) . The posterior distribution of transmission networks therefore spanned the contact network, with 6 of the 12 ancestries remaining fixed. This rigid topology of plausible transmission networks resulted in low variance among the remaining ancestries, producing essentially a single posterior tree. Notably, this analysis proposed several new ancestries (sin2679 to sin842, sin842 to sin847 and sin848 to sin850) rejected with a \u03bb value of 1e-4 and had a substantially lower average log-likelihood (-647.4 compared to -579.2). Therefore, while the assumption that \u03bb was 0 may have been valid, this approach forced the algorithm to accept ancestries highly unlikely under the genetic and temporal likelihoods, thereby preventing a meaningful integration of different data sources. B) The outbreak was reconstructed using temporal and genetic data. Arrows represent posterior ancestries between cases, scaled in width by the posterior frequency of that ancestry. Ancestries with a minimum posterior frequency of 0.01 were included. The color of a node corresponds to the median posterior infection time of that case. C) The outbreak was reconstructed using temporal, contact and genetic data, and the non-infectious contact probability \u03bb fixed at a value of 1e-4. D) The outbreak was reconstructed using temporal, contact and genetic data, and the non-infectious contact probability \u03bb fixed at a value of 0.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 221,
+                    "end": 226,
+                    "text": "Fig).",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 395,
+                    "end": 402,
+                    "text": "Fig 3D)",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "SARS outbreak in Singapore"
+        },
+        {
+            "text": "https://doi.org/10.1371/journal.pcbi.1006930.g003",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SARS outbreak in Singapore"
+        },
+        {
+            "text": "The methodology described here represents, to our knowledge, the first outbreak reconstruction framework integrating contact data alongside the timing of symptom onset, reporting rates and pathogen WGS data. Using simulations, we have shown how contact data can improve epidemiological inference across a range of outbreak settings, including incomplete contact tracing coverage, significant amounts of non-infectious contact and strong superspreading tendencies. By integrating contact data in the analysis of early stages of the 2003 Singaporean SARS outbreak for the first time, we have illustrated how our approach can work in a realistic outbreak scenario and provide a probabilistic description of plausible transmission routes in the face of conflicting outbreak data. The general applicability of our model, in addition to being implemented in a freely available and well-documented software package, makes outbreaker2 useful to a broad epidemiological audience.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Our work reduces the reliance of outbreak reconstruction tools on WGS data. This is significant when considering that genetic diversity in many pathogens arises too slowly to resolve a significant portion of transmission pairs by genetic means [17] , and that within-host genetic diversity of other pathogens hinders accurate transmission tree reconstruction from genetic data [38] . Furthermore, sequencing pathogen genomes from enough cases in an outbreak to resolve individual transmission events is frequently unrealistic in the face of logistical and financial limitations [24] . In contrast, contact tracing is routinely conducted during outbreak response, and therefore provides a valuable additional window of information on transmission events without placing an additional burden on field epidemiologists. Indeed, given the simulation model and likelihoods used for inference, our work suggests that even incomplete contact tracing data may be more informative than fully sampled, error-free genetic sequence data of some pathogens.",
+            "cite_spans": [
+                {
+                    "start": 244,
+                    "end": 248,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 377,
+                    "end": 381,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 578,
+                    "end": 582,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Methodologically, our contact model differs from previous methods for relating contact data to epidemiological processes, with several advantages [39] [40] [41] . Soetens et al. estimate effective reproduction numbers by assigning transmission links on the basis of contact data, while accounting for right censoring of case counts [39] . However, they assume complete sampling of contacts and cases, and automatically designate confirmed cases with a known contact as transmission pairs. This is equivalent to fixing \u03bb at a value of 0 in our model, which our analysis of the SARS dataset has shown is unsuitable for integrating other types of data in a meaningful manner. Similarly, Hens et. al. restrict transmission pairs to those supported by reported contacts [40] , thereby mis-assigning ancestries if contacts are only partially reported.",
+            "cite_spans": [
+                {
+                    "start": 146,
+                    "end": 150,
+                    "text": "[39]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 151,
+                    "end": 155,
+                    "text": "[40]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 156,
+                    "end": 160,
+                    "text": "[41]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 332,
+                    "end": 336,
+                    "text": "[39]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 765,
+                    "end": 769,
+                    "text": "[40]",
+                    "ref_id": "BIBREF40"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Jewell and Roberts establish a more statistically rigorous approach for epidemiological inference from contact data by explicitly modelling the contact process that drives the infectious process in an SINR compartmental framework [41] . Such a mechanistic model natively relates epidemiological processes to a set of observed contact data and has the advantage of potentially accommodating complex contact structures caused by non-random mixing in the future. However, a prospective model of this sort is considerably more complex to develop in a statistically tractable manner and has necessitated the assumption of a single index case, whereas multiple infectious introductions are easily accounted for in our contact likelihood. Furthermore, their approach does not explicitly model under-reporting of contacts, and therefore does not allow valuable prior information on the coverage of the contact tracing effort to inform the analysis. Our approach is therefore applicable to a wider range of realistic outbreak settings.",
+            "cite_spans": [
+                {
+                    "start": 230,
+                    "end": 234,
+                    "text": "[41]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Incorporating this contact model alongside a temporal and genetic model represents an improvement over previous, ad-hoc methods to data integration, which generally use contact data to exclude transmission links and then explore the remaining transmission tree space using other data [42, 43] . By modelling contact tracing as a probabilistic process in a Bayesian framework, information on the contact tracing effort can also be embedded in the prior to improve the inferential process and more explicitly describe the assumptions underlying it. For example, if most contacts in an outbreak are expected to have been reported, the prior on the contact reporting coverage \u03b5 can be shifted to provide greater support for higher values, reducing support for ancestries that lack a contact. \u03b5 could even be fixed at a value of 1, meaning a reported contact is required for a given transmission pair to be inferred, given the assumption that every contact has been reported. Similarly, as shown for the 2003 SARS outbreak, an informative prior on the non-infectious contact probability \u03bb should generally be used. As most contact tracing efforts are conducted under the belief that non-transmission pairs experience contacts with significantly lower probability than transmission pairs, the prior on \u03bb should provide support for lower values, in turn placing greater weight on reported contacts when assigning ancestries.",
+            "cite_spans": [
+                {
+                    "start": 284,
+                    "end": 288,
+                    "text": "[42,",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 289,
+                    "end": 292,
+                    "text": "43]",
+                    "ref_id": "BIBREF43"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Our method also allows conflicting data to be treated in a systematic manner, as demonstrated by the analysis of the the 2003 SARS outbreak, where several ancestries were supported by contact data yet separated by an implausibly large number of mutations. In contrast to existing tools [6, 35] , outbreaker2 can evaluate these inconsistencies and determine the distribution of likely transmission trees under multiple data types. While not necessarily improving the accuracy of the inferred transmission tree, our approach better captures the uncertainty around these ancestry assignments given the available data.",
+            "cite_spans": [
+                {
+                    "start": 286,
+                    "end": 289,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 290,
+                    "end": 293,
+                    "text": "35]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "However, it is important to note both the intrinsic informational limitations of contact data as well as the methodological limitations of the work presented here. Contact tracing constitutes a significant logistical challenge, as most if not at all infected individuals must be followed up, and suspected cases monitored past the upper end of the incubation period distribution [44] [45] [46] . The coverage of contact tracing efforts conducted in low resource settings may therefore be low [47] , and consequently poorly informative of the transmission network (Fig 1) . Even if a significant proportion of contacts are reported, a high degree of mixing between cases can obscure the topology of the underlying transmission network, for example within hospital wards or classrooms. Contact data alone will therefore not always suffice for complete reconstruction of an outbreak. Nevertheless, the framework presented here allows even minimally informative contact data to be incorporated into transmission tree inference alongside other available data.",
+            "cite_spans": [
+                {
+                    "start": 379,
+                    "end": 383,
+                    "text": "[44]",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 384,
+                    "end": 388,
+                    "text": "[45]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 389,
+                    "end": 393,
+                    "text": "[46]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 492,
+                    "end": 496,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 563,
+                    "end": 570,
+                    "text": "(Fig 1)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Furthermore, the use of strong priors on \u03b5 and \u03bb may be required to ensure adequate weighting of contact data, especially in the face of conflicting genetic data as shown in the analysis of the 2003 SARS outbreak. While our framework forces an explicit description of these assumptions, the sensitivity of the algorithm outputs to the prior distributions should be noted and explored adequately.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Our model of epidemiological contacts also makes a number of simplifications, some of which could be improved upon in future work. As the contacts are undated, the model does not consider that they are only indicative of transmission events if they occur during the infectious period of the infector, potentially resulting in overconfident ancestry assignments if contacts frequently occur outside this time period. However, as epidemiologists generally only record meaningful contacts occurring within likely windows of infection, the assumption that recorded contacts represent epidemiologically plausible transmission pairs appears reasonable. As currently implemented, our model also does not account for different weights between contacts, which could be useful for example to stratify different types of sexual intercourse by their risk of HIV transmission [48] , or TB contacts by their duration of contact (e.g. household vs. casual). However, it could be easily extended to do so by using separate parameters for the reporting coverage (e.g. \u03b5 1 , \u03b5 2 , \u03b5 3 ) and non-infectious contact probability (e.g. \u03bb 1 , \u03bb 2 , \u03bb 3 ) of each type of contact. Furthermore, the contact model is undirected and treats exposure data and contact tracing data equally, resulting in a loss of information about the potential directionality of the infectious interaction which must instead be inferred from other data. Directionality could be incorporated with relative ease by treating reported contacts as asymmetric (individual i contacting individual j is distinct from j contacting i) and relating this to the infector-infectee relationship in the putative transmission tree (I infecting j is distinct from j infecting I). However, the current model generally inferred directionality successfully from temporal data simulated under realistic delay distributions (Fig 1) .",
+            "cite_spans": [
+                {
+                    "start": 863,
+                    "end": 867,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1857,
+                    "end": 1864,
+                    "text": "(Fig 1)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "It should also be noted that the use of fixed generation time and incubation period distributions is poorly suited to epidemic scenarios with highly connected contact networks, for which hazard-based approaches are more suitable [49, 50] . However, as demonstrated in Fig 1, contact data is only informative when the contact network itself is fairly sparse (i.e. \u03bb is low). The assumption of fixed generation time and incubation period distributions is therefore suitable for the use cases of our contact model [10, 13, 51] .",
+            "cite_spans": [
+                {
+                    "start": 229,
+                    "end": 233,
+                    "text": "[49,",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 234,
+                    "end": 237,
+                    "text": "50]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 511,
+                    "end": 515,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 516,
+                    "end": 519,
+                    "text": "13,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 520,
+                    "end": 523,
+                    "text": "51]",
+                    "ref_id": "BIBREF51"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 268,
+                    "end": 274,
+                    "text": "Fig 1,",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Finally, the assumptions underlying the pairwise genetic model should be considered when using outbreaker2. The likelihoods of pairwise genetic distances are treated as independent, when in fact they are dependent on the underlying infectious relationships between cases (e.g. the genetic relatedness of case A and its infector B is dependent on the infector of B). Similarly, by considering only genetic distances, our method disregards histories of shared mutations between genomes. These assumptions can result in loss of information and potential misinterpretation of genetic signals, especially when evolutionary histories are complex [38] . In such cases, character-based, phylogenetic models should be considered [10, 11] .",
+            "cite_spans": [
+                {
+                    "start": 640,
+                    "end": 644,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 720,
+                    "end": 724,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 725,
+                    "end": 728,
+                    "text": "11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In conclusion, the work presented here provides a simple yet flexible methodology for integrating contact data with genetic and temporal data in the inference of transmission trees. By allowing contact data to complement and/or substitute genetic data as the primary source of information on infectious relationships between individuals, our work increases both the scope and accuracy of methodologies for outbreak reconstruction.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Our work is an extension of the outbreaker model developed by Jombart et al. [16] , re-written in a manner to be more extensible This model considers, for each case I (i = 1, . . .,N), the probability of a proposed transmission history given the time of symptom onset t i and a pathogen genetic sequence s i (Table 1) . Assumptions on the temporal relationship between transmission pairs are given by the generation time distribution w, defined as the distribution of delays between infection of a primary and secondary case, and the incubation period distribution f, defined as the distribution of intervals between infection and symptom onset of a case. w and f are assumed to be known, and not estimated during the inference process.",
+            "cite_spans": [
+                {
+                    "start": 77,
+                    "end": 81,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 308,
+                    "end": 317,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "The unobserved transmission events are modelled using augmented data; case i is infected at time T i inf , and its most recent sampled ancestor denoted \u03b1 i . To allow for unobserved cases, the number of generations separating i and \u03b1 i is explicitly modelled and denoted \u03ba i (\u03ba i \ufffd 1). The proportion of cases that have been sampled is defined by the parameter \u03c0 and is inferred as part of the estimation procedure. The other estimated parameter is the mutation rate \u03bc, measured per site per generation of infection.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "This model is embedded in a Bayesian framework. Denoting D the observed data, A the augmented data and \u03b8 the model parameters, the joint posterior distribution of parameters and augmented data is defined as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "The first term describes the likelihood of the data, the second term the joint prior (for a complete description of both, see Jombart et al. [6] ). Briefly, the likelihood is computed as a product of case-specific terms, and can be decomposed into a genetic likelihood O 1 , a temporal likelihood O 2 and a reporting likelihood O 3 .",
+            "cite_spans": [
+                {
+                    "start": 141,
+                    "end": 144,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "The genetic likelihood describes, for a given case i, the probability of observing the genetic distance between sequence s i and that of its most recent sampled ancestor s \u03b1i , given the proposed ancestries and parameters:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "and is defined as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "This calculates the probability of d(s i ,s j ) mutation events occurring at the observed nucleotide positions and no mutations occurring at the remaining positions, while summing over the \u03ba i generations in which the mutations could have occurred. For a full derivation of this likelihood, see S1 Text. The temporal likelihood describes the probability of observing the time of symptom onset and proposed time of infection:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "and is calculated as: Inferring transmission chains from temporal, genetic and contact data w \u03ba = w \ufffd w \ufffd . . . \ufffd w, where \ufffd is the convolution operator and is applied k times. The first term describes the probability of the imputed time of infection under the incubation period distribution. The second term describes the probability of observing the delay between infection times of the case and its most recent sampled ancestor under the generation time distribution, over the imputed number of generations. The reporting likelihood describes the probability of unobserved intermediate cases:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "and is calculated as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "where NB is the probability mass function of the negative binomial distribution, and describes the probability of not observing \u03ba i -1 cases given a probability of observation of \u03c0.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Outbreaker model"
+        },
+        {
+            "text": "To integrate contact data into outbreaker, we developed a method for modelling contact data from transmission trees (Fig 4) . The model considers undated, undirected, binary contact data, such that the contact status c i,j is set to 1 if contact is reported between individuals i and j and set to 0 otherwise. The model is hierarchical and describes two processes: the occurrence of contacts and the reporting of contacts. Transmission pairs experience contact with probability \u03b7. This formulation accounts for the possibility of transmission occurring without direct contact, for example by indirect environmental contamination as is observed with Clostridium difficile [52] . Sampled, infected individuals that do not constitute a transmission pair experience contact with probability \u03bb, the non-infectious contact probability. Contacts that have occurred, either between transmission pairs or non-transmission pairs, are then reported with probability \u03b5, the contact reporting coverage. Contacts that have not occurred are reported with probability z, the false positive reporting rate. We make two assumptions to simplify this model, which can be relaxed in future work if necessary. Firstly, we assume that direct contact is necessary for transmission and set \u03b7 to 1. Inferring transmission chains from temporal, genetic and contact data Furthermore, we assume that false reporting of contacts that have not occurred is negligible and set z to zero. This model allows us to define a contact likelihood O 4 , describing the probability of observing the contact data C (a symmetrical, binary, NxN adjacency matrix with zeros on its diagonal) given a proposed transmission tree and parameters \u03b5 and \u03bb. Formally, for individual i:",
+            "cite_spans": [
+                {
+                    "start": 671,
+                    "end": 675,
+                    "text": "[52]",
+                    "ref_id": "BIBREF52"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 116,
+                    "end": 123,
+                    "text": "(Fig 4)",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Contact likelihood"
+        },
+        {
+            "text": "k\u00de Using the contact model described in Fig 4 and the simplifying assumptions made above:",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 40,
+                    "end": 49,
+                    "text": "Fig 4 and",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Contact likelihood"
+        },
+        {
+            "text": "For a mathematical description of the unsimplified model, see S2 Text. The updated joint posterior distribution is therefore proportional to the product of the four likelihood terms and the joint prior:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Contact likelihood"
+        },
+        {
+            "text": "P\u00f0A; yjD\u00de / p\u00f0a; m; p; \ufffd; l\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Contact likelihood"
+        },
+        {
+            "text": "The prior distributions are assumed independent, such that:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distributions"
+        },
+        {
+            "text": "p\u00f0a; m; p; \ufffd; l\u00de \u00bc p\u00f0a\u00dep\u00f0m\u00dep\u00f0p\u00dep\u00f0\ufffd\u00dep\u00f0l\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distributions"
+        },
+        {
+            "text": "The prior on ancestries p(\u03b1) is uniform, and the prior on the mutation rate \u03bc exponentially distributed. \u03c0, \u03b5 and \u03bb represent probabilities and are assigned Beta distributed priors with user-defined parameters, to allow flexible specification of previous knowledge on the sampling coverage, contact reporting coverage and non-infectious contact probability.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Prior distributions"
+        },
+        {
+            "text": "Transmission trees and genetic sequence evolution were simulated using the simOutbreak function from the R package outbreaker. To describe heterogeneities in infectiousness within a population, well-documented in both EBOV [34] and SARS-CoV [25] outbreaks, and capture consequent 'superspreading' events, in which a small portion of the population accounts for a large number of infections, we described the 'individual reproductive number' R i , a variable describing the expected number of secondary cases caused by a particular infected individual [2] . Following previous studies by Lloyd-Smith et al. [2] and Grassly and Fraser [53] , we assumed R i to be Gamma distributed with a mean of R 0 and a dispersion parameter k, with lower values of k indicating greater heterogeneity in infectiousness. The resulting offspring distribution is a negative binomial [2] .",
+            "cite_spans": [
+                {
+                    "start": 223,
+                    "end": 227,
+                    "text": "[34]",
+                    "ref_id": null
+                },
+                {
+                    "start": 241,
+                    "end": 245,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 551,
+                    "end": 554,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 606,
+                    "end": 609,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 633,
+                    "end": 637,
+                    "text": "[53]",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 863,
+                    "end": 866,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simulation scenarios"
+        },
+        {
+            "text": "Estimates of the generation time distribution, R 0 , mutation rate and genome length were taken from a literature review described by Campbell et al. [17] Estimates of the incubation period distribution and dispersion parameter of R i were drawn from the literature ( Table 2) .",
+            "cite_spans": [
+                {
+                    "start": 150,
+                    "end": 154,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 268,
+                    "end": 276,
+                    "text": "Table 2)",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Simulation scenarios"
+        },
+        {
+            "text": "Generation time distributions and incubation period distributions were described by discretized gamma distributions, generated using the function DiscrSI from the R package EpiEstim [54] .",
+            "cite_spans": [
+                {
+                    "start": 182,
+                    "end": 186,
+                    "text": "[54]",
+                    "ref_id": "BIBREF54"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simulation scenarios"
+        },
+        {
+            "text": "Contact data was simulated from transmission trees using the model described in Fig 3 , using a grid of values for the reporting coverage (\u03b5 \u220a [0, 1]) and the number of non-infectious contacts per person (\u03c8 \u220a [0, 10], \u03bb \u220a [0, 0.18]). For a mathematical description of the relationship between \u03c8 and \u03bb, see S3 Text. At each grid point, 100 outbreaks were simulated, with a single initial infection in a susceptible population of 200 individuals. Simulations were run for 100 days, or until no more infectious individuals remained. The first 60 ancestries of each outbreak were reconstructed four times using the R package outbreaker2, using combinations of times of symptom onset (T), contact data (C) and WGS (G): T, TC, TG and TCG. For each analysis, one MCMC chain was run for 10,000 iterations with a thinning frequency of 1/50 and a burn-in of 1,000 iterations. The prior distributions used for \u03b5 and \u03bb were uninformative (Beta(1,1) ), and default priors used otherwise.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 80,
+                    "end": 85,
+                    "text": "Fig 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 926,
+                    "end": 936,
+                    "text": "(Beta(1,1)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Simulation scenarios"
+        },
+        {
+            "text": "The accuracy of outbreak reconstruction was defined as the proportion of correctly assigned ancestries in the consensus transmission tree, itself defined as the tree with the modal posterior infector for each case. The uncertainty associated with an inferred ancestry was quantified using the Shannon entropy of the frequency of posterior ancestors for each case [68] . Given K ancestors of frequency f K (k = 1, . . .,K), the entropy was defined as:",
+            "cite_spans": [
+                {
+                    "start": 363,
+                    "end": 367,
+                    "text": "[68]",
+                    "ref_id": "BIBREF68"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Quantifying accuracy and statistical confidence"
+        },
+        {
+            "text": "Thirteen previously published [35, 36] and aligned [6] SARS whole genome sequences were obtained for our analysis. Data on epidemiological contacts were described by Vega et al. [36] . The same generation time distribution and incubation period distribution used for the analysis of the simulated SARS outbreaks were used ( Table 2) . As the number of non-transmission contacts was assumed to be low and a total of 6 contacts were reported in an outbreak of 13 cases, the proportion of contacts reported was believed to be about 50%. The prior on \u03b5 was therefore chosen as Beta (5, 5) . Several priors on the non-transmission contact rate \u03bb were tested; Beta(1, 10), Unif(0, 1), a fixed value of 0 and a fixed value of 1e-4. The priors on the mutation rate \u03bc and proportion of cases sampled \u03c0 were uninformative. The MCMC chain was run for 1e7 iterations with a thinning frequency of 1/50 and a burn-in of 1,000 iterations. green lines correspond to transmission pairs, red lines to non-transmission pairs. Dashed green lines represent contacts between transmission pairs that were not reported. C) The outbreak was reconstructed using temporal and genomic data, and the consensus transmission tree, describing the modal posterior infector for each case, determined. Green lines correspond to correctly inferred ancestries, red lines to incorrectly inferred ancestries. The accuracy of outbreak reconstruction was 46%. D) The outbreak was reconstructed using temporal, genomic and contact data, with an accuracy of 94%. ",
+            "cite_spans": [
+                {
+                    "start": 30,
+                    "end": 34,
+                    "text": "[35,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 35,
+                    "end": 38,
+                    "text": "36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 51,
+                    "end": 54,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 178,
+                    "end": 182,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 578,
+                    "end": 581,
+                    "text": "(5,",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 324,
+                    "end": 332,
+                    "text": "Table 2)",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Analyzing the 2003 SARS outbreak in Singapore"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Chains of transmission and control of Ebola virus disease in Conakry, Guinea, in 2014: an observational study",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Faye",
+                    "suffix": ""
+                },
+                {
+                    "first": "P-Y",
+                    "middle": [],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Heleze",
+                    "suffix": ""
+                },
+                {
+                    "first": "Faye",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Loucoubar",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Magassouba",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "&apos;faly",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Lancet Infect Dis",
+            "volume": "15",
+            "issn": "",
+            "pages": "320--326",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S1473-3099(14)71075-8"
+                ],
+                "PMID": [
+                    "25619149"
+                ]
+            }
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Superspreading and the effect of individual variation on disease emergence",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Lloyd-Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Schreiber",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kopp",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Getz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nature. Nature Publishing Group",
+            "volume": "438",
+            "issn": "",
+            "pages": "355--359",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Transmission intensity and impact of control policies on the foot and mouth epidemic in Great Britain",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Nature",
+            "volume": "413",
+            "issn": "",
+            "pages": "542--548",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/35097116"
+                ],
+                "PMID": [
+                    "11586365"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Use of the minimum spanning tree model for molecular epidemiological investigation of a nosocomial outbreak of hepatitis C virus infection",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Spada",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Sagliocca",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sourdis",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Garbuglia",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Poggi",
+                    "suffix": ""
+                },
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Fusco",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Clin Microbiol",
+            "volume": "42",
+            "issn": "",
+            "pages": "4230--4236",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/JCM.42.9.4230-4236.2004"
+                ],
+                "PMID": [
+                    "15365016"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Sequencing technologies-the next generation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Metzker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nat Rev Genet",
+            "volume": "11",
+            "issn": "",
+            "pages": "31--46",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nrg2626"
+                ],
+                "PMID": [
+                    "19997069"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Bayesian reconstruction of disease outbreaks by combining epidemiologic and genomic data",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Jombart",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cori",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS Comput Biol",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003457"
+                ],
+                "PMID": [
+                    "24465202"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "A Bayesian approach for inferring the dynamics of partially observed endemic infectious diseases from space-time-genetic data",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mollentze",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Nel",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Townsend",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Le Roux",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Hampson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Haydon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Proc Biol Sci",
+            "volume": "281",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rspb.2013.3251"
+                ],
+                "PMID": [
+                    "24619442"
+                ]
+            }
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A Systematic Bayesian Integration of Epidemiological and Genetic Data",
+            "authors": [
+                {
+                    "first": "Msy",
+                    "middle": [],
+                    "last": "Lau",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Marion",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Streftaris",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gibson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Comput Biol",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1004633"
+                ],
+                "PMID": [
+                    "26599399"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Reconstructing transmission trees for communicable diseases using densely sampled genetic data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Worby",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "O&apos;neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kypraios",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Robotham",
+                    "suffix": ""
+                },
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Angelis",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Cartwright",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ejp",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Ann Appl Stat",
+            "volume": "10",
+            "issn": "",
+            "pages": "395--417",
+            "other_ids": {
+                "PMID": [
+                    "27042253"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Genomic infectious disease epidemiology in partially sampled and ongoing outbreaks",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gardy",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Mol Biol Evol",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/molbev/msw275"
+                ],
+                "PMID": [
+                    "28100788"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "SCOTTI: Efficient Reconstruction of Transmission within Outbreaks with the Structured Coalescent",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "De Maio",
+                    "suffix": ""
+                },
+                {
+                    "first": "C-H",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wilson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "PLoS Comput Biol",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1005130"
+                ],
+                "PMID": [
+                    "27681228"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Epidemic Reconstruction in a Phylogenetics Framework: Transmission Trees as Partitions of the Node Set",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Woolhouse",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Comput Biol",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1004613"
+                ],
+                "PMID": [
+                    "26717515"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Simultaneous inference of phylogenetic and transmission trees in infectious disease outbreaks",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Klinkenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Backer",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "PLoS Comput Biol",
+            "volume": "13",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1005495"
+                ],
+                "PMID": [
+                    "28545083"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Using genomics data to reconstruct transmission trees during disease outbreaks",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "Mej",
+                    "middle": [],
+                    "last": "Woolhouse",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Rev Sci Tech",
+            "volume": "35",
+            "issn": "",
+            "pages": "287--296",
+            "other_ids": {
+                "DOI": [
+                    "10.20506/rst.35.1.2433"
+                ],
+                "PMID": [
+                    "27217184"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Bayesian inference of infectious disease transmission from whole-genome sequence data",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gardy",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Mol Biol Evol",
+            "volume": "31",
+            "issn": "",
+            "pages": "1869--1879",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/molbev/msu121"
+                ],
+                "PMID": [
+                    "24714079"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "The construction and analysis of epidemic trees with reference to the 2001 UK foot-and-mouth outbreak",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Haydon",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Chase-Topping",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Shaw",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Matthews",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Friar",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wilesmith",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proc Biol Sci",
+            "volume": "270",
+            "issn": "",
+            "pages": "121--127",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rspb.2002.2191"
+                ],
+                "PMID": [
+                    "12590749"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "When are pathogen genome sequences informative of transmission events?",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Campbell",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Strang",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cori",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Jombart",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "PLoS Pathog",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.ppat.1006885"
+                ],
+                "PMID": [
+                    "29420641"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Origins and evolutionary genomics of the 2009 swine-origin H1N1 influenza A epidemic",
+            "authors": [
+                {
+                    "first": "Gjd",
+                    "middle": [],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Vijaykrishna",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bahl",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lycett",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Worobey",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Pybus",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature",
+            "volume": "459",
+            "issn": "",
+            "pages": "1122--1125",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nature08182"
+                ],
+                "PMID": [
+                    "19516283"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Criteria for the control of drug-resistant tuberculosis",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Dye",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Williams",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "97",
+            "issn": "",
+            "pages": "8180--8185",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.140102797"
+                ],
+                "PMID": [
+                    "10859359"
+                ]
+            }
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Halting a pneumococcal pneumonia outbreak among United States Marine Corps trainees",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Crum",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Wallace",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Lamb",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ams",
+                    "middle": [],
+                    "last": "Conlin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Amundson",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Olson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Am J Prev Med",
+            "volume": "25",
+            "issn": "",
+            "pages": "107--111",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Within-host diversity of MRSA antimicrobial resistances",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Stanczak-Mrozek",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Manne",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Knight",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Gould",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Witney",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lindsay",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "J Antimicrob Chemother",
+            "volume": "70",
+            "issn": "",
+            "pages": "2191--2198",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/jac/dkv119"
+                ],
+                "PMID": [
+                    "25957384"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Increased susceptibility for superinfection with Streptococcus pneumoniae during influenza virus infection is not caused by TLR7-mediated lymphopenia",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Stegemann",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dahlberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kr\u00f6 Ger",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gereke",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bruder",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Henriques-Normark",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS One",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0004840"
+                ],
+                "PMID": [
+                    "19290047"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Inferring Transmission from Within-and Between-Host Pathogen Genetic Diversity",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wymant",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Ratmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bonsall",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Golubchik",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "De Cesare",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Mol Biol Evol",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Virus genomes reveal factors that spread and sustained the Ebola epidemic",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Dudas",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Carvalho",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bedford",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Tatem",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Baele",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Faria",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Nature",
+            "volume": "544",
+            "issn": "",
+            "pages": "309--315",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nature22040"
+                ],
+                "PMID": [
+                    "28405027"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Superspreading SARS events",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Ning",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Chin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Emerg Infect Dis",
+            "volume": "10",
+            "issn": "",
+            "pages": "256--260",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1002.030732"
+                ],
+                "PMID": [
+                    "15030693"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Hospital outbreak of Middle East respiratory syndrome coronavirus",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Assiri",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mcgeer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Perl",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Price",
+                    "suffix": ""
+                },
+                {
+                    "first": "Al",
+                    "middle": [],
+                    "last": "Rabeeah",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Cummings",
+                    "suffix": ""
+                },
+                {
+                    "first": "Dat",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "N Engl J Med",
+            "volume": "369",
+            "issn": "",
+            "pages": "407--416",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMoa1306742"
+                ],
+                "PMID": [
+                    "23782161"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Who Ebola Response Team. Ebola Virus Disease in West Africa-The First 9 Months of the Epidemic and Forward Projections",
+            "authors": [],
+            "year": 2014,
+            "venue": "N Engl J Med",
+            "volume": "371",
+            "issn": "",
+            "pages": "1481--1495",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMoa1411100"
+                ],
+                "PMID": [
+                    "25244186"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Exposure Patterns Driving Ebola Transmission in West Africa: A Retrospective Observational Study",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Agua-Agum",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ariyarajah",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Aylward",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Bawo",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bilivogui",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "PLoS Med",
+            "volume": "13",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pmed.1002170"
+                ],
+                "PMID": [
+                    "27846234"
+                ]
+            }
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "You may have come into contact with",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Broeckaert",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Haworth-Brockman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "HIV Contact Tracing in Canada. Prevention",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Guidelines for the investigation of contacts of persons with infectious tuberculosis. Recommendations from the National Tuberculosis Controllers Association and CDC",
+            "authors": [],
+            "year": 2005,
+            "venue": "Centers for Disease Control and Prevention (CDC)",
+            "volume": "54",
+            "issn": "",
+            "pages": "1--47",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "R: A Language and Environment for Statistical Computing [Internet]. R Foundation for Statistical Computing",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Development Core Team",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/978-3-540-74686-7"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Transmission dynamics of the etiological agent of SARS in Hong Kong: impact of public health interventions",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ghani",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Abu-Raddad",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hedley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Science",
+            "volume": "300",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1086478"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "A contribution to the mathematical theory of epidemics. A: mathematical, . . .. rspa.royalsocietypublishing.org",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Kermack",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Mckendrick",
+                    "suffix": ""
+                }
+            ],
+            "year": 1927,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Comparative full-length genome sequence analysis of 14 SARS coronavirus isolates and common mutations associated with putative origins of infection",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Ruan",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Wei",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ee",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Vega",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Thoreau",
+                    "suffix": ""
+                },
+                {
+                    "first": "Sty",
+                    "middle": [],
+                    "last": "Su",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Lancet",
+            "volume": "361",
+            "issn": "",
+            "pages": "1779--1785",
+            "other_ids": {
+                "PMID": [
+                    "12781537"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Mutational dynamics of the SARS coronavirus in cell culture and human populations isolated in 2003",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Vega",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Ruan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Wei",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Se-Thoe",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Sy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Infect Dis",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2334-4-32"
+                ],
+                "PMID": [
+                    "15347429"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "SARS transmission pattern in Singapore reassessed by viral sequence variation analysis",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Lim",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Ruan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ling",
+                    "suffix": ""
+                },
+                {
+                    "first": "Lfp",
+                    "middle": [],
+                    "last": "Ng",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Drosten",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "PLoS Med",
+            "volume": "2",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pmed.0020043"
+                ],
+                "PMID": [
+                    "15736999"
+                ]
+            }
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Within-host bacterial diversity hinders accurate reconstruction of transmission networks from genomic distance data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Worby",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Hanage",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS Comput Biol",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003549"
+                ],
+                "PMID": [
+                    "24675511"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Real-time Estimation of Epidemiologic Parameters from Contact Tracing Data During an Emerging Infectious Disease Outbreak",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Soetens",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Klinkenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Swaan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Hahn\u00e9",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Epidemiology",
+            "volume": "29",
+            "issn": "",
+            "pages": "230--236",
+            "other_ids": {
+                "DOI": [
+                    "10.1097/EDE.0000000000000776"
+                ],
+                "PMID": [
+                    "29087987"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Robust reconstruction and analysis of outbreak data: influenza A(H1N1)v transmission in a school-based population",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Hens",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Calatayud",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kurkela",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tamme",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Am J Epidemiol",
+            "volume": "176",
+            "issn": "",
+            "pages": "196--203",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kws006"
+                ],
+                "PMID": [
+                    "22791742"
+                ]
+            }
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Enhancing Bayesian risk prediction for epidemics using contact tracing",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Jewell",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Roberts",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Biostatistics",
+            "volume": "13",
+            "issn": "",
+            "pages": "567--579",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/biostatistics/kxs012"
+                ],
+                "PMID": [
+                    "22674466"
+                ]
+            }
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Whole-genome sequencing and social-network analysis of a tuberculosis outbreak",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Gardy",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Johnston",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ho",
+                    "middle": [],
+                    "last": "Sui",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cook",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Shah",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Brodkin",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "N Engl J Med",
+            "volume": "364",
+            "issn": "",
+            "pages": "730--739",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMoa1003176"
+                ],
+                "PMID": [
+                    "21345102"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Inferring patient to patient transmission of Mycobacterium tuberculosis from whole genome sequencing data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bryant",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Sch\u00fcrch",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Van Deutekom",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Harris",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "De Beer",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "De Jager",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "BMC Infect Dis",
+            "volume": "13",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2334-13-110"
+                ],
+                "PMID": [
+                    "23446317"
+                ]
+            }
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Key data for outbreak evaluation: building on the Ebola experience",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cori",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Dorigatti",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Garske",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Philos Trans R Soc Lond B Biol Sci",
+            "volume": "372",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rstb.2016.0371"
+                ],
+                "PMID": [
+                    "28396480"
+                ]
+            }
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "Factors that make an infectious disease outbreak controllable",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "101",
+            "issn": "",
+            "pages": "6146--6151",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0307506101"
+                ],
+                "PMID": [
+                    "15071187"
+                ]
+            }
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "World Health Organization, Others. Contact tracing during an outbreak of Ebola virus disease. World Health Organization",
+            "authors": [],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Contact Tracing Activities during the Ebola Virus Disease Epidemic in Kindia and Faranah, Guinea",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Dixon",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Taylor",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Dee",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Hakim",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Cantey",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lim",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Emerg Infect Dis",
+            "volume": "21",
+            "issn": "",
+            "pages": "2022--2028",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid2111.150684"
+                ],
+                "PMID": [
+                    "26488116"
+                ]
+            }
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Estimating per-act HIV transmission risk: a systematic review",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Patel",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Borkowf",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Brooks",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lasry",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lansky",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mermin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "AIDS",
+            "volume": "28",
+            "issn": "",
+            "pages": "1509--1519",
+            "other_ids": {
+                "DOI": [
+                    "10.1097/QAD.0000000000000298"
+                ],
+                "PMID": [
+                    "24809629"
+                ]
+            }
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Methods to infer transmission risk factors in complex outbreak data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J R Soc Interface",
+            "volume": "9",
+            "issn": "",
+            "pages": "456--469",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rsif.2011.0379"
+                ],
+                "PMID": [
+                    "21831890"
+                ]
+            }
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Contact intervals, survival analysis of epidemic data, and estimation of R(0)",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Kenah",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Biostatistics",
+            "volume": "12",
+            "issn": "",
+            "pages": "548--566",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/biostatistics/kxq068"
+                ],
+                "PMID": [
+                    "21071607"
+                ]
+            }
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Different epidemic curves for severe acute respiratory syndrome reveal similar impacts of control measures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Teunis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Am J Epidemiol",
+            "volume": "160",
+            "issn": "",
+            "pages": "509--516",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwh255"
+                ],
+                "PMID": [
+                    "15353409"
+                ]
+            }
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Environmental transmission of Clostridium difficile: association between hospital room size and C. difficile Infection",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Jou",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ebrahim",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Shofer",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Hamilton",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Stern",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Han",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Infect Control Hosp Epidemiol",
+            "volume": "36",
+            "issn": "",
+            "pages": "564--568",
+            "other_ids": {
+                "DOI": [
+                    "10.1017/ice.2015.18"
+                ],
+                "PMID": [
+                    "25652311"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Mathematical models of infectious disease transmission",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Grassly",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nat Rev Microbiol",
+            "volume": "6",
+            "issn": "",
+            "pages": "477--487",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nrmicro1845"
+                ],
+                "PMID": [
+                    "18533288"
+                ]
+            }
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "A new framework and software to estimate time-varying reproduction numbers during epidemics",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cori",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Am J Epidemiol",
+            "volume": "178",
+            "issn": "",
+            "pages": "1505--1512",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwt133"
+                ],
+                "PMID": [
+                    "24043437"
+                ]
+            }
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "WHO Ebola Response Team. Ebola Virus Disease in West Africa-The First 9 Months of the Epidemic and Forward Projections",
+            "authors": [],
+            "year": 2014,
+            "venue": "The England New Journal of Medicine",
+            "volume": "371",
+            "issn": "",
+            "pages": "1481--1495",
+            "other_ids": {}
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "WHO Ebola Response Team. West African Ebola Epidemic after One Year-Slowing but Not Yet under Control",
+            "authors": [],
+            "year": 2015,
+            "venue": "N Engl J Med",
+            "volume": "372",
+            "issn": "",
+            "pages": "584--587",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMc1414992"
+                ],
+                "PMID": [
+                    "25539446"
+                ]
+            }
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "Transmission Dynamics and Control of Severe Acute Respiratory Syndrome",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Science",
+            "volume": "300",
+            "issn": "",
+            "pages": "1966--1970",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1086616"
+                ],
+                "PMID": [
+                    "12766207"
+                ]
+            }
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "Factors associated with nosocomial SARS-CoV transmission among healthcare workers in Hanoi",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Reynolds",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Anh",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Thu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Montgomery",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Bausch",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Shah",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "BMC Public Health",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2458-6-207"
+                ],
+                "PMID": [
+                    "16907978"
+                ]
+            }
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "Investigation of a nosocomial outbreak of severe acute respiratory syndrome (SARS) in Toronto",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Varia",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wilson",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sarwal",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mcgeer",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Gournis",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Galanis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Canada. CMAJ",
+            "volume": "169",
+            "issn": "",
+            "pages": "285--292",
+            "other_ids": {
+                "PMID": [
+                    "12925421"
+                ]
+            }
+        },
+        "BIBREF60": {
+            "ref_id": "b60",
+            "title": "Epidemiological determinants of spread of causal agent of severe acute respiratory syndrome in Hong Kong",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ghani",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hedley",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Lancet",
+            "volume": "361",
+            "issn": "",
+            "pages": "1761--1766",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S0140-6736(03)13410-1"
+                ],
+                "PMID": [
+                    "12781533"
+                ]
+            }
+        },
+        "BIBREF61": {
+            "ref_id": "b61",
+            "title": "Complete Genome Sequences of Three Ebola Virus Isolates from the 2014 Outbreak in West Africa",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hoenen",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Groseth",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Feldmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Marzi",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ebihara",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Kobinger",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Genome Announc",
+            "volume": "2",
+            "issn": "",
+            "pages": "647--648",
+            "other_ids": {}
+        },
+        "BIBREF62": {
+            "ref_id": "b62",
+            "title": "Genomic surveillance elucidates Ebola virus origin and transmission during the 2014 outbreak",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Gire",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Goba",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Andersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Rsg",
+                    "middle": [],
+                    "last": "Sealfon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Kanneh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Science",
+            "volume": "345",
+            "issn": "",
+            "pages": "1369--1372",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1259657"
+                ],
+                "PMID": [
+                    "25214632"
+                ]
+            }
+        },
+        "BIBREF63": {
+            "ref_id": "b63",
+            "title": "Genetic diversity and evolutionary dynamics of Ebola virus in Sierra Leone",
+            "authors": [
+                {
+                    "first": "Y-G",
+                    "middle": [],
+                    "last": "Tong",
+                    "suffix": ""
+                },
+                {
+                    "first": "W-F",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "Di",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Qian",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Liang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X-C",
+                    "middle": [],
+                    "last": "Bo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nature",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nature14490"
+                ],
+                "PMID": [
+                    "25970247"
+                ]
+            }
+        },
+        "BIBREF64": {
+            "ref_id": "b64",
+            "title": "Moderate mutation rate in the SARS coronavirus genome and its implications",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhong",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y-P",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Evol Biol",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2148-4-21"
+                ],
+                "PMID": [
+                    "15222897"
+                ]
+            }
+        },
+        "BIBREF65": {
+            "ref_id": "b65",
+            "title": "The genome comparison of SARS-CoV and other coronaviruses. Yi chuan = Hereditas/Zhongguo yi chuan xue hui bian ji",
+            "authors": [
+                {
+                    "first": "S-F",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "C-J",
+                    "middle": [],
+                    "last": "Du",
+                    "suffix": ""
+                },
+                {
+                    "first": "Wan",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "T-G",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "J-Q",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "",
+            "volume": "25",
+            "issn": "",
+            "pages": "373--382",
+            "other_ids": {}
+        },
+        "BIBREF66": {
+            "ref_id": "b66",
+            "title": "Emergence of Zaire Ebola Virus Disease in Guinea-Preliminary Report",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Baize",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Pannetier",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Oestereich",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Rieger",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Koivogui",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Magassouba",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "&apos;faly",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "N Engl J Med",
+            "volume": "",
+            "issn": "",
+            "pages": "1--8",
+            "other_ids": {}
+        },
+        "BIBREF67": {
+            "ref_id": "b67",
+            "title": "Characterization of a novel coronavirus associated with severe acute respiratory syndrome",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rota",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Oberste",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Monroe",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Nix",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Campagnoli",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Icenogle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Science",
+            "volume": "300",
+            "issn": "",
+            "pages": "1394--1399",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1085952"
+                ],
+                "PMID": [
+                    "12730500"
+                ]
+            }
+        },
+        "BIBREF68": {
+            "ref_id": "b68",
+            "title": "The mathematical theory of communication",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Shannon",
+                    "suffix": ""
+                }
+            ],
+            "year": 1963,
+            "venue": "MD Comput",
+            "volume": "14",
+            "issn": "",
+            "pages": "306--317",
+            "other_ids": {
+                "PMID": [
+                    "9230594"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Accuracy of outbreak reconstruction using different types of outbreak data. 100 outbreaks were simulated and reconstructed at each grid point, using different values for the contact reporting coverage \u03b5 and number of non-infectious contacts per case \u03c8. Each outbreak was reconstructed four times, using different combinations of times of sampling (T), contact tracing data (C) and genetic data (G). The color of a grid point represents the average accuracy of outbreak reconstruction.https://doi.org/10.1371/journal.pcbi.1006930.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Informativeness of contact data relative to fully sampled genetic data. 100 outbreaks were simulated and reconstructed at each grid point, using different values for the contact reporting coverage \u03b5 and number of noninfectious contacts \u03c8. The color of a grid point represents the difference between accuracy of outbreak reconstruction using times of sampling and contact tracing data and using times of sampling and genetic data.https://doi.org/10.1371/journal.pcbi.1006930.g002",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Reconstruction of the 2003 SARS outbreak in Singapore. A) Circles represent individual cases, and edges the epidemiological contacts reported between them.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Function Number of mutations between s i and s j l(s i ,s j ) Function Number of comparable nucleotide positions between s i and s j \u03b1 i Augmented data Index of the most recent sampled ancestor of case i \u03ba i Augmented data Number of generations between \u03b1 i and i of false-positive reporting a contact https://doi.org/10.1371/journal.pcbi.1006930.t001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Modelling contact data from transmission trees. Circles represent sampled, infected individuals. c i,j represents the contact status between cases i and j, with 1 indicating a reported contact and 0 the absence of a reported contact. Transmission pairs and non-transmission pairs experience contact with probabilities \u03b7 and \u03bb, respectively. These contacts are reported with probability \u03b5. False positive reporting of contacts that have not occurred occurs with probability z. In the simplified model implemented in outbreaker2, as indicated by colored shading and solid outlines, \u03b7 is assumed to be 1 and z assumed to be 0.https://doi.org/10.1371/journal.pcbi.1006930.g004",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Text. Derivation of genetic likelihood. (DOCX) S2 Text. Derivation of un-simplified contact model. (DOCX) S3 Text. Derivation of the number of non-infectious contacts per person from the noninfectious contact probability. (DOCX) S1 Fig. Example of simulated transmission tree, contact network and reconstructed transmission tree. A) An Ebola-like outbreak of 15 cases was simulated in a susceptible population of 50 susceptible individuals. B) A contact network was simulated with a reporting coverage \u03b5 of 0.8 and a non-infectious contact probability \u03bb of 0.1. Solid lines represent reported contacts;",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Fig. Statistical confidence in ancestry assignment using different types of outbreak data. 100 outbreaks were simulated and reconstructed at each grid point, using different values for the contact reporting coverage \u03b5 and number of non-infectious contacts per case \u03c8. Each outbreak was reconstructed four times, using different combinations of times of sampling (T), contact tracing data (C) and genetic data (G). The colour of a grid point represents the average entropy of ancestry assignments and is related to the number of plausible infectors of a given case. Lower average entropy indicates greater statistical confidence in the proposed transmission tree. (EPS) S3 Fig. Parameter estimates of the contact reporting coverage \u03b5 and non-infectious contact probability \u03bb for simulated EBOV outbreaks. The density plots represent the mean posterior estimates of \u03b5 and \u03bb across 100 reconstructed outbreaks. The shading represents the data used during the inference process, namely temporal and contact data only (TC), or temporal, contact and genetic data (TCG). The true, simulated value is indicated by a vertical dashed line. (EPS) S4 Fig. Parameter estimates of the contact reporting coverage \u03b5 and non-infectious contact probability \u03bb for simulated SARS-CoV outbreaks. The density plots represent the mean posterior estimates of \u03b5 and \u03bb across 100 reconstructed outbreaks. The colour of the plot represents the data used during the inference process, namely temporal and contact data only (TC), or temporal, contact and genetic data (TCG). The true, simulated value is indicated by a vertical dashed line. (EPS) S5 Fig. Infection time estimates for the 2003 SARS outbreak in Singapore. The violin plots indicate the posterior distribution of infection times for the 13 cases in the outbreak. The black dots represent times of symptom onset. The colour of the violin plot indicates the settings used to reconstruct the outbreak, namely using temporal and genetic data only (TG), or temporal, contact and genetic data (TCG). The prior used for the non-transmission contact probability \u03bb is indicated in brackets. (EPS) S6 Fig. Posterior ancestries for the 2003 SARS outbreak in Singapore under different prior distributions for non-infectious contact probability \u03bb. Columns represent sampled cases in the outbreak, rows represent potential sampled infectors. The size of each circle represents the posterior frequency of a given infector-infectee pair. (TIF)",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Notation of outbreaker model[6].",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Epidemiological and genetic parameters for EBOV and SARS-CoV. https://doi.org/10.1371/journal.pcbi.1006930.t002Inferring transmission chains from temporal, genetic and contact data",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We are thankful to Github (https://github.com), CRAN (http://cran.r-project.org) and the wider R community for providing great resources for the development and hosting of outbreaker2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        },
+        {
+            "text": "Conceptualization: Finlay Campbell, Anne Cori, Neil Ferguson, Thibaut Jombart. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Contributions"
+        }
+    ]
+}

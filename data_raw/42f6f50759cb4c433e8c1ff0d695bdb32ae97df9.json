@@ -1,0 +1,267 @@
+{
+    "paper_id": "42f6f50759cb4c433e8c1ff0d695bdb32ae97df9",
+    "metadata": {
+        "title": "Additional File 1",
+        "authors": [
+            {
+                "first": "Daniel",
+                "middle": [],
+                "last": "Bottomly",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Beth",
+                "middle": [],
+                "last": "Wilmot",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Shannon",
+                "middle": [],
+                "last": "Mcweeney",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [],
+    "body_text": [
+        {
+            "text": "Below is the preferred way to install plethy and the example data used in this vignette. The only prerequisite is a version of plethy \u2265 1.5.10. Here we are using a development version of R as plethy 1.5.10 is currently part of the development version of Bioconductor. As Bioconductor packages are tied to specific R versions, installing the latest plethy in, say, R-3.1.2 is not supported (but will probably work).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Installation"
+        },
+        {
+            "text": "> source( \"http://bioconductor.org/biocLite.R\" ) > biocLite( c( \"plethy\" , \"devtools\" ) ) > library( \"devtools\" ) > install_github( repo = \"dbottomly/plethyData\" ) >",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Installation"
+        },
+        {
+            "text": "The plethy package provides code to parse files generated from the Finepointe software suite bundled with the Buxco Whole Body Plethysmographer which contain data of the form:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "Time,Subject,Phase,Recording,f,TVb,MVb,Penh,PAU,Rpef,Comp,PIFb,PEFb,Ti,Te,...",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "Which is further organized into subsections containing either experimental or acclimation data based on the following pattern:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "table.delim table name header line acclimation (ACC) for animal 1 burn.in.lines acclimation (ACC) for animal 2 experimental readings (EXP) for animal 1 burn.in.lines acclimation (ACC) for animal 3 experimental readings (EXP for animal 2",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "Where the indicated lines correspond to default parameters in the current implementation of the parse.buxco function. In plethy each header or burn.in.lines is termed a 'break' and is used to determine when the current run starts or ends. Definitions of the variables listed after the 'Recording' column are found in [Buxco Research Systems, 2005] . Unless the file format changes, these should not have to be modified. Below we provide an example of parsing the example data provided at https://github.com/dbottomly/plethyData. > options( str = strOptions( vec.len=2 ) ) > library( \"xtable\" ) > library ( \"plethyData\" ) > library ( \"plethy\" ) > file.name <-plethy.example.file () > chunk.size <-10000 > db.name <-file.path ( tempdir(), \"bux_test.db\" ) > bux.db <-parse.buxco ( file.name = file.name , chunk.size = chunk.size , db.name = db.name , + verbose = FALSE )",
+            "cite_spans": [
+                {
+                    "start": 333,
+                    "end": 347,
+                    "text": "Systems, 2005]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "In addition to stand-alone database, we can also create R packages containing the data. The benefit of these packages is that they can be easily distributed and provide a convenient means to access the data through plethy's R interface. Note that in this case db.name needs to follow R's package naming convention.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "> db.name <-\"buxtest.db\" > parse.buxco ( file.name = file.name , chunk.size = chunk.size , db.name = db.name , + verbose = FALSE,make.package=T) > install.packages(\"buxtest.db\", repos=NULL, type=\"source\") >",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "The buxtest.db package can then be interacted with similar to a standalone database:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "> library(buxtest.db) > samples(buxtest.db) >",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Parsing"
+        },
+        {
+            "text": "Note that at this point the data in the database consists of values directly parsed from the raw file. Adding additional metadata labels or numeric values can be done through the addAnnotation method by specifying the BuxcoDB object and a function returning the SQLite query. There are currently two functions that are defined, though users can define their own as well with some familiarity of the database structure. The first, day.infer.query computes the number of days past the first measurement for a given animal. The second break.type.query labels the measurements as 'ACC' for acclimation, 'EXP' for experimental, 'UNK' for unknown (where there is only one set of measurements for a given animal and given time point) or 'ERR' which likely represents an error in the parsing or query. Examples are shown below.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Adding Metadata"
+        },
+        {
+            "text": "> addAnnotation ( bux.db, query = day.infer.query , index = FALSE )",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Adding Metadata"
+        },
+        {
+            "text": "[1] TRUE > addAnnotation ( bux.db, query = break.type.query , index = FALSE )",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Adding Metadata"
+        },
+        {
+            "text": "[1] TRUE The index argument specifies whether an index should be added to the annotation table. There should not really be any harm in adding them at each stage. However as the method tries to create a set of covering indices to maximize retrieval speed, we would recommend waiting until the last call to addAnnotation or until the execution of one of the helper functions which modify the annotation table (e.g. add.labels.by.sample or adjust.labels). These two functions construct such indexes automatically.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Adding Metadata"
+        },
+        {
+            "text": "Metadata can also be imported to the database by specifying a data.frame to the add.labels.by.sample function defined by a 'samples' and optionally a 'phase' column (which we typically use to indicate the expected experimental time). Additional columns of this data.frame are then added to the annotations table. To demonstrate this we will add in the infection statuses for these mice as either 'SARS', 'Flu' or 'Mock' depending on the last character of the sample name. Note that in this example, addAnnotation could also be used as the names could be computed by an SQLite query.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Adding Metadata"
+        },
+        {
+            "text": "> transl.table <-data.frame ( sample_status = c( \"m\" , \"s\" , \"f\" ), + Inf_Status = c( \"Mock\" , \"SARS\" , \"Flu\" ), + stringsAsFactors = F) > use.dta <-data.frame( samples = samples ( bux.db ), + sample_status = sapply ( strsplit ( samples ( bux.db ) , \"_\"), \"[\", 3) , + stringsAsFactors = F ) > merge.dta <-merge ( use.dta , transl.table , by = \"sample_status\" ) > merge.dta <-merge.dta [ , -which ( names ( merge.dta ) == \"sample_status\" ) ] > add.labels.by.sample ( bux.db , merge.dta ) > annoLevels ( bux.db ) ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Adding Metadata"
+        },
+        {
+            "text": "We can extract the data using retrieveData. By default, everything in the database is retrieved in data.frame form. We can limit the retrieval to only subsets of the data by specifying constraints on several pre-defined variables parsed from the file: samples, variables, tables, phase and timepoint.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data retrieval"
+        },
+        {
+            "text": "> data.1 <-retrieveData ( bux.db , samples = c( \"906_L_m\" , \"908_R_s\" ), + variables = c( \"Penh\" , \"f\" )) > str( data.1 ) 'data.frame': 28068 obs. of 11 variables: $ Sample_Name : chr \"906_L_m\" \"906_L_m\" ... > Additionally we can subset the data using the metadata columns defined through addAnnotation or add.labels.by.sample. For this we need to be able to type in the metadata column name and the constraint vector at the end of the retrieveData statement. The annoCols and annoLevels are convenient ways to determine which columns and values are available.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data retrieval"
+        },
+        {
+            "text": "> annoCols ( bux.db )",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data retrieval"
+        },
+        {
+            "text": "[1] \"Days\" \"Break_type_label\" \"Inf_Status\" ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data retrieval"
+        },
+        {
+            "text": "Although for a given run we typically carry out 900 acclimation measurements and 150 experimental measurements, there can be issues that arise which result in fewer measurements or even missing run types. One way to examine this is perform summaries of the 'Break type labels' inferred previously.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Quality Control"
+        },
+        {
+            "text": "If discrepancies in terms of the labels are found, they can then be addressed by first extracting out information on the relevant entries, determining how they should be corrected and then adding in the new labels, keeping the old labels around for provenance. To demonstrate this we will first generate some additional data in an erroneous form using an internal utility function and create a temporary database.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Quality Control"
+        },
+        {
+            "text": "> samples = c( NA , \"sample_1\" , NA , \"sample_1\" , \"sample_2\" , NA , \"sample_3\" , + \"sample_2\" , NA , \"sample_3\", \"sample_4\" , NA , \"sample_4\" , \"sample_2\" , + NA , \"sample_2\" , \"sample_5\" ) > count = c( NA , 900 , NA 68 obs. of 7 variables: $ Sample_Name : chr \"sample_2\" \"sample_2\" ... $ Variable_Name : chr \"Comp\" \"Comp\" ... $ Rec_Exp_date : chr \"D1\" \"D1\" ... $ Break_number : int 2 3 5 6 2 ... $ Break_type_label: chr \"ERR\" \"ERR\" ... $ num_entries : int 1 28 900 150 1 ... $ inferred_labs : chr \"ERR\" \"ERR\" ...",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Quality Control"
+        },
+        {
+            "text": "The 'test.err.breaks' data.frame indicates each sample, variable, phase and break that incurred an 'ERR' label in this example as well as the number of observations recorded. In addition, whether or not, the entry can be reconciled is also reported as the 'inferred labs' column. This is inferred by comparing the observed number of observations to the maximum number of expected experimental or acclimation observations. If the number of actual observations is greater than a 'vary.perc' percent decrease for either the acclimation or experimental units then it is labeled accordingly. The 'test.err.breaks' data.frame can be modified to address any discrepancies in the 'inferred labs' column and then it can be used to adjust the metadata. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": ">"
+        },
+        {
+            "text": "Here we reproduce the figures and tables presented in the manuscript except for Table 1 which was compiled manually. (Table 2) > summaries <-summaryMeasures ( bux.db , samples = \"907_B_f\" , + variables = c( \"Penh\" , \"PAU\" , \"PEFb\" ) , Break_type_label = \"EXP\" , + tables = \"WBPth\" ) > > use.summary <-summaries [ ,-which ( names ( summaries ) == \"Sample_Name\" ) ] > names ( use.summary ) <-sub ( \"\\\\.response\" , \"\" , names ( use.summary ) ) > names ( use.summary ) <-gsub ( \"\\\\.\" , \"_\" , names ( use.summary ) ) > print( xtable( use.summary, + caption = \"Summary measures for animal '907\\\\_B\\\\_f' for several Buxco whole body plethysmogra + label = \"table:sumTab\" , + align = rep(\"c\", ncol(use.summary)+1)) , + floating = T , > library( MASS ) > bux.mat <-retrieveMatrix(bux.db, + Break_type_label=\"EXP\", + Days=4, + variables=c(\"Penh\", \"PAU\", \"EF50\"), + formula = Sample_Name + Inf_Status~Variable_Name) > labels <-sapply(strsplit(rownames(bux.mat ),\"_\" ),\"[\",4) > bux.data <-data.frame(labels=labels, bux.mat) > trained.result <-lda(labels~EF50 + Penh + PAU, + data=bux.data) > ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 80,
+                    "end": 87,
+                    "text": "Table 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 117,
+                    "end": 126,
+                    "text": "(Table 2)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Plotting and Summary Utilities"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Respiration measurement in the whole body plethysmograph",
+            "authors": [],
+            "year": 2005,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF1": {
+            "text": ": chr \"ACC\" \"ACC\" ... $ Inf_Status : chr \"Mock\" \"Mock\" ... $ Value : num 496.545 0.681 ...>",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Flu\" \"Mock\" \"SARS\" > data.3 <-retrieveData ( bux.db , samples = \"906_L_m\" , variables = \"Penh\" , Days = 0 ) > with ( data.3, table ( Days , Break_type_label ) ) .4 <-retrieveData( bux.db , samples = \"906_L_m\" , variables = \"Penh\" , Days = 0, + Break_type_label = 'EXP' ) > with ( data.4, table ( Days, Break_type_label ) )",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "adjust.labels ( test.bux.db , test.err.breaks ) > annoLevels ( test.bux.db ) \"ACC\" \"ERR\" \"EXP\" \"UNK\" > data.6 <-retrieveData ( test.bux.db , samples = \"sample_2\" , variables = \": chr \"ERR\" \"ERR\" ...$ Break_type_label : chr \"EXP\" \"EXP\" ... $ Value : num 0.194 1.275 ...>",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "( bux.db , plot.value = \"Penh\" , Break_type_label = \"EXP\" , + outer.group.name = \"Inf_Status\" , + outer.cols = c( Flu = \"black\" , SARS = \"brown\" , Mock = \"blue\"",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "table( data.1$Sample_Name , data.1$Variable_Name )",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "sim.bux.lines, file = temp.file ) > test.bux.db <-parse.buxco ( file.name = temp.file , db.name = temp.db.file , + chunk.size = 10000 , verbose = F ) > addAnnotation ( test.bux.db , query = day.infer.query , index = FALSE ) [1] TRUE > addAnnotation ( test.bux.db , query = break.type.query , index = TRUE ) [1] TRUE > type.summary <-proc.sanity ( test.bux.db ) > str ( type.summary )",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "table.placement = \"h\" , include.rownames = FALSE)Table 1: Summary measures for animal '907 B f' for several Buxco whole body plethysmography phenotypes sub.penh <-subset(penh.data, Break_sec_start > ( 298-30 )) > lme( log( Value )~Inf_Status + Days + I(Days^2) , + random =~1 | Sample_Name, data=sub.penh)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "> sessionInfo() R Under development (unstable) (2015-02-03 r67717) Platform: x86_64-apple-darwin12.6.0/x86_64 (64-bit) Running under: OS X 10.8.5 (Mountain Lion) locale: [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": []
+}

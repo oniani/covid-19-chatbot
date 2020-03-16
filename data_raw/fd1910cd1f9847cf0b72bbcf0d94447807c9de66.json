@@ -1,0 +1,2383 @@
+{
+    "paper_id": "fd1910cd1f9847cf0b72bbcf0d94447807c9de66",
+    "metadata": {
+        "title": "ELM: enhanced lowest common ancestor based method for detecting a pathogenic virus from a large sequence dataset",
+        "authors": [
+            {
+                "first": "Keisuke",
+                "middle": [],
+                "last": "Ueno",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Akihiro",
+                "middle": [],
+                "last": "Ishii",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Kimihito",
+                "middle": [],
+                "last": "Ito",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Emerging viral diseases, most of which are caused by the transmission of viruses from animals to humans, pose a threat to public health. Discovering pathogenic viruses through surveillance is the key to preparedness for this potential threat. Next generation sequencing (NGS) helps us to identify viruses without the design of a specific PCR primer. The major task in NGS data analysis is taxonomic identification for vast numbers of sequences. However, taxonomic identification via a BLAST search against all the known sequences is a computational bottleneck. Description: Here we propose an enhanced lowest-common-ancestor based method (ELM) to effectively identify viruses from massive sequence data. To reduce the computational cost, ELM uses a customized database composed only of viral sequences for the BLAST search. At the same time, ELM adopts a novel criterion to suppress the rise in false positive assignments caused by the small database. As a result, identification by ELM is more than 1,000 times faster than the conventional methods without loss of accuracy. Conclusions: We anticipate that ELM will contribute to direct diagnosis of viral infections. The web server and the customized viral database are freely available at http://bioinformatics.czc.hokudai.ac.jp/ELM/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Most emerging infectious diseases are zoonoses, the pathogens of which are transmitted between humans and animals. The 2009 pandemic H1N1 influenza virus spread worldwide through reassortment that exchanged a gene segment between pigs and humans [1] . Recently, cases of influenza A virus H7N9 transmitted from birds to humans have been reported [2] . The 2003 severe acute respiratory syndrome (SARS) outbreak originated from the transmission of a novel bat coronavirus [3] . For the sporadically endemic Ebola virus, bats are suspected to be the natural reservoir, but this is still controversial [4] . Vector-borne zoonoses caused by transmission of viruses through mosquitoes and ticks have also become a public health concern. The 1999 outbreak of West Nile virus (WNV) that occurred in New York was caused by the transmission of the WNV among birds, horses and humans via mosquitoes [5] . Similarly, severe fever with thrombocytopenia syndrome (SFTS) was found to be due to a virus transmitted by ticks [6] .",
+            "cite_spans": [
+                {
+                    "start": 246,
+                    "end": 249,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 346,
+                    "end": 349,
+                    "text": "[2]",
+                    "ref_id": null
+                },
+                {
+                    "start": 471,
+                    "end": 474,
+                    "text": "[3]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 599,
+                    "end": 602,
+                    "text": "[4]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 889,
+                    "end": 892,
+                    "text": "[5]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1009,
+                    "end": 1012,
+                    "text": "[6]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "To prepare for the risk of emerging infectious diseases, we need to identify pathogenic viruses through surveillance of livestock and wild animals. Although universal PCR primers against 16S ribosomal RNA are available for the identification of bacteria, we needed specific PCR primers to identify viruses. In recent years, NGS technologies have become available for identifying novel viruses that cannot be found by Sanger sequencing due to the difficulty of isolation and passage culture [7] .",
+            "cite_spans": [
+                {
+                    "start": 490,
+                    "end": 493,
+                    "text": "[7]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The taxonomic classification of metagenomic sequences is an important task in NGS data analyses [8] . It has been widely applied to investigate the relationship between human health and the microbiome [9] . Recently, a metagenomic analysis of the virome in a monkey infected with simian immunodeficiency virus was conducted, suggesting that the virome was associated with enteropathy caused by HIV [10] . Through the first screening with NGS, the novel influenza virus H17N10 was identified in bats from metagenomic samples [11] .",
+            "cite_spans": [
+                {
+                    "start": 96,
+                    "end": 99,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 201,
+                    "end": 204,
+                    "text": "[9]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 398,
+                    "end": 402,
+                    "text": "[10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 524,
+                    "end": 528,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The taxonomic classification of NGS data uses sequence similarity searches such as BLASTX and BLASTN [12] to assign each sequence into a specific taxon based on the hits. However, with the similarity-based approach it is difficult to decide the resolution of assignments because the resolution depends on whether the sequences are conserved or species specific. The metagenome analyzer (MEGAN) employs the lowest common ancestor (LCA) concept in graph theory to estimate the taxonomical contents of samples [8] . MEGAN evaluates the resolution of similarity-based assignments as the level of taxonomy based on the LCA.",
+            "cite_spans": [
+                {
+                    "start": 101,
+                    "end": 105,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 507,
+                    "end": 510,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The LCA is the closest taxon shared among two or more taxa found by a BLAST search for a read. When multiple taxa are found by the BLAST search with sufficiently reliable BLAST scores, the common ancestor is a high-level taxon. The LCA assignments to high-level taxa are associated with conserved sequences. When a single taxon is found by a BLAST search for a read, the common ancestor still remains a low-level taxon. The LCA assignments to low-level taxa are associated with species-specific sequences. Thus, the LCA assignments to low-level taxa are more suitable for resolving closely related organisms than those to high-level taxa.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The SOrt-ITEMS [13] and CARMA3 [14] methods extended the LCA using a reciprocal BLAST search to reduce false positives in assignments. CARMA3 introduced the concept of the mutation rate into the LCA algorithm, and reinforced the reciprocal BLAST search to identify a novel taxon, relatives of which are numbered [14] .",
+            "cite_spans": [
+                {
+                    "start": 15,
+                    "end": 19,
+                    "text": "[13]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 31,
+                    "end": 35,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 312,
+                    "end": 316,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "While taxonomic classification of metagenomic sequences has been developed with respect to accuracy, NGS technologies continue to improve sequencing throughput, and require considerable computational time and resources to perform taxonomic classification. The throughput of Roche 454 sequencing is 700 Mb with an average length of 400-800 bases. The present throughputs of NGS have become over 1 Gb with Illumina sequences of 600 Gb and an average length of~100 bases, SOLiD sequences of 20 Gb with an average length of~50 bases, and Ion Torrent PGM sequences of 1 Gb with an average length of~200 bases [7] . These massive sequencing data prevent the fast detection of infecting viruses from metagenomic samples.",
+            "cite_spans": [
+                {
+                    "start": 604,
+                    "end": 607,
+                    "text": "[7]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "To reduce the computational time, we constructed a customized database composed only of viruses for the BLAST search. However, customized databases also increase accidental hits, i.e. the match of host sequences to viral genomic sequences. Here, we introduce ELM with a customized viral database for taxonomic identification. The method is based on the assumption that valid hits, the match of viral sequences to viral genomic sequences, raise the probability of finding other similar genomic sequences in the BLAST search. In other words, true assignments with the LCA should be sensitive to the threshold of the bit score in the BLAST search. Consequently, ELM can suppress the rise of false positive assignments while saving computational time and resources.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The ELM server performs taxonomic identification of viral sequences from NGS datasets via three steps ( Figure 1 ). In step one, the server carries out a BLASTN search for a customized database of viral genomic sequences. In step two, the server performs the LCA-based taxonomic assignments using MEGAN software [8] with default parameters. In step three, the server iterates the LCA assignments with different parameters for the threshold of the bit scores for the BLAST hits and investigates the taxa in which the number of assigned reads is significantly changed. In this step, the server provides a novel criterion for evaluating the LCA assignments.",
+            "cite_spans": [
+                {
+                    "start": 312,
+                    "end": 315,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 104,
+                    "end": 112,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Construction and content"
+        },
+        {
+            "text": "To reduce the computational time and save disk space, we constructed a customized database composed only of viral genomic sequences for a BLASTN search. First, the RefSeq genomic sequences were downloaded from the NCBI. Then a total of 3,336 viral genomic sequences were selected using a custom-made script program and converted into BLAST databases by the formatdb command in the NCBI BLAST package. We used the BLASTN program in the NCBI BLAST + version 2.2.26 package with the default parameters to search for similar sequences. The hits with an E-value under 10 \u22124 were used for subsequent analyses.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST search for customized database"
+        },
+        {
+            "text": "The LCA method assigns sequence reads to taxa with a criterion for the resolution of assignments [8] . h(q, s) is the set of taxa found by a BLAST search for a sequence read q under the threshold of the bit score s. For a set of taxa h(q, s), the common ancestor located farthest from the root of the taxonomic tree defines the LCA as the representative taxon. Thus, the LCA allows the assignment of a read to a single taxon. At the same time, the taxonomic levels indicate the resolution of assignments because the LCA allows broad hits to be assigned as high-level taxa but specific hits to be assigned as lowlevel taxa. It also means that the number of the LCA assigned reads depends on the thresholds of the bit scores for BLAST hits.",
+            "cite_spans": [
+                {
+                    "start": 97,
+                    "end": 100,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "LCA analysis for taxonomic classification"
+        },
+        {
+            "text": "We use MEGAN software version 4.62.5 for the LCA analysis [8] . MEGAN assigns sequence reads into taxa at different hierarchical levels such as family, genus, and species in the taxonomic ordering relation.",
+            "cite_spans": [
+                {
+                    "start": 58,
+                    "end": 61,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "LCA analysis for taxonomic classification"
+        },
+        {
+            "text": "Since the LCA method solely provides the taxonomic levels of the assignments and the BLAST scores for short reads depend on local genomic regions, it is difficult to discriminate between true and false assignments with the LCA assignments or the BLAST scores alone. Here we combine the LCA assignments with top percent score filters for the BLAST hits to find out not only species-specific but also conserved reads, and introduce an additional criterion for the taxonomic assignment. First, ELM repeats the LCA analysis further under different top percent score filters for the BLAST hits and compares these LCA assignments with the reference assignment under the top 10% score filter ( Figure 2 ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 687,
+                    "end": 695,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "ELM for evaluating the LCA assignments"
+        },
+        {
+            "text": "Here, the top x percent score filter retains the BLAST hits whose bit scores lie within x% of the best score [8] . n(x) is the total number of the LCA assigned reads for a taxon and its descendants under top x percent score filter. Then the difference \u0394n from that under the reference top 10% score filter is given by:",
+            "cite_spans": [
+                {
+                    "start": 109,
+                    "end": 112,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "ELM for evaluating the LCA assignments"
+        },
+        {
+            "text": "Here, \u0394n indicates to what extent the assigned reads are shifted into upper taxa as increasing x greater than 10%. We analyzed the increase of \u0394n, which is associated with sequence similarity to relatives, to discriminate between true and false assignments. In the statistical analysis of \u0394n, we introduce the inflation index IF, which is the Z score for outlier detection, to compare the effect Figure 1 Overview of ELM server and web interface. Users input NGS data as a zip file (~1 Gb). (1) The web server matches NGS reads against known viral genomes using BLAST [12] . (2) Taxonomic classification based on the LCA is performed using MEGAN under the top 10% score filter [8] . (3) In ELM analyisis, multiple comparisons of the LCA assignments are performed under different top percent score filters. The server displays the results with the ratings of taxa.",
+            "cite_spans": [
+                {
+                    "start": 568,
+                    "end": 572,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 677,
+                    "end": 680,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 396,
+                    "end": 404,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "ELM for evaluating the LCA assignments"
+        },
+        {
+            "text": "of top percent score filters on the taxonomic assignments. The IF for a taxon is given by:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ELM for evaluating the LCA assignments"
+        },
+        {
+            "text": "where \u03bc is the average of \u0394n for all assigned taxa, and \u03c3 is the standard deviation. Since multiple comparisons in IFs under top percent score filters ranging from 20% to 100% are performed nine times at 10% intervals, a P value of less than 0.05/9 is accepted for statistical significance after Bonferroni correction. Accordingly, IF >2.54 (one-tailed) is accepted with statistical significance. [17] . We selected these three datasets to evaluate the effects of the read length, host and NGS platform. Furthermore, we applied ELM to fecal samples including multiple virus and phage taxa in dataset 4 (SRR: 1055974 for 12-day-old piglets) and dataset 5 (SRR: 1055972 for 54-day-old piglets). Reads with an average length of 291 bases in dataset 4 and 400 bases in dataset 5 were obtained by 454 GS FLX Titanium sequencing [18] . In these benchmark tests, the BLAST searches were performed on a workstation with an Intel Sandy Bridge CPU 2.6 GHz processor. We compared the result of the BLASTN search for the customized database with that for the NCBI NT database.",
+            "cite_spans": [
+                {
+                    "start": 397,
+                    "end": 401,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 823,
+                    "end": 827,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "ELM for evaluating the LCA assignments"
+        },
+        {
+            "text": "To identify infecting viruses, we performed conventional LCA-based assignment using the results of a BLASTN search of the NCBI NT database (Figure 3 ). The taxa assigned at the 6th taxonomic level from the root in dataset 1 showed that this rodent host was infected with Old world arenaviruses ( Figure 3A) . A previous study showed that the rodent host was infected with Luna virus, which belongs to the Old world arenaviruses [15] . Totally, 99.9% of the sequences were derived from eukaryotes, including sequences from the rodent host. The reptile host in dataset 2 was infected with Lymphocytic choriomeningitis virus ( Figure 3B ). This result was consistent with the closest virus described in the literature [16] . In dataset 2, 99.5% of the sequences were probably derived from the reptile host. According to the literature concerning dataset 3, the Figure 2 Schematic representation of the ELM algorithm. An example of the LCA assigned NGS reads into target viral taxa. The LCA assignment is affected by top percent score filters-that is, the BLAST hits for the similar sequences in the relatives. ELM evaluates this effect on the assignments. Circled A to E represent viral taxa on a taxonomic tree. The reads assigned as the LCA are shown in red. The reads corresponding to the reads assigned to descendant taxa as the LCA are shown in black. The total number of the LCA assigned reads for each taxon and its descendants is denoted as n. \u0394n indicates the differences in n as varying thresholds of top percent score filters. The reads with strikeouts (blue) are the LCA assignments shifted into the upper taxon.",
+            "cite_spans": [
+                {
+                    "start": 428,
+                    "end": 432,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 715,
+                    "end": 719,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 139,
+                    "end": 148,
+                    "text": "(Figure 3",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 296,
+                    "end": 306,
+                    "text": "Figure 3A)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 624,
+                    "end": 633,
+                    "text": "Figure 3B",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 858,
+                    "end": 866,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Identification of infecting viruses using the LCA with BLASTN-NT"
+        },
+        {
+            "text": "simian host was infected with a novel simian adenovirus, which is close to Simian adenovirus 3, Simian adenovirus 18 and Simian adenovirus 21 with about 55% pairwise nucleotide identity [17] . We found Simian adenovirus 49, Simian adenovirus 18 and Simian adenovirus 1 in dataset 3 ( Figure 3C ), suggesting results similar to those in the literature. Similarly, in dataset 3, most of the sequences (95.1%) were likely derived from the simian host.",
+            "cite_spans": [
+                {
+                    "start": 186,
+                    "end": 190,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 284,
+                    "end": 293,
+                    "text": "Figure 3C",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Identification of infecting viruses using the LCA with BLASTN-NT"
+        },
+        {
+            "text": "To assess the required computational resources, we measured the elapsed time for the BLAST search ( Table 1) . As seen in Table 1 , we found that the elapsed time for the BLAST search depended on the number of reads and hits. Although multiple threads and parallel jobs reduced the computational time, we needed at least one day with 8 threads and 32 parallel jobs. The sizes of the resulting tabulated format files ranged from 60-648 gigabytes, possibly affecting the elapsed time for the LCA analysis.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 100,
+                    "end": 108,
+                    "text": "Table 1)",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 122,
+                    "end": 129,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Identification of infecting viruses using the LCA with BLASTN-NT"
+        },
+        {
+            "text": "According to the literature on taxonomic classification, the sequence similarity search of BLAST is a computational bottleneck [14] . Therefore, we used the customized viral database for a BLAST search to investigate how much the computational time was reduced and whether the conventional LCA could identify the infecting viruses.",
+            "cite_spans": [
+                {
+                    "start": 127,
+                    "end": 131,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Taxonomic classification using the LCA with BLASTN viruses"
+        },
+        {
+            "text": "In Figure 4 , the top 3 assigned reads show the capturing of infecting viruses. However, most of the assigned taxa were false positives (Figure 4 ). At the 6th taxonomic level of assignments in dataset 1, 98.7% of the reads were assigned into Choristoneura occidentalis granulovirus and Spodoptera litura granulovirus, and only 0.4% (1,518/383,939) of them were assigned into Luna virus ( Figure 4A ). In the case of BLAST-NT, we failed to identify Luna virus but detected Old world arenaviruses, with 1,245 reads at the 5th taxonomic level, including the following relatives: Mobala virus, 125 reads; Morogoro virus, 73 reads; and Mopeia virus, 56 reads. In dataset 2, 8,387 reads were assigned into 141 viral taxa at the 7th taxonomic level, and 573 were assigned into Lymphocytic choriomeningitis virus ( Figure 4B ). In the case of BLAST-NT, 454 reads were assigned into Lymphocytic choriomeningitis virus. These results showed consistency between BLAST viruses and BLAST-NT. Of the 5,952 reads assigned into viral taxa at the 7th taxonomic level in dataset 3, 468 were assigned into Simian adenovirus 49 ( Figure 4C ). The most assigned taxon in BLAST viruses was Simian adenovirus 49, but 99 reads in BLAST-NT were assigned into the closest relative, Simian adenovirus 18. Although the assignments with BLAST-NT were more favorable than those with BLAST viruses, the coverage of the identified Simian adenovirus 49 was sufficient to perform the subsequent analysis. These results showed that the sensitivity of the LCA with BLASTN viruses outperformed the LCA with BLASTN-NT, suggesting that the BLAST search of the viral database was sufficient for subsequent analysis.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 3,
+                    "end": 11,
+                    "text": "Figure 4",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 136,
+                    "end": 145,
+                    "text": "(Figure 4",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 389,
+                    "end": 398,
+                    "text": "Figure 4A",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 808,
+                    "end": 817,
+                    "text": "Figure 4B",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1111,
+                    "end": 1120,
+                    "text": "Figure 4C",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Taxonomic classification using the LCA with BLASTN viruses"
+        },
+        {
+            "text": "Next, we investigated whether the elapsed time for the BLASTN search was effectively reduced ( Table 2 ). The elapsed time in the BLAST search was reduced to The circle sizes indicate the relative numbers of assigned reads. These trees were created using MEGAN [8] . Here, only the viral taxa are illustrated. 0.03%-0.05% (Tables 1 and 2 ). This showed the synergy effect of the reduction of the custom database to 0.1% (from 38 Gb to 49 Mb) for the size of FASTA files and to 1.4%-8.8% for the number of BLASTN hits (Tables 1  and 2 ). Furthermore, the elapsed time for the LCA analysis was also reduced despite the additional nine assignments for ELM analysis.",
+            "cite_spans": [
+                {
+                    "start": 261,
+                    "end": 264,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 95,
+                    "end": 102,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 322,
+                    "end": 337,
+                    "text": "(Tables 1 and 2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 517,
+                    "end": 533,
+                    "text": "(Tables 1  and 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Taxonomic classification using the LCA with BLASTN viruses"
+        },
+        {
+            "text": "To reduce the false assignments of the BLAST search for the customized viral database, we compared true and false assignments to confirm whether the true assignments altered into high-level taxa in ELM analysis ( Figure 5 ). As shown for the 6th taxonomic level assignments of dataset 1 in Figure 5A and D, the assignment of Luna virus was significantly changed (IF >2.54, ranging from 20% to 100%), suggesting that ELM correctly identified the infecting virus. In the 7th taxonomic level assignments of dataset 2, the assignment of Lymphocytic choriomeningitis virus was most changed (IF >9, ranging from 20% to 100%) but, at the 6th taxonomic level, those of unclassified Tospovirus, Tomato spotted wilt virus and Impatiens necrotic spot virus were only slightly changed ( Figure 5B and E) . Figure 5C and F show that, in the 7th taxonomic level assignments of dataset 3, the assignment of Simian adenovirus 49 was significantly changed (IF >10, ranging from 20% to 100%). However, at the 6th taxonomic level, the assignments of Ictalurid herpesvirus 1, Simian adenovirus 3 and Human adenovirus 54 were also changed, suggesting that ELM failed to exclude the false assignment of Ictalurid herpesvirus 1. On the other hand, ELM excluded the most of the false assignments (IF <2.54, ranging from 20% to 100%). These results suggested that we could find out true assignments mainly by high inflation indices and partly by low taxonomic levels. The results for viruses identified using ELM with BLASTN viruses were assembled using SSAKE v3.8.1 [19] and are summarized in Table 3 . Next, we evaluated the effect of the BLAST hit score on the inflation indices. The results showed that the inflation indices had little association with the E-value in the BLAST search (Additional file 1: Figure S1 ). We also investigated the coverage of the BLAST hits. Valid hits in dataset 1 were distributed across target genomic sequences but not a specific genomic sequence, something not seen in datasets 2 and 3 (Additional file 1: Figure S2 ).",
+            "cite_spans": [
+                {
+                    "start": 1542,
+                    "end": 1546,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 213,
+                    "end": 221,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 290,
+                    "end": 299,
+                    "text": "Figure 5A",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 775,
+                    "end": 791,
+                    "text": "Figure 5B and E)",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 794,
+                    "end": 803,
+                    "text": "Figure 5C",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1569,
+                    "end": 1576,
+                    "text": "Table 3",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 1784,
+                    "end": 1793,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 2019,
+                    "end": 2028,
+                    "text": "Figure S2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Identification of infecting viruses using ELM with BLASTN viruses"
+        },
+        {
+            "text": "To investigate whether ELM could detect multiple viral taxa, we analyzed the fecal virome of piglets using ELM with BLASTN viruses. We identified the shift of Kobuvirus in dataset 4 to Bocavirus and Dependovirus in dataset 5, which depended on the age of the piglets (Table 4 ). These results were consistent with abundant virus genera described in the literature [18] . However, we failed to identify pig stool-associated small circular DNA virus in dataset 5 (Table 4 ). This virus belongs to the single-stranded circular DNA viruses. The members of this family show extensive genetic diversity [20] . The results suggested that, in this case, the inflation index was not preferable for evaluating the LCA assignments.",
+            "cite_spans": [
+                {
+                    "start": 364,
+                    "end": 368,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 597,
+                    "end": 601,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 267,
+                    "end": 275,
+                    "text": "(Table 4",
+                    "ref_id": "TABREF4"
+                },
+                {
+                    "start": 461,
+                    "end": 469,
+                    "text": "(Table 4",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Virome analyses using ELM with BLASTN viruses"
+        },
+        {
+            "text": "ELM with a specific database drastically reduced the computational time and saved disk space. Furthermore, ELM was effective even for short reads. Though short reads can reduce the accuracy of BLAST searches, in this study we verified ELM for average lengths of between 73 and 400 bases. The results showed no difference between the capabilities for taxonomic assignment. One approach to reduce the computational time needed for the BLAST search is the subtraction of reads by mapping host-derived reads onto reference sequences [18] , this virus is the novel pig stool-associated single-stranded DNA virus, which is not assigned to a specific genus. [21, 22] . This approach might be considered effective for reducing analyzed sequence data but is limited to known hosts. It is not suitable for surveillance of wild animals or metagenomic analysis because the host sequences have yet to be deposited in databases. Therefore, we need to decide a moderate threshold for NGS data before the mapping.",
+            "cite_spans": [
+                {
+                    "start": 529,
+                    "end": 533,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 651,
+                    "end": 655,
+                    "text": "[21,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 656,
+                    "end": 659,
+                    "text": "22]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Interpretation of results"
+        },
+        {
+            "text": "For ELM we adopted another approach using specific databases composed only of target sequences to reduce the computational cost. The difficulty in applying this approach directly to virus identification was the increase of false positive assignments (Figure 4) . We tested several ways to solve this problem. As shown in Additional file 1: Figure S1 , changing the threshold of the E-value dependent on the size of the database is probably not effective for discriminating between true and false assignments. The criteria for evaluating breadth coverage, i.e. the proportion of reads mapped across the hit genomes and the depth coverage (the number of reads mapped at a position), also failed to identify the target viruses (Additional file 1: Figure S2 ). On the other hand, ELM analyzed how sequence similarity to the relatives changes. This extension of the LCA method suppressed the rise in false positive assignments. A limitation of ELM would be the false-negative errors because ELM cannot detect viruses distantly related to other relatives (Table 4 ). Therefore, viruses without relatives should be carefully handled without the inflation index.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 250,
+                    "end": 260,
+                    "text": "(Figure 4)",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 340,
+                    "end": 349,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 744,
+                    "end": 753,
+                    "text": "Figure S2",
+                    "ref_id": null
+                },
+                {
+                    "start": 1049,
+                    "end": 1057,
+                    "text": "(Table 4",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Interpretation of results"
+        },
+        {
+            "text": "ELM is especially useful for the first screening of infectious diseases caused by viruses. In surveillance for pathogenic viruses, taxonomic assignment of the host sequence is not necessary for the initial screening. For this, sensitivity for detecting viruses is particularly required. Our results suggest that ELM recovers most reads assigned to target viruses. Therefore, we can apply these results to further sophisticated analyses. ELM will contribute to analyses of NGS data for limited targets such as the direct diagnosis of viral infections.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "ELM is freely accessible at http://bioinformatics.czc.hokudai. ac.jp/ELM/. The web interface has been tested in the following web browsers: Google Chrome (version 36), Microsoft Internet Explorer (version 11) and Mozilla Firefox (version 31).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Antigenic and genetic characteristics of swine-origin 2009 A(H1N1) influenza viruses circulating in humans",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Garten",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Davis",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Russell",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Shu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lindstrom",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Balish",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Sessions",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Skepner",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Deyde",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Okomo-Adhiambo",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Gubareva",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Barnes",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Emery",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hillman",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rivailler",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Smagala",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "De Graaf",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Burke",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Fouchier",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Pappas",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Alpuche-Aranda",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lopez-Gatell",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Olivera",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Lopez",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Faix",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Blair",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Science",
+            "volume": "325",
+            "issn": "5937",
+            "pages": "197--201",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Bats are natural reservoirs of SARS-like coronaviruses",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Epstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Crameri",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mceachern",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Field",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Daszak",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Eaton",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "",
+            "volume": "310",
+            "issn": "",
+            "pages": "676--679",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Ebola virus ecology: a continuing mystery",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Feldmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Wahl-Jensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Stroher",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Trends Microbiol",
+            "volume": "12",
+            "issn": "10",
+            "pages": "433--437",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "The outbreak of West Nile virus infection in the New York City area in 1999",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Nash",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Mostashari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Fine",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "O&apos;leary",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Murray",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rosenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Greenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Sherman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Layton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "N Engl J Med",
+            "volume": "344",
+            "issn": "24",
+            "pages": "1807--1814",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Applications of nextgeneration sequencing technologies to diagnostic virology",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Barzon",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Lavezzo",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Militello",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Toppo",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Palu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Int J Mol Sci",
+            "volume": "12",
+            "issn": "11",
+            "pages": "7861--7884",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "MEGAN analysis of metagenomic data",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Huson",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Auch",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Qi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Schuster",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Genome Res",
+            "volume": "17",
+            "issn": "3",
+            "pages": "377--386",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "An obesity-associated gut microbiome with increased capacity for energy harvest",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Turnbaugh",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ley",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mahowald",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Magrini",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Mardis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Gordon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nature",
+            "volume": "444",
+            "issn": "7122",
+            "pages": "1027--1031",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Virgin HW: Pathogenic simian immunodeficiency virus infection is associated with expansion of the enteric virome",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Handley",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Thackray",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Presti",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Droit",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Abbink",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Maxfield",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kambal",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Duan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Stanley",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Kramer",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Macri",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Permar",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Schmitz",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Mansfield",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Brenchley",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Veazey",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Stappenbeck",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Barouch",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Cell",
+            "volume": "2012",
+            "issn": "2",
+            "pages": "253--266",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Donis RO: A distinct lineage of influenza A virus from bats",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Tong",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rivailler",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Conrardy",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Castillo",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Recuenco",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Ellison",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Davis",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "York",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Turmelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Moran",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Rogers",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Tao",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Weil",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rowe",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sammons",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Frace",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lindblade",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cox",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Rupprecht",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "109",
+            "issn": "11",
+            "pages": "4269--4274",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Basic local alignment search tool",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Altschul",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Gish",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lipman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "J Mol Biol",
+            "volume": "215",
+            "issn": "3",
+            "pages": "403--410",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "SOrt-ITEMS: Sequence orthology based approach for improved taxonomic estimation of metagenomic sequences",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Monzoorul Haque",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Ghosh",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Komanduri",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mande",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Bioinformatics",
+            "volume": "25",
+            "issn": "14",
+            "pages": "1722--1730",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Taxonomic classification of metagenomic shotgun sequences with CARMA3",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Gerlach",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Stoye",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "14",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Novel arenavirus, Zambia. Emerg Infect Dis",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ishii",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Moonga",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Nakamura",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ohnuma",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Hang&apos;ombe",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Takada",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mweene",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Sawa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "17",
+            "issn": "",
+            "pages": "1921--1924",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Identification, characterization, and in vitro culture of highly divergent arenaviruses from boa constrictors and annulated tree boas: candidate etiological agents for snake inclusion body disease",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Stenglein",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Sanders",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Kistler",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Ruby",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Franco",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Reavill",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Dunker",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Derisi",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "MBio",
+            "volume": "2012",
+            "issn": "4",
+            "pages": "180--00112",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Cross-species transmission of a novel adenovirus associated with a fulminant pneumonia outbreak in a new world monkey colony",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Yagi",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Kelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Mendoza",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Tarara",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Canfield",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Maninger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rosenthal",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Spinner",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Bales",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Schnurr",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Lerche",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Chiu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PLoS Pathog",
+            "volume": "7",
+            "issn": "7",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "The general composition of the faecal virome of pigs depends on age, but not on feeding with a probiotic bacterium",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sachsenroder",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Twardziok",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Scheuch",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Johne",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS One",
+            "volume": "9",
+            "issn": "2",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Assembling millions of short DNA sequences using SSAKE",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Warren",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Sutton",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Holt",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bioinformatics",
+            "volume": "23",
+            "issn": "4",
+            "pages": "500--501",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "A divergent clade of circular single-stranded DNA viruses from pig feces",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Cheung",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Ng",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Lager",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Bayles",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Alt",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Delwart",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Pogranichniy",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kehrli",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Arch Virol",
+            "volume": "158",
+            "issn": "10",
+            "pages": "2157--2162",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Identification of herpesvirus-like DNA sequences in AIDS-associated Kaposi's sarcoma",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Cesarman",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Pessin",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Culpepper",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Knowles",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Moore",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Science",
+            "volume": "266",
+            "issn": "5192",
+            "pages": "1865--1869",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Identification of two flavivirus-like genomes in the GB hepatitis agent",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Simons",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Pilot-Matias",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Leary",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Dawson",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Desai",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Schlauder",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Muerhoff",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Erker",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Buijk",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Chalmers",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Van Sant",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Mushahwar",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "92",
+            "issn": "8",
+            "pages": "3401--3405",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-15-254"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Submit your next manuscript to BioMed Central and take full advantage of: \u2022 Convenient online submission \u2022 Thorough peer review \u2022 No space constraints or color figure charges \u2022 Immediate publication on acceptance \u2022 Inclusion in PubMed, CAS, Scopus and Google Scholar \u2022 Research which is freely available for redistribution",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Ueno",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Taxonomic identification using the LCA with BLASTN-NT. The taxonomic trees for (A) rodent, (B) reptile and (C) simian samples.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Taxonomic classification using the LCA with BLASTN viruses. The pie charts illustrate the number of reads assigned to taxa for (A) the rodent sample at the 6th taxonomic level, (B) the reptile sample at the 7th taxonomic level and (C) the simian sample at the 7th taxonomic level. Here, only the top three taxa are denoted.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "ELM analyses of BLASTN viruses below the varietas level. The solid lines depict the difference \u0394n of the number of the LCA assigned reads for (A) rodent, (B) reptile and (C) simian samples from that under the reference top 10% score filter and the inflation index IF for (D) rodent, (E) reptile and (F) simian samples. IFs indicate how much \u0394n deviates from a mean of that for all assigned taxa under each top percent score filter. The taxon described in the literature is shown as a bold line. IFs below the dashed lines indicate those under the null hypothesis.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Benchmark tests for NGS datasetsTo evaluate the ability of ELM to detect pathogenic viruses from large sequence datasets, five real datasets were used. Dataset 1 consisted of 4,449,766 unassembled reads from a rodent sample in Zambia[15]. Reads with an average length of 236 bases were obtained by Ion Torrent Personal Genome Machine (PGM) sequencing.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Elapsed time for the LCA with BLASTN-NT",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Elapsed time for ELM with BLASTN viruses",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Detection of the viral genomes using ELM with BLASTN virusesContigs were assembled using SSAKE v3.8.1[19]. a LCMV, Lymphocytic choriomeningitis virus; SAdV-49, Simian adenovirus 49.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Detection of abundant virus genera in fecal viromes of piglets using ELM with BLASTN virusesThe genus includes descendant taxa IF >2.54. b According to the literature",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The work was supported by the Japan Initiative for Global Research Network on Infectious Diseases. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Additional file 1: Figure S1 . Distribution of E-values in BLASTN viruses. The figure shows the effect of E-value on discrimination between true and false assignments. Figure S2 . Read coverage on the position of target genomes. The figure shows the effect of breadth and depth coverage on discrimination between true and false assignments.Abbreviations NGS: Next generation sequencing; LCA: Lowest common ancestor; ELM: Enhanced LCA-based method.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 19,
+                    "end": 28,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 168,
+                    "end": 177,
+                    "text": "Figure S2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Additional file"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "KU designed, implemented, tested and evaluated the method, and wrote the manuscript. AI provided the experimental NGS data analyzed in the manuscript. KI participated in the design and evaluation of the method and collaborated in writing the manuscript. All authors read and approved the manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

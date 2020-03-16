@@ -1,0 +1,3115 @@
+{
+    "paper_id": "5e01fabcf9b38073be541d0ac1c9f147c99a7af7",
+    "metadata": {
+        "title": "Predicting RNA-Protein Interactions Using Only Sequence Information",
+        "authors": [
+            {
+                "first": "Usha",
+                "middle": [
+                    "K"
+                ],
+                "last": "Muppirala",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Vasant",
+                "middle": [
+                    "G"
+                ],
+                "last": "Honavar",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Drena",
+                "middle": [],
+                "last": "Dobbs",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: RNA-protein interactions (RPIs) play important roles in a wide variety of cellular processes, ranging from transcriptional and post-transcriptional regulation of gene expression to host defense against pathogens. High throughput experiments to identify RNA-protein interactions are beginning to provide valuable information about the complexity of RNA-protein interaction networks, but are expensive and time consuming. Hence, there is a need for reliable computational methods for predicting RNA-protein interactions. Results: We propose RPISeq, a family of classifiers for predicting RNA-protein interactions using only sequence information. Given the sequences of an RNA and a protein as input, RPIseq predicts whether or not the RNAprotein pair interact. The RNA sequence is encoded as a normalized vector of its ribonucleotide 4-mer composition, and the protein sequence is encoded as a normalized vector of its 3-mer composition, based on a 7-letter reduced alphabet representation. Two variants of RPISeq are presented: RPISeq-SVM, which uses a Support Vector Machine (SVM) classifier and RPISeq-RF, which uses a Random Forest classifier. On two non-redundant benchmark datasets extracted from the Protein-RNA Interface Database (PRIDB), RPISeq achieved an AUC (Area Under the Receiver Operating Characteristic (ROC) curve) of 0.96 and 0.92. On a third dataset containing only mRNA-protein interactions, the performance of RPISeq was competitive with that of a published method that requires information regarding many different features (e.g., mRNA half-life, GO annotations) of the putative RNA and protein partners. In addition, RPISeq classifiers trained using the PRIDB data correctly predicted the majority (57-99%) of non-coding RNA-protein interactions in NPInter-derived networks from E. coli, S. cerevisiae, D. melanogaster, M. musculus, and H. sapiens.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Our experiments with RPISeq demonstrate that RNA-protein interactions can be reliably predicted using only sequence-derived information. RPISeq offers an inexpensive method for computational construction of RNA-protein interaction networks, and should provide useful insights into the function of non-coding RNAs. RPISeq is freely available as a web-based server at",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Most of the essential molecular functions of cells are governed by interactions of proteins with other proteins, nucleic acids and small ligands. Computational studies of protein interaction data have helped identify protein-protein interaction PPI networks in various organisms [1, 2] . Similarly, studies on DNA-protein interactions have allowed construction of transcription factor-gene regulatory networks [3, 4] . In contrast, although several ribonucleoprotein (RNP) complexes have been extensively characterized (e.g., the ribosome, the spliceosome), posttranscriptional regulatory networks that are mediated by RNA-protein interactions (RPIs) are much less well studied [5] [6] [7] [8] [9] . In addition to their roles in controlling gene expression at the post-transcriptional level, RPIs regulate numerous fundamental biological processes, ranging from DNA replication and transcription, to pathogen resistance, to viral replication [10] [11] [12] [13] . Recently, high-throughput experiments have provided evidence for large numbers of RNA binding proteins in cells, and are beginning to identify and characterize pairs of RNAs and proteins that participate in RPIs [14] [15] [16] [17] [18] [19] . At present, however, our understanding of RNA binding proteins lags far behind our knowledge of regulatory DNA binding proteins, such as transcription factors and replication factors.",
+            "cite_spans": [
+                {
+                    "start": 279,
+                    "end": 282,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 283,
+                    "end": 285,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 410,
+                    "end": 413,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 414,
+                    "end": 416,
+                    "text": "4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 678,
+                    "end": 681,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 682,
+                    "end": 685,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 686,
+                    "end": 689,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 690,
+                    "end": 693,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 694,
+                    "end": 697,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 943,
+                    "end": 947,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 948,
+                    "end": 952,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 953,
+                    "end": 957,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 958,
+                    "end": 962,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 1177,
+                    "end": 1181,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1182,
+                    "end": 1186,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1187,
+                    "end": 1191,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 1192,
+                    "end": 1196,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1197,
+                    "end": 1201,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1202,
+                    "end": 1206,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Computational studies of RNA-protein interactions have largely focused on the \"interface prediction problem\", i.e., the problem of identifying the amino acid residues in a protein that are likely to bind to an RNA [20] [21] [22] . Only a few studies to date have focused on the \"partner prediction problem\", i.e., identification of specific RNA interaction partner(s) for a known RNA binding protein, or protein binding partner(s) for non-coding RNAs (ncRNAs). Although large-scale experimental analyses of RPIs such as RNAcompete [23] , RIP-Chip [24] , HITS-CLIP [25] , PAR-CLIP [8] are now providing valuable data about networks of RNA-protein interactions, these experiments are expensive and time-consuming. Thus, there is a compelling need for computational methods to accurately predict RPIs and to construct RNA-protein interaction networks. Given the limited number of structurally characterized RNA-protein complexes available in the PDB [26] at present (1,092 as of June 13, 2011) and the current availability of only one database of ncRNA-protein interactions (NPInter [27] ), it would be especially valuable to develop sequence-based methods that can be used to identify potential RNA-protein partners in the absence of experimental structural information regarding either partner.",
+            "cite_spans": [
+                {
+                    "start": 214,
+                    "end": 218,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 219,
+                    "end": 223,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 224,
+                    "end": 228,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 531,
+                    "end": 535,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 547,
+                    "end": 551,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 564,
+                    "end": 568,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 580,
+                    "end": 583,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 947,
+                    "end": 951,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 976,
+                    "end": 990,
+                    "text": "June 13, 2011)",
+                    "ref_id": null
+                },
+                {
+                    "start": 1080,
+                    "end": 1084,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Machine learning offers one of the most cost-effective approaches to constructing predictive models in settings where experimentally validated training data are available. At present, however, it is unclear whether the available experimental data regarding RNA-protein interactions are sufficient for successfully training classifiers using machine learning algorithms. Against this background, this study explores machine learning approaches to train sequencebased classifiers for predicting RPIs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "As a first step towards computational construction of RPI networks, we focused on the following question: Given the sequence of an RNA-binding protein, can we predict whether it interacts with a given RNA sequence? In developing sequence-based methods to answer this question, we considered several reduced and alternative alphabet representations of the input protein and RNA sequences. Shen et al. [28] used a Conjoint Triad Feature (CTF) representation to successfully predict protein-protein interactions. The CTF representation essentially encodes each protein sequence using the normalized 3-gram frequency distribution extracted from a 7-letter reduced alphabet representation of the protein sequence (See Methods for details). A recent study [29] demonstrated the utility of the CTF representation for predicting whether a given protein is an RNA binding protein. Inspired by these studies, we chose to encode each protein sequence using the normalized k-gram frequency distributions extracted from the 7-letter reduced alphabet representation of the sequence. The choice of k = 3 yielded the best results. We also explored several alternative representations of RNA sequences and settled on encoding each RNA sequence using normalized 4-gram frequencies extracted directly from the 4-letter ribonucleotide alphabet representation of the RNA sequence.",
+            "cite_spans": [
+                {
+                    "start": 400,
+                    "end": 404,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 750,
+                    "end": 754,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "Our choice of Random Forest (RF) and Support Vector Machine (SVM) classifiers was motivated by several studies that have successfully used them on classification tasks that are closely related to the RPI prediction [30] [31] [32] [33] . To rigorously evaluate the performance of these methods, we generated two non-redundant benchmark datasets, RPI2241 and RPI369, from PRIDB [34] , a comprehensive database of RNA-protein complexes extracted from the PDB [26] . Most of the RNA-protein pairs in RPI2241 correspond to RPIs involving rRNAs or ribosomal proteins; the rest correspond to RPIs involving other ncRNAs or mRNAs. RPI369 corresponds to RPIs extracted from nonribosomal complexes in RPI2241. \"Negative\" examples of non-interacting RNA-protein pairs were generated by randomly pairing proteins with RNAs and excluding the known interacting pairs (see Methods for details).",
+            "cite_spans": [
+                {
+                    "start": 215,
+                    "end": 219,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 220,
+                    "end": 224,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 225,
+                    "end": 229,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 230,
+                    "end": 234,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 376,
+                    "end": 380,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 456,
+                    "end": 460,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "We compared the performance of RPISeq-SVM and RPI-Seq-RF classifiers to predict RPIs, using the benchmark datasets described above. Table 1 summarizes the prediction results obtained in 10-fold cross-validation experiments. On the RPI2241 dataset, the prediction accuracy was 89.6% (RF) and 87.1% (SVM); precision and recall for both classifiers was greater than 87%. On the RPI369 dataset, performance of both classifiers was considerably lower with an average accuracy of only 76.2% (RF) and 72.8% (SVM). Notably, values of the F-measure (weighted average of precision and recall) were greater than 0.70 for both classifiers on both datasets. Thus, the performance of classifiers estimated using 10-fold cross-validation on the larger RPI2241 dataset, which includes ribosomal data, is considerably better than that estimated using the RPI369 dataset, from which ribosomal data have been excluded. We also performed leave-one-out cross validation for the RF classifier. The results were not significantly different from 10-fold cross-validation experiments. The performance statistics reported in Table 1 were obtained using classifiers designed to provide high prediction accuracy. By varying the classification threshold value, the prediction specificity can be increased at the expense of a decrease in sensitivity. The corresponding trade-off between true positive rate and false positive rate can be seen from the receiver operating characteristic (ROC) curve shown in Figure 1 . Consistent with the results in Table 1 , ROC AUCs of 0.97 (RF) and 0.92 (SVM) were obtained for predictions on the RPI2241 dataset, with lower values of 0.85 (RF) and 0.81 (SVM) on the RPI369 dataset. For both classifiers, the AUC of ROC is significantly greater than 0.50 (random), indicating the feasibility of predicting RPIs using only sequence information from the RNA and protein as input.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 132,
+                    "end": 139,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1099,
+                    "end": 1106,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1476,
+                    "end": 1484,
+                    "text": "Figure 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1518,
+                    "end": 1525,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "RPISeq classifiers can reliably predict RNA-protein interactions"
+        },
+        {
+            "text": "Bellucci et al. [35] used a variety of physicochemical properties (e.g., hydrogen-bonding propensities, secondary structure propensities) of proteins and RNAs to predict the interaction propensities for individual residues in the RNA and protein sequences of a potentially interacting pair. Because the catRAPID server [http://tartaglialab.crg. cat] does not directly report predictions as to whether or not a specific RNA-protein pair is expected to interact (the \"partner prediction problem\"), we were not able to directly compare our results with their method [35] .",
+            "cite_spans": [
+                {
+                    "start": 16,
+                    "end": 20,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 563,
+                    "end": 567,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison with other methods for predicting RNAprotein interactions"
+        },
+        {
+            "text": "Pancaldi and B\u00e4hler et al. [36] also employed RF and SVM classifiers, but their method uses more than 100 different features of mRNA and proteins, extracted from the literature or computed from the protein and RNA sequences to make predictions. Examples of such features include mRNA half-life, predicted protein secondary structure, Gene Ontology annotation, relative abundance of each amino acid, codon bias. Using a dataset of 5,166 positive mRNA-protein RPI partners derived from Hogan et al. [10] , and 5,166 randomly generated negative examples of mRNA-protein pairs, Pancaldi and B\u00e4hler reported an average accuracy of 70% in 2-fold cross-validation tests using an RF classifier based on 500 trees, and 68% using an SVM classifier using an RBF kernel with optimized parameters [36] . They also reported that 5fold and leave-one-out experiments gave comparable results. We performed 10-fold cross-validation experiments on the same dataset using RPISeq-RF, which uses only sequence information. Our RF classifier achieved an accuracy of 68%, based on 500 trees, results comparable Figure 1 Performance of RPISeq classifiers in predicting RPIs. Receiver operating characteristic (ROC) curves for RPI predictions, illustrating the trade-off between true positive rate and false positive rate for RPISeq-RF (random forest) and RPISeq-SVM (support vector machine) classifiers, using two datasets, RPI2241 and RPI369. The area under the curve (AUC) of each ROC is shown next to the curve. The AUC for a perfect classifier is 1, and for a random classifier = 0.5.",
+            "cite_spans": [
+                {
+                    "start": 27,
+                    "end": 31,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 497,
+                    "end": 501,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 784,
+                    "end": 788,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1087,
+                    "end": 1095,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Comparison with other methods for predicting RNAprotein interactions"
+        },
+        {
+            "text": "to the 70% reported for the RF classifier of Pancaldi and B\u00e4hler [36] . Our SVM classifier, using a normalized polykernel, gave less accurate predictions (61%) than the SVM of Pancaldi and B\u00e4hler (68%) [36] .",
+            "cite_spans": [
+                {
+                    "start": 65,
+                    "end": 69,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 202,
+                    "end": 206,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison with other methods for predicting RNAprotein interactions"
+        },
+        {
+            "text": "In the Pancaldi and B\u00e4hler study, only 5,166 out of a total of 13,243 positive mRNA-protein pairs were actually used for prediction, because some of the features required by the classifiers were not available for the remaining 8,000 pairs [36] . When we tested our method using all 13,243 pairs for cross-validation, the prediction accuracies increased to 78% for the RF and 65% for SVM classifier. Taken together, our experiments indicate that the sequence-based method proposed here and the multiple feature-based method of Pancaldi and B\u00e4hler have comparable performance in predicting mRNA-protein interactions. Further, our results suggest that sequences of mRNAs and proteins carry sufficient information to allow reasonable predictions regarding whether or not a given mRNA and protein interact. Because feature information required by the method of Pancaldi and B\u00e4hler may not be available in many cases, our proposed method complements theirs, and may be more generally applicable for predicting ncRNA-protein partners, in addition to mRNA-protein partners.",
+            "cite_spans": [
+                {
+                    "start": 239,
+                    "end": 243,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison with other methods for predicting RNAprotein interactions"
+        },
+        {
+            "text": "An important potential application of RPISeq is computational construction of RNA-protein interaction networks. Recently, Nacher and Araki [37] used RPIs from the NPInter database [27] , a database of non-coding RNA-protein interactions, to construct non-coding RNA-protein networks for several different model organisms. Their study revealed significant similarities between ncRNA-protein and transcription factor-gene regulatory networks. To explore whether RPISeq could be useful for constructing networks of ncRNA-protein interactions, we evaluated our method in predicting RPIs in networks derived from NPInter. Because the NPInter RPI pairs do not include any pairs derived from ribosomes, in this experiment, we also compared the performance of models trained on the RPI369 (which lacks ribosomal sequences) versus RPI2241, to evaluate the potential effect of strong ribosomal sequence bias on performance. Tables 2 and 3 show the number of RPI pairs correctly predicted for each organism. When trained on the RPI2241 dataset (Table 2) , the RF classifier correctly pre-dicted~80% (1,349 of 1,681 total interactions). The output probabilities of RPISeq are estimates of interaction propensities for a specific RNA-protein pair. In Tables 2  and 3 , the probability threshold used for \"positive\" interactions was 0.50. Among the 1,349 interactions predicted by the RF classifier, only 119 were predicted with probabilities \u2265 0.80, and another 1,230 interactions were predicted with probabilities in the range 0.50-0.80. The SVM classifier generally had slightly lower performance, correctly predicting~66% of the interactions.",
+            "cite_spans": [
+                {
+                    "start": 139,
+                    "end": 143,
+                    "text": "[37]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 180,
+                    "end": 184,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 914,
+                    "end": 928,
+                    "text": "Tables 2 and 3",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 1033,
+                    "end": 1042,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 1238,
+                    "end": 1253,
+                    "text": "Tables 2  and 3",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Predicting ncRNA-protein interaction networks"
+        },
+        {
+            "text": "In contrast, when trained on the RPI369 dataset, the SVM classifiers out-performed the RF classifiers (Table 3) . Overall, the SVM classifier correctly predicted 1,402 (83%) and the RF classifier correctly predicted 1,115 (66%) of the interactions. Among the 1,402 interactions correctly predicted by SVM classifier, more than 850 interactions were predicted with probabilities \u2265 0.80, and another 525 interactions were predicted with probabilities in the range 0.50 to 0.80. For the RF classifier, only 50 interactions were predicted with probabilities \u2265 0.80.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 102,
+                    "end": 111,
+                    "text": "(Table 3)",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Predicting ncRNA-protein interaction networks"
+        },
+        {
+            "text": "With regard to the effects of ribosomal sequence bias, these results are somewhat difficult to interpret. The best \"overall\" prediction performance was obtained using the SVM classifier trained on the RPI369 dataset (which lacks ribosomal sequences), with 83.4% interactions correctly predicted; the RF classifier trained on the RPI2241 dataset (which includes ribosomal sequences) correctly predicted 80.2% of the total interactions. Differences in performance of classifiers trained on the two different datasets are significant when predictions for each model organism are considered individually. For example, for D. melanogaster, substantially better predictions were obtained with an RF classifier trained on the RPI2241 dataset (98.8%) versus an RF classifier trained on the RPI369 dataset (46.9%). In contrast, for predicting human and mouse RNA-protein interactions, SVM classifiers trained on the RPI369 dataset (which excludes the ribosomal sequences) provide the best Figure 2 shows the ncRNA-protein interaction network from S. cerevisiae, based on the data in NPInter. In Figure  2A , RPISeq predictions obtained using classifiers trained on the RPI2241 dataset are mapped onto the network. As described above, the SVM classifier (right) makes more correct predictions (green edges) and fewer incorrect predictions, i.e., false negatives, (red edges) than the RF classifier (left). In Figure 2B , RPISeq predictions made using classifiers trained on the RPI369 dataset, which results in more errors, are shown.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 980,
+                    "end": 988,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1086,
+                    "end": 1096,
+                    "text": "Figure  2A",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1399,
+                    "end": 1408,
+                    "text": "Figure 2B",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Predicting ncRNA-protein interaction networks"
+        },
+        {
+            "text": "One protein hub (highlighted in yellow), which appears as a green square node with connections to several RNA nodes (pink circles), is apparent in these views of the network. It corresponds to the yeast SEN-1 helicase, which is known to interact with several snoRNAs [38] . Several RNA hubs, represented by red circular nodes, each connected to several green protein nodes, are also apparent. One of these RNA hubs (highlighted in purple), corresponds to snRNA u4560, which interacts with various Sm-like proteins in the LSM complex [39] . Figure 2C shows an enlarged view of these hubs, extracted from Figure 2B . Edges are labelled with the interaction probabilities predicted by each classifier. Using classifiers trained on the RPI369 dataset, the RF classifier made more errors (i.e., predicted a known interaction with probability < 0.5) than the SVM classifier in both cases: for SEN-1 helicase, the RF classifier correctly identified only 4 out of 8 known snoRNA interactions, whereas the SVM classifier correctly identified 6 out of 8. Similarly, of 8 proteins known to interact with snRNA u4560 in yeast, the RF classifier identified 6, while the SVM classifier correctly identified all 8 interaction partners. Notably, as shown in Figure 2A , both RF and SVM classifiers trained on the RPI2241 dataset correctly identified all 8 RNA interaction partners of the SEN-1 helicase, and both classifiers missed only 1 of 8 protein interaction partners of the snRNA u4560.",
+            "cite_spans": [
+                {
+                    "start": 267,
+                    "end": 271,
+                    "text": "[38]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 533,
+                    "end": 537,
+                    "text": "[39]",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 540,
+                    "end": 549,
+                    "text": "Figure 2C",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 603,
+                    "end": 612,
+                    "text": "Figure 2B",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1242,
+                    "end": 1251,
+                    "text": "Figure 2A",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Predicting ncRNA-protein interaction networks"
+        },
+        {
+            "text": "Regulation of gene expression at the post-transcriptional level is often mediated by interactions between RNA binding proteins and mRNAs or ncRNAs [5, 11, 40] . In this work, we present a new method, RPISeq, for predicting RNA-protein interaction partners, using only sequence information, with up to 90% average accuracy. We also demonstrate, that RPISeq can effectively predict RNA-protein interaction networks, based on evaluation using available data from five model organisms.",
+            "cite_spans": [
+                {
+                    "start": 147,
+                    "end": 150,
+                    "text": "[5,",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 151,
+                    "end": 154,
+                    "text": "11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 155,
+                    "end": 158,
+                    "text": "40]",
+                    "ref_id": "BIBREF40"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "While several computational methods for predicting networks of protein-protein interactions have been developed [1, 2] , very few studies have focused on computational analysis or prediction of RNA-protein interactions [3, 4] . One of the major challenges in solving the \"partner prediction problem\" for RNA-protein interactions is the limited amount of experimental data currently available. Unlike the \"interface prediction problem,\" for which detailed structural information for more than 1,000 RNA-protein complexes is available in the PDB, mRNA partners for only a handful of RBPs are known [10] . Currently, two basic types of information regarding RNA-protein interaction partners are widely available: i) experimentally-determined structures of RNA-protein complexes, available in primary resources such as the PDB [26] and NDB [41] , and secondary resources such as PRIDB [34] and BIPA [42] ; and ii) experimental data from in vivo or in vitro cross-linking studies focused on individual proteins (e.g., SFRS1 [43] , PUF [44] ) or from high throughput RNAbinding microarrays [23] , stored in repositories such as NPInter [27] , CLIPZ [45] and RBPDB [46] .",
+            "cite_spans": [
+                {
+                    "start": 112,
+                    "end": 115,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 116,
+                    "end": 118,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 219,
+                    "end": 222,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 223,
+                    "end": 225,
+                    "text": "4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 596,
+                    "end": 600,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 823,
+                    "end": 827,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 836,
+                    "end": 840,
+                    "text": "[41]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 881,
+                    "end": 885,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 895,
+                    "end": 899,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 1019,
+                    "end": 1023,
+                    "text": "[43]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 1030,
+                    "end": 1034,
+                    "text": "[44]",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 1084,
+                    "end": 1088,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1130,
+                    "end": 1134,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 1143,
+                    "end": 1147,
+                    "text": "[45]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 1158,
+                    "end": 1162,
+                    "text": "[46]",
+                    "ref_id": "BIBREF46"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sequence-based prediction of RNA-protein interactions"
+        },
+        {
+            "text": "RPISeq requires only sequence information to generate predictions. In the current version of RPISeq, the classifiers were trained using only RPIs for which experimental structures are available. RPI2241 is a non-redundant training dataset consisting of 2241 interacting RNA-protein pairs, and includes a wide variety of different functional classes of proteins and RNA (e.g., rRNA, tRNA, miRNA, mRNA). rRNA-ribosomal protein pairs constitute~40% of the total, reflecting the predominance of ribosomal structures in the current version of the PDB. To investigate the impact of this bias on machine learning methods for predicting RPIs, we also generated a smaller dataset of 369 RNA-protein partners (RPI369), from which all rRNA-containing complexes had been removed (see Methods for details).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence-based prediction of RNA-protein interactions"
+        },
+        {
+            "text": "We used RPI2241 and RPI369 as non-redundant benchmark datasets for developing and rigorously evaluating the performance of various machine learning classifiers. In cross-validation experiments, classifiers trained and tested on the larger dataset had superior prediction performance, indicating that the greater number and diversity of complexes in RPI2241, relative to RPI369, has a stronger positive effect on classification accuracy than the potentially negative effect of sequence bias in RPI2241. When we evaluated classifiers using independent datasets of RPIs from NPInter, however, classifiers trained on RPI369, in some cases, had better prediction performance. The basis for this observation is currently under investigation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence-based prediction of RNA-protein interactions"
+        },
+        {
+            "text": "To identify sequence features of the proteins and RNA important in determining their specific interactions, we analyzed the features most frequently used by the Random Forest classifier to predict interacting partners (see Methods for details).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence-based prediction of RNA-protein interactions"
+        },
+        {
+            "text": "The four most often selected RNA tetrads were: AUUC, AGUG, UUUU and UCAA. Notably, these tetrads were found in the interfacial region in only 15% of the cases examined. The most frequently selected conjoint triad in protein sequences was {I, L, F, P}{A, G, V}{R, K}, which represents twenty-four possible amino acid triplets (e.g., IAR, IAK, IGR, IGK...). The complete list of important RNA and protein features is provided as Supplemental data S1 (Additional file 1). Although additional experiments and analyses of these features will be required to extract precise \"rules\" that specify a particular RNA-protein interaction, our current analysis indicates that at least 50 features (a combination of RNA and protein features) are required to accurately classify a given RNA-protein pair as interacting or not.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence-based prediction of RNA-protein interactions"
+        },
+        {
+            "text": "In this study, RPISeq accurately predicted RPIs in both cross-validation experiments using the benchmark datasets and in experiments on independent datasets. This suggests that normalized k-mer frequency distributions of RNA and protein sequences (specifically, reduced alphabet representations of protein sequences) in combination with appropriate machine learning methods, provide an effective approach to construct RPI predictors. Because the data used in this study represent only a small fraction of cellular RNA-protein complexes and interactions, we anticipate that more accurate predictions will be possible when larger and more diverse datasets of experimentally validated RPIs become available.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence-based prediction of RNA-protein interactions"
+        },
+        {
+            "text": "The method of Pancaldi and B\u00e4hler [36] , which was developed to predict mRNA-protein interactions (rather than ncRNA-protein interactions), also uses RF and SVM classifiers, but requires a much more extensive set of features regarding the mRNAs and proteins. Input for the classifiers, which consists of a vector constructed by concatenating the features of potential RNA and protein partners (e.g., isoelectric point of protein, protein localization, mRNA half-life), cannot be extracted or calculated from sequence information alone. This requirement restricts the applicability of this method in practice: Pancaldi and B\u00e4hler were not able to extract the necessary features for a majority of interactions in their RPI dataset. The RPISeq methods do not suffer from this limitation because they require only sequence-derived features to make reliable predictions. In fact, the performance of RPISeq improved substantially (by 8% in accuracy) when evaluated on the entire dataset of Pancaldi and B\u00e4hler. Thus, for predicting mRNA-protein interactions, the sequence-based approach implemented in RPISeq provides performance comparable to that of classifiers that require a more extensive set of features, including those that cannot be extracted from RNA and protein sequences alone.",
+            "cite_spans": [
+                {
+                    "start": 34,
+                    "end": 38,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison with other available methods"
+        },
+        {
+            "text": "Encouraged by the success of RPISeq in predicting specific RPIs, we examined its effectiveness in constructing RNAprotein interaction networks in several model organisms, using only information derived from RNA and protein sequences. The networks were extracted from the \"ncRNA binds protein\" category of NPInter [27] , currently the only available database of functional interactions of ncRNA with proteins. RPISeq was able to successfully predict the interactions of a single protein with multiple RNAs (protein hubs), as well as interactions of a single RNA with multiple proteins (RNA hubs).",
+            "cite_spans": [
+                {
+                    "start": 313,
+                    "end": 317,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Application of RPISeq to constructing RNA-protein interaction networks"
+        },
+        {
+            "text": "In the case of the yeast, S. cerevisiae, RPISeq provided excellent predictions of RPIs: both the RF and SVM classifiers trained on the RPI2241 dataset correctly predicted > 98% of interactions in the NPInter database [27] . The RPISeq-RF classifier trained on the RPI2241 dataset also correctly identified a large majority of interactions in the D. melanogaster (99%) and E. coli (92%) networks. For human and mouse networks, however, classifiers trained on the RPI369 dataset gave better performance, with the RPISeq-SVM classifier correctly identifying 83% of the interactions in human and 93% in the mouse. It is important to note that these evaluations are based on predicting only known \"positive\" interactions currently available in NPInter [27] ; \"negative\" data regarding non-interacting protein-RNA-protein pairs are not included in NPInter. Because the experimental data in NPInter are incomplete, it is problematic to assume that RNA-protein pairs not included in NPInter do not, in fact, interact. Also, some experimentally-determined RPIs included in NPInter could correspond to false positives.",
+            "cite_spans": [
+                {
+                    "start": 217,
+                    "end": 221,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 747,
+                    "end": 751,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Application of RPISeq to constructing RNA-protein interaction networks"
+        },
+        {
+            "text": "Given the relatively small sizes of the RNA-protein networks analyzed in this study, differences in the results obtained using different classifiers to predict RPIs in different species must be interpreted with caution. It will be important to evaluate these methods on larger, more complete datasets of experimentally validated RNA-protein interactions as they become available. On the whole, our results suggest that RPISeq should be valuable for constructing and analyzing regulatory RNA-protein interaction networks.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Application of RPISeq to constructing RNA-protein interaction networks"
+        },
+        {
+            "text": "In this work, we tested whether RPISeq, a family of purely sequence-based classifiers, can be used to predict whether a specific RNA-protein pair is likely to interact. Our results demonstrate that the corresponding RNA and protein sequences alone contain sufficient information to allow reliable prediction of RPIs. Such predictions can be used to: (i) identify putative RNA partners of a target protein, or protein partners of a target RNA; and (ii) computationally construct RNA-protein interaction networks. The datasets used in this study are relatively small compared with the large number of RNA-protein complexes and diverse interactions that occur in cells. The increasing availability of transcriptome-wide experimental data should lead to improvements in computational methods for predicting RNA-protein interactions and for modelling regulatory networks of RNA-protein interactions. RPISeq is freely available as a web-based server at http://pridb. gdcb.iastate.edu/RPISeq/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "For training and testing classifiers, two benchmark nonredundant datasets of RNA-protein interacting pairs were extracted from 943 protein-RNA complexes in PRIDB using an 8 \u00c5 distance cut-off [34] . PRIDB is a database of protein-RNA interfaces calculated from protein-RNA complexes in the PDB [26] . The original 943 complexes from PRIDB contained a total of 9,689 protein chains and 2,074 RNA chains; the final dataset RPI2241 (see below), which contains a total of 952 protein chains and 443 RNA chains, was derived from these complexes by applying the following criteria. Redundant protein sequences (i.e., with \u2265 30% sequence identity) interacting with similar RNA sequences (i.e., with \u2265 30% sequence identity) were discarded. Also, redundant RNA sequences (i.e., with \u2265 30% sequence identity) interacting with similar protein sequences (i.e., with \u2265 30% sequence identity) were discarded. Only proteins whose length is greater than 25 and RNAs at least 15 nucleotides long were retained. This resulted in a dataset of \"positive\" examples, RPI2241, consisting of 2241 experimentally validated RNA-protein pairs, and is provided as Supplemental data S2 (Additional file 2).",
+            "cite_spans": [
+                {
+                    "start": 192,
+                    "end": 196,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 294,
+                    "end": 298,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "RPI benchmark datasets derived from structure-based experimental data"
+        },
+        {
+            "text": "To generate a balanced dataset of \"non-interacting RNA-protein pairs\" (negative examples), we randomly paired the RNAs and proteins from the 943 protein-RNA complexes and removed similar interacting RNA-protein pairs (a randomly generated pair A-B was discarded if there exists a positive interaction pair C-B, and A and C share \u2265 30% sequence identity). Because~40% of RNAprotein complexes in the PDB correspond to ribosomal structures, the RPI2241 dataset is also strongly biased towards ribosomal RPIs. Thus, we constructed a second dataset, RPI369, which is a subset of RPI2241 generated by removing all RPIs that contain ribosomal proteins or ribosomal RNAs and is provided as Supplemental data S3 (Additional file 3). RPI369 contains only non-ribosomal complexes (e.g., tRNA, mRNA, viral RNA, miRNA).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "RPI benchmark datasets derived from structure-based experimental data"
+        },
+        {
+            "text": "For evaluation of our method on independent RPI datasets, we used two datasets of RPIs obtained from RNA immunoaffinity purification and microarray experiments, published by Hogan et al [10] . One dataset comprises 5,166 mRNA-protein interactions; this dataset was also used in the study of Pancaldi and B\u00e4hler [36] . The second dataset is larger, consisting of 13,243 RPIs, and including all 5,166 interactions in the smaller dataset. Pancaldi and B\u00e4hler were not able to evaluate their method on this larger dataset because of missing feature information for RNAs and proteins involved in these interactions. Because RPISeq uses only sequence information, we were able to evaluate our method using all of the available data.",
+            "cite_spans": [
+                {
+                    "start": 186,
+                    "end": 190,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 311,
+                    "end": 315,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "RPI datasets derived from non-structure-based experimental data"
+        },
+        {
+            "text": "To test the ability of RPISeq to predict ncRNA-protein interaction networks, we used the NPInter database http:// www.panrna.org/NPInter/, which includes eight different categories of functional interactions between non-coding RNAs, but excludes ribosomal RNAs and proteins. We extracted only those interactions for which there is experimental evidence for physical association of ncRNA with a protein, i.e. the 'ncRNA binds protein' category.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "RPI datasets derived from non-structure-based experimental data"
+        },
+        {
+            "text": "Each RNA-protein pair is represented as a 599-feature vector, in which 343 features are used to encode the protein sequence and 256 features are used to encode the RNA sequence. Proteins are encoded using the conjoint triad feature (CTF) representation previously used by Shen et al [28] . In this method, the 20 amino acids are Each protein sequence is then encoded using the 7-letter reduced alphabet. Each protein feature represents the normalized frequency of the corresponding conjoint triad, i.e., 3-mer in the 7-letter reduced alphabet representation of the protein sequence. Thus, each protein sequence is represented by a 343 (7 \u00d7 7 \u00d7 7) dimensional vector, where each element of the vector corresponds to the normalized frequency of the corresponding 3-mer in the sequence (see [28] for details). Based on results of preliminary tests comparing the normalized k-mer frequency representation of RNA sequences for different values of k, we chose to encode RNA sequences using a 4 \u00d7 4 \u00d7 4 or 256-dimensional vector, in which each feature represents the normalized frequency of the corresponding 4-mer appearing in the RNA sequence (e.g., AAUG, CGAU, GGCC)",
+            "cite_spans": [
+                {
+                    "start": 283,
+                    "end": 287,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 788,
+                    "end": 792,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Alternative representations of protein and RNA sequences"
+        },
+        {
+            "text": "The SVM classifier [47] classifies input samples represented in the form of n-dimensional vectors into two classes using a hyperplane in a feature space. If the patterns are not separable in the original n-dimensional input space, a suitable non-linear kernel function is used to implicitly map the patterns in the n-dimensional input space into a typically higher (finite or even infinite) dimensional kernel-induced feature space in which the patterns become separable or nearly separable. Given a training set consisting labeled examples of the form (X i , y i ) where X i is an n-dimensional input vector and y i = 0/1 is its label (i.e., the desired output of the SVM classifier for input X i ), the SVM learning algorithm effectively selects the hyperplane that maximizes the margin of separation between the training samples of the two classes from among all separating hyperplanes. If the examples are not perfectly separable in the kernel-induced feature space, a user-chosen parameter C is used to trade off training error (the number of misclassified training examples) against margin for the correctly classified training examples.",
+            "cite_spans": [
+                {
+                    "start": 19,
+                    "end": 23,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Machine Learning Algorithms"
+        },
+        {
+            "text": "In our study, the input to the SVM classifier is a 599dimensional vector that encodes features of a given pair of RNA and protein sequences as described above. The output of the SVM is a binary label indicating whether the given RNA-protein pair interact or not. We used the Sequential Minimal Optimization SMO implementation in Weka 3.7 [48] to train the SVM classifier. After some preliminary experiments which showed that the normalized polykernel performed better than RBF kernel on our data, we chose the normalized polykernel function of order 2 with \u03b5 = 1.0E-12. We set C = 1.0 and tolerance parameter T = 0.0010. We then used the option to fit a logistic model to the output of the resulting SVM classifier to obtain the posterior probability of class from the SVM output for any given input.",
+            "cite_spans": [
+                {
+                    "start": 338,
+                    "end": 342,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Machine Learning Algorithms"
+        },
+        {
+            "text": "RandomForest (RF) [49] is an ensemble of many classification trees. Each tree in the ensemble is trained on a subset of training examples that are randomly sampled from the given training set. At each node the best split is chosen from a set of m variables selected at random from the set of input features. Given a query instance, the majority vote of all the classifiers is returned as the RF prediction. We used the Random Forest implementation in Weka 3.7. By default, Weka builds a RF classifier as an ensemble of 10 trees and sets the value of m = log_2 (number of features) + 1. For most of our experiments, we set the number of trees to 20 and 10 features were evaluated at each node. For comparison with the method of Pancaldi and B\u00e4hler [36] , we set the number of trees to 500.",
+            "cite_spans": [
+                {
+                    "start": 18,
+                    "end": 22,
+                    "text": "[49]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 747,
+                    "end": 751,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Machine Learning Algorithms"
+        },
+        {
+            "text": "For performing feature selection, we used AttributeSelection class in Weka toolkit. We used wrapper subset evaluator in combination with Random Forest classifier and best first search method.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Machine Learning Algorithms"
+        },
+        {
+            "text": "Standard 10-fold cross-validation procedures were used to evaluate and compare classifier performance on the benchmark datasets. For the RF classifier, we also performed leave-one-out cross-validation; results were not significantly different from those obtained using 10-fold cross-validation (data not shown).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance Evaluation"
+        },
+        {
+            "text": "We computed the following statistics, as described in Baldi et al. [50] , to measure the performance of the classifiers. The F-Measure is a composite indicator of performance that attempts to \"balance\" precision and recall. F-Measure values range from 0 to 1, with values close to 1 indicating better performance. The area under the curve (AUC) of the receiver operating characteristic curve (ROC) was also computed. AUC values also range from 0 to 1: the AUC = 1 for a perfect classifier and for a random classifier = 0.5.",
+            "cite_spans": [
+                {
+                    "start": 67,
+                    "end": 71,
+                    "text": "[50]",
+                    "ref_id": "BIBREF50"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Performance Evaluation"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Systematic computational prediction of protein interaction networks",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Lees",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Heriche",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Morilla",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Ranea",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Orengo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Phys Biol",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "A predicted protein-protein interaction network of the filamentous fungus Neurospora crassa",
+            "authors": [
+                {
+                    "first": "T-Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q-W",
+                    "middle": [],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Mol Biosyst",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Transcriptional regulatory networks in Saccharomyces cerevisiae",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "",
+            "volume": "298",
+            "issn": "",
+            "pages": "799--804",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Escherichia coli transcriptional regulatory network",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Mart\u00ednez",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "1",
+            "issn": "",
+            "pages": "21--33",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Deciphering the role of RNA-binding proteins in the post-transcriptional control of gene expression",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kishore",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Luber",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zavolan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Brief Funct Genomics",
+            "volume": "9",
+            "issn": "",
+            "pages": "391--404",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Dissecting the expression dynamics of RNA-binding proteins in posttranscriptional regulatory networks",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mittal",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Roy",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Babu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Janga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "106",
+            "issn": "",
+            "pages": "20300--20305",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Proteome-wide search reveals unexpected RNA-binding proteins in Saccharomyces cerevisiae",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Tsvetanova",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Klass",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Salzman",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Brown",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS One",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Transcriptome-wide identification of RNA-binding protein and microRNA target sites by PAR-CLIP",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hafner",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Landthaler",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Burger",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Khorshid",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hausser",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Berninger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rothballer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ascano",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Jungkamp",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Munschauer",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ulrich",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Wardle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dewell",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zavolan",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tuschl",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Cell",
+            "volume": "141",
+            "issn": "",
+            "pages": "129--141",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "PAR-CliP-a method to identify transcriptome-wide the binding sites of RNA binding proteins",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hafner",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Landthaler",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Burger",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Khorshid",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hausser",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Berninger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rothballer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ascano",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Jungkamp",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Munschauer",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ulrich",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Wardle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dewell",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zavolan",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tuschl",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Vis Exp",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Diverse RNAbinding proteins interact with functionally related sets of RNAs, suggesting an extensive regulatory system",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hogan",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Riordan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Gerber",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Herschlag",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Brown",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "PLoS Biol",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "RNA processing and its regulation: global insights into biological networks",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Licatalosi",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Darnell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nat Rev Genet",
+            "volume": "11",
+            "issn": "",
+            "pages": "75--87",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "RNA-RNA and RNA-protein interactions in coronavirus replication and transcription",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Sola",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mateos-Gomez",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Almazan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zu\u00f1iga",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Enjuanes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "RNA Biol",
+            "volume": "8",
+            "issn": "",
+            "pages": "237--248",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Diverse roles of host RNA binding proteins in RNA virus replication",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Nagy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "RNA Biol",
+            "volume": "8",
+            "issn": "",
+            "pages": "305--315",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Advances in RIP-chip analysis: RNA-binding protein immunoprecipitation-microarray profiling",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Baroni",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Chittur",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "George",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Tenenbaum",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Methods Mol Biol",
+            "volume": "419",
+            "issn": "",
+            "pages": "93--108",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Genome-wide analysis of RNA-protein interactions in plants",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Barkan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Methods Mol Biol",
+            "volume": "553",
+            "issn": "",
+            "pages": "13--37",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Non-protein-coding RNAs and their interacting RNA-binding proteins in the plant cell nucleus",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Charon",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Moreno",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Bardou",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Crespi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Mol Plant",
+            "volume": "3",
+            "issn": "",
+            "pages": "729--739",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Structure and function of nematode RNAbinding proteins",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Kaymak",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Wee",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Ryder",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Curr Opin Struct Biol",
+            "volume": "20",
+            "issn": "",
+            "pages": "305--312",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Emerging roles of RNA and RNA-binding protein network in cancer cells",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hur",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jeong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMB Rep",
+            "volume": "42",
+            "issn": "",
+            "pages": "125--130",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Insights into the biology of IRES elements through riboproteomic approaches",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Pacheco",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Martinez-Salas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Biomed Biotechnol",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Prediction of RNA binding sites in proteins from amino acid sequence",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Terribilini",
+                    "suffix": ""
+                },
+                {
+                    "first": "J-H",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Yan",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Jerniga",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Honavar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dobbs",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "RNA",
+            "volume": "12",
+            "issn": "",
+            "pages": "1450--62",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Optimal protein-RNA area, OPRA: a propensity-based method to identify RNA-binding sites on proteins",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "P\u00e9rez-Cano",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Fern\u00e1ndez-Recio",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Proteins",
+            "volume": "78",
+            "issn": "",
+            "pages": "25--35",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Geometric similarity between protein-RNA interfaces",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zou",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Tian",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Shang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J Comput Chem",
+            "volume": "30",
+            "issn": "",
+            "pages": "2738--2751",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Rapid and systematic analysis of the RNA recognition specificities of RNA-binding proteins",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Ray",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kazan",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Chan",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Castillo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Chaudhry",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Talukder",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Blencowe",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Morris",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Hughes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature Biotechnol",
+            "volume": "27",
+            "issn": "",
+            "pages": "667--70",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "RIP-Chip: the isolation and identification of mRNAs, microRNAs and protein components of ribonucleoprotein complexes from cell extracts",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Keene",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Komisarow",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Friedersdorf",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nature protoc",
+            "volume": "1",
+            "issn": "",
+            "pages": "302--309",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "HITS-CLIP yields genome-wide insights into brain alternative RNA processing",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Licatalosi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mele",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Fak",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ule",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kayikci",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Chi",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Blume",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Darnell",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Darnell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature",
+            "volume": "456",
+            "issn": "",
+            "pages": "464--473",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "The Protein Data Bank",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Berman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Westbrook",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Feng",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gilliland",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Bhat",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Weissig",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Shindyalov",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Bourne",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Nucleic Acids Res",
+            "volume": "28",
+            "issn": "",
+            "pages": "235--277",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "NPInter: the noncoding RNAs and protein related biomacromolecules interaction database",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Skogerb\u00f8",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nucleic Acids Res",
+            "volume": "34",
+            "issn": "",
+            "pages": "150--152",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Predicting protein-protein interactions based only on sequences information",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Luo",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Jiang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "104",
+            "issn": "",
+            "pages": "4337--4378",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Predicting DNA-and RNAbinding proteins from sequences with kernel methods",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Shao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Tian",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Jing",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J Theor Biol",
+            "volume": "258",
+            "issn": "",
+            "pages": "289--293",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Sequence-based protein-protein interaction prediction via support vector machine",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Syst Sci Complex",
+            "volume": "23",
+            "issn": "",
+            "pages": "1012--1023",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "A machine learning approach for the prediction of protein surface loop flexibility",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Hwang",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Vreven",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Whitfield",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Wiehe",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Weng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Proteins: Struct Funct Bioinf",
+            "volume": "79",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/prot.23070"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Prediction of protein-protein interactions using random decision forest framework",
+            "authors": [
+                {
+                    "first": "X-W",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "",
+            "pages": "4394--400",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Prediction of protein-RNA binding sites by a random forest method with combined features",
+            "authors": [
+                {
+                    "first": "Z-P",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "L-Y",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X-S",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Bioinformatics",
+            "volume": "26",
+            "issn": "",
+            "pages": "1616--1622",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "PRIDB: a Protein-RNA Interface Database",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lewis",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Walia",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Terribilini",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Feguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Zheng",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Honavar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dobbs",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "",
+            "pages": "277--82",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Predicting protein associations with long noncoding RNAs",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bellucci",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Agostini",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Masin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Tartaglia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nature Methods",
+            "volume": "8",
+            "issn": "",
+            "pages": "444--445",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "In silico characterization and prediction of global protein-mRNA interactions in yeast",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Pancaldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "B\u00e4hler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "",
+            "issn": "",
+            "pages": "1--11",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Structural characterization and modeling of ncRNAprotein interactions",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Nacher",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Araki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Biosystems",
+            "volume": "101",
+            "issn": "",
+            "pages": "10--19",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Multiple protein/protein and protein/RNA interactions suggest roles for yeast DNA/RNA helicase Sen1p in transcription, transcription-coupled DNA",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Ursic",
+                    "suffix": ""
+                },
+                {
+                    "first": "Kjsf",
+                    "middle": [],
+                    "last": "Chinchilla",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Culbertson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "",
+            "pages": "2441--2452",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Characterization of U6 snRNAprotein interactions",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Vidal",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Verdone",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Mayes",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Beggs",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "RNA",
+            "volume": "5",
+            "issn": "",
+            "pages": "1470--81",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Post-transcriptional gene regulation: RNA-protein interactions, RNA processing, mRNA stability and localization",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Blencowe",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brenner",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hughes",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Morris",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Pac Symp Biocomput",
+            "volume": "",
+            "issn": "",
+            "pages": "545--548",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "A comprehensive relational database of three-dimensional structures of nucleic acids",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Berman",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Olson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Beveridge",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Westbrook",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gelbin",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Demeny",
+                    "suffix": ""
+                },
+                {
+                    "first": "S-H",
+                    "middle": [],
+                    "last": "Hsieh",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Srinivasan",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Schneider",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Biophys J",
+            "volume": "63",
+            "issn": "",
+            "pages": "751--759",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "BIPA: a database for protein-nucleic acid interaction in 3D structures",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Blundell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Bioinformatics",
+            "volume": "25",
+            "issn": "",
+            "pages": "1559--1560",
+            "other_ids": {}
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Splicing factor SFRS1 recognizes a functionally diverse landscape of RNA transcripts",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Sanford",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Mort",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Vandyun",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Cooper",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Mooney",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Edenburg",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Genome Res",
+            "volume": "19",
+            "issn": "",
+            "pages": "381--94",
+            "other_ids": {}
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Extensive association of functionally and cytotopically related mRNAs with Puf family RNA-binding proteins in yeast",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Gerber",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Herschlag",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Brown",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "PLoS Biol",
+            "volume": "2",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "CLIPZ: a database and analysis environment for experimentally determined binding sites of RNAbinding proteins",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Khorshid",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Rodak",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zavolan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "",
+            "pages": "245--252",
+            "other_ids": {}
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "RBPDB: a database of RNA-binding specificities",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Cook",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kazan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Zuberi",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Morris",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Hughes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "",
+            "pages": "301--308",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "The Nature of Statistical Learning Theory",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Vapnik",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "The WEKA data mining software: An update",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Frank",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Holmes",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Pfahringer",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Reutemann",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Witten",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "SIGKDD Explorations",
+            "volume": "11",
+            "issn": "",
+            "pages": "10--18",
+            "other_ids": {}
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Breiman I: Random Forests",
+            "authors": [],
+            "year": 2001,
+            "venue": "Mach Learn",
+            "volume": "45",
+            "issn": "",
+            "pages": "5--32",
+            "other_ids": {}
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Assessing the accuracy of prediction algorithms for classification: An overview",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Baldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brunak",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Chauvin",
+                    "suffix": ""
+                },
+                {
+                    "first": "Caf",
+                    "middle": [],
+                    "last": "Andersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Nielsen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Bioinformatics",
+            "volume": "16",
+            "issn": "",
+            "pages": "412--424",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-12-489"
+                ]
+            }
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Predicting RNA-Protein Interactions Using Only Sequence Information",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Muppirala",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "BMC Bioinformatics",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "A. Predicted interactions using classifiers trained on the RPI2241 dataset. Among 254 known interactions, RPISeq-RF and RPISeq-SVM classifiers correctly predicted all except 5 and 2 edges, respectively. A protein hub, highlighted in yellow, shows interactions of a helicase (SEN1) with several snoRNAs. One of several RNA hubs, highlighted in purple, illustrates interactions of an snRNA (u4560) with various Sm-like proteins in the LSM complex. B. Predicted interactions using classifiers trained on RPI369 dataset. Among 254 known interactions, RPISeq-RF classifier correctly predicted 168 (66%) and RPISeq-SVM correctly predicted 226 (89%). A protein hub highlighted in yellow, shows interactions of a helicase (SEN1) with 8 snoRNAs. One of several RNA hubs, highlighted in purple, illustrates interactions of an snRNA (u4560) with various Sm-like proteins in the LSM complex. C. An enlarged view of the protein (SEN1) and RNA (snRNA) hubs described in B. above. Edges are labelled with the interaction probabilities predicted by RPISeq-RF (left) and RPISeq-SVM (right) classifiers, providing estimates of the relative pairwise interaction propensities.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "classified into 7 groups according to their dipole moments and the volume of their side chains: {A, G, V}, {I, L, F, P}, {Y, M, T, S}, {H, N, Q, W}, {R, K}, {D, E}, {C}.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "precision = TP TP + FP Recall = TP TP + FN Accuracy = TP + TN TP + TN + FP + FN F -Measure = 2 \u00d7 Precision \u00d7 Recall Precision + Recallwhere TP is the number of true positives, FP is the number of false positives, TN is the number of true negatives, and FN is the number of false negatives.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Performance evaluation of RPISeq",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "RPISeq predictions on NPInter dataset using RF and SVM classifiers trained on RPI2241RPISeq predictions on interactions derived from the NPInter database for five model organisms.prediction performance. For yeast RPIs, both the RF and SVM classifiers trained on RPI2241 generated excellent predictions, 98.0% and 99.2%, respectively, whereas classifiers trained on RPI369 made more errors, with correct predictions for 66.1% (RF) and 89.0% (SVM) of the cases.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "RPISeq predictions on NPInter dataset using RF and SVM classifiers trained on RPI369RPISeq predictions on interactions derived from the NPInter database for five model organisms.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We thank Benjamin Lewis, Pete Zaback and Rasna Walia for valuable suggestions and comments on the manuscript. We also thank Yasser EL-Manzalawy for critical reading of the manuscript and other members of the Honavar research group for interesting discussions. The work of Vasant Honavar while working at the National Science Foundation was supported by the National Science Foundation. Any opinion, finding, and conclusions contained in this article are those of the authors and do not necessarily reflect the views of the National Science Foundation. This work was partially supported by funding from National Institutes of Health (GM066387 to VGH and DD) and Iowa State University's Center for Integrated Animal Genomics (to UKM and DD). Partial funding for open access charges was provided by Iowa State University. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements and Funding"
+        },
+        {
+            "text": "Additional file 1: List of RNA and protein features important for distinguishing interacting and non-interacting RNA-protein pairs (S1).Additional file 2: Positive RPIs in the RPI2241 dataset. This is a tabdelimited file with two columns. The first column is a list of proteins and the second column is a list of corresponding RNAs (S2).Additional file 3: Positive RPIs in RPI369 dataset. This is a tabdelimited file with two columns. The first column is a list of proteins and the second column is a list of corresponding RNAs (S3).Authors' contributions UKM conceived the study (with DD and VGH), carried out the experiments, implemented the RPISeq webserver and prepared the initial draft of the manuscript. DD and VGH contributed to the experimental design, supervised the work, and edited the manuscript. All authors read and approved the final manuscript. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional material"
+        }
+    ]
+}

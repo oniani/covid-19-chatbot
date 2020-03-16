@@ -1,0 +1,2228 @@
+{
+    "paper_id": "59e3592ad1516fe1b4f4a1ea5a8cae320af5cf7d",
+    "metadata": {
+        "title": "VIGOR, an annotation program for small viral genomes",
+        "authors": [
+            {
+                "first": "Shiliang",
+                "middle": [],
+                "last": "Wang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jaideep",
+                "middle": [
+                    "P"
+                ],
+                "last": "Sundaram",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "David",
+                "middle": [],
+                "last": "Spiro",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: The decrease in cost for sequencing and improvement in technologies has made it easier and more common for the re-sequencing of large genomes as well as parallel sequencing of small genomes. It is possible to completely sequence a small genome within days and this increases the number of publicly available genomes. Among the types of genomes being rapidly sequenced are those of microbial and viral genomes responsible for infectious diseases. However, accurate gene prediction is a challenge that persists for decoding a newly sequenced genome. Therefore, accurate and efficient gene prediction programs are highly desired for rapid and cost effective surveillance of RNA viruses through full genome sequencing. Results: We have developed VIGOR (Viral Genome ORF Reader), a web application tool for gene prediction in influenza virus, rotavirus, rhinovirus and coronavirus subtypes. VIGOR detects protein coding regions based on sequence similarity searches and can accurately detect genome specific features such as frame shifts, overlapping genes, embedded genes, and can predict mature peptides within the context of a single polypeptide open reading frame. Genotyping capability for influenza and rotavirus is built into the program. We compared VIGOR to previously described gene prediction programs, ZCURVE_V, GeneMarkS and FLAN. The specificity and sensitivity of VIGOR are greater than 99% for the RNA viral genomes tested. Conclusions: VIGOR is a user friendly web-based genome annotation program for five different viral agents, influenza, rotavirus, rhinovirus, coronavirus and SARS coronavirus. This is the first gene prediction program for rotavirus and rhinovirus for public access. VIGOR is able to accurately predict protein coding genes for the above five viral types and has the capability to assign function to the predicted open reading frames and genotype influenza virus. The prediction software was designed for performing high throughput annotation and closure validation in a post-sequencing production pipeline.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Rapid and cost effective genomic surveillance of RNA viruses is a critical component of vaccine and drug development pipelines for the control of emerging viral diseases. Improvements in sequencing technology and the concomitant decrease in costs have made it easier and more common for the re-sequencing of large genomes as well as parallel sequencing of small genomes. This has led to an exponential increase in the genomic data available in public databases. However, accurate gene prediction is a challenge that has created a bottleneck in the gene predication pipeline.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Two major approaches, ab initio gene finding and similarity-based prediction [1] , have been commonly applied to gene prediction. The ab initio method, also known as the intrinsic statistical strategy, computes statistical data such as the nucleotide frequencies and their ordering in a set of genomic sequences that have been characterized. This is because the nucleotide frequencies and ordering for each genome usually differ between protein coding and non-coding regions. However, viral genomes, because of their small genome sizes, may not provide sufficient training data to derive the parameters necessary to attain the best performance possible for this approach. The heuristic method, which determines the parameters of the necessary models from short sequences, was adopted by several gene prediction programs, e.g., GeneMarkS [2] . Small amount of genomic sequence, but long enough to produce the efficient Markov models, usually a small fraction of large genome or small genomes like viral genomes, is needed for this method. The linear function reflecting the relationship between the nucleotide frequencies in the three codon positions and the global nucleotide frequencies is obtained by analyzing the small amount of DNA sequence. These derived data will be used to predict protein coding genes by the heuristic method [3] . The ab initio method uses these trained or self-trained modules to select the protein coding regions and predict coding sequences. The similarity-based method predicts protein coding sequences by a different strategy, identifying gene coding sequences by sequence similarity alignment to reference sequences which are closely related evolutionarily. Since these two approaches use different strategies to detect the protein coding sequences, the performances are different and depend on the training data set and reference sequence data. Usually, ab initio approach is more sensitive than similarity-based approach, while the performance of similarity-based method has greater specificity. This is because ab initio methods predict some false positive exons and genes in intergenic regions and introns, while similaritybased tools cannot detect genes if the homologous sequences are not included in the reference data.",
+            "cite_spans": [
+                {
+                    "start": 77,
+                    "end": 80,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 837,
+                    "end": 840,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 1335,
+                    "end": 1338,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Although most viral genomes are relatively small compared to eukaryotic and prokaryotic genomes, the gene structure of viral genomes can be complex. For example, introns, alternative splicing, overlapping genes, and ribosomal slippage exist in many viral genomes. Thus an all purpose gene finder cannot be easily adapted for gene prediction across all virus families. However, if the genome scaffold and the gene features of a viral genome are well understood, a similarity-based gene prediction approach based on the curated gene repertoire for a specific virus genus with attention to particular recognition features, such as, splice sites and mature peptide cleavage sites can be adapted, and perform better than an ab initio gene finder.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The National Institute of Allergy and Infectious Diseases (NIAID) funds a Genomic Sequencing Center for Infectious Diseases (GSCID) at the J. Craig Venter Institute (JCVI). One of the goals of the GSCID is high throughput sequencing of various viral pathogens. The viral genome sequencing projects at JCVI have resulted in publication of more than 4000 influenza virus genomes from clinical and animal reservoir specimens, and hundreds of coronavirus and rotavirus sequences. Prediction of protein coding genes encoded in these viral genomes is a critical step to understanding these pathogenic viruses. In order to have a flexible, accurate gene prediction tool for utilization in high throughput viral genome sequencing projects, we developed a viral annotation program, VIGOR (Viral Genome ORF Reader). VIGOR uses a similarity-based approach to detect open reading frames (ORF) in various viral genomes by similarity searches against custom reference protein sequence databases. VIGOR takes into account differences between the genomic structures of viral taxonomic groups. VIGOR is tailored for the designated viruses with complex gene features such as splicing and frame-shifting, and it is able to predict genes accurately in influenza (group A, B, and C), coronavirus (including SARS coronavirus), rhinovirus, and rotavirus genomes. It was also designed to assign function to the predicted ORFs and genotype influenza viruses. In addition to gene prediction, VIGOR can also be used as a tool to validate sequence accuracy and completeness during the genome finishing process.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Complete protein sequences of all ORFs for influenza virus, rotavirus, rhinovirus and coronavirus subtypes were downloaded from GenBank, and redundant sequences were removed by custom scripts. For coronavirus and SARS coronavirus, both the orf1a polypeptide sequences and orf1b polypeptide sequences were included in the coronavirus and SARS coronavirus reference database.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Custom protein databases"
+        },
+        {
+            "text": "Similarity searches between viral genomic sequences and a custom protein database are conducted by BLASTX [4] . The longest aligned region detected by the similarity search spanning one single protein sequence plus 100 bases upstream and downstream sequences is selected as the potential coding region for the particular open reading frame. This region is then further searched for genomic features indicative of the coding region.",
+            "cite_spans": [
+                {
+                    "start": 106,
+                    "end": 109,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Detection of protein coding regions in viral genomes"
+        },
+        {
+            "text": "A similarity search is performed again between the potential coding region and the custom protein database. The protein sequence with highest identity in the similarity search is established as the reference sequence for the identification of the start and stop codons. If the first codon in the potential coding sequence is ATG and aligns with the first residue in the reference sequence, this ATG is selected as the start codon; otherwise, the nearest upstream in-frame ATG is selected as the start codon. If no in-frame ATG is present in the upstream region of the aligned sequences, the 60 nucleotides downstream of the first aligned residue are scanned for the start codon. Sequences downstream of the last aligned residue of the potential coding sequence are scanned for in-frame stop codons (TAA, TGA, and TAG) and the closest stop codon to the last aligned residue is selected. Mature mRNA for the influenza M2 and NS2 genes is produced by internal splicing. The conserved splice donor and acceptor sites (GT...AG) [5] are scanned around the alignment joint sites between the gap and aligned regions. The splice sites which result in the best alignment between the translated protein and the reference sequence are selected. The two main criteria for the selection of splice sites are identity to reference sequence and sequence length of the translated protein; however, if these two do not agree with each other, sequence length has priority in choosing the final splice sites.",
+            "cite_spans": [
+                {
+                    "start": 1023,
+                    "end": 1026,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Identification of start codon and stop codon"
+        },
+        {
+            "text": "The first transcript of coronavirus genomes and SARS coronavirus genomes encodes two polyproteins because of ribosomal slippage during translation [6] . The first polyprotein (orf1a) is translated from the sequence with start and stop codons, and normal translation, while the synthesis of the second polyprotein (orf1ab) is dependent on a -1 nucleotide ribosomal frameshift induced by a \"slippery\" sequence of the type \"UUUAAAC\" upstream of the orf1a stop codon [7] . VIGOR examines the region upstream of the orf1a stop codon to map out precisely the \"UUUAAAC\" string. It then shifts back the reading frame by -1 nucleotide (from AAC to AAA) within the slippery sequence, and the -1 frame is extended to generate the coding sequence for the translation of orf1ab.",
+            "cite_spans": [
+                {
+                    "start": 147,
+                    "end": 150,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 463,
+                    "end": 466,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Identification of start codon and stop codon"
+        },
+        {
+            "text": "There are 16 subtypes for hemagglutinin protein (HA) and 9 subtypes for neuraminidase (NA) in group A influenza viruses, but only one subtype for HA and one subtype for NA for influenza B viruses [8, 9] . The genotypes of influenza viruses can be categorized by the hemagglutinin protein (HA) and neuraminidase (NA). In the custom VIGOR database, HA and NA subtype sequences are stored and used to categorize the genotypes of these two influenza proteins based on the best similarity.",
+            "cite_spans": [
+                {
+                    "start": 196,
+                    "end": 199,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 200,
+                    "end": 202,
+                    "text": "9]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Genotyping of influenza virus"
+        },
+        {
+            "text": "6. Identification of the mature peptide cleavage sites for the rhinovirus polyprotein and SARS coronavirus orf1a and orf1ab",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Genotyping of influenza virus"
+        },
+        {
+            "text": "The rhinovirus polyprotein is cleaved into 11 mature, functional peptides by proteases. There are conserved cleavage signature sequences for 9 cleavage sites [10] . In order to predict mature peptides, the polyprotein sequence is aligned with the sequences in VIGOR's custom rhinovirus mature peptide database to identify the mature peptide cleavage sites. In the absence of a conserved signature sequence, the putative cleavage site whose products result in best alignments for both sequence length and similarity is selected.",
+            "cite_spans": [
+                {
+                    "start": 158,
+                    "end": 162,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Genotyping of influenza virus"
+        },
+        {
+            "text": "The conserved mature peptide cleavage signature sequences for the orf1a and orf1ab of SARS coronavirus derived from sequence comparative alignment and literature [11] [12] [13] . At the position P1 (the position just before the cleavage site) is the conserved Glutamine (Q), the signature residue recognized by papain-like proteinase. Mature peptide cleavage sites are determined by mature peptide length and conserved cleavage signature sequences.",
+            "cite_spans": [
+                {
+                    "start": 162,
+                    "end": 166,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 167,
+                    "end": 171,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 172,
+                    "end": 176,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Genotyping of influenza virus"
+        },
+        {
+            "text": "(i) Coding sequences must have both start and stop codons, or span the 5' or 3'-end of the input sequences for partial genomic sequences.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Further criteria for gene prediction"
+        },
+        {
+            "text": "(ii) There should not be an internal stop codon or frameshift in the coding sequences except for the orf1ab in coronavirus genomes and SARS coronavirus genomes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Further criteria for gene prediction"
+        },
+        {
+            "text": "(iii) The exon number must be the same as that of the homologous gene in the custom database. (iv) The translated product of the coding region must span 95% of the length of the homologous protein unless the homolog in the reference database is shorter than 50 amino acids except influenza genomes. For influenza genes, if the encoded protein is 500 amino acids or longer (PB2, PB1, PA and HA), the translated product must span more than 98% of the length of the reference protein; The length difference between the translated product and the reference protein should be within 5 amino acids for NS2 and M2 genes (shorter than 150 aa); the encoded NS, MP, NP and NA proteins should not be 15 amino acid shorter than reference proteins.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Further criteria for gene prediction"
+        },
+        {
+            "text": "(v) If any of these criteria is not observed, the sequence region homologous to reference sequences will be identified as a non-functional gene region, and will be marked as a possible sequence mutation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Further criteria for gene prediction"
+        },
+        {
+            "text": "VIGOR is available at http://www.jcvi.org/vigor. Viral genomic sequences in either FASTA or multi-FASTA format can be pasted or uploaded from a local file into the input sequence area through a GUI interface which was implemented in Perl CGI, PHP and Javascript. VIGOR is supported by a multi-tiered backend service called Arcturus. This service includes the capability to receive and process all types of web form submissions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Implementation"
+        },
+        {
+            "text": "The submission component transforms the submitted data into a job and the queuing component schedules the job for processing. A post-processing component formats the results and notifies the submitter that the gene predictions can be viewed following the completion of the job.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Implementation"
+        },
+        {
+            "text": "Arcturus is responsible for invoking the appropriate gene prediction program in the VIGOR package for the specified virus type. Currently, all jobs are executed on a single, dedicated server. The backend service is implemented to support scalability. The entire backend service was implemented in Perl.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Implementation"
+        },
+        {
+            "text": "A user needs to select the virus type through a pulldown virus name menu prior to submitting the sequence data. The user will be informed of the link to download the prediction result by email following the VIGOR run. The output includes three files. The main output file is the gene prediction file which includes the predicted peptide sequence length, coordinates of the coding regions, splice sites if applicable, protein function and genotype if available, and the predicted amino acid sequences. The other two output files are the cDNA sequence file and a file of the alignment between the predicted protein and the best match in the custom database so that the user can evaluate the prediction. If mutations which generate internal stop codons or frameshifts are detected, the mutated sequences plus the flanking sequences will be presented in the output. The alignment data from the BLASTX search is also included in the gene prediction file.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Implementation"
+        },
+        {
+            "text": "To assess the performance of VIGOR, five sets of annotated sample sequences were downloaded from Gen-Bank. These included influenza virus, rotavirus, coronavirus, SARS coronavirus and rhinovirus. VIGOR was compared to three separate gene finding programs: GeneMarkS, ZCURVE_V and FLAN. GeneMarkS [2] and ZCURVE_V [14] both are ab initio universal gene finding programs. FLAN is a web-based gene prediction tool specific for influenza viruses that was developed at NCBI for the Influenza Genome Sequencing Project and has been widely used to annotate influenza sequences [15] . FLAN uses the similarity based approach, comparing the influenza genomic sequences with annotated influenza peptide sequences to identify open reading frames. GeneMarkS and ZCURVE_V were run for all sample genomes, while FLAN was run only on influenza genomes.",
+            "cite_spans": [
+                {
+                    "start": 296,
+                    "end": 299,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 313,
+                    "end": 317,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 570,
+                    "end": 574,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "The results were evaluated by comparison between the gene finder predictions and annotations in GenBank. Sensitivity (Sn) and Specificity (Sp) were employed to evaluate the performance of the programs tested. Sn is defined as the percent correct predictions out of all annotated genes in the dataset. Sp is defined as the percent correct predictions out of all predictions. Correct predictions are those which are the same as the Gen-Bank annotations. Any prediction that was not identical to the GenBank annotation was inspected manually by similarity searching against the NCBI non-redundant (NR) protein database. If the new prediction was highly similar (E value <1e-10) to a viral protein spanning 95% of the homologous protein length, it was categorized as a correct prediction. A partially correct prediction was assigned when the prediction overlapped with the Gen-Bank annotation in the same reading frame but with a different start codon. An incorrect prediction was assigned when the prediction overlapped with the Gen-Bank annotation but in a different reading frame, or cannot be validated by sequence similarity.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "The influenza virus genome consists of eight RNA segments that encode one or two proteins each. Splicing is involved in the expression of the MP and M2 proteins from segment 7 (MP segment) in group A influenza viruses and NS1 and NS2 proteins from segment 8 (NS segment) in both group A and group B viruses [16] . Segment 2 (PB1 segment) encodes two proteins, PB1 and PB1-F2, in some influenza genomes. The coding sequence of PB1-F2 is completely embedded in the PB1 coding region with a different reading frame [17] . In order to test its accuracy in gene finding, 2376 full and partial influenza segment sequences including group A, group B, and group C viruses, encoding 3177 annotated proteins, were run through VIGOR. VIGOR predicted 3178 ORFs encoded by these segments. Among these predicted protein sequences, 99% (3169/3178) ORFs completely agreed with the annotations in GenBank. Three predicted ORFs were partially correct and one ORF was incorrectly predicted ( Table 1) .",
+            "cite_spans": [
+                {
+                    "start": 307,
+                    "end": 311,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 512,
+                    "end": 516,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 973,
+                    "end": 981,
+                    "text": "Table 1)",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Influenza"
+        },
+        {
+            "text": "The influenza sequence set was also run through FLAN (influenza specific gene prediction program). The specificity and sensitivity of FLAN are quite comparable to VIGOR (Table 1) . However, 47 genes annotated in GenBank were predicted as non-functional genes by FLAN because of different problems detected in these sequences including internal stop codons, frame shifts or incorrect splicing. These predictions were marked as discrepancies in Table 1 . Nine small ORFs detected by FLAN were missing from the VIGOR prediction list; all of these were homologous to PB1-F2 protein. These PB1-F2 proteins predicted by FLAN were manually compared to the homologous PB1-F2 sequences. It was found that multiple stop codons are present in the region homologous to the N-terminal domain of PB1-F2. Although the annotations in GenBank for 6 of these nine sequences are same as FLAN predictions, most likely all these nine sequences encode non-functional PB1-F2 genes.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 169,
+                    "end": 178,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 443,
+                    "end": 450,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Influenza"
+        },
+        {
+            "text": "The same set of influenza genomic sequences was also run using GeneMarkS and ZCURVE_V, two ab initio approach gene prediction tools for viral genomes ( Table  1 ). The specificity and sensitivity for GeneMarkS was 40.63% and 35.22% respectively; while the specificity and sensitivity for ZCURVE_V was 81.74% and 72.27%. Similar numbers of GenBank annotated genes were missed by both GeneMarkS (770 genes) and ZCUR-VE_V (841 genes). Manual inspection showed that the majority of the overlooked genes were PB1-F2, NS2 and M2 genes. Several studies have shown that embedded genes and splicing often pose problems for viral gene prediction algorithms [2, 14] . For example, ZCURVE_V could not identify the Tat gene correctly and missed the Rev completely when it was used to predict genes for the HIV-I virus [14] . Additionally, almost half of the GeneMarkS predictions for influenza genomes picked start codons upstream of the correct start codons.",
+            "cite_spans": [
+                {
+                    "start": 647,
+                    "end": 650,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 651,
+                    "end": 654,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 805,
+                    "end": 809,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 152,
+                    "end": 160,
+                    "text": "Table  1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Influenza"
+        },
+        {
+            "text": "Rotavirus genomes are made up of 11 segments of double stranded RNA encoding 6 viral structural proteins (VP1-4, VP6-7) and 6 non-structural proteins (NSP1-6). Non-structural protein 5 and 6 are encoded by same genomic segment; the coding regions overlap, but are in different reading frames [18] . 19 G types and 27 P types of rotaviruses based on structural proteins VP7 and VP4 were recorded We downloaded from GenBank 1166 rotavirus sequence segments with 1158 annotated genes, and ran in parallel VIGOR, ZCURVE_V and GeneMarkS analyses. VIGOR predicted 1202 protein coding genes including 44 newly detected ORFs which were not annotated in GenBank. Three predictions picked different start codons compared to the annotations in Gen-Bank. These new predictions were examined closely and all of them are homologous to NSP6 with very good similarities (E-value < 1e-10, data not shown).",
+            "cite_spans": [
+                {
+                    "start": 292,
+                    "end": 296,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Rotavirus"
+        },
+        {
+            "text": "ZCURVE_V performed well for rotavirus genome gene prediction ( Table 1) . 1112 of the 1171 predictions were the same as the annotations in GenBank. Both the specificity and sensitivity are approximately 95%; only one protein coding gene was not picked by ZCURVE_V, and 45 were predicted with different start codons. The performance of GeneMarkS was limited for rotavirus gene prediction. Approximately 64% of the predictions (776 predictions) selected the wrong start codons (Table 1) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 63,
+                    "end": 71,
+                    "text": "Table 1)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 475,
+                    "end": 484,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Rotavirus"
+        },
+        {
+            "text": "The rhinovirus genome encodes one polyprotein precursor which is cleaved into eleven functional mature peptides [20] . Thirty-six annotated rhinovirus genomes were downloaded from GenBank and tested with VIGOR, GeneMarkS and ZCURVE_V. VIGOR correctly predicted the polypeptide start codon and stop codon, as well as the mature peptides for each genome (see Table 2 ). GeneMarkS identified all 36 polyproteins, but predicted the wrong start codons for four genomes. An additional nine small ORFs were incorrectly predicted in the 5'-UTR. ZCURVE_V predicted 77 genes in total, including the 36 true ORFs and 41 mis-predicted small peptides. The start codons of 6 real open reading frames were not correctly predicted. VIGOR was also used to predict the polyproteins and mature peptides for 66 ATCC rhinovirus samples and field samples sequenced at JCVI with 100% specificity and sensitivity [21] . Neither GeneMarkS nor ZCUR-VE_V was designed to predict mature peptide sequences for viral genomes.",
+            "cite_spans": [
+                {
+                    "start": 112,
+                    "end": 116,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 889,
+                    "end": 893,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 357,
+                    "end": 364,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Rhinovirus"
+        },
+        {
+            "text": "Coronavirus genomes are 27 to 31 Kb in size and encode 9-15 proteins. The genomic structure of each species in the coronavirus genus is highly variable [6] with considerable species diversity among the non-structural proteins. The first open reading frame occupies about 2/3 of the genome, and ribosomal slippage occurs in the expression of this transcript, producing two polypeptides (orf1a and orf1ab) which are cleaved into functional mature peptides. Coronavirus genomes also encode overlapping genes and genes which are completely embedded within other genes.",
+            "cite_spans": [
+                {
+                    "start": 152,
+                    "end": 155,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "To evaluate the performance of VIGOR for coronavirus gene prediction, 38 annotated complete coronavirus genomes containing annotation for 341 genes were downloaded from GenBank and run through VIGOR, GeneMarkS and ZCURVE_V. VIGOR identified 354 ORFs, while GeneMarkS and ZCURVE_V predicted 314 and 339 protein coding genes respectively (Table 2) . Of the 341 GenBank annotated genes, VIGOR correctly predicted 339 genes, missed one gene and identified one gene with wrong start codon ( Table 2) . VIGOR also predicted 14 new ORFs which were not annotated in Gen-Bank. Manual curation of these 14 newly predicted proteins showed that they are highly similar (E value < 1e-10) to annotated coronavirus or other viral proteins (data not shown); thus we classified these 14 newly identified genes in coronaviruses as correct predictions. Of the 341 annotated genes, GeneMarkS and ZCUR-VE_V did not detect 48 and 34 genes respectively. Most of the missing genes were short overlapping genes. The small structural envelope protein coding gene in 10 coronavirus genomes was not identified by either of these two programs because the coding region of this envelope protein overlaps with the coding region of an upstream gene.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 336,
+                    "end": 345,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 486,
+                    "end": 494,
+                    "text": "Table 2)",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "VIGOR was also evaluated and used successfully for the gene prediction of more than 50 coronavirus genomes sequenced at JCVI; the specificity and sensitivity were greater than 99% [22] [23] [24] [25] .",
+            "cite_spans": [
+                {
+                    "start": 180,
+                    "end": 184,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 185,
+                    "end": 189,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 190,
+                    "end": 194,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 195,
+                    "end": 199,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "VIGOR has been adjusted as well to optimally predict the protein coding genes in SARS coronavirus genomes. We downloaded from GenBank 102 annotated SARS coronavirus genomes, containing a total of 1322 annotated genes. VIGOR, GeneMarkS, and ZCURVE_V were run for these SARS coronavirus genomes to identify protein coding genes. VIGOR detected 1447 ORFs, 1321 of which completely agreed with the annotations in GenBank (Table 2) . Only one GenBank annotated gene was missing on the VIGOR prediction list. VIGOR also found 126 ORFs in these SARS coronavirus genomes which were not annotated in GenBank. By searching the NCBI NR database, the similarity search showed that these 126 newly detected genes encode proteins highly similar (E value < 1e-10) to proteins in SARS coronavirus or other viruses. ZCURVE_V predicted 1204 genes, 958 of which were identical to the annotations in GenBank. One hundred seven ZCURVE_V predictions have different start codons compared to the annotations in GenBank ( Table  2 ). This program also detected 76 new ORFs which did not exist in GenBank; as with VIGOR, the encoded proteins are highly similar to other viral proteins in Gen-Bank (data not shown). Sixty-three predictions may be incorrect since they could not be corroborated by similarity searches. These were either small peptides (shorter than 50 aa) or were located within the first long open reading frame.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 417,
+                    "end": 426,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 997,
+                    "end": 1005,
+                    "text": "Table  2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "GeneMarkS detected only 941 genes and 680 of them were precise predictions. One hundred nineteen predictions hit the correct regions with the correct frame but the start codons were incorrect ( Table 2) . GeneMarkS also picked 21 new ORFs which are similar to other viral proteins. One hundred twenty-one GeneMarkS predictions may be incorrect since no homologous proteins could be found in GenBank. Two hundred fiftyseven and 523 GenBank annotations were missing on the ZCURVE_V and GeneMarkS prediction list. These missing genes were examined closely, and most of them are overlapping genes, such as, non-structural protein 3b, 9b, envelope protein, or the gene encoding a nonstructural protein which is completely embedded within the coding region of nucleocapsid protein.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 194,
+                    "end": 202,
+                    "text": "Table 2)",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "The gene predictions from two SARS coronavirus genomes (NC_009695 and AY485277) are detailed in Table  3 . NC_009695 is the genomic sequence of a bat SARSlike coronavirus published in 2005 [26] . The annotations have been updated several times by different annotators. This genome encodes 14 ORFs in GenBank. VIGOR predicted 13 ORFs and detected one mutation which resulted in a truncated non-functional peptide ( Table 3 ). The 13 predicted ORFs were exactly the same as the annotations in GenBank. The mutation detected by VIGOR is located in orf3b and generates an internal stop codon, creating truncated peptide of 114 amino acids. The orf3b gene in other coronaviruses is~154 aa long. We believe this truncated protein is non-functional. ZCURVE_V identified 11 ORFs but missed the two short ORFs (28094-28387, 28544-28756) which are completely embedded in the coding region of the nucleocapsid protein. GeneMarkS detected 8 ORFs but ignored 3 additional ORFs. One was the envelope protein gene (26056-26286), and the other two were non-structural protein genes (27573-27707, 27713-28082). Both GeneMarkS and ZCURVE_V did not predict the orf1ab correctly.",
+            "cite_spans": [
+                {
+                    "start": 189,
+                    "end": 193,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 96,
+                    "end": 104,
+                    "text": "Table  3",
+                    "ref_id": null
+                },
+                {
+                    "start": 414,
+                    "end": 421,
+                    "text": "Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "AY485277 is another SARS coronavirus genome that has 8 ORFs annotated in GenBank [27] . VIGOR predicted an additional 7 ORFs (Table 3 ). These 7 ORFs were corroborated by comparing them with other viral proteins in GenBank. ZCURVE_V detected 12 ORFs including 5 ORFs which were not annotated in Gen-Bank; these 5 ORFs are highly homologous to other viral proteins. One ORF annotated in GenBank and two ORFs predicted by VIGOR were ignored by ZCUR-VE_V. GeneMarkS identified 9 ORFs. Three GenBank annotated genes were missing, and 3 VIGOR predictions were also missing from the GeneMarkS prediction list. Neither GeneMarkS nor ZCURVE_V predicted orf1ab protein correctly.",
+            "cite_spans": [
+                {
+                    "start": 81,
+                    "end": 85,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 125,
+                    "end": 133,
+                    "text": "(Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "Two ab initio gene prediction programs, ZCURVE_-CoV [28] and GeneDecipher [29] , were specifically trained and the program parameters were adjusted for SARS coronavirus genomes. Both programs can correctly predict the major large protein coding genes and structural protein coding genes like polyprotein orf1a, orf1ab, spike gene, nucleocapsid gene, envelope gene and membrane protein gene. However, short peptide genes and embedded genes were often missing on the predicted gene list (false negative) [29] , although the exact function of these small peptide genes is unknown. Mature peptide prediction is not a designed function for these two programs. 17 of the 18 SARS-CoV genomes tested by GeneDecipher were used to evaluate VIGOR predictions. Since there were no annotations for most of these genomes in GenBank, SARS-CoV genome TOR2 genome was annotated in GenBank and predictions were listed [29] , a detail comparison was done for this genome (data not shown). The predictions of VIGOR for SARS-CoV genome TOR2 were exactly same as the GenBank annotations. GeneDeciper didn't pick 6 small non-structural protein genes and predicted one gene incorrectly. The genome structure and genes of the other 16 tested SARS-CoV genomes are same as SARS-CoV genome TOR 2, 14 genes and one non-functional non-structural protein gene were detected in these genomes by VIGOR.",
+            "cite_spans": [
+                {
+                    "start": 52,
+                    "end": 56,
+                    "text": "[28]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 74,
+                    "end": 78,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 502,
+                    "end": 506,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 900,
+                    "end": 904,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "VIGOR usage in high-throughput viral genome closure and annotation VIGOR has been used extensively to validate the genomes in the finishing process for the high-throughput virus sequencing projects at JCVI [21] [22] [23] [24] [25] 30] . In this role, VIGOR is used to detect sequence changes which generate a premature stop codon or a frameshift. The potential sequence error and the flanking sequences as well as the BLASTX alignment results are presented in the prediction output. This data allows researchers working on finishing tasks to investigate whether the sequence changes are due to laboratory error or are biologically relevant SNPs or IN/DELs. We noticed that if a mutation or a sequence error generates a pre-mature stop codon or causes frame-shift, and the translated product still meets all criteria stated above, VIGOR will predict this gene as a functional gene. In this type of cases, VIGOR prediction may not be able to identify the potential sequence errors. However, VIGOR provides the alignment data between the predicted peptide and reference sequence in the output alignment file, users can use the alignment data to evaluate the prediction and identify the potential sequence errors. If a genomic sequence covers only a fraction of a gene coding region, VIGOR will identify this genomic sequence as partial sequence. Genome finishing team is able to pursue finishing the genome basing the missing regions identified by VIGOR.",
+            "cite_spans": [
+                {
+                    "start": 206,
+                    "end": 210,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 211,
+                    "end": 215,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 216,
+                    "end": 220,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 221,
+                    "end": 225,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 226,
+                    "end": 230,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 231,
+                    "end": 234,
+                    "text": "30]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "VIGOR has also been used in the gene annotation and submission process. One of the advantages of VIGOR is that it can be used on large numbers of viral genomes simultaneously. The efficiency of VIGOR varies depending on the viral sequence type used as input. For example, using four hundred and fifty eight influenza genomes (6 Mb in total of nucleotide sequences) VIGOR took 85 minutes to complete the gene predictions. In comparison, it took VIGOR 23 minutes to execute the gene prediction for 102 SARS coronavirus genomes (3 Mb in total nucleotide sequences). Table 3 Comparison of the annotations in GenBank and predictions by VIGOR, GeneMarkS and ZCURVE_V of two SARS coronavirus genomes, NC_009695 (NC) and AY485277 (AY)",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 563,
+                    "end": 570,
+                    "text": "Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Coronavirus"
+        },
+        {
+            "text": "We have demonstrated that VIGOR, a RNA virus gene prediction tool, can predict protein coding genes with high accuracy for 5 different RNA virus types, influenza virus, rotavirus, rhinovirus, coronavirus and SARS coronavirus. VIGOR is available for public use at http:// www.jcvi.org/vigor. VIGOR has been thoroughly field tested in several high throughput genome sequencing projects at the JCVI. VIGOR has been employed to predict the protein coding genes successfully for 51 newly sequenced group A rotavirus complete genomes sequenced at JCVI [30] and to annotate and predict mature peptides for 66 rhinovirus full genome sequences [21] . The similarity based program has been also used to annotate the published sequences of bovine, feline, human, murine, rat, SARS and several novel wild animal coronavirus genomes [22] [23] [24] [25] . Partial genomes and the potential sequence errors which generate premature stop codons or frameshifts were identified by VIGOR as well during the genome finishing process for these viral sequencing projects.",
+            "cite_spans": [
+                {
+                    "start": 546,
+                    "end": 550,
+                    "text": "[30]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 635,
+                    "end": 639,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 820,
+                    "end": 824,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 825,
+                    "end": 829,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 830,
+                    "end": 834,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 835,
+                    "end": 839,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "VIGOR detects protein coding sequences based on similarity searches in conjunction with the known genome specific features for the particular viral genomes. Genes with introns, overlapping genes, and even the genes with a frameshift due to ribosomal slippage can be identified accurately because VIGOR includes these complex mechanisms in the processing for the designated genomes. Both the specificity and sensitivity of VIGOR for the tested genomes was greater than 99%. The same sets of viral genomes were tested for two existing universal viral gene predication methods, the specificity was between 31% and 95%, and the sensitivity was from 35% to 96%. VIGOR was designed to predict the mature peptides accurately for rhinovirus genomes and SARS coronavirus genomes, which is not applicable for the existing universal gene prediction tools. VIGOR can also conduct genotyping and assign function to the predicted protein, both of which are not capable for most available viral gene prediction tools. This userfriendly program is convenient for high throughput sequencing projects and for use by individual laboratories. If reference protein sequences can be collected, and genome specific features are added to VIGOR, this program can extend its capability to predict the protein coding genes in many other small viral genomes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "\u2022 Project name: VIGOR \u2022 Project home page: http://www.jcvi.org/vigor \u2022 Operating System(s): Platform-independent \u2022 Programming Language: Perl and PHP \u2022 Any restrictions to use by non-academics: None.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Intrinsic and extrinsic approaches for detecting genes in a bacterial genome",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Borodovsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Rudd",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Koonin",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Nucleic Acids Res",
+            "volume": "22",
+            "issn": "22",
+            "pages": "4756--4767",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Improving gene annotation of complete viral genomes",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Mills",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Rozanov",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lomsadze",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tatusova",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Borodovsky",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nucleic Acids Res",
+            "volume": "31",
+            "issn": "23",
+            "pages": "7041--7055",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Heuristic approach to deriving models for gene finding",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Besemer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Borodovsky",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Nucleic Acids Res",
+            "volume": "27",
+            "issn": "19",
+            "pages": "3911--3920",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Gapped BLAST and PSI-BLAST: a new generation of protein database search programs",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Altschul",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Madden",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Schaffer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lipman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Nucleic Acids Res",
+            "volume": "25",
+            "issn": "17",
+            "pages": "3389--3402",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "A catalogue of splice junction sequences",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Mount",
+                    "suffix": ""
+                }
+            ],
+            "year": 1982,
+            "venue": "Nucleic Acids Res",
+            "volume": "10",
+            "issn": "2",
+            "pages": "459--472",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Molecular biology of severe acute respiratory syndrome coronavirus",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ziebuhr",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Curr Opin Microbiol",
+            "volume": "7",
+            "issn": "4",
+            "pages": "412--419",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Programmed -1 ribosomal frameshifting in the SARS coronavirus",
+            "authors": [
+                {
+                    "first": "Dos",
+                    "middle": [],
+                    "last": "Ramos",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carrasco",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Doyle",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Brierley",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Biochem Soc Trans",
+            "volume": "32",
+            "issn": "",
+            "pages": "1081--1083",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Influenza: lessons from past pandemics, warnings from current incidents",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Horimoto",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kawaoka",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nat Rev Microbiol",
+            "volume": "3",
+            "issn": "8",
+            "pages": "591--600",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Human rhinovirus 2A proteinase cleavage sites in eukaryotic initiation factors (eIF) 4GI and eIF4GII are different",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gradi",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Svitkin",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Sommergruber",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Imataka",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Morino",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Skern",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Sonenberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "J Virol",
+            "volume": "77",
+            "issn": "8",
+            "pages": "5026--5029",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Processing of open reading frame 1a replicase proteins nsp7 to nsp10 in murine hepatitis virus strain A59 replication",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Deming",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Graham",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Denison",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Baric",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "J Virol",
+            "volume": "81",
+            "issn": "19",
+            "pages": "10280--10291",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Replication of murine hepatitis virus is regulated by papain-like proteinase 1 processing of nonstructural proteins 1, 2, and 3",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Graham",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Denison",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "J Virol",
+            "volume": "80",
+            "issn": "23",
+            "pages": "11610--11620",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Coronavirus 3CLpro proteinase cleavage sites: possible relevance to SARS virus pathology",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Kiemer",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Lund",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brunak",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Blom",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Bioinformatics",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "ZCURVE_V: a new self-training system for recognizing protein-coding genes in viral and phage genomes",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Guo",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "BMC Bioinformatics",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "FLAN: a web server for influenza virus genome annotation",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Bao",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bolotov",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dernovoy",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Kiryutin",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tatusova",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "35 Web Server",
+            "volume": "",
+            "issn": "",
+            "pages": "280--284",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Genetics of influenza viruses",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Steinhauer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Skehel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Annu Rev Genet",
+            "volume": "36",
+            "issn": "",
+            "pages": "305--332",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A novel influenza A virus mitochondrial protein that induces cell death",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Calvo",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Malide",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gibbs",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Schubert",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Bacik",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Basta",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "O&apos;neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Schickli",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Palese",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Nat Med",
+            "volume": "7",
+            "issn": "12",
+            "pages": "1306--1312",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Pathogenesis of rotavirus gastroenteritis",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Estes",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Kang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Zeng",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Crawford",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ciarlet",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "",
+            "volume": "238",
+            "issn": "",
+            "pages": "96--100",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Full genomebased classification of rotaviruses reveals a common origin between human Wa-Like and porcine rotavirus strains and human DS-1-like and bovine rotavirus strains",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Matthijnssens",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ciarlet",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Heiman",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Arijs",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Delbeke",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Mcdonald",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Palombo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Iturriza-Gomara",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Maes",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Patton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Virol",
+            "volume": "82",
+            "issn": "7",
+            "pages": "3204--3219",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Genome-wide diversity and selective pressure in the human rhinovirus",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Kistler",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Webster",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Rouskin",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Magrini",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Credle",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Schnurr",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Boushey",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Mardis",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Derisi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Virol J",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Sequencing and analyses of all known human rhinovirus genomes reveal structure and evolution",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Palmenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Spiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Kuzmickas",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Djikeng",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rathe",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Fraser-Liggett",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Liggett",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Science",
+            "volume": "324",
+            "issn": "5923",
+            "pages": "55--59",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Quasispecies of bovine enteric and respiratory coronaviruses based on complete genome sequences and genetic changes after tissue culture adaptation",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hasoksuz",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Spiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Halpin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Vlasova",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Janies",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Ghedin",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Saif",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Virology",
+            "volume": "363",
+            "issn": "1",
+            "pages": "1--10",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Biologic, antigenic, and full-length genomic characterization of a bovine-like coronavirus isolated from a giraffe",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hasoksuz",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Alekseev",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Vlasova",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Spiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Halpin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Ghedin",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Saif",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "J Virol",
+            "volume": "81",
+            "issn": "10",
+            "pages": "4981--4990",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Complete genomic sequences, a key residue in the spike protein and deletions in nonstructural protein 3b of US strains of the virulent and attenuated coronaviruses, transmissible gastroenteritis virus and porcine respiratory coronavirus",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hasoksuz",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Spiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Halpin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Stollar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Janies",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Hadya",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Ghedin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Virology",
+            "volume": "358",
+            "issn": "2",
+            "pages": "424--435",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Bovine-like coronaviruses isolated from four species of captive wild ruminants are homologous to bovine coronaviruses, based on complete genomic sequences",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Alekseev",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Vlasova",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Jung",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hasoksuz",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Halpin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Ghedin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Spiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Saif",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Virol",
+            "volume": "82",
+            "issn": "24",
+            "pages": "12422--12431",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Bats are natural reservoirs of SARS-like coronaviruses",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Epstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Crameri",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "",
+            "volume": "310",
+            "issn": "",
+            "pages": "676--679",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Preparation and characterization of SARS in-house reference antiserum",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Gong",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Song",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Vaccine",
+            "volume": "23",
+            "issn": "",
+            "pages": "5666--5669",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "ZCURVE_CoV: a new system to recognize protein coding genes in coronavirus genomes, and its applications in analyzing SARS-CoV genomes",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Ou",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Biochem Biophys Res Commun",
+            "volume": "307",
+            "issn": "2",
+            "pages": "382--388",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Recognition and analysis of protein-coding genes in severe acute respiratory syndrome associated coronavirus",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Sharma",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Maheshwari",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Prakash",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dash",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Brahmachari",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Bioinformatics",
+            "volume": "20",
+            "issn": "7",
+            "pages": "1074--1080",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Evolutionary dynamics of human rotaviruses: balancing reassortment with preferred genome constellations",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Mcdonald",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Matthijnssens",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Mcallen",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Hine",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Overton",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Lemey",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zeller",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Van Ranst",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Spiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS Pathog",
+            "volume": "5",
+            "issn": "10",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-11-451"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Cite this article as: Wang et al.: VIGOR, an annotation program for small viral genomes",
+            "authors": [],
+            "year": 2010,
+            "venue": "BMC Bioinformatics",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Selection of splice sites in influenza genomes and detection of ribosomal slippage sites in the first open reading frame of coronavirus genomes and SARS coronavirus genomes",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "The annotations in GenBank and predictions by VIGOR, FLAN, GeneMarkS and ZCURVE_V of segmented RNA viruses, influenza viruses (Flu) and rotaviruses (Rtv) + . Specificity; ++ Sensitivity. *. Discrepancy cases between this prediction and GenBank annotation.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Comparative analysis of the annotations in GenBank and predictions by VIGOR, GeneMarkS and ZCURVE_V of RNA viruses, coronaviruses (CoV), SARS coronaviruses (SARS) and rhinoviruses(Rhv)",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The authors would like to thank Dr. Elodie Ghedin for reviewing the manuscript and helpful discussion, and also thank Dr. Granger Sutton and Rebecca Halpin for their critical comments and suggestions. We also appreciate members of the Viral Genomics and Closure groups at JCVI for generating samples for testing. We are especially grateful to Haiyan Zhang and Ryan Johnson from IT department of JCVI for help with setting up and maintaining VIGOR website. We also appreciate the two anonymous reviewers for their valuable comments and suggestions. This work was supported by National Institute of Allergy contracts N01-AI-30071 and HHSN272200900007C. Authors' contributions SW designed and implemented the gene prediction programs, also helped with implementation of the web service back-end infrastructure, evaluated VIGOR, and drafted this manuscript. DS Designed this project and refined this manuscript. JPS designed and implemented the interface and web service back-end infrastructure and refined the manuscript. All authors read and approved the final manuscript. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        }
+    ]
+}

@@ -1,0 +1,2976 @@
+{
+    "paper_id": "9ea62d48ba2e9f9c122aa34759f9bcb5451a09f4",
+    "metadata": {
+        "title": "Evaluation and comparison of statistical methods for early temporal detection of outbreaks: A simulation-based study",
+        "authors": [
+            {
+                "first": "Gabriel",
+                "middle": [],
+                "last": "B\u00e9 Dubourg",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "CESPA",
+                    "location": {
+                        "settlement": "Marseille",
+                        "country": "France"
+                    }
+                },
+                "email": "*gabrielbedubourg@hotmail.fr"
+            },
+            {
+                "first": "Yann",
+                "middle": [],
+                "last": "Le Strat",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "French national public health agency",
+                    "location": {
+                        "addrLine": "111 Avenue de la Corse, BP 40026",
+                        "postCode": "F-94415, 13568",
+                        "settlement": "Saint-Maurice, Marseille Cedex 02",
+                        "country": "France, France"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "The objective of this paper is to evaluate a panel of statistical algorithms for temporal outbreak detection. Based on a large dataset of simulated weekly surveillance time series, we performed a systematic assessment of 21 statistical algorithms, 19 implemented in the R package surveillance and two other methods. We estimated false positive rate (FPR), probability of detection (POD), probability of detection during the first week, sensitivity, specificity, negative and positive predictive values and F 1 -measure for each detection method. Then, to identify the factors associated with these performance measures, we ran multivariate Poisson regression models adjusted for the characteristics of the simulated time series (trend, seasonality, dispersion, outbreak sizes, etc.). The FPR ranged from 0.7% to 59.9% and the POD from 43.3% to 88.7%. Some methods had a very high specificity, up to 99.4%, but a low sensitivity. Methods with a high sensitivity (up to 79.5%) had a low specificity. All methods had a high negative predictive value, over 94%, while positive predictive values ranged from 6.5% to 68.4%. Multivariate Poisson regression models showed that performance measures were strongly influenced by the characteristics of time series. Past or current outbreak size and duration strongly influenced detection performances.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Citation: B\u00e9dubourg G, Le Strat Y (2017) Evaluation and comparison of statistical methods for early temporal detection of outbreaks: A simulation-based study. PLoS ONE 12(7): e0181227. https://doi.org/10.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Public health surveillance is the ongoing, systematic collection, analysis, interpretation, and dissemination of data for use in public health action to reduce morbidity and mortality of health-related events and to improve health [1] . One of the objectives of health surveillance is outbreak detection, which is crucial to enabling rapid investigation and implementation of control measures [2] . The threat of bioterrorism has stimulated interest in improving health surveillance systems for early detection of outbreaks [3, 4] reemergence of infectious diseases such as Middle East Respiratory Syndrome due to New Coronavirus (MERS-CoV) in 2012 [5] or Ebola in West Africa in 2014 [6] . Nowadays, a large number of surveillance systems are computer-supported. The computer support and statistical alarms are intended to improve outbreak detection for traditional or syndromic surveillance [7, 8] . These systems routinely monitor a large amount of data, recorded as time series of counts in a given geographic area for a given population. They produce statistical alarms that need to be confirmed by an epidemiologist, who determines if further investigation is needed. One limitation of these detection systems is an occasional lack of specificity, leading to false alarms that can overwhelm the epidemiologist with verification tasks [9, 10] . It is thus important to implement statistical methods that offer a good balance between sensitivity and specificity in order to detect a large majority of outbreaks without generating too many false positive alarms.",
+            "cite_spans": [
+                {
+                    "start": 231,
+                    "end": 234,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 393,
+                    "end": 396,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 524,
+                    "end": 527,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 528,
+                    "end": 530,
+                    "text": "4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 649,
+                    "end": 652,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 685,
+                    "end": 688,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 893,
+                    "end": 896,
+                    "text": "[7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 897,
+                    "end": 899,
+                    "text": "8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 1340,
+                    "end": 1343,
+                    "text": "[9,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 1344,
+                    "end": 1347,
+                    "text": "10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "In the literature, a broad range of statistical methods has been proposed to detect outbreaks from surveillance data. The main statistical approaches have been reviewed by Shmueli et al. [11] and Unkel et al. [12] . By restricting these reviews to the methods that allow temporal detection of outbreaks without integrating the spatial distribution of cases, the general principle is to identify a time interval in which the observed number of cases of an event under surveillance (i.e. the number of reported cases) is significantly higher than expected. This identification is mainly based on a two-step process: First, an expected number of cases of the event of interest for the current time unit (generally a week or a day) is estimated and then compared to the observed value by a statistical test. A statistical alarm is triggered if the observed value is significantly different from the expected value. The main difference between statistical methods lies in how the expected value is estimated, which is most often done using statistical process control or regression techniques or combination of both [12] .",
+            "cite_spans": [
+                {
+                    "start": 187,
+                    "end": 191,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 209,
+                    "end": 213,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1111,
+                    "end": 1115,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "A major constraint to the practical implementation of these methods is their capacity to be run on an increasing number of time series, provided by multiple sources of information, and centralized in large databases [3, 13, 14] . Monitoring a large number of polymorphic time series requires flexible statistical methods to deal with several well-known characteristics observed in time series: the frequency and variance of the number of cases, secular trend and one or more seasonality terms [14] . Even if some authors proposed to classify time series into a small number of categories and sought suitable algorithms for each category, in this automated and prospective framework, statistical methods cannot easily be fine tuned by choosing the most appropriate parameters adapted to each time series in an operational way, as explained by Farrington et al. [15] .",
+            "cite_spans": [
+                {
+                    "start": 216,
+                    "end": 219,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 220,
+                    "end": 223,
+                    "text": "13,",
+                    "ref_id": null
+                },
+                {
+                    "start": 224,
+                    "end": 227,
+                    "text": "14]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 493,
+                    "end": 497,
+                    "text": "[14]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 860,
+                    "end": 864,
+                    "text": "[15]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "A key question for public health practitioners is what method(s) can be adopted to detect the effects of unusual events on the data. Some authors have proposed a systematic assessment of the performances of certain methods in order to choose one reference algorithm [16] [17] [18] [19] [20] . They assessed these methods on a real dataset [16, 21] , a simulated dataset [18-20, 22, 23] or on real time series for which simulated outbreaks were added [24, 25] . Simulating data offers the advantage of knowing the exact occurrence of the simulated outbreaks and their characteristics (amplitude, etc.). For example, Lotze et al. developed a simulated dataset of time series and outbreak signatures [26] . In the same way, Noufaily et al. [9] proposed a thorough simulation study to improve the Farrington algorithm [15] . Guillou et al. [27] compared the performance of their own algorithm to that of the improved Farrington, using the same simulated dataset. This dataset was also used by Salmon et al. to assess their method [28] .",
+            "cite_spans": [
+                {
+                    "start": 266,
+                    "end": 270,
+                    "text": "[16]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 271,
+                    "end": 275,
+                    "text": "[17]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 276,
+                    "end": 280,
+                    "text": "[18]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 281,
+                    "end": 285,
+                    "text": "[19]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 286,
+                    "end": 290,
+                    "text": "[20]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 339,
+                    "end": 343,
+                    "text": "[16,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 344,
+                    "end": 347,
+                    "text": "21]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 370,
+                    "end": 385,
+                    "text": "[18-20, 22, 23]",
+                    "ref_id": null
+                },
+                {
+                    "start": 450,
+                    "end": 454,
+                    "text": "[24,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 455,
+                    "end": 458,
+                    "text": "25]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 697,
+                    "end": 701,
+                    "text": "[26]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 737,
+                    "end": 740,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 814,
+                    "end": 818,
+                    "text": "[15]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 836,
+                    "end": 840,
+                    "text": "[27]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 1026,
+                    "end": 1030,
+                    "text": "[28]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "To our knowledge, no study has been proposed to thoroughly evaluate and compare the performance of a broad range of methods on a large simulated dataset.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The objective of this paper is to evaluate the performance of 21 statistical methods applied to large simulated datasets for outbreak detection in weekly health surveillance. The simulated dataset is presented in Section 2. The 21 evaluated methods and performance measures are described in Section 3. Evaluations and comparisons are presented in Section 4. A discussion follows in the last section.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "We simulated data following the approach proposed by Noufaily et al. [9] .",
+            "cite_spans": [
+                {
+                    "start": 69,
+                    "end": 72,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Materials"
+        },
+        {
+            "text": "First, simulated baseline data (i.e. time series of counts in the absence of outbreaks) were generated from a negative binomial model of mean \u03bc and variance \u03d5\u03bc, \u03d5 being the dispersion parameter !1. The mean at time t, \u03bc(t), depends on a trend and seasonality modeled using Fourier terms:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Materials"
+        },
+        {
+            "text": "Time series were simulated from 42 parameter combinations (called scenarios and presented in Table 1 in [9] ) with different values taken by \u03b8, \u03b2, \u03b3 1 , \u03b3 2 , m and \u03d5, respectively associated with the baseline frequency of counts, trend, seasonality (no seasonality: m = 0, annual seasonality: m = 1, biannual seasonality: m = 2) and the dispersion parameter. For each scenario, 100 replicates of the baseline data (time series with 624 weeks) were generated. We thus obtained 42 \u00d7 100 = 4200 simulated time series. The last 49 weeks of each time series were named current weeks. The evaluated algorithms were run on these most recent 49 weeks. Performance measures described below were computed based on detection during these 49 weeks.",
+            "cite_spans": [
+                {
+                    "start": 104,
+                    "end": 107,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 93,
+                    "end": 100,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Materials"
+        },
+        {
+            "text": "Secondly, for each time series, five outbreaks were simulated. Four outbreaks were generated in baseline weeks. Each outbreak started at a randomly drawn week and we generated the outbreak size (i.e. the number of outbreak cases) as Poisson with mean equal to a constant k 1 times the standard deviation of the counts observed at the starting week. The fifth outbreak was generated in the current weeks in the same manner, using another constant noted k 2 . We chose the values of k 1 to be 0, 2, 3, 5 and 10 in baseline weeks and k 2 from 1 to 10 in current weeks as in [9] .",
+            "cite_spans": [
+                {
+                    "start": 571,
+                    "end": 574,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Materials"
+        },
+        {
+            "text": "Finally, outbreak cases were randomly distributed according to a lognormal distribution with mean 0 and standard deviation 0.5.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Materials"
+        },
+        {
+            "text": "A total of 231,000 time series were generated from the 42 scenarios: 21,000 time series during the first step of simulation process (42 \u00d7 100 duplicates \u00d7 5 values for k 1 ), and 210,000 time series during the second step of simulation process (21,000 \u00d7 10 values for k 2 ), leading to a large simulated dataset including a great variety of time series, as observed in real surveillance data. At the end of the simulation process, 10,290,000 current weeks were generated, among which 6.2% were classified as outbreak weeks as they were included in an outbreak.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Materials"
+        },
+        {
+            "text": "We studied 21 statistical methods, 19 of which were implemented in the R package surveillance [29, 30] :",
+            "cite_spans": [
+                {
+                    "start": 94,
+                    "end": 98,
+                    "text": "[29,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 99,
+                    "end": 102,
+                    "text": "30]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "\u2022 CUSUM variants: original CUSUM [29, 32] , a Rossi approximate CUSUM [32] , a CUSUM algorithm for which the expected values are estimated by a GLM model [29] , a mixed Rossi approximate CUSUM GLM algorithm [29] ,",
+            "cite_spans": [
+                {
+                    "start": 33,
+                    "end": 37,
+                    "text": "[29,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 38,
+                    "end": 41,
+                    "text": "32]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 70,
+                    "end": 74,
+                    "text": "[32]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 154,
+                    "end": 158,
+                    "text": "[29]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 207,
+                    "end": 211,
+                    "text": "[29]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "\u2022 the original Farrington algorithm [15] and the improved Farrington algorithm [9] ,",
+            "cite_spans": [
+                {
+                    "start": 36,
+                    "end": 40,
+                    "text": "[15]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 79,
+                    "end": 82,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "\u2022 a count data regression chart (GLRNB) [29, 33] and a Poisson regression chart (GLR Poisson) [29, 34] ,",
+            "cite_spans": [
+                {
+                    "start": 40,
+                    "end": 44,
+                    "text": "[29,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 45,
+                    "end": 48,
+                    "text": "33]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 94,
+                    "end": 98,
+                    "text": "[29,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 99,
+                    "end": 102,
+                    "text": "34]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "\u2022 the OutbreakP method [35] ,",
+            "cite_spans": [
+                {
+                    "start": 23,
+                    "end": 27,
+                    "text": "[35]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "\u2022 EARS C1, C2 and C3 algorithms [19, 36] For all simulated time series, we used the tuning parameters recommended by their authors for each algorithm when available and proposed by default in the package surveillance. The commands used from the R package surveillance and the control tuning parameters chosen for these 19 algorithms are presented in Table 1 .",
+            "cite_spans": [
+                {
+                    "start": 32,
+                    "end": 36,
+                    "text": "[19,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 37,
+                    "end": 40,
+                    "text": "36]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 350,
+                    "end": 357,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "We also proposed two additional methods not implemented in the package surveillance:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "\u2022 a periodic Poisson regression where \u03bc(t) is defined as in Eq (1). The threshold is the 1 \u2212 \u03b1 quantile of a Poisson distribution with mean equal to the predicted value at week t.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "\u2022 a periodic negative binomial regression, also defined as in Eq (1), where the threshold is the 1 \u2212 \u03b1 quantile of a negative binomial distribution with mean equal to the predicted value at week t and a dispersion parameter estimated by the model. RKI 3 algo.rki3() - [29] GLR Negative Binomial algo.glrnb() ARL = 5, dir = \"inc\" [29, 33] GLR Poisson algo.glrpois() ARL = 5, dir = \"inc\" [29, 34] EARS C1 earsC() method = \"C1\", \u03b1 1 [19, 36] EARS C2 earsC() method = \"C2\", \u03b1 1 [19, 36] EARS C3 earsC() method = \"C3\", \u03b1 1 [19, 36] OutbreakP algo.outbreakP() K = 100, ret = c(\"value\") [35] These last two models were run on all the historical data. An alarm was triggered if the observed number of cases was greater than the upper limit of the prediction interval. These two methods are basic periodic regressions. The R code of these two algorithms is presented in the S24 Appendix.",
+            "cite_spans": [
+                {
+                    "start": 268,
+                    "end": 272,
+                    "text": "[29]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 329,
+                    "end": 333,
+                    "text": "[29,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 334,
+                    "end": 337,
+                    "text": "33]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 386,
+                    "end": 390,
+                    "text": "[29,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 391,
+                    "end": 394,
+                    "text": "34]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 430,
+                    "end": 434,
+                    "text": "[19,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 435,
+                    "end": 438,
+                    "text": "36]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 474,
+                    "end": 478,
+                    "text": "[19,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 479,
+                    "end": 482,
+                    "text": "36]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 518,
+                    "end": 522,
+                    "text": "[19,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 523,
+                    "end": 526,
+                    "text": "36]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 580,
+                    "end": 584,
+                    "text": "[35]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "We evaluated the performances of the methods with three different \u03b1 values: \u03b1 = 0.001, \u03b1 = 0.01 and \u03b1 = 0.05.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Statistical methods"
+        },
+        {
+            "text": "We considered eight measures to assess the performance of the methods:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 1 is false positive rate (FPR). For each method and each scenario, we calculated the FPR defined as the proportion of weeks corresponding to an alarm in the absence of an outbreak, as in [9] . Nominal FPRs were 0.0005 for analyses with \u03b1 = 0.001, 0.005 for analyses with \u03b1 = 0.01 or 0.025 for analyses with \u03b1 = 0.05.",
+            "cite_spans": [
+                {
+                    "start": 197,
+                    "end": 200,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 2 is probability of detection (POD). For each scenario and for each current week period, if an alarm is generated at least once between the start and the end of an outbreak, the outbreak is considered to be detected [9] . POD is an event-based sensitivity (i.e. the entire outbreak interval is counted as a single observation for the sensitivity measurement) and is thus the proportion of outbreaks detected in 100 replicates.",
+            "cite_spans": [
+                {
+                    "start": 226,
+                    "end": 229,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 3 is probability of detection during the first week (POD1week), which makes it possible to evaluate the methods' ability to enable early control measures.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 4 is observation-based sensitivity (Se): Outbreak weeks associated with an alarm were defined as True Positive (TP), non-outbreak weeks without alarm as True Negative (TN), outbreak weeks without alarm as False Negative (FN) and non-outbreak weeks with alarm as False Positive (FP). Thus, Se = TP/(TP+FN).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 5 is specificity (Sp) defined as Sp = TN/(TN+FP). Unlike FPR which was calculated on current weeks without any simulated outbreak, specificity was calculated on the entire number of current weeks out of the 210 000 time series including current outbreaks.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 6 is positive predictive value (PPV) defined as: PPV = TP/(TP+FP).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 7 is negative predictive value (NPV) defined as: NPV = TN/(TN+FN).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "\u2022 Measure 8 is F 1 -measure defined as the harmonic mean of the sensitivity and the PPV:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "In the result section, we proposed to calculate averaged performance measures, i.e. to calculate FPR on the overall 21,000 time series without outbreak during the current weeks, and to calculate the other performance measures on the overall 210,000 time series with simulated outbreaks during the current weeks.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "FPR was estimated prior to the simulation of current outbreaks, i.e. among the 49 current weeks for 21,000 (5 \u00d7 4,200) time series. Other indicators (POD, POD1week, Se, Sp, PPV, NPV) were estimated once outbreaks had been simulated, i.e. on the current weeks of all the time series (210,000 time series).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "For each \u03b1 value, we proposed ROC curve-like representation of these results with four plots representing sensitivity according to 1-specificity, POD and POD1week as functions of FPR, and sensitivity according to PPV.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance measures"
+        },
+        {
+            "text": "To identify the factors associated with the performance measures for \u03b1 = 0.01 and assess the strength of associations, multivariate Poisson regression models [38] were run, as in Barboza et al. [39] or Buckeridge et al. [40] . A set of covariates corresponding to the characteristics of the simulated time series was included: trend (yes/no), seasonality (no/annual/biannual), the baseline frequency coefficient \u03b8, the dispersion coefficient \u03d5 and k 1 representing the amplitude and duration of past outbreaks. The last three covariates and k 2 were treated as continuous and modeled using fractional polynomials. The statistical methods were introduced as covariates to estimate performance ratios, i.e. the ratios of performances of two methods, adjusted for the characteristics of the time series represented by the other covariates.",
+            "cite_spans": [
+                {
+                    "start": 158,
+                    "end": 162,
+                    "text": "[38]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 194,
+                    "end": 198,
+                    "text": "[39]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 220,
+                    "end": 224,
+                    "text": "[40]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Factors associated with the performance measures"
+        },
+        {
+            "text": "Adjusted FPR, POD, POD1week, sensitivity, and specificity ratios were estimated with the improved Farrington algorithm as reference. 95% confidence intervals were calculated with robust estimation of standard errors. For each continuous covariate modeled by fractional polynomials, ratios were presented for each value [41] .",
+            "cite_spans": [
+                {
+                    "start": 319,
+                    "end": 323,
+                    "text": "[41]",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Factors associated with the performance measures"
+        },
+        {
+            "text": "The simulation study, the implementation of the detection methods, and the estimations of performance were carried out using R (version 3.2.2), in particular using the package surveillance. Poisson regression models used to identify the factors associated with the performance measures and to assess the strength of associations were run using Stata 14.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Factors associated with the performance measures"
+        },
+        {
+            "text": "In this section, we present the averaged performances of each evaluated method, i.e. the performances irrespective of the scenario and of the characteristics of the time series. Table 2 presents averaged FPR, specificity, POD, POD1week, sensitivity, negative predictive value, positive predictive value and F 1 -measure for all 42 scenarios and all past and current outbreak amplitude and duration and for \u03b1 = 0.01. Overall, FPR ranged from 0.7% to 59.9% and POD from 43.3% to 88.7%. Methods with the highest specificity, such as the improved Farrington method or the periodic negative binomial regression, presented a POD lower than 45% and a sensitivity lower than 21%. Averaged measures for \u03b1 = 0.001 and \u03b1 = 0.05 are presented in S1 Table  and S2 Table. RKI 1-3, GLR Negative Binomial, GLR Poisson, Bayes 1-3 and OutbreakP algorithms' performances do not vary with \u03b1 values (see Table 1 ). Their performances are only reported in Table 2 . For each method, a radar chart presenting the measures 1-7 for \u03b1 = 0.01 is proposed in the S23 Appendix. . Two groups stand out from the rest. The first group consists of Bayes 1, 2 and 3. These methods present the best POD (around 0.8) and POD1week with a FPR around 10%. The second group consists of the 4 CUSUM methods: CUSUM, CUSUM Rossi, CUSUM GLM, and CUSUM GLM Rossi. For \u03b1 = 0.01, these methods present the best sensitivity (around 0.80) but the lowest specificity (0.55) and the highest FPR (0.40). Note that while of the algorithm test statistics are based on the likelihood of single-week observations independent of recent ones, CuSUMs are not, and they may be important for applications where detection of gradual events rather than one-week spikes is especially critical. The OutbreakP method had the lowest specificity without having a better POD or POD1week than the first two groups. Finally, a third group consists of the other methods that had good specificity (over 0.9) but a lower sensitivity, POD and POD1week than the first two groups. All 21 methods presented a high negative predictive value, greater than 94%. The PPV of OutbreakP is very low (6.5%), while the Periodic Negative Binomial GLM method had the highest PPV (68.4%).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 178,
+                    "end": 185,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 737,
+                    "end": 757,
+                    "text": "Table  and S2 Table.",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 883,
+                    "end": 890,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 934,
+                    "end": 941,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "A first attempt to visualize certain differences is to plot POD and FPR according to the scenario and the k 1 or k 2 values. To illustrate this, Fig 2 shows the performances of the CDC method. The first row represents FPR for an increasing past outbreak constant k 1 = 0, 2, 3, 5 and 10 according to the 42 scenarios. The second row shows POD according to k 2 for the 42 scenarios (each curve corresponds to a simulated scenario) for an increasing past outbreak constant k 1 = 0, 2, 3, 5 and 10. It clearly shows that performance depends on the scenario. The same plots with tables presenting numerical values for each method and different \u03b1 values are presented in the S2 Appendix to S22 Appendix. To better compare the 21 methods, we presented on a single display in the S1 Appendix, their FPR according to the scenarios and their POD according to the k 2 values for k 1 = 5 and \u03b1 = 0.01.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 145,
+                    "end": 156,
+                    "text": "Fig 2 shows",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "To better understand which characteristics are associated with each performance and to compare each method with the improved Farrington method, we present the results obtained from the multivariate Poisson regression models in the next section.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "Adjusted performance ratios and associated factors Table 3 presents the adjusted performance ratios for performance measures 1 to 5 as described in the Methods' section (\u03b1 = 0.01 for Improved Farrington, Original Farrington, Periodic Poisson GLM and Neg Binomial GLM, CDC and EARS C1-C3. \u03b1 = 0.05 for Bayes 1-3). Evaluation and comparison of statistical methods for early temporal detection of outbreaks \u2022 Adjusted FPR ratios decreased when the amplitude and duration (driven by k 1 in Eq (1)) of past outbreaks increased. It is indeed more difficult to detect an outbreak when past outbreaks have occurred, especially when these outbreaks are large and when the method does not under-weight their influence to estimate the expected number of cases. Adjusted FPR ratio was 2.75 times higher for time series with a secular trend than for the others. As we simulated time series with a non-negative trend (\u03b2 ! 0 in Eq (1)), it was expected that FPR would decrease with a trend, especially for methods which do not integrate a trend in the estimation of the expected number of cases. In the same way, annual seasonality-and biannual seasonality to an even greater extent-and overdispersion increased FPR. We observed a nonlinear relation between FPR and baseline frequency: FPR ratio increased from the lowest frequencies to 12 cases per week, then decreased for the highest frequencies, with no clear explanation. Only periodic negative binomial GLM presented a FPR lower than improved Farrington FPR (FPR ratio = 0.71). Adjusted FPR ratios of OutbreakP and all CUSUM variants were higher than 40. Another group of methods all presented FPR ratios below 10: CDC, RKI variants, EARS methods, periodic Poisson GLM, original Farrington, Bayes 2 and GLR negative binomial. FPR ratios for other methods (Bayes 1 and 3, and GLR Poisson) were between 10 and 17.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 51,
+                    "end": 58,
+                    "text": "Table 3",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "\u2022 Adjusted specificity ratios were almost all equal to 1 as the amplitude and duration of past outbreaks had little influence on specificity. They were significantly lower for time series with a secular trend (adjusted specificity ratio = 0.84) or with annual or biannual seasonality (respective ratios: 0.99 and 0.98). Specificity decreased when dispersion increased but increased when the baseline frequency (\u03b8 in Eq (1)) increased. Only the periodic negative binomial GLM presented a specificity as good as that of the improved Farrington method (specificity ratio = 1.00).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "\u2022 The adjusted POD ratios significantly decreased when past outbreak amplitude and duration (k 1 ) increased, which is logical. They increased when current outbreak amplitude and duration (k 2 ) increased, which is also normal. POD was higher for time series with secular trends which can be explained by the positive trend. POD decreased when there was an annual or a biannual seasonality (respective POD ratio = 0.97 and 0.92). Only the highest dispersion value (\u03b8 = 5) had an influence on POD (adjusted POD ratio = 1.09). Bayes 1, 2 and 3, CUSUM variants and the GLR Poisson method presented the highest POD ratios, from 1.75 (GLR Poisson) to 1.95 (CUSUM GLM). Any method was less able to detect an outbreak than the improved Farrington algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "\u2022 POD1week presented results that were similar to those of POD. Adjusted POD1week ratios were significantly lower than those of POD for EARS C3 (0.25 versus 1.25), for CDC (0.55 versus 1.04) and for GLR negative binomial (1.17 versus 0.87). Other methods presented ratios for POD1week that were similar to or greater than those of POD.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "\u2022 Finally, similar results were observed for sensitivity and for POD. Bayes 2 and 3 methods, OutbreakP, RKI 3, CUSUM variants and the GLR Poisson method presented the highest sensitivity ratios, from 2.04 (RKI 3) to 3.89 (CUSUM GLM). As observed in the POD model, any method was less able to detect an outbreak than the improved Farrington algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "Estimation from the multivariate regression models to explain PPV and NPV are presented in S3 Table.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Averaged performances of the methods"
+        },
+        {
+            "text": "We presented a systematic assessment of the performance of 21 outbreak detection algorithms using a simulated dataset. One advantage of a simulation study for outbreak detection methods benchmarking is the a priori knowledge of the occurrence of outbreaks, which enables the developpment of a real \"gold standard\". Some authors have already proposed that simulation studies be used to assess outbreak detection methods [18, 19, 23] , and others have suggested adding simulated outbreaks to real surveillance data baselines [16, 24, 25] , but without proposing a systematic assessment of the performance of a broad range of outbreak detection methods. Choi et al. [20] proposed such a study design based on the daily simulation method proposed by Hutwagner et al. [18] but do not study the influence of past outbreaks or time series characteristics (frequency, variance, secular trends, seasonalities, etc.), on methods performance.",
+            "cite_spans": [
+                {
+                    "start": 419,
+                    "end": 423,
+                    "text": "[18,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 424,
+                    "end": 427,
+                    "text": "19,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 428,
+                    "end": 431,
+                    "text": "23]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 523,
+                    "end": 527,
+                    "text": "[16,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 528,
+                    "end": 531,
+                    "text": "24,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 532,
+                    "end": 535,
+                    "text": "25]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 663,
+                    "end": 667,
+                    "text": "[20]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 763,
+                    "end": 767,
+                    "text": "[18]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The simulated dataset we used to perform our study is large enough to include the considerable diversity of time series observed in real surveillance systems. We also simulated a high diversity of outbreaks in terms of amplitude and duration. In our opinion, this simulated dataset presents a high representativeness of real weekly surveillance data. To extend our results to daily surveillance data, it should be necessary to perform a similar study with daily surveillance data. These characteristics of the simulated dataset enabled us to propose simple intrinsic performance indicator estimations such as FPR and POD and sensitivity and specificity to compare the performance of the evaluated methods. Furthermore, this allows us to compare our results to other studies based on the same dataset. Negative predictive value and positive predictive value are proposed as operational indicators for decision making when an alarm is triggered, or not triggered, by an algorithm. A benefit of the addition of outbreaks to the baseline weeks is that outlier removal strategies considered by many authors may be objectively tested and evaluated. One limitation in the simulation process was the fact that only increasing secular trends were used. Increasing secular trends would facilitate outbreak detection, while decreasing trends would hamper it. Furthermore, our study was designed based on weekly surveillance, while syndromic surveillance systems are most often daily systems. In daily surveillance time series, other seasonalities such as the \"day of the week\" effect need to be taken into account, which is not the case in our study.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The performance of the evaluated methods was only considered from a general perspective, in order to detect outbreaks in a large number of polymorphic weekly-based time series. In a pragmatic approach, it seems very difficult to adapt the tuning parameters of these methods for every time series. In France, public health agencies, such as the French National Public Health Agency (Sant\u00e9 publique France), the French Agency for Food, Environmental and Occupational Health Safety (Anses) and the French Armed Forces Center for Epidemiology and Public Health (CESPA) have deployed computer-supported outbreak detection systems in traditional or syndromic surveillance contexts [42] [43] [44] [45] . They monitor a broad range of time series on a daily or weekly basis without, however, having rigorously evaluated the algorithms implemented. In the same way, the performance of the methods varied according to different baseline profiles depending on trend, seasonality, baseline frequency and overdispersion. Even if similar meta-models were already proposed by Buckeridge et al. for example [40] , an original approach was to compare performance indicators adjusted for these parameters in a regression model. As expected, the adjusted performance of the 21 methods was penalized by increasing amplitude and duration in past outbreaks and by annual or biannual seasonality. Conversely, performance was better for increasing amplitude and duration in current outbreaks to be detected. More generally, the methods' performance was highly dependent on simulation tuning parameters.",
+            "cite_spans": [
+                {
+                    "start": 675,
+                    "end": 679,
+                    "text": "[42]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 680,
+                    "end": 684,
+                    "text": "[43]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 685,
+                    "end": 689,
+                    "text": "[44]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 690,
+                    "end": 694,
+                    "text": "[45]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 1091,
+                    "end": 1095,
+                    "text": "[40]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We proposed various measures to monitor the performance of outbreak detection methods. False positive rate (FPR) and probability of detection (POD) were proposed by Noufaily et al. [9] . We proposed an observation-based sensitivity measure and an event based sensitivity (POD). The concept of sensitivity based on alerting in each observation period is not applicable in some applications because signals of interest are intermittent and multimodal and may even be interpreted as multiple events. Many of the algorithms are based on the likelihood of single-week observations independent of recent ones, but CUSUMs are not, and the large sensitivity advantage in the CUSUMs methods, diminished for POD and POD1week, may be a result of the way the outbreak effects are modeled. By contrast, the implementation of the POD measure is uniformly applicable. Public health response to an outbreak depends on its early detection. In the POD definition, an outbreak was considered to be detected even if the first statistical alarm was issued during its last week. With the aim of estimating early detection performance, we also proposed POD during the first week, which cannot be considered alone, because even if it is done belatedly, an outbreak needs to be detected by the methods. While",
+            "cite_spans": [
+                {
+                    "start": 181,
+                    "end": 184,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "POD1week was an indicator of a method's ability to detect an outbreak early, we did not propose any measure of timeliness like Salmon et al. [28] or Jiang et al. [45] . This topic could be further explored in another study. To give some insight on the speed of detection, we calculated it for the Improved Farrington algorithm and the CUSUM GLM Rossi algorithm. On average, on the overall dataset, it took 1.23 weeks for the Improved Farrincton method to detect an outbreak or 1.16 weeks for the CUSUM GLM Rossi method.",
+            "cite_spans": [
+                {
+                    "start": 141,
+                    "end": 145,
+                    "text": "[28]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 162,
+                    "end": 166,
+                    "text": "[45]",
+                    "ref_id": "BIBREF43"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "No method presented outbreak detection performances sufficient enough to provide reliable monitoring for a large surveillance system. Methods which provide high specificity or FPR, such as the improved Farrington or CDC algorithms, are not sensitive enough to detect the majority of outbreaks. These two algorithms could be implemented in systems that monitor health events to detect the largest outbreaks with the highest specificity.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Conversely, methods with the highest sensitivity and able to detect the majority of outbreaks-Bayes 3 or CUSUM GLM Rossi for example-produced an excessive number of false alarms, which could saturate a surveillance system and overhelm an epidemiologist in charge of outbreak investigations. As a screening test in clinical activity, the aim of an early outbreak detection method is to identify the largest possible number of outbreaks without producing too many false alarms.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The performances presented in this paper should be interpreted with caution as they depend both on tuning parameters and on the current implementation of the methods in the R packages. Packages evolve with time and their default parameters may also change. So this work based on R available packages, may be viewed as a starting point for researchers to enhance the comparison of methods and/or to optimize the tuning according to their data. Since no single algorithm presented sufficient performance for all scenarios, combinations of methods must be investigated to achieve predefined minimum performance. Other performance criteria should be proposed in order to improve the choice of algorithms to be implemented in surveillance systems. Therefore, we suggest that a study of the detection period between the first week of an outbreak and the first triggered alarm be conducted. Table. FPR, specificity, POD, POD1week, sensitivity, negative predictive value, positive predictive value and F 1 -measure for 12 evaluated methods and \u03b1 = 0.001 (for past outbreak constant k 1 = 0, 2, 3, 5, 10 and current outbreak k 2 = 1 to 10 for POD and sensitivity). (PDF) S2 Table. FPR, specificity, POD, POD1week, sensitivity, negative predictive value, positive predictive value and F 1 -measure for 15 evaluated methods and \u03b1 = 0.05 (for past outbreak constant k 1 = 0, 2, 3, 5, 10 and current outbreak k 2 = 1 to 10 for POD and sensitivity). (PDF) S3 Table. Other performance ratios, adjusted on past and current outbreak duration and amplitude, trend, seasonality, dispersion and baseline frequency (\u03b1 = 0.01 for Improved ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 884,
+                    "end": 890,
+                    "text": "Table.",
+                    "ref_id": null
+                },
+                {
+                    "start": 1165,
+                    "end": 1171,
+                    "text": "Table.",
+                    "ref_id": null
+                },
+                {
+                    "start": 1445,
+                    "end": 1451,
+                    "text": "Table.",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Framework for evaluating public health surveillance systems for early detection of outbreaks: recommendations from the CDC Working Group. MMWR Recommendations and reports: Morbidity and mortality weekly report Recommendations and reports / Centers for Disease Control",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Buehler",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Hopkins",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Overhage",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Sosin",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Tong",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Cdc Working",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Group",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "",
+            "volume": "53",
+            "issn": "",
+            "pages": "1--11",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "The emerging science of very early detection of disease outbreaks",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Wagner",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Tsui",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "U"
+                    ],
+                    "last": "Espino",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dato",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Sittig",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Caruana",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "JPHMP",
+            "volume": "7",
+            "issn": "6",
+            "pages": "51--59",
+            "other_ids": {
+                "DOI": [
+                    "10.1097/00124784-200107060-00006"
+                ],
+                "PMID": [
+                    "11710168"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Statistical issues and challenges associated with rapid detection of bio-terrorist attacks",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Fienberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Shmueli",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Statistics in Medicine",
+            "volume": "24",
+            "issn": "4",
+            "pages": "513--529",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.2032"
+                ],
+                "PMID": [
+                    "15678405"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Outbreak detection through automated surveillance: a review of the determinants of detection",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Buckeridge",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Journal of Biomedical Informatics",
+            "volume": "40",
+            "issn": "4",
+            "pages": "370--379",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jbi.2006.09.003"
+                ],
+                "PMID": [
+                    "17095301"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Isolation of a novel coronavirus from a man with pneumonia in Saudi Arabia",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Zaki",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Van Boheemen",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bestebroer",
+                    "suffix": ""
+                },
+                {
+                    "first": "Adme",
+                    "middle": [],
+                    "last": "Osterhaus",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ram",
+                    "middle": [],
+                    "last": "Fouchier",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "The New England Journal of Medicine",
+            "volume": "367",
+            "issn": "19",
+            "pages": "1814--1820",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMoa1211721"
+                ],
+                "PMID": [
+                    "23075143"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "The next epidemic-lessons from Ebola",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Gates",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "The New England Journal of Medicine",
+            "volume": "372",
+            "issn": "15",
+            "pages": "1381--1384",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMp1502918"
+                ],
+                "PMID": [
+                    "25853741"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Practical usage of computer-supported outbreak detection in five European countries",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Hulth",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Andrews",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ethelberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Dreesman",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Faensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Van Pelt",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Euro Surveillance: Bulletin Europ\u00e9en Sur Les Maladies Transmissibles",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A system for automated outbreak detection of communicable diseases in Germany",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Salmon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Schumacher",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Burmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Frank",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Claus",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "H\u00f6hle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Euro Surveillance: Bulletin Europ\u00e9en Sur Les Maladies Transmissibles",
+            "volume": "21",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "An improved algorithm for outbreak detection in multiple surveillance systems",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Noufaily",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Enki",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Farrington",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Garthwaite",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Andrews",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Charlett",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Statistics in Medicine",
+            "volume": "32",
+            "issn": "7",
+            "pages": "1206--1222",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.5595"
+                ],
+                "PMID": [
+                    "22941770"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Public health monitoring tools for multiple data streams. MMWR Morbidity and mortality weekly report",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Burkom",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Murphy",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Coberly",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Hurt-Mullen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "",
+            "volume": "54",
+            "issn": "",
+            "pages": "55--62",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Statistical Challenges Facing Early Outbreak Detection in Biosurveillance",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Shmueli",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Burkom",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "",
+            "volume": "52",
+            "issn": "",
+            "pages": "39--51",
+            "other_ids": {
+                "DOI": [
+                    "10.1198/TECH.2010.06134"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Statistical methods for the prospective detection of infectious disease outbreaks: a review",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Unkel",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Farrington",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Garthwaite",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Robertson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Andrews",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Journal of the Royal Statistical Society: Series A (Statistics in Society)",
+            "volume": "175",
+            "issn": "1",
+            "pages": "49--82",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1467-985X.2011.00714.x"
+                ],
+                "PMID": [
+                    "15714619"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Automated biosurveillance data from England and Wales",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Enki",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Noufaily",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Garthwaite",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Andrews",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Charlett",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lane",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "Emerging Infectious Diseases",
+            "volume": "19",
+            "issn": "1",
+            "pages": "35--42",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1901.120493"
+                ],
+                "PMID": [
+                    "23260848"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "A Statistical Algorithm for the Early Detection of Outbreaks of Infectious Disease",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Farrington",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Andrews",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Beale",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Catchpole",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "Journal of the Royal Statistical Society Series A (Statistics in Society)",
+            "volume": "159",
+            "issn": "3",
+            "pages": "547--563",
+            "other_ids": {
+                "DOI": [
+                    "10.2307/2983331"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "An evaluation and comparison of three commonly used statistical models for automatic detection of outbreaks in epidemiological data of communicable diseases",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rolfhamre",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Ekdahl",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Epidemiology and Infection",
+            "volume": "134",
+            "issn": "4",
+            "pages": "863--871",
+            "other_ids": {
+                "DOI": [
+                    "10.1017/S095026880500573X"
+                ],
+                "PMID": [
+                    "16371181"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Assessing surveillance using sensitivity, specificity and timeliness",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Kleinman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Abrams",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Statistical Methods in Medical Research",
+            "volume": "15",
+            "issn": "5",
+            "pages": "445--464",
+            "other_ids": {
+                "DOI": [
+                    "10.1177/0962280206071641"
+                ],
+                "PMID": [
+                    "17089948"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Comparing aberration detection methods with simulated data",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Hutwagner",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Browne",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Seeman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Fleischauer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Emerging Infectious Diseases",
+            "volume": "11",
+            "issn": "2",
+            "pages": "314--316",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1102.040587"
+                ],
+                "PMID": [
+                    "15752454"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Comparing syndromic surveillance detection methods: EARS' versus a CUSUM-based methodology",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Fricker",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hegler",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Dunfee",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Statistics in Medicine",
+            "volume": "27",
+            "issn": "17",
+            "pages": "3407--3429",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.3197"
+                ],
+                "PMID": [
+                    "18240128"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Comparison of various statistical methods for detecting disease outbreaks",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Choi",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Go",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Jeong",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Computational Statistics",
+            "volume": "25",
+            "issn": "4",
+            "pages": "603--617",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/s00180-010-0191-7"
+                ]
+            }
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Statistical algorithms for early detection of the annual influenza peak season in Hong Kong using sentinel surveillance data",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cowling",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ho",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Hong Kong Medical Journal = Xianggang Yi Xue Za Zhi / Hong Kong Academy of Medicine",
+            "volume": "19",
+            "issn": "",
+            "pages": "4--5",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "A simulation model for assessing aberration detection methods used in public health surveillance for systems with limited baselines",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Hutwagner",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Thompson",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Seeman",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Treadwell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Statistics in Medicine",
+            "volume": "24",
+            "issn": "4",
+            "pages": "543--550",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.2034"
+                ],
+                "PMID": [
+                    "15678442"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Evaluation of a method for detecting aberrations in public health surveillance data",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Stroup",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Wharton",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Kafadar",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Dean",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "American Journal of Epidemiology",
+            "volume": "137",
+            "issn": "3",
+            "pages": "373--380",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/oxfordjournals.aje.a116684"
+                ],
+                "PMID": [
+                    "8452145"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Comparing early outbreak detection algorithms based on their optimized parameter values",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Zeng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Seale",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Cheng",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Luan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Journal of Biomedical Informatics",
+            "volume": "43",
+            "issn": "1",
+            "pages": "97--103",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jbi.2009.08.003"
+                ],
+                "PMID": [
+                    "19683069"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "A simulation study comparing aberration detection algorithms for syndromic surveillance. BMC medical informatics and decision making",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Jackson",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Baer",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Painter",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Duchin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1472-6947-7-6"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Yahav I Simulating Multivariate Syndromic Time Series and Outbreak Signatures, Social Science Research Network",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lotze",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Shmueli",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "An extreme value theory approach for the early detection of time clusters. A simulation-based assessment and an illustration to the surveillance of Salmonella",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Guillou",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kratz",
+                    "suffix": ""
+                },
+                {
+                    "first": "Le",
+                    "middle": [],
+                    "last": "Strat",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Statistics in Medicine",
+            "volume": "33",
+            "issn": "28",
+            "pages": "5015--5027",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.6275"
+                ],
+                "PMID": [
+                    "25060768"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Bayesian outbreak detection in the presence of reporting delays",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Salmon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Schumacher",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Stark",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "H\u00f6hle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Biometrical Journal Biometrische Zeitschrift",
+            "volume": "57",
+            "issn": "6",
+            "pages": "1051--1067",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/bimj.201400159"
+                ],
+                "PMID": [
+                    "26250543"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "surveillance: An R package for the monitoring of infectious diseases",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "H\u00f6hle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Computational Statistics",
+            "volume": "22",
+            "issn": "4",
+            "pages": "571--582",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/s00180-007-0074-8"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "surveillance: Temporal and Spatio-Temporal Modeling and Monitoring of Epidemic Phenomena",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "H\u00f6hle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Meyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Paul",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Held",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Correa",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hofmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Detection of aberrations in the occurrence of notifiable diseases surveillance data",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Stroup",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Williamson",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Herndon",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Karon",
+                    "suffix": ""
+                }
+            ],
+            "year": 1989,
+            "venue": "Statistics in Medicine",
+            "volume": "8",
+            "issn": "3",
+            "pages": "323--329",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.4780080312"
+                ],
+                "PMID": [
+                    "2540519"
+                ]
+            }
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "An approximate CUSUM procedure for surveillance of health events",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Rossi",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Lampugnani",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Marchi",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Statistics in Medicine",
+            "volume": "18",
+            "issn": "16",
+            "pages": "2111--2122",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/(SICI)1097-0258(19990830)18:16%3C2111::AID-SIM171%3E3.3.CO;2-H"
+                ],
+                "PMID": [
+                    "10441767"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Count data regression charts for the monitoring of surveillance time series",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "H\u00f6hle",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Paul",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Computational Statistics & Data Analysis",
+            "volume": "52",
+            "issn": "9",
+            "pages": "4357--4368",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.csda.2008.02.015"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Discussion paper // Sonderforschungsbereich 386 der Ludwig-Maximilians-Universit\u00e4t M\u00fcnchen",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "H\u00f6hle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Robust outbreak surveillance of epidemics in Sweden",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fris\u00e9n",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Andersson",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Schi\u00f6ler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Statistics in Medicine",
+            "volume": "28",
+            "issn": "3",
+            "pages": "476--493",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.3483"
+                ],
+                "PMID": [
+                    "19012277"
+                ]
+            }
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "The bioterrorism preparedness and response Early Aberration Reporting System (EARS)",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Hutwagner",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Thompson",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Seeman",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Treadwell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "",
+            "volume": "80",
+            "issn": "",
+            "pages": "89--96",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Agreement, the F-measure, and reliability in information retrieval",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Hripcsak",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Rothschild",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Journal of the American Medical Informatics Association: JAMIA",
+            "volume": "12",
+            "issn": "3",
+            "pages": "296--298",
+            "other_ids": {
+                "DOI": [
+                    "10.1197/jamia.M1733"
+                ],
+                "PMID": [
+                    "15684123"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "A modified poisson regression approach to prospective studies with binary data",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Zou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "American Journal of Epidemiology",
+            "volume": "159",
+            "issn": "7",
+            "pages": "702--706",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwh090"
+                ],
+                "PMID": [
+                    "15033648"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Factors influencing performance of internet-based biosurveillance systems used in epidemic intelligence for early detection of infectious diseases outbreaks",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Barboza",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Vaillant",
+                    "suffix": ""
+                },
+                {
+                    "first": "Le",
+                    "middle": [],
+                    "last": "Strat",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Hartley",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Nelson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Mawudeku",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Madoff",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Linge",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Collier",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Brownstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Astagneau",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PloS One",
+            "volume": "9",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0090536"
+                ],
+                "PMID": [
+                    "24599062"
+                ]
+            }
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Predicting Outbreak Detection in Public Health Surveillance: Quantitative Analysis to Enable Evidence-Based Method Selection",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Buckeridge",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Okhmatovskaia",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Tu",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "O&apos;connor",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Nyulas",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Musen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "AMIA Annual Symposium Proceedings",
+            "volume": "",
+            "issn": "",
+            "pages": "76--80",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "The use of fractional polynomials to model continuous risk variables in epidemiology",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Royston",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Ambler",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Sauerbrei",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "International Journal of Epidemiology",
+            "volume": "28",
+            "issn": "5",
+            "pages": "964--974",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/ije/28.5.964"
+                ],
+                "PMID": [
+                    "10597998"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Automated early warning system for the surveillance of Salmonella isolated in the agro-food chain in France",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Danan",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Baroukh",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Moury",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jourdan-Da",
+                    "middle": [],
+                    "last": "Silva",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Brisabois",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "Le",
+                    "middle": [],
+                    "last": "Strat",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Epidemiology and Infection",
+            "volume": "139",
+            "issn": "5",
+            "pages": "736--741",
+            "other_ids": {
+                "DOI": [
+                    "10.1017/S0950268810001469"
+                ],
+                "PMID": [
+                    "20598207"
+                ]
+            }
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Ten years experience of syndromic surveillance for civil and military public health",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Caserio-Schonemann",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Meynard",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Euro Surveillance: Bulletin Europ\u00e9en Sur Les Maladies Transmissibles",
+            "volume": "20",
+            "issn": "19",
+            "pages": "35--38",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Value of syndromic surveillance within the Armed Forces for early warning during a dengue fever outbreak in French Guiana in 2006. BMC medical informatics and decision making",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Meynard",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Chaudet",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Texier",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Ardillon",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Ravachol",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Deparis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1472-6947-8-29"
+                ],
+                "PMID": [
+                    "18597694"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Generalized AMOC curves for evaluation and improvement of event surveillance",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Jiang",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Cooper",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Neill",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "AMIA Annual Symposium proceedings / AMIA Symposium AMIA Symposium",
+            "volume": "",
+            "issn": "",
+            "pages": "281--285",
+            "other_ids": {
+                "PMID": [
+                    "20351865"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Fig 1 illustrates these results by plotting for the 21 methods the global results: sensitivity according to 1-specificity (line 1), POD according to FPR (line 2), POD1week according to FPR (line 3) and sensitivity according to PPV (line 4) for the 3 \u03b1 values (columns 1-3)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Sensitivity versus 1-specificity (line 1), POD versus FPR (line 2), POD1week versus FPR (line 3) and sensitivity versus PPV (line 4) for \u03b1 = 0.001, 0.01 and 0.05 (columns 1-3). (Farr = Improved Farrington, OrigFarr = Original Farrington, Serf = periodic Poisson GLM, SerfNB = periodic Negative Binomial GLM, CDC = CDC algorithm, CUSUM = CUSUM, CUSUMR = CUSUM Rossi, CUSUMG = CUSUM GLM, CSMGR = CUSUM GLM Rossi, Bay1 = Bayes 1, Bay2 = Bayes 2, Bay3 = Bayes 3, RKI1 = RKI 1, RKI2 = RKI 2, RKI3 = RKI 3, Pois = GLR Poisson, GLRNB = GLR Negative Binomial, C1 = EARS C1, C2 = EARS C2, C3 = EARS C3, OutP = Outbreak P). https://doi.org/10.1371/journal.pone.0181227.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "CDC algorithm performances for \u03b1 = 0.01 by increasing past outbreak amplitude k 1 = 0, 2, 3, 5 or 10 with (i) on the first row: false positive rate for 42 simulated scenarios, (ii) on the second row: probability of detection for 42 simulated scenarios (each curve corresponding to a scenario) by increasing current outbreak amplitude k 2 = 1 to 10. https://doi.org/10.1371/journal.pone.0181227.g002",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": ". Comparison of the 21 evaluated methods (\u03b1 = 0.01 for Improved Farrington, Original Farrington, Periodic Poisson GLM and Neg Binomial GLM, CDC and EARS C1-C3, \u03b1 = 0.05 for Bayes 1-3, k1 = 5. (PDF) S2 Appendix. Overall performances of Improved Farrington algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S3 Appendix. Overall performances of Original Farrington algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S4 Appendix. Overall performances of Periodic Poisson GLM algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S5 Appendix. Overall performances of Periodic Negative Binomial GLM algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S6 Appendix. Overall performances of CDC algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S7 Appendix. Overall performances of CUSUM algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S8 Appendix. Overall performances of CUSUM Rossi algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S9 Appendix. Overall performances of CUSUM GLM algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S10 Appendix. Overall performances of CUSUM GLM Rossi algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S11 Appendix. Overall performances of Bayes 1 algorithm (\u03b1 = 0.05). (PDF) S12 Appendix. Overall performances of Bayes 2 algorithm (\u03b1 = 0.05). (PDF) S13 Appendix. Overall performances of Bayes 3 algorithm (\u03b1 = 0.05). (PDF) S14 Appendix. Overall performances of RKI 1 algorithm. (PDF) S15 Appendix. Overall performances of RKI 2 algorithm. (PDF) S16 Appendix. Overall performances of RKI 3 algorithm. (PDF) S17 Appendix. Overall performances of GLR Negative Binomial algorithm. (PDF) S18 Appendix. Overall performances of GLR Poisson algorithm. (PDF) S19 Appendix. Overall performances of EARS C1 algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S20 Appendix. Overall performances of EARS C2 algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S21 Appendix. Overall performances of EARS C3 algorithm (\u03b1 = 0.001, 0.01 and 0.05). (PDF) S22 Appendix. Overall performances of OutbreakP algorithm. (PDF) S23 Appendix. Radar charts of performances indicators: POD1week, POD, PPV, NPV, 1-FPR, Sp and Se for all 21 methods (\u03b1 = 0.01 for Improved Farrington, Original Farrington, Periodic Poisson GLM and Neg Binomial GLM, CDC and EARS C1-C3. \u03b1 = 0.05 for Bayes 1-3). (PDF) S24 Appendix. R code of periodic Poisson GLM algorithm and periodic negative binomial GLM algorithm. (PDF) S1",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Farrington, Original Farrington, Periodic Poisson GLM and Neg Binomial GLM, CDC and EARS C1-C3. \u03b1 = 0.05 for Bayes 1-3). (PDF) Methodology: Gabriel B\u00e9dubourg, Yann Le Strat. Project administration: Gabriel B\u00e9dubourg, Yann Le Strat. Software: Gabriel B\u00e9dubourg, Yann Le Strat. Supervision: Yann Le Strat. Validation: Gabriel B\u00e9dubourg, Yann Le Strat. Visualization: Gabriel B\u00e9dubourg. Writing -original draft: Gabriel B\u00e9dubourg. Writing -review & editing: Yann Le Strat.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "as have natural disasters and humanitarian crises, such as earthquakes or the 2005 tsunami, and the recent emergence or PLOS ONE | https://doi.org/10.1371/journal.pone.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Commands, control tuning parameters and references of 19 algorithms implemented in the R package surveillance.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "FPR, specificity, POD, POD1week, sensitivity, NPV, PPV and F 1 -measure for all 21 evaluated methods (for past outbreak constant k 1 = 0, 2, 3, 5, 10 and current outbreak k 2 = 1 to 10 for POD and sensitivity). \u03b1 = 0.01 for Improved Farrington, Original Farrington, Periodic Poisson GLM and Neg Binomial GLM, CDC and EARS C1-C3. \u03b1 = 0.05 for Bayes 1-3.https://doi.org/10.1371/journal.pone.0181227.t002",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Performance ratios with the improved Farrington method as reference, adjusted for past and current outbreaks (duration and amplitude), trend, seasonality, dispersion and baseline frequency (\u03b1 = 0.01 for Improved Farrington, Original Farrington, Periodic Poisson GLM and Neg Binomial GLM, CDC and EARS C1-C3. \u03b1 = 0.05 for Bayes 1-3).",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "(Continued)",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The authors would like to thank Angela Noufaily and Paddy Farrington for providing them with simulated datasets and an R code to simulate outbreaks.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        },
+        {
+            "text": "Conceptualization: Gabriel B\u00e9dubourg, Yann Le Strat. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Contributions"
+        }
+    ]
+}

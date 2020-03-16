@@ -1,0 +1,4602 @@
+{
+    "paper_id": "db7b6440cfdfd2bbf71c22361d4ea606a16d4643",
+    "metadata": {
+        "title": "iGPCR-Drug: A Web Server for Predicting Interaction between GPCRs and Drugs in Cellular Networking",
+        "authors": [
+            {
+                "first": "X",
+                "middle": [],
+                "last": "Xiao",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "J-L",
+                "middle": [],
+                "last": "Min",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "P",
+                "middle": [],
+                "last": "Wang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "K-C",
+                "middle": [],
+                "last": "Chou",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Involved in many diseases such as cancer, diabetes, neurodegenerative, inflammatory and respiratory disorders, G-proteincoupled receptors (GPCRs) are among the most frequent targets of therapeutic drugs. It is time-consuming and expensive to determine whether a drug and a GPCR are to interact with each other in a cellular network purely by means of experimental techniques. Although some computational methods were developed in this regard based on the knowledge of the 3D (dimensional) structure of protein, unfortunately their usage is quite limited because the 3D structures for most GPCRs are still unknown. To overcome the situation, a sequence-based classifier, called ''iGPCR-drug'', was developed to predict the interactions between GPCRs and drugs in cellular networking. In the predictor, the drug compound is formulated by a 2D (dimensional) fingerprint via a 256D vector, GPCR by the PseAAC (pseudo amino acid composition) generated with the grey model theory, and the prediction engine is operated by the fuzzy K-nearest neighbour algorithm. Moreover, a user-friendly web-server for iGPCR-drug was established at http://www.jci-bioinfo.cn/iGPCR-Drug/. For the convenience of most experimental scientists, a step-by-step guide is provided on how to use the web-server to get the desired results without the need to follow the complicated math equations presented in this paper just for its integrity. The overall success rate achieved by iGPCR-drug via the jackknife test was 85.5%, which is remarkably higher than the rate by the existing peer method developed in 2010 although no web server was ever established for it. It is anticipated that iGPCR-Drug may become a useful high throughput tool for both basic research and drug development, and that the approach presented here can also be extended to study other drug -target interaction networks.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "G-protein-coupled receptors (GPCRs), also known as G proteinlinked receptors (GPLR), serpentine receptor, seven-transmembrane domain receptors, and 7 TM (transmembrane), form the largest family of cell surface receptors. GPCRs share a common global topology that consists of seven transmembrane alpha helices, intracellular C-terminal, an extracellular N-terminal, three intracellular loops and three extracellular loops (Fig. 1) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 421,
+                    "end": 429,
+                    "text": "(Fig. 1)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Introduction"
+        },
+        {
+            "text": "GPCR-associated proteins may play at least the following four distinct roles in receptor signaling: (1) directly mediate receptor signaling, as in the case of G proteins; (2) regulate receptor signaling through controlling receptor localization and/or trafficking; (3) act as a scaffold, physically linking the receptor to various effectors; (4) act as an allosteric modulator of receptor conformation, altering receptor pharmacology and/or other aspects of receptor function [1, 2, 3] . Involved in many diseases such as cancer, diabetes, neurodegenerative, inflammatory and respiratory disorders, GPCRs are among the most frequent targets of therapeutic drugs [4] . Over half of all prescription drugs currently on the market are actually acting by targeting GPCRs directly or indirectly [5, 6] . A lot of efforts have been invested for studying GPCRs in both academic institutions and pharmaceutical industries.",
+            "cite_spans": [
+                {
+                    "start": 476,
+                    "end": 479,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 480,
+                    "end": 482,
+                    "text": "2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 483,
+                    "end": 485,
+                    "text": "3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 662,
+                    "end": 665,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 790,
+                    "end": 793,
+                    "text": "[5,",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 794,
+                    "end": 796,
+                    "text": "6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Identification of drug-target interactions is an essential step in the drug discovery process, which is the most important task for the new medicine development [7] . The methods commonly used in this regard are docking simulations [8, 9] , literature text mining [10] , as well as a combination of chemical structure, genomic sequence, and 3D (three-dimensional) structure information, among others [11] . Obviously, an experimental 3D structure of a target protein is the key for identifying the drug-protein interaction; if it is not available, the common approach is to create a homology model of the target protein based on the experimental structure of a related protein [12, 13, 14] . However, the above methods need further development due to the following reasons. (1) None of these methods has provided a web-server for the public usage, and hence their practical application value is quite limited. (2) The prediction quality needs to be improved with the state-of-the-art machine learning techniques and updated training datasets. (3) GPCRs belong to membrane proteins, which are very difficult to crystallize and most of them will not dissolve in normal solvents. Although a series of recent reports [15, 16, 17, 18, 19, 20, 21] have demonstrated that NMR is indeed a very powerful tool in determining the 3D structures of membrane proteins, it is time-consuming and costly. Also, although using various structural bioinformatics tools [12] , particularly the homologous technique [22, 23, 24, 25, 26] , can help acquire the structural and functional information of membrane proteins, unfortunately the number of templates for membrane proteins is quite limited. Therefore, it would be very useful to develop a computational method for predicting the interactions between drugs and GPCRs in cellular networking based on their sequencesderived features before a drug candidate was synthesized, so as to reduce the unnecessary waste of time and money [27] . And this is the goal of the current study.",
+            "cite_spans": [
+                {
+                    "start": 161,
+                    "end": 164,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 232,
+                    "end": 235,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 236,
+                    "end": 238,
+                    "text": "9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 264,
+                    "end": 268,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 400,
+                    "end": 404,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 677,
+                    "end": 681,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 682,
+                    "end": 685,
+                    "text": "13,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 686,
+                    "end": 689,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 910,
+                    "end": 913,
+                    "text": "(2)",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 1213,
+                    "end": 1217,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1218,
+                    "end": 1221,
+                    "text": "16,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 1222,
+                    "end": 1225,
+                    "text": "17,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1226,
+                    "end": 1229,
+                    "text": "18,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1230,
+                    "end": 1233,
+                    "text": "19,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 1234,
+                    "end": 1237,
+                    "text": "20,",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1238,
+                    "end": 1241,
+                    "text": "21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1449,
+                    "end": 1453,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1494,
+                    "end": 1498,
+                    "text": "[22,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1499,
+                    "end": 1502,
+                    "text": "23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1503,
+                    "end": 1506,
+                    "text": "24,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 1507,
+                    "end": 1510,
+                    "text": "25,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 1511,
+                    "end": 1514,
+                    "text": "26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 1962,
+                    "end": 1966,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "According to a recent comprehensive review [28] and demonstrated by a series of recent publications (see, e.g., [29, 30, 31] ), to establish a really useful statistical predictor for a protein system, we need to consider the following procedures: (i) construct or select a valid benchmark dataset to train and test the predictor; (ii) formulate the protein samples with an effective mathematical expression that can truly reflect their intrinsic correlation with the attribute to be predicted; (iii) introduce or develop a powerful algorithm (or engine) to operate the prediction; (iv) properly perform cross-validation tests to objectively evaluate the anticipated accuracy of the predictor; (v) establish a userfriendly web-server for the predictor that is accessible to the public. Below, let us describe how to deal with these steps.",
+            "cite_spans": [
+                {
+                    "start": 43,
+                    "end": 47,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 112,
+                    "end": 116,
+                    "text": "[29,",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 117,
+                    "end": 120,
+                    "text": "30,",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 121,
+                    "end": 124,
+                    "text": "31]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The benchmark dataset S can be formulated as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Benchmark Dataset"
+        },
+        {
+            "text": "where S z is the positive subset that consists of the interactive GPCR-drug pairs only, while S { the negative subset that contains of the non-interactive GPCR-drug pairs only, and the symbol | represents the union in the set theory. Here, the ''interactive'' pair means the pair whose two counterparts are interacted with each other in the drug-target networks as defined in the KEGG database at http://www.kegg.jp/kegg/; while the ''non-interactive'' pair means that its two counterparts are not interacted with each other in the drug-target networks. The positive dataset S z contains 620 GPCR-drug pairs, which were taken from [32] . The negative dataset S { contains 1,240 non-interactive GPCR-drug pairs, which were derived according to the following procedures as done in [32] : (i) separating each of the pairs in S z into single drug and GPCR; (ii) re-coupling each of the single drugs with each of the single GPCRs into pairs in a way that none of them occurred in S z ; (iii) randomly picking the pairs thus formed until they reached the number two times as many as the pairs in S z . The 620 interactive GPCR-drug pairs and 1,240 non-interactive GPCR-drug pairs are given in Supporting Information S1. All the detailed information for the compounds or drugs listed there can be found in the KEGG database via their codes.",
+            "cite_spans": [
+                {
+                    "start": 631,
+                    "end": 635,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 779,
+                    "end": 783,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Benchmark Dataset"
+        },
+        {
+            "text": "Since each of the samples in the current network system contains a GPCR (protein) and a drug, a combination of the following two approaches were adopted to represent the GPCR{drug pair samples.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "(a) Representing drugs with 2D molecular fingerprints. Although the number of drugs is extremely large, most of them are small organic molecules and are composed of some fixed small structures [33] . The identification of small molecules or structures can be used to detect the drug-target interactions [34] . Molecular fingerprints are bit-string representations of molecular structure and properties [35] . It should be pointed out that there are many types of structural representation that have been suggested for the description of drug molecules, including physicochemical properties [36] , chemical graphs [37] , topological indices [38] , 3D pharmacophore patterns and molecular fields. In the current study, let us use the simple and generally adopted 2D molecular fingerprints to represent drug molecules, as described below.",
+            "cite_spans": [
+                {
+                    "start": 193,
+                    "end": 197,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 303,
+                    "end": 307,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 402,
+                    "end": 406,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 590,
+                    "end": 594,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 613,
+                    "end": 617,
+                    "text": "[37]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 640,
+                    "end": 644,
+                    "text": "[38]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "First, for each of the drugs concerned, we can obtain a MOL file from the KEGG database [39] via its code that contains the detailed information of chemical structure. Second, we can convert the MOL file format into its 2D molecular fingerprint file format by using a chemical toolbox software called OpenBabel [40] , which can be downloaded from the website at http:// openbabel.org/. The current version of OpenBabel can generate four types of fingerprints: FP2, FP3, FP4 and MACCS. In the current study, we used the FP2 fingerprint format. It is a pathbased fingerprint that identifies small molecule fragments based on all linear and ring substructures and maps them onto a bit-string using a hash function (somewhat similar to the Daylight fingerprints [41, 42] ). It is a length of 256-bit hexadecimal string or a 256-bit vector, whose component values are an integer between 0 and 15. Let us suppose V 1 is the 1st value of the 256-bit vector, V 2 that of the 2nd value, and so forth. Thus, the 256-bit vector can be converted to a digit signal. In order to find the inwardness of the drug fingerprint values, we implement the discrete Fourier transform, with the frequency-domain values given by",
+            "cite_spans": [
+                {
+                    "start": 88,
+                    "end": 92,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 311,
+                    "end": 315,
+                    "text": "[40]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 758,
+                    "end": 762,
+                    "text": "[41,",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 763,
+                    "end": 766,
+                    "text": "42]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where j represents the imaginary unit and X k is a complex number whose complex modulus or amplitude is given by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where real(X k ) is the real part of X k and imag(X k ) the corresponding image part. Thus we can generate the discrete Fourier spectrum as given by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "The Fourier spectrum numbers contain substantial information about the digit signal, and hence can also be used to reflect certain characters of a drug. Thus, a drug compound d now can be formulated as a 256-D (dimensional) vector given by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where A i has the same meaning as in Eq. 4, and T is the matrix transpose operator. The 256-D vector thus obtained for each of the drug codes listed in Supporting Information S1 are given in Supporting Information S2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "(b) Representing GPCR sequences with grey model pseudo amino acid composition. The sequences of the GPCRs involved in this study are given in Supporting Information S3. Now the problem is how to effectively represent these receptor sequences for the current study. Generally speaking, there are two kinds of approaches to formulate protein sequences: the sequential model and the non-sequential or discrete model [43] . The most typical sequential representation for a protein sample with L residues is its entire amino acid sequence, as can be formulated as",
+            "cite_spans": [
+                {
+                    "start": 413,
+                    "end": 417,
+                    "text": "[43]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where R 1 represents the 1 st residue of the protein sequence P, R 2 the 2 nd residue, and so forth. A protein thus formulated can contain its most complete information. This is an obvious advantage of the sequential representation. To get the desired results, the sequence-similarity-search-based tools, such as BLAST [44, 45] , are usually utilized to conduct the prediction. However, this kind of approach failed to work when the query protein did not have significant homology to proteins of known characters. Thus, various non-sequential representation models were proposed. The simplest non-sequential model for a protein was based on its amino acid composition (AAC), as defined by",
+            "cite_spans": [
+                {
+                    "start": 319,
+                    "end": 323,
+                    "text": "[44,",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 324,
+                    "end": 327,
+                    "text": "45]",
+                    "ref_id": "BIBREF44"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where f u (u~1,2, \u00c1 \u00c1 \u00c1 ,20) are the normalized occurrence frequencies of the 20 native amino acids [46, 47] in the protein P, and T has the same meaning as in Eq. 5. The AAC-discrete model was widely used for identifying various attributes of proteins. However, as can be seen from Eq. 7, all the sequence order effects were lost by using the AAC-discrete model. This is its main shortcoming. To avoid completely losing the sequence-order information, the pseudo amino acid composition was proposed [48] to replace the simple amino acid composition (AAC) for representing the sample of a protein. Since the concept of PseAAC (also called ''Chou's PseAAC'' [49] ) was proposed in 2001 [48] , it has been widely used to study various attributes of proteins, such as discriminating outer membrane proteins [50] , identifying antibacterial peptides [51] , identifying allergenic proteins [52] , predicting metalloproteinase family [53] , predicting protein structural class [54] , identifying bacterial virulent proteins [55] , predicting supersecondary structure [56] , predicting protein subcellular location [57, 58, 59, 60] , predicting membrane protein types [61, 62] , identifying GPCRs and their types [63] , identifying protein quaternary structural attributes [64] , predicting protein submitochondria locations [65] , identifying risk type of human papillomaviruses [66] , identifying cyclin proteins [67] , predicting GABA(A) receptor proteins [68] , classifying amino acids [69] , predicting cysteine S-nitrosylation sites in proteins [30] , among many others (see a long list of papers cited in the References section of [28] ). Recently, the concept of PseAAC was further extended to represent the feature vectors of DNA and nucleotides [29, 31] , as well as other biological samples (see, e.g., [70, 71] ). Because it has been widely and increasingly used, recently two powerful soft-wares called ''PseAAC-Builder'' [72] and ''propy'' [73] were established for generating various special Chou's pseudo-amino acid compositions, in addition to the web-server PseAAC [74] built in 2008. According to a recent review [28] , the general form of PseAAC for a protein P is formulated by",
+            "cite_spans": [
+                {
+                    "start": 100,
+                    "end": 104,
+                    "text": "[46,",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 105,
+                    "end": 108,
+                    "text": "47]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 500,
+                    "end": 504,
+                    "text": "[48]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 657,
+                    "end": 661,
+                    "text": "[49]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 685,
+                    "end": 689,
+                    "text": "[48]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 804,
+                    "end": 808,
+                    "text": "[50]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 846,
+                    "end": 850,
+                    "text": "[51]",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 885,
+                    "end": 889,
+                    "text": "[52]",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 928,
+                    "end": 932,
+                    "text": "[53]",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 971,
+                    "end": 975,
+                    "text": "[54]",
+                    "ref_id": "BIBREF54"
+                },
+                {
+                    "start": 1018,
+                    "end": 1022,
+                    "text": "[55]",
+                    "ref_id": "BIBREF55"
+                },
+                {
+                    "start": 1061,
+                    "end": 1065,
+                    "text": "[56]",
+                    "ref_id": "BIBREF56"
+                },
+                {
+                    "start": 1108,
+                    "end": 1112,
+                    "text": "[57,",
+                    "ref_id": "BIBREF57"
+                },
+                {
+                    "start": 1113,
+                    "end": 1116,
+                    "text": "58,",
+                    "ref_id": "BIBREF58"
+                },
+                {
+                    "start": 1117,
+                    "end": 1120,
+                    "text": "59,",
+                    "ref_id": "BIBREF59"
+                },
+                {
+                    "start": 1121,
+                    "end": 1124,
+                    "text": "60]",
+                    "ref_id": "BIBREF60"
+                },
+                {
+                    "start": 1161,
+                    "end": 1165,
+                    "text": "[61,",
+                    "ref_id": "BIBREF61"
+                },
+                {
+                    "start": 1166,
+                    "end": 1169,
+                    "text": "62]",
+                    "ref_id": "BIBREF62"
+                },
+                {
+                    "start": 1206,
+                    "end": 1210,
+                    "text": "[63]",
+                    "ref_id": "BIBREF63"
+                },
+                {
+                    "start": 1266,
+                    "end": 1270,
+                    "text": "[64]",
+                    "ref_id": "BIBREF64"
+                },
+                {
+                    "start": 1318,
+                    "end": 1322,
+                    "text": "[65]",
+                    "ref_id": "BIBREF65"
+                },
+                {
+                    "start": 1373,
+                    "end": 1377,
+                    "text": "[66]",
+                    "ref_id": "BIBREF66"
+                },
+                {
+                    "start": 1408,
+                    "end": 1412,
+                    "text": "[67]",
+                    "ref_id": "BIBREF67"
+                },
+                {
+                    "start": 1452,
+                    "end": 1456,
+                    "text": "[68]",
+                    "ref_id": "BIBREF68"
+                },
+                {
+                    "start": 1483,
+                    "end": 1487,
+                    "text": "[69]",
+                    "ref_id": "BIBREF69"
+                },
+                {
+                    "start": 1544,
+                    "end": 1548,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 1631,
+                    "end": 1635,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 1748,
+                    "end": 1752,
+                    "text": "[29,",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 1753,
+                    "end": 1756,
+                    "text": "31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 1807,
+                    "end": 1811,
+                    "text": "[70,",
+                    "ref_id": "BIBREF70"
+                },
+                {
+                    "start": 1812,
+                    "end": 1815,
+                    "text": "71]",
+                    "ref_id": "BIBREF71"
+                },
+                {
+                    "start": 1928,
+                    "end": 1932,
+                    "text": "[72]",
+                    "ref_id": "BIBREF72"
+                },
+                {
+                    "start": 1947,
+                    "end": 1951,
+                    "text": "[73]",
+                    "ref_id": "BIBREF73"
+                },
+                {
+                    "start": 2076,
+                    "end": 2080,
+                    "text": "[74]",
+                    "ref_id": "BIBREF74"
+                },
+                {
+                    "start": 2125,
+                    "end": 2129,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where the subscript V is an integer, and its value as well as the components y u (u~1,2, \u00c1 \u00c1 \u00c1 ,V) will depend on how to extract the desired information from the amino acid sequence of P (cf. Eq. 6). Below, let us describe how to extract useful information from the benchmark dataset S and Supporting Information S3 to define the GPCR samples concerned via Eq. 8. First, let us represent the protein sequence by a series of real numbers. Listed in Table 1 are the ten different kinds of physicochemical properties usually used for identifying protein attributes [75] . For the current study, however, it was found through many preliminary tests that when the 10 th physicochemical property (i.e., the ''mean polarity'') was used, the best prediction quality was observed. This is quite consistent with the observations that polar amino acids play an important role in membrane protein receptors [12, 17] . Accordingly, the 20 numerical values of the mean polarity in Table 1 were used to encode the 20 native amino acids in a GPCR sequence. Note that to ensure that each of these numerical codes was a positive number as required by the Grey model used later, during the encoding process, each of the mean polarity values in Table 1 was added by a number of 1.20. Thus, for a given GPCR sequence with L amino acids (cf. Eq. 6), we can convert it into a series of L real number as formulated by",
+            "cite_spans": [
+                {
+                    "start": 562,
+                    "end": 566,
+                    "text": "[75]",
+                    "ref_id": "BIBREF75"
+                },
+                {
+                    "start": 895,
+                    "end": 899,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 900,
+                    "end": 903,
+                    "text": "17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 448,
+                    "end": 455,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 967,
+                    "end": 974,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 1225,
+                    "end": 1232,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where r 1 is the mean polarity value for the 1 st amino acid residue in the GPCR protein P, e.g., if the 1 st residue is A, then we have r 1~( {0:06z1:20)~1:14; r 2 is the mean polarity value for the 2 nd amino acid residue plus 1.20; and so forth. Now, we can use the grey system model to extract the useful information of P via Eq. 8 to formulate its PseAAC.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "According to the grey system theory [76] , if the information of a system investigated is fully known, it is called a ''white system''; if completely unknown, a ''black system''; if partially known, a ''grey system''. The model developed based on such a theory is called ''grey model'', which is a kind of nonlinear and dynamic model formulated by a differential equation. The grey model is particularly useful for solving complicated problems [77] that are lack of sufficient information, or need to process uncertain information and reduce random effects of acquired data. In the grey system theory, an important and generally used model is called GM(1,1) [76] . By following the similar procedures as described in [78, 79, 80, 81] , Eq. 8 would become a feature vector with dimension V~22 and each of its components defined by",
+            "cite_spans": [
+                {
+                    "start": 36,
+                    "end": 40,
+                    "text": "[76]",
+                    "ref_id": "BIBREF76"
+                },
+                {
+                    "start": 444,
+                    "end": 448,
+                    "text": "[77]",
+                    "ref_id": "BIBREF77"
+                },
+                {
+                    "start": 658,
+                    "end": 662,
+                    "text": "[76]",
+                    "ref_id": "BIBREF76"
+                },
+                {
+                    "start": 717,
+                    "end": 721,
+                    "text": "[78,",
+                    "ref_id": "BIBREF78"
+                },
+                {
+                    "start": 722,
+                    "end": 725,
+                    "text": "79,",
+                    "ref_id": "BIBREF79"
+                },
+                {
+                    "start": 726,
+                    "end": 729,
+                    "text": "80,",
+                    "ref_id": "BIBREF80"
+                },
+                {
+                    "start": 730,
+                    "end": 733,
+                    "text": "81]",
+                    "ref_id": "BIBREF81"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "w u{20 a u{20 P 20",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where f u has the same meaning as Eq. 7, w k (k~1,2) is the weight factor (in this study we choose w 1~1 0 5 and w 2~1 0 2 to get the best results), and a 1 and a 2 are given by ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "(c) Representing GPCR-drug pairs. Now the pair between a GPCR protein P and a drug compound D can be formulated by combing Eq. 5 and Eq. 8, as given by The numerical codes of the physicochemical properties can be obtained from the text biochemistry book (e.g., [101] ) and the papers [102, 103] . b The 1 st physicochemical property is for ''hydrophobicity'', 2 nd for ''hydrophilicity'', 3 rd for ''side-chain mass'', 4 th for ''pK1 (C a -COOH)'', 5 th for ''pK2 (NH3)'', 6 th for ''PI (25uC)'', 7 th for ''average buried volume'', 8 th for ''molecular weight'', 9 th for ''side-chain volume'', and 10 th for ''mean polarity''. doi:10.1371/journal.pone.0072234.t001",
+            "cite_spans": [
+                {
+                    "start": 261,
+                    "end": 266,
+                    "text": "[101]",
+                    "ref_id": "BIBREF101"
+                },
+                {
+                    "start": 284,
+                    "end": 289,
+                    "text": "[102,",
+                    "ref_id": "BIBREF102"
+                },
+                {
+                    "start": 290,
+                    "end": 294,
+                    "text": "103]",
+                    "ref_id": "BIBREF103"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "where G represents the GPCR-drug pair, + the orthogonal sum [43] , w 3 the weight factor that was chosen as 1/700 in this study to get the best results, and y u (u~1,2, \u00c1 \u00c1 \u00c1 ,22) are given in Eq. 10.",
+            "cite_spans": [
+                {
+                    "start": 60,
+                    "end": 64,
+                    "text": "[43]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sample Representation"
+        },
+        {
+            "text": "The fuzzy K-Nearest Neighbour (KNN) classification method [82] is quite popular in the pattern recognition community owing to its good performance and ease of use. It is particularly effective in dealing with complicated biological systems, such as identifying nuclear receptor subfamilies [83] , characterizing the structure of fast-folding proteins [84] , classifying G protein-coupled receptors [85] , predicting protein quaternary structural attributes [86] , predicting protein structural classes [87, 88, 89, 90] , identifying membrane protein types [91] , and so forth. The rationale of the fuzzy method is based on the fact that it is impossible to define a feature vector that can contain all the entire information of a complicated system. Therefore, it is logically more reasonable to treat this kind of object as a fuzzy system. Below, let us give a brief introduction how to use the fuzzy KNN approach to identify the interactions between the GPCR and the drug compounds in the network concerned.",
+            "cite_spans": [
+                {
+                    "start": 58,
+                    "end": 62,
+                    "text": "[82]",
+                    "ref_id": "BIBREF82"
+                },
+                {
+                    "start": 290,
+                    "end": 294,
+                    "text": "[83]",
+                    "ref_id": "BIBREF83"
+                },
+                {
+                    "start": 351,
+                    "end": 355,
+                    "text": "[84]",
+                    "ref_id": "BIBREF84"
+                },
+                {
+                    "start": 398,
+                    "end": 402,
+                    "text": "[85]",
+                    "ref_id": "BIBREF85"
+                },
+                {
+                    "start": 457,
+                    "end": 461,
+                    "text": "[86]",
+                    "ref_id": "BIBREF86"
+                },
+                {
+                    "start": 502,
+                    "end": 506,
+                    "text": "[87,",
+                    "ref_id": "BIBREF87"
+                },
+                {
+                    "start": 507,
+                    "end": 510,
+                    "text": "88,",
+                    "ref_id": "BIBREF88"
+                },
+                {
+                    "start": 511,
+                    "end": 514,
+                    "text": "89,",
+                    "ref_id": "BIBREF89"
+                },
+                {
+                    "start": 515,
+                    "end": 518,
+                    "text": "90]",
+                    "ref_id": "BIBREF90"
+                },
+                {
+                    "start": 556,
+                    "end": 560,
+                    "text": "[91]",
+                    "ref_id": "BIBREF91"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Fuzzy K-Nearest Neighbor Algorithm"
+        },
+        {
+            "text": "Suppose S(N)~G 1 ,G 2 , \u00c1 \u00c1 \u00c1 ,G N f g is a set of vectors representing N GPCR-drug pairs in a training set classified into two classes",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Fuzzy K-Nearest Neighbor Algorithm"
+        },
+        {
+            "text": "is the subset of the K nearest neighbor pairs to the query pair G. Thus, the fuzzy membership value for the query pair G in the two classes of S(N) is given by [92] ",
+            "cite_spans": [
+                {
+                    "start": 160,
+                    "end": 164,
+                    "text": "[92]",
+                    "ref_id": "BIBREF92"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Fuzzy K-Nearest Neighbor Algorithm"
+        },
+        {
+            "text": "where K is the number of the nearest neighbors counted for the query pair G; m z (G \u00c3 j ) and m { (G \u00c3 j ), the fuzzy membership values of the training sample G \u00c3 j to the class C z and C { , respectively, as will be further defined below; d(G,G \u00c3 j ), the Euclidean distance between G and its jth nearest pair G \u00c3 j in the training dataset S(N); Q(w1), the fuzzy coefficient for determining how heavily the distance is weighted when calculating each nearest neighbor's contribution to the membership value. Note that the parameters K and Q will affect the computation result of Eq. 15, and they will be optimized by a grid-search as will be described later. Also, various other metrics can be chosen for d(G,G \u00c3 j ), such as Hamming distance [93] and Mahalanobis distance [94, 95] .",
+            "cite_spans": [
+                {
+                    "start": 743,
+                    "end": 747,
+                    "text": "[93]",
+                    "ref_id": "BIBREF93"
+                },
+                {
+                    "start": 773,
+                    "end": 777,
+                    "text": "[94,",
+                    "ref_id": "BIBREF94"
+                },
+                {
+                    "start": 778,
+                    "end": 781,
+                    "text": "95]",
+                    "ref_id": "BIBREF95"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Fuzzy K-Nearest Neighbor Algorithm"
+        },
+        {
+            "text": "The quantitative definitions for the aforementioned m z (G \u00c3 j ) and m { (G \u00c3 j ) in Eq. 15 are given by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Fuzzy K-Nearest Neighbor Algorithm"
+        },
+        {
+            "text": "Substituting the results obtained by Eq. 16 into Eq. 15, it follows that if m z (G)wm { (G) then the query pair G is an interactive couple; otherwise, non-interactive. In other words, the outcome can be formulated as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Fuzzy K-Nearest Neighbor Algorithm"
+        },
+        {
+            "text": "The predictor thus established is called iGPCR-Drug. To provide an intuitive overall picture of how the classifier works, a flowchart is provided in Fig. 2 to show its operation process.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 149,
+                    "end": 155,
+                    "text": "Fig. 2",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Fuzzy K-Nearest Neighbor Algorithm"
+        },
+        {
+            "text": "To provide a more intuitive and easier-to-understand method to measure the prediction quality, here the criteria proposed in [96] was adopted. According to those criteria, the rates of correct predictions for the interactive GPCR-drug pairs in dataset S z and the non-interactive GPCR-drug pairs in dataset S { are respectively defined by (cf. Eq. 1).",
+            "cite_spans": [
+                {
+                    "start": 125,
+                    "end": 129,
+                    "text": "[96]",
+                    "ref_id": "BIBREF96"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "where N z is the total number of the interactive GPCR-drug pairs investigated while N z { the number of the interactive GPCR-drug pairs incorrectly predicted as the non-interactive GPCR-drug pairs; N { the total number of the non-interactive GPCR-drug pairs investigated while N { z the number of the non-interactive GPCR-drug pairs incorrectly predicted as the interactive GPCRdrug pairs. The overall success prediction rate is given by [97] ",
+            "cite_spans": [
+                {
+                    "start": 438,
+                    "end": 442,
+                    "text": "[97]",
+                    "ref_id": "BIBREF97"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "It is obvious from Eqs. 18-19 that, if and only if none of the interactive GPCR-drug pairs and the non-interactive GPCR-drug pairs are mispredicted, i.e., N z {~N { z~0 and L z~L{~1 , we have the overall success rate L~1. Otherwise, the overall success rate would be smaller than 1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "On the other hand, it is interesting to point out that the following equation set is often used in literatures for examining the performance quality of a predictor. where TP represents the true positive; TN, the true negative; FP, the false positive; FN, the false negative; Sn, the sensitivity; Sp, the specificity; Acc, the accuracy; MCC, the Mathew's correlation coefficient.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "Obviously, the relations between the symbols in Eq. 18 or Eq. 19 and those in Eq. 20 are given by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "Substituting Eq. 21 into Eq. 20 and also noting Eqs. 18-19, we obtain.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "Now we can easily see: when N z {~0 meaning none of the interactive GPCR-drug pairs was mispredicted to be a noninteractive GPCR-drug pair, we have the sensitivity Sn~1; while N z {~N z meaning that all the interactive GPCR-drug pairs were mispredicted to be the non-interactive GPCR-drug pairs, we have the sensitivity Sn~0. Likewise, when N { z~0 meaning none of the non-interactive GPCR-drug pairs was mispredicted, we have the specificity Sp~1; while N { z~N { meaning all the non-interactive GPCR-drug pairs were incorrectly predicted as interactive GPCRdrug pairs, we have the specificity Sp~0.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "meaning that none of the interactive GPCR-drug pairs in the dataset S z and none of the non-interactive GPCR-drug pairs in S { was incorrectly predicted, we have the overall accuracy Acc~L~1; while N z we have MCC~{1 meaning total disagreement between prediction and observation. As we can see from the above discussion, it is much more intuitive and easier-tounderstand when using Eq. 22 to examine a predictor for its sensitivity, specificity, overall accuracy, and Mathew's correlation coefficient.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Metrics for Performance Evaluation"
+        },
+        {
+            "text": "How to properly examine the prediction quality is a key for developing a new predictor and estimating its potential application value. Generally speaking, to avoid the ''memory effect'' [43] of the resubstitution test in which a same dataset was used to train and test a predictor, the following three cross-validation methods are often used to examine a predictor for its effectiveness in practical application: independent dataset test, subsampling or Kfold (such as 5-fold, 7-fold, or 10-fold) test, and jackknife test [93] . However, as elaborated by a penetrating analysis in [98] , considerable arbitrariness exists in the independent dataset test. Also, as demonstrated by Eqs. 28-30 in [28] , the subsampling test (or K-fold cross validation) cannot avoid arbitrariness either. Only the jackknife test is the least arbitrary that can always yield a unique result for a given benchmark dataset. Therefore, the jackknife test has been widely recognized and increasingly adopted by investigators to examine the quality of various predictors (see, e.g., [51, 52, 99] ). In view of this, the success rate by the jackknife test was also used to optimize the two uncertain parameters K and Q in Eq. 15. The result thus obtained is shown in Fig. 3 , from which we obtain when K~10 and Q~1:8 the iGPCR-Drug predictor reaches its optimized status.",
+            "cite_spans": [
+                {
+                    "start": 186,
+                    "end": 190,
+                    "text": "[43]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 522,
+                    "end": 526,
+                    "text": "[93]",
+                    "ref_id": "BIBREF93"
+                },
+                {
+                    "start": 581,
+                    "end": 585,
+                    "text": "[98]",
+                    "ref_id": "BIBREF98"
+                },
+                {
+                    "start": 685,
+                    "end": 698,
+                    "text": "28-30 in [28]",
+                    "ref_id": null
+                },
+                {
+                    "start": 1058,
+                    "end": 1062,
+                    "text": "[51,",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 1063,
+                    "end": 1066,
+                    "text": "52,",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 1067,
+                    "end": 1070,
+                    "text": "99]",
+                    "ref_id": "BIBREF99"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1241,
+                    "end": 1247,
+                    "text": "Fig. 3",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Cross-Validation"
+        },
+        {
+            "text": "The success rates thus obtained by the jackknife test in identifying interactive GPCR-drug pairs or non-interactive GPCR-drug pairs are given in Table 2 , from which we can see that the overall success rate by iGPCR-Drug on the benchmark dataset S was about 85.5%. In contrast, the corresponding success rate obtained by He et al. [32] in using six biochemical and physicochemical features to formulate GPCR-Drug samples was only 78.49%. The remarkable improved success rate indicates that introducing 2D molecular fingerprints to represent drug samples and using the grey PseAAC to represent GPCR samples are really a promising approach for studying the interactions of GPCRs and drugs in cellular network, where the former can catch the essence of the drug sample whereas the latter can catch the essence of the GPCR sample.",
+            "cite_spans": [
+                {
+                    "start": 331,
+                    "end": 335,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 145,
+                    "end": 152,
+                    "text": "Table 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Cross-Validation"
+        },
+        {
+            "text": "It is instructive to point out that, compared with the existing sequence-based methods, although the current approach could get better results because of introducing the 2D molecular fingerprints to represent drug samples and using grey PseAAC to represent the GPCR samples, it is still a sequence-based or ''sequence-derived'' approach, and hence could not avoid some limitation. Particularly, it cannot be used to predict the binding site and binding energy between GPCR and drug. Only when the 3D structures for both the GPCR receptor and its drug ligand are known or well defined, can we try to predict their binding details via molecular docking (see, e.g., [9] ). Nevertheless, before their 3D structures are available, the current sequence-derived approach can serve as a high throughput tool for predicting GPCR-drug interactions in cellular networking. This is particularly useful in conducting largescale analysis for the avalanche of biological sequences generated in the post-genomic age.",
+            "cite_spans": [
+                {
+                    "start": 663,
+                    "end": 666,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Cross-Validation"
+        },
+        {
+            "text": "Besides, to further validate the current predictor, we took 314 GPCR-drug pairs from the study by Yamanishi et al. [100] that had been confirmed by experiments as interactive pairs and none of them occurred in the current benchmark dataset used to train our predictor. It was observed that, of the 314 pairs in such an independent dataset, 271 were correctly identified by iGPCR-Drug as interactive pairs; i.e., the success rate was 86.33%, quite consistent with the above-mentioned jackknife success rate (85.55%) achieved by the predictor on the benchmark dataset S (cf. Eq. 1).",
+            "cite_spans": [
+                {
+                    "start": 115,
+                    "end": 120,
+                    "text": "[100]",
+                    "ref_id": "BIBREF100"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Cross-Validation"
+        },
+        {
+            "text": "To enhance the value of its practical applications, the web server for iGPCR-Drug has been established that can be freely accessible at http://www.jci-bioinfo.cn/iGPCR-Drug/. It is anticipated that the web server will become a useful high throughput tool for both basic research and drug development in the relevant areas, or at the very least play a complementary role to the existing method [32] for which so far no web-server whatsoever has been provided yet.",
+            "cite_spans": [
+                {
+                    "start": 393,
+                    "end": 397,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Cross-Validation"
+        },
+        {
+            "text": "For the convenience of the vast majority of biologists and pharmaceutical scientists, here let us provide a step-by-step guide to show how the users can easily get the desired result by means of the web server without the need to follow the complicated mathematical equations presented in this paper for the process of developing the predictor and its integrity.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Protocol or User Guide"
+        },
+        {
+            "text": "Step 1. Open the web server at the site http://www.jcibioinfo.cn/iGPCR-Drug/and you will see the top page of the predictor on your computer screen, as shown in Fig. 4 . Click on the Read Me button to see a brief introduction about iGPCR-Drug predictor and the caveat when using it.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 160,
+                    "end": 166,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "The Protocol or User Guide"
+        },
+        {
+            "text": "Step 2. Either type or copy/paste the query pairs into the input box at the center of Fig. 4 . Each query pair consists of two parts: one is for the protein sequence, and the other for the drug. The GPCR sequence should be in FASTA format, while the drug Table 2 . The jackknife success rates obtained iGPCR-Drug in identifying interactive GPCR-drug pairs and non-interactive GPCR-drug pairs for the benchmark dataset S (cf. Supporting Information S1). in the KEGG code. Examples for the query pairs input can be seen by clicking on the Example button right above the input box.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 86,
+                    "end": 92,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 255,
+                    "end": 262,
+                    "text": "Table 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "The Protocol or User Guide"
+        },
+        {
+            "text": "Step 3. Click on the Submit button to see the predicted result. For example, if you use the four query pairs in the Example window as the input, after clicking the Submit button, you will see on your screen that the ''hsa:10161'' GPCR and the ''D00528'' drug are an interactive pair, and that the ''hsa:10800'' GPCR and the ''D00411'' drug are also an interactive pair, but that the ''hsa:1909'' GPCR and the ''D02566'' drug are not an interactive pair, and that the ''hsa:2913'' GPCR and the ''D01699'' drug are not an interactive pair either. All these results are fully consistent with the experimental observations. It takes about 10 seconds before the results are shown on the screen.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Protocol or User Guide"
+        },
+        {
+            "text": "Step 4. Click on the Citation button to find the relevant paper that documents the detailed development and algorithm of iGPCR-Durg.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Protocol or User Guide"
+        },
+        {
+            "text": "Step 5. Click on the Data button to download the benchmark dataset used to train and test the iGPCR-Durg predictor.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Protocol or User Guide"
+        },
+        {
+            "text": "Step 6. The program code is also available by clicking the button download on the lower panel of Fig. 4 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 97,
+                    "end": 103,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "The Protocol or User Guide"
+        },
+        {
+            "text": "Supporting Information S1 The benchmark dataset contains 1,860 GPCR-drug pair samples, of which 620 are interactive and 1,240 non-interactive. The codes listed here were from the KEGG database at http://www.kegg.jp/kegg/. (PDF)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supporting Information"
+        },
+        {
+            "text": "Supporting Information S2 The fingerprints for the drug codes listed in Supporting Information S1. Each of these fingerprints is a 256-D vectors generated by the OpenBabel software downloaded from http://openbabel.org/. (PDF)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supporting Information"
+        },
+        {
+            "text": "Supporting Information S3 The protein sequences for the GPCRs listed in Supporting Information S1. (PDF) ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supporting Information"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "G-protein-independent signaling by G-proteincoupled receptors",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Heuss",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Gerber",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Trends Neurosci",
+            "volume": "23",
+            "issn": "",
+            "pages": "469--475",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Protein-protein interactions at G-protein-coupled receptors",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Milligan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "White",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Trends Pharmacol Sci",
+            "volume": "22",
+            "issn": "",
+            "pages": "513--518",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Regulation of G protein-coupled receptor signaling by scaffold proteins",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lefkowitz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Circ Res",
+            "volume": "91",
+            "issn": "",
+            "pages": "672--680",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Prediction of G-protein-coupled receptor classes",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Journal of Proteome Research",
+            "volume": "4",
+            "issn": "",
+            "pages": "1413--1418",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Latest development in drug discovery on G proteincoupled receptors",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Lundstrom",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Curr Protein Pept Sci",
+            "volume": "7",
+            "issn": "",
+            "pages": "465--470",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "How many drug targets are there?",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Overington",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Al-Lazikani",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hopkins",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nat Rev Drug Discov",
+            "volume": "5",
+            "issn": "",
+            "pages": "993--996",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "A guide to drug discovery: Target selection in drug discovery",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Knowles",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gromo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nat Rev Drug Discov",
+            "volume": "2",
+            "issn": "",
+            "pages": "63--69",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A fast flexible docking method using an incremental construction algorithm",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Rarey",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Kramer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lengauer",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Klebe",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "J Mol Biol",
+            "volume": "261",
+            "issn": "",
+            "pages": "470--489",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Binding mechanism of coronavirus main proteinase with ligands and its implication to drug design against SARS",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Wei",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Zhong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Biochem Biophys Res Comm",
+            "volume": "310",
+            "issn": "",
+            "pages": "148--151",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "A probabilistic model for mining implicit 'chemical compound-gene' relations from literature",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Okuno",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Tsujimoto",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mamitsuka",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "",
+            "pages": "245--251",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Prediction of drug-target interaction networks from the integration of chemical and genomic spaces",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Yamanishi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Araki",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gutteridge",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Honda",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kanehisa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Bioinformatics",
+            "volume": "24",
+            "issn": "",
+            "pages": "232--240",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Review: Structural bioinformatics and its impact to biomedical science",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Current Medicinal Chemistry",
+            "volume": "11",
+            "issn": "",
+            "pages": "2105--2134",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "The many roles of computation in drug discovery",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Jorgensen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Science",
+            "volume": "303",
+            "issn": "",
+            "pages": "1813--1818",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Utility of homology models in the drug discovery process",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Hillisch",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Pineda",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Hilgenfeld",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Drug Discov Today",
+            "volume": "9",
+            "issn": "",
+            "pages": "659--669",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Unusual architecture of the p7 channel fromhepatitis C virus",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Ouyang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Xie",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Berardi",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Dev",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nature",
+            "volume": "498",
+            "issn": "",
+            "pages": "521--525",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Structure and mechanism of the M2 proton channel of influenza A virus",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Schnell",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature",
+            "volume": "451",
+            "issn": "",
+            "pages": "591--595",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Mitochondrial uncoupling protein 2 structure determined by NMR molecular fragment searching",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Berardi",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Shih",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Harrison",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nature",
+            "volume": "476",
+            "issn": "",
+            "pages": "109--113",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Solution structure and functional analysis of the influenza B proton channel",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Pielak",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mcclintock",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature Structural and Molecular Biology",
+            "volume": "16",
+            "issn": "",
+            "pages": "1267--1271",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "The structural basis for intramembrane assembly of an activating immunoreceptor complex",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Call",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Wucherpfennig",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nature Immunology",
+            "volume": "11",
+            "issn": "",
+            "pages": "1023--1029",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "The structure of the zetazeta transmembrane dimer reveals features essential for its assembly with the T cell receptor",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Call",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Schnell",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lutz",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Cell",
+            "volume": "127",
+            "issn": "",
+            "pages": "355--368",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Regulation of T cell receptor activation by dynamic membrane binding of the CD3epsilon cytoplasmic tyrosine-based motif",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Gagnon",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Call",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Schnell",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Schwieters",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Cell",
+            "volume": "135",
+            "issn": "",
+            "pages": "702--713",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Prediction of the tertiary structure of the betasecretase zymogen",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Howe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Biochem Biophys Res Commun",
+            "volume": "292",
+            "issn": "",
+            "pages": "702--708",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Insights from modelling three-dimensional structures of the human potassium and sodium channels",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Journal of Proteome Research",
+            "volume": "3",
+            "issn": "",
+            "pages": "856--861",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Coupling interaction between thromboxane A2 receptor and alpha-13 subunit of guanine nucleotide-binding protein",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Journal of Proteome Research",
+            "volume": "4",
+            "issn": "",
+            "pages": "1681--1686",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Insights from modeling the 3D structure of DNA-CBF3b complex",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Journal of Proteome Research",
+            "volume": "4",
+            "issn": "",
+            "pages": "1657--1660",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Modeling the tertiary structure of human cathepsin-E",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Biochem Biophys Res Commun",
+            "volume": "331",
+            "issn": "",
+            "pages": "56--60",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Assessment of chemical libraries for their druggability",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sirois",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Hatzakis",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Wei",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Du",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Comput Biol Chem",
+            "volume": "29",
+            "issn": "",
+            "pages": "55--67",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Some remarks on protein attribute prediction and pseudo amino acid composition (50th Anniversary Year Review)",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "273",
+            "issn": "",
+            "pages": "236--247",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "iRSpot-PseDNC: identify recombination spots with pseudo dinucleotide composition",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Feng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Research",
+            "volume": "41",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "iSNO-PseAAC: Predict cysteine Snitrosylation sites in proteins by incorporating position specific amino acid propensity into pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ding",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS ONE",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "iNuc-PhysChem: A Sequence-Based Predictor for Identifying Nucleosomes via Physicochemical Properties",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Feng",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Ding",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Zuo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS ONE",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Predicting drug-target interaction networks based on functional groups and biological features",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Kong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS ONE",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Pharmacophore Discovery Using the Inductive Logic Programming System PROGOL",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Finn",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Muggleton",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Page",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Srinivasan",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Mach Learn",
+            "volume": "30",
+            "issn": "",
+            "pages": "241--270",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Methods for computer-aided chemical biology. Part 2: Evaluation of compound selectivity using 2D molecular fingerprints",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Vogt",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Stumpfe",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ahmed",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bajorath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Chem Biol Drug Des",
+            "volume": "70",
+            "issn": "",
+            "pages": "195--205",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Molecular similarity analysis in virtual screening: foundations, limitations and novel approaches",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Eckert",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bajorath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Drug Discov Today",
+            "volume": "12",
+            "issn": "",
+            "pages": "225--233",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Comparative study of the physicochemical properties of six clinical low molecular weight gadolinium contrast agents",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Laurent",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Elst",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Muller",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Contrast Media Mol Imaging",
+            "volume": "1",
+            "issn": "",
+            "pages": "128--137",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Indexing molecules with chemical graph identifiers",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Gregori-Puigjane",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Garriga-Sust",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mestres",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Comput Chem",
+            "volume": "32",
+            "issn": "",
+            "pages": "2638--2646",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Application of novel atom-type AI topological indices to QSPR studies of alkanes",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Comput Chem",
+            "volume": "26",
+            "issn": "",
+            "pages": "357--369",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "From genomics to chemical genomics: new developments in KEGG",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kanehisa",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Goto",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hattori",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Aoki-Kinoshita",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Itoh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nucleic Acids Res",
+            "volume": "34",
+            "issn": "",
+            "pages": "354--357",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Open Babel: An open chemical toolbox",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "O&apos;boyle",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Banck",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "James",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Morley",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Vandermeersch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Cheminform",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Similarity searching using reduced graphs",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Gillet",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Willett",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bradshaw",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "J Chem Inf Comput Sci",
+            "volume": "43",
+            "issn": "",
+            "pages": "338--345",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Unsupervised data base clustering based on daylight's fingerprint and Tanimoto similarity: A fast and automated way to cluster small and large data sets",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Butina",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Chem Inf Comput Sci",
+            "volume": "39",
+            "issn": "",
+            "pages": "747--750",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Review: Recent progresses in protein subcellular location prediction",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Shen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Analytical Biochemistry",
+            "volume": "370",
+            "issn": "",
+            "pages": "1--16",
+            "other_ids": {}
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Evaluating the statistical significance of multiple distinct local alignments",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Altschul",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "1--14",
+            "other_ids": {}
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Statistics of local complexity in amino acid sequences and sequence databases",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wootton",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Federhen",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Comput Chem",
+            "volume": "17",
+            "issn": "",
+            "pages": "149--163",
+            "other_ids": {}
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "The folding type of a protein is relevant to the amino acid composition",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Nakashima",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Nishikawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Ooi",
+                    "suffix": ""
+                }
+            ],
+            "year": 1986,
+            "venue": "J Biochem",
+            "volume": "99",
+            "issn": "",
+            "pages": "152--162",
+            "other_ids": {}
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Predicting protein folding types by distance functions that make allowances for amino acid interactions",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Journal of Biological Chemistry",
+            "volume": "269",
+            "issn": "",
+            "pages": "22014--22020",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Prediction of protein cellular attributes using pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "PROTEINS: Structure, Function, and Genetics",
+            "volume": "43",
+            "issn": "",
+            "pages": "246--255",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Theoretical and experimental biology in one -A symposium in honour of Professor Kuo-Chen Chou's 50th anniversary and Professor Richard Gieg\u00e9's 40th anniversary of their scientific careers",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lapointe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Discriminating Outer Membrane Proteins with Fuzzy K-Nearest Neighbor Algorithms Based on the General Form of Chou's PseAAC",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hayat",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Khan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Protein & Peptide Letters",
+            "volume": "19",
+            "issn": "",
+            "pages": "411--421",
+            "other_ids": {}
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Predicting Antibacterial Peptides by the Concept of Chou's Pseudoamino Acid Composition and Machine Learning Methods",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Khosravian",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Faramarzi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Beigi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Behbahani",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mohabatkar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Protein & Peptide Letters",
+            "volume": "20",
+            "issn": "",
+            "pages": "180--186",
+            "other_ids": {}
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Prediction of Allergenic Proteins by Means of the Concept of Chou's Pseudo Amino Acid Composition and a",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mohabatkar",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Beigi",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Abdolahi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mohsenzadeh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Machine Learning Approach. Medicinal Chemistry",
+            "volume": "9",
+            "issn": "",
+            "pages": "133--137",
+            "other_ids": {}
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Prediction of metalloproteinase family based on the concept of Chou's pseudo amino acid composition using a machine learning approach",
+            "authors": [
+                {
+                    "first": "Mohammad",
+                    "middle": [],
+                    "last": "Beigi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Behjati",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Mohabatkar",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Structural and Functional Genomics",
+            "volume": "12",
+            "issn": "",
+            "pages": "191--197",
+            "other_ids": {}
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "A novel feature representation method based on Chou's pseudo amino acid composition for protein structural class prediction",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Sahu",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Panda",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Computational Biology and Chemistry",
+            "volume": "34",
+            "issn": "",
+            "pages": "320--327",
+            "other_ids": {}
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "Identifying Bacterial Virulent Proteins by Fusing a Set of Classifiers Based on Variants of Chou's Pseudo Amino Acid Composition and on Evolutionary Information",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Nanni",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lumini",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Gupta",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Garg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "IEEE/ACM Trans Comput Biol Bioinform",
+            "volume": "9",
+            "issn": "",
+            "pages": "467--475",
+            "other_ids": {}
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "Supersecondary structure prediction using Chou's pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Zou",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Xia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Computational Chemistry",
+            "volume": "32",
+            "issn": "",
+            "pages": "271--278",
+            "other_ids": {}
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "GOASVM: A subcellular location predictor by incorporating term-frequency gene ontology into the general form of Chou's pseudo-amino acid composition",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Mak",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Kung",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "323",
+            "issn": "",
+            "pages": "40--48",
+            "other_ids": {}
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "EuLoc: a web-server for accurately predict protein subcellular localization in eukaryotes by incorporating various features of sequence segments into the general form of Chou's PseAAC",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Huang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Journal of Computer-Aided Molecular Design",
+            "volume": "27",
+            "issn": "",
+            "pages": "91--103",
+            "other_ids": {}
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "Using the concept of Chou's pseudo amino acid composition to predict protein subcellular localization: an approach by incorporating evolutionary information and von Neumann entropies",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Pan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Amino Acids",
+            "volume": "34",
+            "issn": "",
+            "pages": "565--572",
+            "other_ids": {}
+        },
+        "BIBREF60": {
+            "ref_id": "b60",
+            "title": "Prediction of Apoptosis Protein Locations with Genetic Algorithms and Support Vector Machines Through a New Mode of Pseudo Amino Acid Composition",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Kandaswamy",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Pugalenthi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Moller",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Hartmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "U"
+                    ],
+                    "last": "Kalies",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Protein and Peptide Letters",
+            "volume": "17",
+            "issn": "",
+            "pages": "1473--1479",
+            "other_ids": {}
+        },
+        "BIBREF61": {
+            "ref_id": "b61",
+            "title": "Predicting membrane protein types by incorporating protein topology, domains, signal peptides, and physicochemical properties into the general form of Chou's pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "318",
+            "issn": "",
+            "pages": "1--12",
+            "other_ids": {}
+        },
+        "BIBREF62": {
+            "ref_id": "b62",
+            "title": "A Multilabel Model Based on Chou's Pseudo-Amino Acid Composition for Identifying Membrane Proteins with Both Single and Multiple Functional Types",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Yuan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J Membr Biol",
+            "volume": "246",
+            "issn": "",
+            "pages": "327--334",
+            "other_ids": {}
+        },
+        "BIBREF63": {
+            "ref_id": "b63",
+            "title": "Identifying GPCRs and their Types with Chou's Pseudo Amino Acid Composition: An Approach from Multi-scale Energy Representation and Position Specific Scoring Matrix",
+            "authors": [
+                {
+                    "first": "Zia",
+                    "middle": [],
+                    "last": "Ur",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Khan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Protein & Peptide Letters",
+            "volume": "19",
+            "issn": "",
+            "pages": "890--903",
+            "other_ids": {}
+        },
+        "BIBREF64": {
+            "ref_id": "b64",
+            "title": "Identifying protein quaternary structural attributes by incorporating physicochemical properties into the general form of Chou's PseAAC via discrete wavelet transform",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Sun",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Qiu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Suo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Huang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Molecular BioSystems",
+            "volume": "8",
+            "issn": "",
+            "pages": "3178--3184",
+            "other_ids": {}
+        },
+        "BIBREF65": {
+            "ref_id": "b65",
+            "title": "Genetic programming for creating Chou's pseudo amino acid based features for submitochondria localization",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Nanni",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lumini",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Amino Acids",
+            "volume": "34",
+            "issn": "",
+            "pages": "653--660",
+            "other_ids": {}
+        },
+        "BIBREF66": {
+            "ref_id": "b66",
+            "title": "Using the concept of Chou's pseudo amino acid composition for risk type prediction of human papillomaviruses",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Esmaeili",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mohabatkar",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mohsenzadeh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "263",
+            "issn": "",
+            "pages": "203--209",
+            "other_ids": {}
+        },
+        "BIBREF67": {
+            "ref_id": "b67",
+            "title": "Prediction of cyclin proteins using Chou's pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mohabatkar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Protein & Peptide Letters",
+            "volume": "17",
+            "issn": "",
+            "pages": "1207--1214",
+            "other_ids": {}
+        },
+        "BIBREF68": {
+            "ref_id": "b68",
+            "title": "Prediction of GABA(A) receptor proteins using the concept of Chou's pseudo-amino acid composition and support vector machine",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Mohabatkar",
+                    "suffix": ""
+                },
+                {
+                    "first": "Mohammad",
+                    "middle": [],
+                    "last": "Beigi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Esmaeili",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "281",
+            "issn": "",
+            "pages": "18--23",
+            "other_ids": {}
+        },
+        "BIBREF69": {
+            "ref_id": "b69",
+            "title": "Use of fuzzy clustering technique and matrices to classify amino acids and its impact to Chou's pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Georgiou",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Karakasidis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Nieto",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Torres",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "257",
+            "issn": "",
+            "pages": "17--26",
+            "other_ids": {}
+        },
+        "BIBREF70": {
+            "ref_id": "b70",
+            "title": "Identification of colorectal cancer related genes with mRMR and shortest path in protein-protein interaction network",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Cai",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS ONE",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF71": {
+            "ref_id": "b71",
+            "title": "Signal propagation in protein interaction network during colorectal cancer progression",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Jiang",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lei",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Cai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "BioMed Research International",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1155/2013/287019"
+                ]
+            }
+        },
+        "BIBREF72": {
+            "ref_id": "b72",
+            "title": "PseAAC-Builder: A cross-platform standalone program for generating various special Chou's pseudo-amino acid compositions",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Du",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Analytical Biochemistry",
+            "volume": "425",
+            "issn": "",
+            "pages": "117--119",
+            "other_ids": {}
+        },
+        "BIBREF73": {
+            "ref_id": "b73",
+            "title": "propy: a tool to generate various modes of Chou's PseAAC",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Cao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Liang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Bioinformatics",
+            "volume": "29",
+            "issn": "",
+            "pages": "960--962",
+            "other_ids": {}
+        },
+        "BIBREF74": {
+            "ref_id": "b74",
+            "title": "PseAAC: a flexible web-server for generating various kinds of protein pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Analytical Biochemistry",
+            "volume": "373",
+            "issn": "",
+            "pages": "386--388",
+            "other_ids": {}
+        },
+        "BIBREF75": {
+            "ref_id": "b75",
+            "title": "Digital coding of amino acids based on hydrophobic index",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Protein & Peptide Letters",
+            "volume": "14",
+            "issn": "",
+            "pages": "871--875",
+            "other_ids": {}
+        },
+        "BIBREF76": {
+            "ref_id": "b76",
+            "title": "Introduction to Grey System Theory",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Deng",
+                    "suffix": ""
+                }
+            ],
+            "year": 1989,
+            "venue": "The Journal of Grey System",
+            "volume": "",
+            "issn": "",
+            "pages": "1--24",
+            "other_ids": {}
+        },
+        "BIBREF77": {
+            "ref_id": "b77",
+            "title": "iLoc-Animal: A multi-label learning classifier for predicting subcellular localization of animal proteins",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Fang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Molecular BioSystems",
+            "volume": "9",
+            "issn": "",
+            "pages": "634--644",
+            "other_ids": {}
+        },
+        "BIBREF78": {
+            "ref_id": "b78",
+            "title": "iDNA-Prot: Identification of DNA Binding Proteins Using Random Forest with Grey Model",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Fang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PLoS ONE",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF79": {
+            "ref_id": "b79",
+            "title": "Predicting Secretory Proteins of Malaria Parasite by Incorporating Sequence Evolution Information into Pseudo Amino Acid Composition via Grey System Model",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Fang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS One",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF80": {
+            "ref_id": "b80",
+            "title": "GPCR-GIA: a web-server for identifying Gprotein coupled receptors and their families with grey incidence analysis",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Protein Eng Des Sel",
+            "volume": "22",
+            "issn": "",
+            "pages": "699--705",
+            "other_ids": {}
+        },
+        "BIBREF81": {
+            "ref_id": "b81",
+            "title": "Using grey dynamic modeling and pseudo amino acid composition to predict protein structural classes",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Journal of Computational Chemistry",
+            "volume": "29",
+            "issn": "",
+            "pages": "2018--2024",
+            "other_ids": {}
+        },
+        "BIBREF82": {
+            "ref_id": "b82",
+            "title": "A fuzzy k-nearest neighbours algorithm",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Keller",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Gray",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Givens",
+                    "suffix": ""
+                }
+            ],
+            "year": 1985,
+            "venue": "IEEE Trans Syst Man Cybern",
+            "volume": "15",
+            "issn": "",
+            "pages": "580--585",
+            "other_ids": {}
+        },
+        "BIBREF83": {
+            "ref_id": "b83",
+            "title": "iNR-PhysChem: A Sequence-Based Predictor for Identifying Nuclear Receptors and Their Subfamilies via Physical-Chemical Property Matrix",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS ONE",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF84": {
+            "ref_id": "b84",
+            "title": "Twointermediate model to characterize the structure of fast-folding proteins",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Roterman",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Konieczny",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Jurkowski",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Prymula",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Banach",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "283",
+            "issn": "",
+            "pages": "60--70",
+            "other_ids": {}
+        },
+        "BIBREF85": {
+            "ref_id": "b85",
+            "title": "GPCR-2L: Predicting G protein-coupled receptors and their types by hybridizing two different modes of pseudo amino acid compositions",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Molecular Biosystems",
+            "volume": "7",
+            "issn": "",
+            "pages": "911--919",
+            "other_ids": {}
+        },
+        "BIBREF86": {
+            "ref_id": "b86",
+            "title": "Quat-2L: a web-server for predicting protein quaternary structural attributes",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Molecular Diversity",
+            "volume": "15",
+            "issn": "",
+            "pages": "149--155",
+            "other_ids": {}
+        },
+        "BIBREF87": {
+            "ref_id": "b87",
+            "title": "Prediction of protein structure classes with pseudo amino acid composition and fuzzy support vector machine network",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Ding",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Protein & Peptide Letters",
+            "volume": "14",
+            "issn": "",
+            "pages": "811--815",
+            "other_ids": {}
+        },
+        "BIBREF88": {
+            "ref_id": "b88",
+            "title": "Combining fuzzy clustering and neural networks to predict protein structural classes",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Maggiora",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Elrod",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "Neural Networks in QSAR and Drug Design",
+            "volume": "",
+            "issn": "",
+            "pages": "255--279",
+            "other_ids": {}
+        },
+        "BIBREF89": {
+            "ref_id": "b89",
+            "title": "Using supervised fuzzy clustering to predict protein structural classes",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Biochem Biophys Res Commun",
+            "volume": "334",
+            "issn": "",
+            "pages": "577--581",
+            "other_ids": {}
+        },
+        "BIBREF90": {
+            "ref_id": "b90",
+            "title": "Predicting protein structural classes from amino acid composition: application of fuzzy clustering",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Maggiora",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Protein Engineering",
+            "volume": "8",
+            "issn": "",
+            "pages": "425--435",
+            "other_ids": {}
+        },
+        "BIBREF91": {
+            "ref_id": "b91",
+            "title": "Fuzzy KNN for predicting membrane protein types from pseudo amino acid composition",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Journal of Theoretical Biology",
+            "volume": "240",
+            "issn": "",
+            "pages": "9--13",
+            "other_ids": {}
+        },
+        "BIBREF92": {
+            "ref_id": "b92",
+            "title": "NR-2L: A Two-Level Predictor for Identifying Nuclear Receptor Subfamilies Based on Sequence-Derived Features",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PLoS ONE",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF93": {
+            "ref_id": "b93",
+            "title": "Review: Prediction of protein structural classes",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Critical Reviews in Biochemistry and Molecular Biology",
+            "volume": "30",
+            "issn": "",
+            "pages": "275--349",
+            "other_ids": {}
+        },
+        "BIBREF94": {
+            "ref_id": "b94",
+            "title": "On the generalized distance in statistics",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Mahalanobis",
+                    "suffix": ""
+                }
+            ],
+            "year": 1936,
+            "venue": "Proc Natl Inst Sci India",
+            "volume": "2",
+            "issn": "",
+            "pages": "49--55",
+            "other_ids": {}
+        },
+        "BIBREF95": {
+            "ref_id": "b95",
+            "title": "Does the folding type of a protein depend on its amino acid composition?",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "FEBS Letters",
+            "volume": "363",
+            "issn": "",
+            "pages": "127--131",
+            "other_ids": {}
+        },
+        "BIBREF96": {
+            "ref_id": "b96",
+            "title": "Prediction of signal peptides using scaled window",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Peptides",
+            "volume": "22",
+            "issn": "",
+            "pages": "1973--1979",
+            "other_ids": {}
+        },
+        "BIBREF97": {
+            "ref_id": "b97",
+            "title": "A novel approach to predicting protein structural classes in a (20-1)-D amino acid composition space",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Proteins: Structure, Function & Genetics",
+            "volume": "21",
+            "issn": "",
+            "pages": "319--344",
+            "other_ids": {}
+        },
+        "BIBREF98": {
+            "ref_id": "b98",
+            "title": "Cell-PLoc 2.0: An improved package of webservers for predicting subcellular localization of proteins in various organisms",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Shen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Natural Science",
+            "volume": "2",
+            "issn": "",
+            "pages": "1090--1103",
+            "other_ids": {
+                "DOI": [
+                    "10.4236/ns.2010.210136"
+                ]
+            }
+        },
+        "BIBREF99": {
+            "ref_id": "b99",
+            "title": "Some Remarks on Predicting Multi-Label Attributes in Molecular Biosystems",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Molecular Biosystems",
+            "volume": "9",
+            "issn": "",
+            "pages": "1092--1100",
+            "other_ids": {}
+        },
+        "BIBREF100": {
+            "ref_id": "b100",
+            "title": "Drug-target interaction prediction from chemical, genomic and pharmacological data in an integrated framework",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Yamanishi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kotera",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kanehisa",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Goto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Bioinformatics",
+            "volume": "26",
+            "issn": "",
+            "pages": "246--254",
+            "other_ids": {}
+        },
+        "BIBREF101": {
+            "ref_id": "b101",
+            "title": "Biochemistry. New York: John Eiley & sons, Inc",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Voet",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Voet",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF102": {
+            "ref_id": "b102",
+            "title": "Contribution of hydrophobic interactions to the stability of the globular conformation of proteins",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Tanford",
+                    "suffix": ""
+                }
+            ],
+            "year": 1962,
+            "venue": "Journal of American Chemical Society",
+            "volume": "84",
+            "issn": "",
+            "pages": "4240--4274",
+            "other_ids": {}
+        },
+        "BIBREF103": {
+            "ref_id": "b103",
+            "title": "Prediction of protein antigenic determinants from amino acid sequences",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Hopp",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Woods",
+                    "suffix": ""
+                }
+            ],
+            "year": 1981,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "78",
+            "issn": "",
+            "pages": "3824--3828",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Schematic drawing of a GPCR. It consists of seven transmembrane alpha helices, intracellular C-terminal, an extracellular N-terminal, three intracellular loops and three extracellular loops. Reproduced from [4] with permission. doi:10.1371/journal.pone.0072234.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "-drug pairs in the dataset S z and all the noninteractive GPCR-drug pairs in S { were mispredicted, we have the overall accuracy Acc~L~0. The MCC correlation coefficient is usually used for measuring the quality of binary (two-class) classifications. When N z {~N { z~0 meaning that none of the interactive GPCR-drug pairs in the dataset S z and none of the non-interactive GPCR-drug pairs in S { was mispredicted, we have MCC~1; when N z {~N z =2 and N { z~N { =2 we have MCC~0 meaning no better than random prediction; when",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "A flowchart to show the operation process of the iGPCR-Drug predictor. See the text for further explanation. doi:10.1371/journal.pone.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "A 3D graph to show how to optimize the two parameters K and Q for the iGPCR-Drug predictor. doi:10.1371/journal.pone.0072234.g003",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "A semi-screenshot to show the top page of the iGPCR-Drug web-server. Its web-site address is at http://www.jci-bioinfo.cn/ iGPCR-Drug. doi:10.1371/journal.pone.0072234.g004",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF1": {
+            "text": "Ten physicochemical property codes for each of the 20 native amino acids a .",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Performance evaluation (cf. Eq. 10 or22) iGPCR-Drug aThe parameters used: w 1~1 0 5 and w 2~1 0 2 (cf. Eq. 10), w 3~1 =700 (cf. Eq. 14), and K~10 and Q~1:8 (cf. Eq. 15).See ref.[32]. doi:10.1371/journal.pone.0072234.t002",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The authors wish to thank the two anonymous reviewers for their constructive comments, which were very helpful for strengthening the presentation of this paper.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        }
+    ]
+}

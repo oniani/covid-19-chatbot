@@ -1,0 +1,1796 @@
+{
+    "paper_id": "3d3886831b542dfc9d1b6428ac48d96589d0ae61",
+    "metadata": {
+        "title": "The R0 package: a toolbox to estimate reproduction numbers for epidemic outbreaks",
+        "authors": [
+            {
+                "first": "Thomas",
+                "middle": [],
+                "last": "Obadia",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Romana",
+                "middle": [],
+                "last": "Haneef",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Pierre-Yves",
+                "middle": [],
+                "last": "Bo\u00eblle",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Several generic methods have been proposed to estimate transmission parameters during an outbreak, especially the reproduction number. However, as of today, no dedicated software exists that implements these methods and allow comparisons.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Results: A review of generic methods used to estimate transmissibility parameters during outbreaks was carried out. Most methods used the epidemic curve and the generation time distribution. Two categories of methods were available: those estimating the initial reproduction number, and those estimating a time dependent reproduction number. We implemented five methods as an R library, developed sensitivity analysis tools for each method and provided numerical illustrations of their use. A comparison of the performance of the different methods on simulated datasets is reported. Conclusions: This software package allows a standardized and extensible approach to the estimation of the reproduction number and generation interval distribution from epidemic curves.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "In 2009, the new influenza virus A/H1N1 rapidly spread worldwide [1] . In the World Health Organization guidance document [2] detailing the epidemiological parameters to quickly determine after identification of the disease were: the incubation period, i.e. time between infection and symptoms; the serial interval, i.e. time between symptoms onset in primary and secondary cases; and the initial reproduction ratio, i.e. the average number of secondary cases per primary case. In a systematic review of all articles presenting such estimates for the 2009 H1N1 influenza pandemic [3] , we found high variability in the methods used to estimate the same parameters.",
+            "cite_spans": [
+                {
+                    "start": 65,
+                    "end": 68,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 122,
+                    "end": 125,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 580,
+                    "end": 583,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Numerical differences in the reported estimates were therefore due in part to the chosen method. Applying all methods on the same dataset would help to understand what variation is due to the method, and this will be encouraged if the required code is widely distributed. It is also worth noting that subtile variation arises from the actual implementation of the same methods. For example, the initial \"exponential growth rate\" of the epidemic curve, used in the method described by Wallinga & Lipsitch [4] has been estimated using linear regression on logged incidence [5] , Poisson regression on incidence data [6] or renewal equations [7] .",
+            "cite_spans": [
+                {
+                    "start": 504,
+                    "end": 507,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 571,
+                    "end": 574,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 614,
+                    "end": 617,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 639,
+                    "end": 642,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Authors may have provided code implementing their methods, but no effort has yet been made to provide end users with a unique framework, with standardized approach allowing easy comparisons. To allow comparisons and provide more standardized approaches, we developed an R package implementing five methods that were the most commonly used during the 2009 H1N1 influenza pandemic. These methods are \"plug-in\" methods, requiring only data that are commonly recorded during an outbreak (epidemic curve, serial interval), and have been applied in a variety of situations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "After briefly recalling the principle of these methods, we illustrate their use, propose some tools to critically examine results and finally discuss applicability and limitations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We recall and describe the implementation of methods to estimate the serial interval distribution and reproduction numbers in epidemics. We also propose tools to explore the sensitivity of estimates to required assumptions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Implementation"
+        },
+        {
+            "text": "The generation time is the time lag between infection in a primary case and a secondary case. The generation time distribution should be obtained from the time lag between all infectee/infector pairs [8] . As it cannot be observed directly, it is often substituted with the serial interval distribution that measures time between symptoms onset. In our software package, the 'generation. time' function is used to represent a discretized generation time distribution. Discretization is carried out on the grid [0,0.5), [0.5, 1.5), [1.5, 2.5), etc.. . . where the unit is a user chosen time interval (hour, day, week. . .). Several descriptions are supported: \"empirical\" requiring the full specification of the distribution, or parametric distributions taken among \"gamma\", \"lognormal\" or \"weibull\". In the latter case, the mean and standard deviation must be provided in the desired time units.",
+            "cite_spans": [
+                {
+                    "start": 200,
+                    "end": 203,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Defining a generation time distribution"
+        },
+        {
+            "text": "A function ('est.GT') is also provided to estimate the serial interval distribution from a sample of observed time intervals between symptom onsets in primary cases and secondary cases by maximum likelihood.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Defining a generation time distribution"
+        },
+        {
+            "text": "Reproduction numbers may be estimated at different times during an epidemic. In the following, we recall methods for estimating the \"initial\" reproduction number, i.e. at the beginning of an outbreak, and for estimating the \"time-dependent\" reproduction number at any time during an outbreak, as well as the required hypotheses for the methods. Proposed extensions and options implemented in the software are also presented.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Estimation of initial reproduction numbers"
+        },
+        {
+            "text": "In the classical SIR model of disease transmission, the attack rate (AR : the percentage of the population eventually infected) is linked to the basic reproduction number [9] , by R 0 \u00bc \u00c0",
+            "cite_spans": [
+                {
+                    "start": 171,
+                    "end": 174,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Attack rate (AR)"
+        },
+        {
+            "text": "\u00de where S 0 is the initial percentage of susceptible population. The required assumptions are homogeneous mixing, closed population, and no intervention during the outbreak.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Attack rate (AR)"
+        },
+        {
+            "text": "As summarized by Wallinga & Lipsitch [4] , the exponential growth rate during the early phase of an outbreak can be linked to the initial reproduction ratio. The exponential growth rate, denoted by r, is defined by the per capita change in number of new cases per unit of time. As incidence data are integer valued, Poisson regression is indicated to estimate this parameter [6, 10] , rather than linear regression of the logged incidence. The reproduction number is computed as R \u00bc",
+            "cite_spans": [
+                {
+                    "start": 37,
+                    "end": 40,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 375,
+                    "end": 378,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 379,
+                    "end": 382,
+                    "text": "10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Exponential growth (EG)"
+        },
+        {
+            "text": "where M is the moment generating function of the (discretized) generation time distribution. It is necessary to choose a period in the epidemic curve over which growth is exponential. We propose to use the deviance based R-squared statistic to guide this choice. No assumption is made on mixing in the population.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Exponential growth (EG)"
+        },
+        {
+            "text": "This model, proposed by White & Pagano [11] , relies on the assumption that the number of secondary cases caused by an index case is Poisson distributed with expected value R. Given observation of (N 0, N 1 , . . ., N T ) incident cases over consecutive time units, and a generation time distribution w, R is estimated by maximiz-",
+            "cite_spans": [
+                {
+                    "start": 39,
+                    "end": 43,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Maximum likelihood estimation (ML)"
+        },
+        {
+            "text": "Here again, the likelihood must be calculated on a period of exponential growth, and the deviance R-squared measure may be used to select the best period. No assumption is made on mixing in the population.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Maximum likelihood estimation (ML)"
+        },
+        {
+            "text": "The approach assumes that the epidemic curve is analysed from the first case on. If this is not the case, the initial reproduction number will be overestimated, as secondary cases will be assigned to too few index cases: we implemented a correction as described in Additional file 1: Supplementary material S1. It is also possible to account for importation of cases during the course of the epidemic.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Maximum likelihood estimation (ML)"
+        },
+        {
+            "text": "This method, although introduced as \"real-time bayesian\" by its authors, more exactly allows sequential estimation of the initial reproduction number. It relies on an approximation to the SIR model, whereby incidence at time t + 1, N(t + 1) is approximately Poisson distributed with mean N(t)e (\u03b3(R \u2212 1)) [12] , where 1 \u03b3 the average duration of the infectious period. The proposed algorithm, described in a Bayesian framework, starts with a non-informative prior on the distribution of the reproduction number R. The distribution is updated as new data is observed, using P RjN 0 ; . . . ; N t\u00fe1 \u00f0 \u00de \u00bc P N t\u00fe1 jR;N 0 ;...;N t \u00f0 \u00de P RjN 0 ;...;N t \u00f0 \u00de P N 0 ;...;N t\u00fe1 \u00f0 \u00de",
+            "cite_spans": [
+                {
+                    "start": 305,
+                    "end": 309,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sequential bayesian method (SB)"
+        },
+        {
+            "text": ". In other words, the prior distribution for R used on each new day is the posterior distribution from the previous day. At each time, the mode of the posterior may be computed along with the highest probability density interval. As before, the method requires that the epidemic is in a period of exponential growth, i.e. it does not account for susceptible depletion; it implicitly uses an exponential distribution for the generation time; and assumes random mixing in the population.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequential bayesian method (SB)"
+        },
+        {
+            "text": "The time-dependant method, proposed by Wallinga & Teunis [13] , computes reproduction numbers by averaging over all transmission networks compatible with observations. The probability p ij that case i with onset at time ti was infected by case j with onset at time tj is cal-",
+            "cite_spans": [
+                {
+                    "start": 57,
+                    "end": 61,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Estimation of time dependent reproduction numbers (TD)"
+        },
+        {
+            "text": "reproduction number for case j is therefore R j = P i p ij , and is averaged as where not yet observed secondary cases are taken into account is possible [14] . It is possible to account for importation cases during the course of the epidemic.",
+            "cite_spans": [
+                {
+                    "start": 154,
+                    "end": 158,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Estimation of time dependent reproduction numbers (TD)"
+        },
+        {
+            "text": "In the following, we assume that the incidence data is provided on a daily basis, i.e. that the time unit is the day. To use the maximum likelihood and time dependent method, it will be necessary that the generation time distribution is discretized using the same time unit. The user may provide incidence data in the following formats:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "-Vector of dates of onset. A list of dates in character or date format is required. An epicurve object from the Epitools package [15] (epitools::epicurve) may also be supplied.",
+            "cite_spans": [
+                {
+                    "start": 129,
+                    "end": 133,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "-Vector of incidence counts. In this case, the initial date and/or time step can be supplied separately.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "We now illustrate the use of the package using an example dataset from the 1918 influenza pandemic [16] , then use simulation to compare methods. The code used for this analysis is given in the Appendix.",
+            "cite_spans": [
+                {
+                    "start": 99,
+                    "end": 103,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "The 'estimate.R' function applies the methods described above to a given epidemic curve. Several methods may be used at the same time by listing them in the \"methods\" argument. In the session code presented in the appendix, a generation time distribution typical of influenza is defined, using a Gamma distribution with mean 2.6 days and standard deviation 1 day [17] . An example dataset (Germany.1918) is loaded from the package.",
+            "cite_spans": [
+                {
+                    "start": 363,
+                    "end": 367,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Estimating reproduction numbers"
+        },
+        {
+            "text": "Initial inspection of the incidence data shows that the exponential growth period takes place during the first 30 days of the epidemic curve. Sensitivity analyses may help refine the choice of an optimal time window for exponential growth (see below). Here, we applied all methods (except the attack rate) on the first 32 days (epidemic peak) of the epidemic curve and reported estimates in Table 1 . Surprisingly, although the analysis uses the same data, the estimates range in a relatively large interval, with up to 15% variation (from 1.2 to 1.4). Moreover, confidence or credible intervals do not always overlap ( Figure 1A ). The fit of each model to the data is however quite similar in all cases, except for the SB method which fits very poorly ( Figure 1B ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 391,
+                    "end": 398,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 620,
+                    "end": 629,
+                    "text": "Figure 1A",
+                    "ref_id": null
+                },
+                {
+                    "start": 756,
+                    "end": 765,
+                    "text": "Figure 1B",
+                    "ref_id": null
+                }
+            ],
+            "section": "Estimating reproduction numbers"
+        },
+        {
+            "text": "The EG and ML methods require the user to select the time period over which growth is exponential. By default this is taken as the time period from first case to the date of maximum incidence. However, a better choice is possible using the deviance R-squared statistic over a range of possible time periods. The largest R-squared value corresponds to the period over which the model of analysis fitted the data best: we select this period to provide estimates. To look for this time period, the function 'sensitivity.analysis' systematically computes the deviance R-squared statistic over a range of time periods chosen by the user. A plot can be obtained that displays the largest R-squared value over time periods of increasing length (see Figure 2A) , and the corresponding estimates can be displayed according to the chosen time window See text for details regarding the methods. All estimates were obtained using the first 32 days of data (default column) or the best fitting time window (\"optimal\" column). For the SB method, the optimal reported estimate was obtained on day 22, as this date best fits the end of the exponential growth period. For the TD method, daily estimates were averaged over the 32 first days.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 742,
+                    "end": 752,
+                    "text": "Figure 2A)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Sensitivity analysis"
+        },
+        {
+            "text": "( Figure 2B) . Here, this analysis shows that the portion of the epidemic curve that best fitted exponential growth in the EG method was of length 15, and more precisely in this case between time units 7 and 22. Figure 1 Estimates of the reproduction ratio and goodness of fit. A) Estimates of the reproduction ratio by four different methods (see text for details). B) Observed incidence (step function) and model predicted incidence for each method. user chosen generation time distribution. In our example, we varied the generation time distribution for the EG method (see Figure 3 ): as expected, the estimates increased with the mean generation time [18] . Using the same epidemic curve, the reported reproduction ratio ranged between 1.3 and 2 when the mean generation time goes between 1.5 and 5 days.",
+            "cite_spans": [
+                {
+                    "start": 655,
+                    "end": 659,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 2,
+                    "end": 12,
+                    "text": "Figure 2B)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 212,
+                    "end": 220,
+                    "text": "Figure 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 576,
+                    "end": 584,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Sensitivity analysis"
+        },
+        {
+            "text": "We conducted a simulation study to investigate how estimates of the reproduction number changed with the method of estimation, the role of over-dispersion in the secondary cases distribution and of epidemic curve aggregation at increasingly large time steps. Epidemics were simulated using a branching process, with no restriction on the number of susceptibles to allow exponential growth. For each case, the latent and infectious period were sampled in distributions typical of influenza (gamma distributions with mean+/\u2212sd 1.6+/\u22120.3 days for latency and 1+/\u22121 days for infectious period [19] ) yielding a generation time interval with mean 2.6 days. The epidemic was started with one incident case at time t=0, then for each incident case, the number of secondary cases was sampled from a negative binomial distribution with mean \u03b2 I and variance k \u03b2 I, where I was the individual's duration of infectious period, \u03b2 the effective contact rate, and k the overdispersion parameter. The actual time of infection of secondary cases was sampled uniformly during the infectious period of the index case. In this model, the reproduction number is R = \u03b2 E(I), so that it was possible to calibrate \u03b2 to obtain the desired value of R. We ran simulations with 3 values for R (1.5, 2 and 3) and overdispersion parameter k to 1 (no overdispersion) and 4 (large overdispersion).",
+            "cite_spans": [
+                {
+                    "start": 589,
+                    "end": 593,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison of methods"
+        },
+        {
+            "text": "All epidemics were simulated over a period corresponding to approximately the 6 first generations of cases (24 days). For each combination of R and k, 4000 epidemics with more than 20 cases were simulated. Epidemic data were then aggregated daily, by 3 days periods and by 6 days periods. Estimation of the reproduction ratio was made, and the bias and mean squared error were calculated.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparison of methods"
+        },
+        {
+            "text": "The comparison of methods is presented in Table 2 . In all cases, when the data were available as daily counts, all methods had approximately the same characteristics. The ML and TD methods were the least biased. Bias increased with larger aggregation periods, especially for the ML and TD methods. For these two methods, the reproduction ratio was increasingly underestimated as data were aggregated on longer periods. Overall, overdispersion did not significantly affect the estimated value of R. In all cases, the exponential growth method performance was the least affected by either aggregation or over dispersion. ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 42,
+                    "end": 49,
+                    "text": "Table 2",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Comparison of methods"
+        },
+        {
+            "text": "We have described a package implementing several methods for estimating the reproduction number from epidemic curves, along with diagnostic tools and provided a comparison of the accuracy of these methods. The reproduction number in an epidemic is of interest when the disease is actually transmitted between subjects, either directly or indirectly. This is for example the case for influenza, childhood diseases, vector borne diseases, but not in food-borne epidemics caused by environmental exposure to a pathogen. The methods implemented in the package will best be used for acute diseases with short serial intervals. The analysis of diseases with very long incubation times (e.g. HIV or HBV infection) requires more specialized methods, especially to account for censoring [20] .",
+            "cite_spans": [
+                {
+                    "start": 778,
+                    "end": 782,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "While several methods for estimating reproduction numbers exist, sometimes with code provided by their authors, no common framework was available to allow easy and direct comparison of the results. Developing an R package provide this framework and allow widespread distribution. It will complement package developed for epidemiological surveillance [4] and cost-effectiveness analyses [5] . Furthermore, R packages are easily extensible, so that additional methods can be easily included in future releases.",
+            "cite_spans": [
+                {
+                    "start": 350,
+                    "end": 353,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 386,
+                    "end": 389,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Regarding the methods described here, we found that when the data was available on a time scale smaller than the mean generation time, all methods tended to be unbiased. Very small aggregation windows may lead to gaps, i.e. time periods with 0 observations. In this case, the SB method fails after the first gap (data not shown). Other methods are not affected, provided the maximum generation time is longer than the gap. When the data was aggregated in time periods up to twice the mean generation time, only the exponential growth method remained unbiased. Indeed, it has previously been reported that aggregation in time periods of 1 mean generation time width was ideal for estimation, and corrections proposed for larger time intervals [21] . The results obtained from the methods described here when data are aggregated in time periods larger than the mean generation time should therefore be interpreted with caution, all the more than the exponential growth assumption is unlikely to be met on long time periods.",
+            "cite_spans": [
+                {
+                    "start": 742,
+                    "end": 746,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In a real situation, and especially for an emerging disease, several practical problems must be taken into For each fixed value of R0, 4.000 epidemics were simulated at an individual-based level. A first index case is set at the initial time, and contaminated descendants are sampled in a negative binomial distribution. For each case, we sample a latency period dlat during which the individual is infected, but not contagious, and an infectious period dinf, both from Gamma distributions of parameters already described for influenza (gamma distributions with mean+/\u2212sd 1.6+/\u22120.3 days for latency and 1+/\u22121 days for infectious period [19] ). Incidence data are computed as class of time of infection, defined as",
+            "cite_spans": [
+                {
+                    "start": 636,
+                    "end": 640,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "where p is the parent case and 0 the offspring case. Epidemics that didn't start due to too few cases were discarded, and estimations were run by batch. For each batch of simulations, we report the bias between the value used to generate the epidemics and the average of all estimates, along with the Mean Square Estimator (MSE) of the simulation series.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "account in the application of these methods. The attack rate method requires the least information, but is only usable when the epidemic is over, and furthermore requires that no intervention was set up during the whole course of an outbreak. Therefore its use is generally limited to particular settings like schools or army platoons, for example [22] . All other methods require the epidemic curve and the generation time distribution, with the 'initial' reproduction ratio as an output. If one assumes that the population was totally susceptible at first, it may also be interpreted as the basic reproduction ratio (R0); a correction will be necessary in the case of a initial partial immunity. With a truly emerging outbreak, prior knowledge on the generation time distribution may be unavailable. Allowing sensitivity analyses according to the mean generation time, as we described, is therefore important to help quantify uncertainty in this respect. In other cases, estimation of the generation time distribution is relatively straightforward from pairs of infectors/infectees if there is a marked separation between generations; it is more complicated when generations quickly overlap as with influenza [23] . An additional issue is that symptom onset dates may be known only to an interval, requiring specialized methods for estimation [24] . Joint-estimation of the generation time distribution and reproduction number is another possibility [11, 14] .",
+            "cite_spans": [
+                {
+                    "start": 348,
+                    "end": 352,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1211,
+                    "end": 1215,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1345,
+                    "end": 1349,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 1452,
+                    "end": 1456,
+                    "text": "[11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1457,
+                    "end": 1460,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "A second step is to choose a time period that displays exponential growth. Too long a time period may depart from true exponential growth and bias estimation downwards, while too short a period may lead to large variance in the estimates. We implemented a method to select the optimal period displaying exponential growth based on the deviance R-squared, a commonly used method to measure goodness of fit of model to data. As shown in Figure 2A , the typical profile of the R-squared deviance presents a maximum that allows selecting the best period.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 435,
+                    "end": 444,
+                    "text": "Figure 2A",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "An implicit assumption in all methods is that all cases are recorded and are linked by a chain of transmission. However, the following issues will arise: missing first cases; under-reporting; unreported cases; reporting delays; importation cases.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "If the epidemic is not observed from the first case on, overestimation of the initial reproduction number is likely since some initial cases are absent from the epidemic curve, and secondary cases will be imputed to too few index cases. A correction was implemented for missing generations at the beginning of the epidemic curve for the ML method, similar to that proposed by McBryde in a Bayesian setting [25] using the assumption of constant reproduction number. No obvious way exists to correct the TD method, as the reproduction ratio is allowed to change with time. The EG and SB methods are, by construction, not dependent on this issue.",
+            "cite_spans": [
+                {
+                    "start": 406,
+                    "end": 410,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "No method explicitly accounts for under-reporting during the course of the epidemic. If the underreporting rate is constant in time, no bias is expected. However, if it is known that under-reporting changed with time, this could be corrected before estimation proceeds, as was done in the US [26] .",
+            "cite_spans": [
+                {
+                    "start": 292,
+                    "end": 296,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Non-reported cases during an outbreak the epidemic are neither accounted for. Treating missing cases as latent observations has been proposed, but requires the grouping of cases in successive generations rather than on a temporal basis [27] .",
+            "cite_spans": [
+                {
+                    "start": 236,
+                    "end": 240,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Importation of cases during the course of the epidemic generally leads to overestimation of the reproduction ratio, since these cases are considered as \"offspring\" of cases present earlier in the outbreak. In all the methods presented here, only the TD and ML methods can satisfactorily correct for importation cases. The other methods are less easily modified in this respect, and this should be the object of further research.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "A final issue is reporting delays, especially when analysis is done in real time. Reporting delays cause a downward bias in incidence in the last few days of observation. This will impact the most the ML and TD estimates, as these rely more heavily on the fit of the model to the observed incidence. In practice, one may wait for data consolidation before applying any method, but it would also be possible to correct for this bias before estimating the reproduction number if the reporting delay is known [14, 26] .",
+            "cite_spans": [
+                {
+                    "start": 506,
+                    "end": 510,
+                    "text": "[14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 511,
+                    "end": 514,
+                    "text": "26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In the simulation study, we identified that all methods would generally be biased downwards for a disease like flu, with bias increasing both with larger aggregation windows and increasing reproduction number. An exception was the EG method, with upward bias for small R values (R<2) and downwards bias for larger values. When incidence data was available on a daily basis, i.e. smaller than the generation time distribution, the characteristics of the four methods compared. The EG method was the least sensitive to changes in aggregation window, while the ML and TD methods were rapidly inconsistent. The SB method was generally not better than the EG method. Best practice in case of an emerging epidemic will likely depend on a combination of reproduction ratio magnitude, mean generation time duration and aggregation detail. We have provided the framework that would allow comparison and critic of these estimates.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Finally, we highlighted that the estimated reproduction ratio may depend on the method for estimation. This should be taken into account in comparisons, and also when calibrating predictive models as small differences can lead to large variation in attack rates and assessment of required efficacy in interventions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Spread of a Novel Influenza A (H1N1) Virus via Global Airline Transportation",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Khan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Arino",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Raposo",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sears",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Calderon",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Heidebrecht",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Macdonald",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Liauw",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Chan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gardam",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "N Engl J Med",
+            "volume": "361",
+            "issn": "",
+            "pages": "212--214",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "World Health Organization: Global Surveillance during an Influenza Pandemic",
+            "authors": [],
+            "year": 2009,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Transmission parameters of the A/H1N1 (2009) influenza virus pandemic: a review. Influenza and Other Respiratory Viruses",
+            "authors": [
+                {
+                    "first": "P-Y",
+                    "middle": [],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ansart",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cori",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                },
+                {
+                    "first": "A-J",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "5",
+            "issn": "",
+            "pages": "306--316",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "How generation intervals shape the relationship between growth rates and reproductive numbers",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proceedings of the Royal Society B: Biological Sciences",
+            "volume": "274",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "The 1918-19 Influenza Pandemic in Boyac\u00e1. Colombia. Emerging infectious diseases",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Chowell",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Viboud",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Simonsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Acuna-Soto",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "D\u00edaz",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Mart\u00ednez-Mart\u00edn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "",
+            "volume": "18",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "A preliminary estimation of the reproduction ratio for new influenza A(H1N1) from the outbreak in Mexico",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bernillon",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Desenclos",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Euro Surveill",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Estimating the reproduction number of the novel influenza A virus (H1N1) in a Southern Hemisphere setting: preliminary estimate in New Zealand",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Nishiura",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Wilson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Baker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "N. Z. Med. J",
+            "volume": "122",
+            "issn": "",
+            "pages": "73--77",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A note on generation times in epidemic models",
+            "authors": [
+                {
+                    "first": "\u00c5",
+                    "middle": [],
+                    "last": "Svensson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Math Biosci",
+            "volume": "208",
+            "issn": "",
+            "pages": "300--311",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "The estimation of the basic reproduction number for infectious diseases",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Dietz",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Statistical Methods in Medical Research",
+            "volume": "2",
+            "issn": "",
+            "pages": "23--41",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Estimating the effective reproduction number for pandemic influenza from notification data made publicly available in real time: a multicountry analysis for influenza A/H1N1v",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Hens",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Van Ranst",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Aerts",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Robesyn",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Van Damme",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Beutels",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Vaccine",
+            "volume": "29",
+            "issn": "",
+            "pages": "896--904",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "A likelihood-based method for real-time estimation of the serial interval and reproductive number of an epidemic",
+            "authors": [
+                {
+                    "first": "Forsberg",
+                    "middle": [],
+                    "last": "White",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Pagano",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Statist. Med",
+            "volume": "27",
+            "issn": "",
+            "pages": "2999--3016",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Real time bayesian estimation of the epidemic potential of emerging infectious diseases",
+            "authors": [
+                {
+                    "first": "Lma",
+                    "middle": [],
+                    "last": "Bettencourt",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ribeiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "PLoS One",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Different epidemic curves for severe acute respiratory syndrome reveal similar impacts of control measures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Teunis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Am J Epidemiol",
+            "volume": "160",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Real-time estimates in early detection of SARS. Emerg Infect Dis",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "P-Y",
+                    "middle": [],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hedley",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "A-J",
+                    "middle": [],
+                    "last": "Valleron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "12",
+            "issn": "",
+            "pages": "110--113",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "epitools: epidemiology Tools. R package version 0.5-7. 2012",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Tomas",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Time variations in the transmissibility of pandemic influenza in Prussia",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Nishiura",
+                    "suffix": ""
+                }
+            ],
+            "year": 1918,
+            "venue": "Theor Biol Med Model",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Time lines of infection and disease in human influenza: a review of volunteer challenge studies",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carrat",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Vergu",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lemaitre",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Leach",
+                    "suffix": ""
+                },
+                {
+                    "first": "A-J",
+                    "middle": [],
+                    "last": "Valleron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Am J Epidemiol",
+            "volume": "167",
+            "issn": "",
+            "pages": "775--785",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Transmission potential of the new influenza A (H1N1) virus and its age-specificity in Japan",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Nishiura",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Castillo-Chavez",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Safan",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Chowell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Euro Surveill",
+            "volume": "14",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Estimating influenza latency and infectious period durations using viral excretion data",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cori",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carrat",
+                    "suffix": ""
+                },
+                {
+                    "first": "Scalia",
+                    "middle": [],
+                    "last": "Tomba",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Epidemics",
+            "volume": "2012",
+            "issn": "",
+            "pages": "132--138",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Minimum size of the acquired immunodeficiency syndrome (AIDS) epidemic in the United States",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Brookmeyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Gail",
+                    "suffix": ""
+                }
+            ],
+            "year": 1986,
+            "venue": "Lancet",
+            "volume": "328",
+            "issn": "",
+            "pages": "1320--1322",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "The ideal reporting interval for an epidemic to objectively interpret the epidemiological time course",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Nishiura",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Chowell",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Heesterbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J. R. Soc. Interface",
+            "volume": "7",
+            "issn": "",
+            "pages": "297--307",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Transmissibility of swine flu at Fort Dix, 1976",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lessler",
+                    "suffix": ""
+                },
+                {
+                    "first": "Dat",
+                    "middle": [],
+                    "last": "Cummings",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Fishman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Vora",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Burke",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "J. R. Soc. Interface",
+            "volume": "4",
+            "issn": "",
+            "pages": "755--762",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Role of social networks in shaping disease transmission during a community outbreak of 2009 H1N1 pandemic influenza",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bhattarai",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Marchbanks",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Fagan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ostroff",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Swerdlow",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Sodha",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Moll",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Angulo",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Palekar",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Archer",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Finelli",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "108",
+            "issn": "",
+            "pages": "2825--2830",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Outbreak of 2009 pandemic influenza A (H1N1) at a New York City school",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lessler",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Reich",
+                    "suffix": ""
+                },
+                {
+                    "first": "Dat",
+                    "middle": [],
+                    "last": "Cummings",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "N Engl J Med",
+            "volume": "361",
+            "issn": "",
+            "pages": "2628--2636",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Early transmission characteristics of influenza A (H1N1)v in Australia: Victorian state",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mcbryde",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Bergeri",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Van Gemert",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Rotty",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Headley",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Simpson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lester",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hellard",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Fielding",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Euro Surveill",
+            "volume": "",
+            "issn": "42",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Estimation of the reproductive number and the serial interval in early phase of the 2009 influenza A/H1N1 pandemic in the USA",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "White",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Finelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Reed",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pagano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Influenza and Other Respiratory Viruses",
+            "volume": "3",
+            "issn": "",
+            "pages": "267--276",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Predicting case numbers during infectious disease outbreaks when some cases are undiagnosed",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Glass",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Becker",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Clements",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Statistics in Medicine",
+            "volume": "26",
+            "issn": "",
+            "pages": "171--183",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1472-6947-12-147"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "The R0 package: a toolbox to estimate reproduction numbers for epidemic outbreaks",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Obadia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "BMC Medical Informatics and Decision Making",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Sensitivity of the reproduction ratio to the choice of the time period for estimation. A) Maximum deviance R-squared statistic for time periods of increasing duration. The red dot corresponds with the best value. B) Estimates of the reproduction ratio according to various begin and end dates for the time period. The value corresponding to the best fit is shown as a dot, and the solid black lines show the limits of the corresponding 95%CI. In other words, an estimate that falls within the 95%CI of the value showing the best fit can be achieved by using a wide range of begin and end dates. These dates are the ones producing values between the solid black lines.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Sensitivity of the reproduction number to the choice of the generation time distribution. Reproduction ratio estimates were computed using different mean generation times. Confidence intervals are shown as vertical bars.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF1": {
+            "text": "Estimation of initial reproduction number by four different methods over the same dataset",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "estimates obtained using the best fitting time window for methods are reported inTable 1. Interestingly, when the \"best fitting\" time period was used for the EG and ML method, the variability between estimates was reduced.A second issue worth considering is how estimates change according to the choice of the generation time distribution. A function was developed that systematically computes the reproduction ratio over a range of",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Bias and MSE of initial reproduction number estimation methods",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Partial funding from MOSAR network contract LSHP-CT-2007-037941; Institut National de Veille Sanitaire. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Although many mathematical models have been developed to estimate several types of reproduction numbers during epidemic outbreaks, no unique workframe existed. We here provide a user-friendly R package that supports five of the most commonly used methods, and extend some approaches with sensitivity analysis or imputing censored data. This will allow for fast assessment of the transmissibility parameters in new outbreaks, as well as critical assessment of the reported values. The package is currently available from the CRAN repository. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Additional file 1: Supplementary material S1. Imputation method for missing incidence values in the ML method.Abbreviations AR: Attack rate; EG: Exponential growth; ML: Maximum likelihood; TD: Time dependent; SB: Sequential bayesian.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional file"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.Authors' contributions TO coded the software, wrote the manuscript. RH researched bibliography. PYB conceived the study, wrote the manuscript. All authors read and approved the final manuscript.Submit your next manuscript to BioMed Central and take full advantage of: ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

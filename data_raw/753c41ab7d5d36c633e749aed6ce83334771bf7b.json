@@ -1,0 +1,504 @@
+{
+    "paper_id": "753c41ab7d5d36c633e749aed6ce83334771bf7b",
+    "metadata": {
+        "title": "Supplementary Methods",
+        "authors": []
+    },
+    "abstract": [],
+    "body_text": [
+        {
+            "text": "PubCrawler is a high-resolution spatial dataset representing estimated \"reporting effort\" that serves as a background weight for our model. \"Reporting bias\" refers to bias in a model that is due to the unequal distribution of reporting effort, leading to uneven detection probability for the outcome of interest (in our case EID events ). We followed previous authors and reasoned that variation in detection probability of disease events would be primarily determined by \"search effort\"; namely, the extent to which disease events have been looked for. 1,2 Since search effort is difficult to estimate directly for infectious diseases at a global scale, we further reasoned that search effort would be a function of \"reporting effort\", which is the extent to which disease events are \"reported\" to become part of the scientific literature. This is appropriate here since our observations of disease events are similarly drawn from the scientific literature.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Previous studies have similarly recognized this issue when modeling infectious disease occurrence, and various methods have been used to estimate the distribution of reporting effort. In certain cases, presence-only data may be supplemented with data on known sampling bias, or data from other planned sampling efforts. 3 A previous study using an earlier version of the dataset used in the present study used locations drawn from the Journal of Infectious Disease as a measure of reporting effort. 4 An index was created using the country of residence of every author from all JID articles since 1973. This country-level measure of reporting effort was then downscaled to match the spatial grid used in the analyses (~100 x 100km) and included as a covariate in a logistic regression model. Similarly, in their study of water-associated infectious disease events, Yang et al., (2012) searched PubMed for \"infectious disease\" and \"[country name]\" and recorded the yearly counts at the country level for 1991 through 2008 5 . In their spatial Poisson model, these country level publication count estimates were again downscaled to match the spatial grid used in their analyses and included as an offset. 5 In our analyses, we sought to improve on these methods by creating a better-than country level reporting effort dataset. Country-level measures of reporting effort may be limited as a correction for more fine-grain bias in the detection of disease events in people. Furthermore, in the case of Jones et al., (2008) , the country of residence of authors may not be a good proxy for the locations in which studies have actually occurred. To solve these issues, we adapted methods from ecology that are now routinely used when modeling species distributions from \"presence-only\" data.",
+            "cite_spans": [
+                {
+                    "start": 320,
+                    "end": 321,
+                    "text": "3",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 499,
+                    "end": 500,
+                    "text": "4",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 865,
+                    "end": 884,
+                    "text": "Yang et al., (2012)",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 1021,
+                    "end": 1022,
+                    "text": "5",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 1203,
+                    "end": 1204,
+                    "text": "5",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 1499,
+                    "end": 1519,
+                    "text": "Jones et al., (2008)",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "In \"presence-absence\" models, where both positive (i.e., presence/occurrence records) and negative (i.e., absence) outcome samples are gathered from the same dataset (e.g. systematized surveys for species), both presence and absence records are drawn from the same covariate space and can be compared directly. However, the same is not true for datasets involving only observations of an event (i.e., presence-only). In such circumstances, presence records are typically contrasted with randomly generated records, often termed \"background data\" or (somewhat misleadingly) \"pseudo-absence\" records. However, while it is reasonable to compare a distribution of observations against a random distribution, the set of \"background data\" provided to the model may innately differ from the covariate space of search effort, and this can cause poor model performance and/or spurious associations. 1-3 Weighting or stratifying background points by a proxy or estimate of detection probability can ameliorate this problem. By balancing the distribution of covariates in the background sample and a hypothetical null outcome sample, the divergence between those measured by the model should be due to the effect of interest. 1-31",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "All code used to generate the dataset is available on GitHub 6 .",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "To estimate reporting effort and integrate it with our models, we wrote a series of scripts in Python and R to identify place names in the PubMed Central Open Access Subset (PMCOAS), and aggregate them to the spatial grid used in our analyses. This section describes the current capabilities of the PubCrawler Python package, and then details the workflow used in the creation of the reporting effort layer for this study.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "We developed three components for our workflow:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "\u2022 PubCrawler, a Python package, which provides functionality for extracting information from PMCOAS. \u2022 Annie, a generalized text annotation Python package, first developed for the GRITS (Global Rapid Identification of Threats) natural language processing tool. 7 PubCrawler uses Annie's GeonameAnnotator() class, and a modified method from that class, to identify toponyms in article text. \u2022 pubcrawler2hotspots, a set of R scripts bundled as a package, which aggregates extracted toponyms to the spatial grid used in our main model, and fits a boosted regression tree model to the output.",
+            "cite_spans": [
+                {
+                    "start": 261,
+                    "end": 262,
+                    "text": "7",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "PubCrawler, written in Python 3.4, consists of a number of classes and scripts that facilitate the extraction of data from PMCOAS. PubCrawler stores data, including the PMCOAS and GeoNames toponyms (described below) in Mongo databases. Scripts are included to initialize these databases in the required format and ingest the raw data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Managing Articles"
+        },
+        {
+            "text": "Articles in the PMCOAS are available in NXML (National Libraries of Medicine XML) format, a schema that defines a number of entities, including article identifiers, publication type, indicators for keywords, and publication dates. These are stored in the database with the contents of the file as a property named \"nxml\" and the name of the file as Mongo's \"_id\" property.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Managing Articles"
+        },
+        {
+            "text": "PubCrawler defines the class Article(), which takes an article from the Mongo database. This class has methods defined for accessing the article's publication IDs, publication dates, article type (e.g. \"research-article\"), title, and keywords (if any), as well as the text from any named tags in the XML document.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Managing Articles"
+        },
+        {
+            "text": "A separate module defines three \"extractor\" functions, described below, along with a number of auxiliary functions, to manage writing the extracted information to the documents in the database. Some of the extractor functions use Annie internally. 7 The script \"crawler.py\" provides the core functionality of the PubCrawler package, iterating across batches of articles in parallel, extracting and saving metadata using specified extractor functions (described below).",
+            "cite_spans": [
+                {
+                    "start": 248,
+                    "end": 249,
+                    "text": "7",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Managing Articles"
+        },
+        {
+            "text": "After toponyms and other information are extracted, the script \"export.py\" iterates through articles (optionally specifying a subset via a Mongo query), writing a CSV file per article in a directory (in subdirectories of 10,000) with all extracted locations, plus pertinent metadata.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Managing Articles"
+        },
+        {
+            "text": "The PMCOAS contains everything published in participating journals, including research articles, reviews, errata, figures, and commentary. 8 For our analyses, we only exported data for research articles. The extract_meta() function records this information from NXML tags and stores it in the database. The script \"create_index.py\" tailors this information to facilitate processing the large volumes of data.",
+            "cite_spans": [
+                {
+                    "start": 139,
+                    "end": 140,
+                    "text": "8",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Extracting Metadata"
+        },
+        {
+            "text": "The PMCOAS includes articles on \"biomedical and life sciences\", broadly defined. 8 We restricted our search to articles related to infectious diseases. To do this, we first tried using keywords as they are represented in NXML documents; however, the <kwd> element is not consistently applied throughout the OAS. In a random sample of 10,000 articles, 50.3% (95% CI [49.4%, 51.3%]) contained the <kwd> element, and these keywords may come from various ontologies (such as MeSH) or be author-created. 9 For each article, We searched the full body text for diseases caused by infectious agents in the Human Disease Ontology (1392 keywords). 10 Accordingly, the function extract_disease_ontology_keywords() uses the Human Disease Ontology (in OWL format) to return a list of keywords found in an article, which are recorded in the database. The infectious disease terminology extractor uses Annie's KeywordAnnotator() class.",
+            "cite_spans": [
+                {
+                    "start": 81,
+                    "end": 82,
+                    "text": "8",
+                    "ref_id": null
+                },
+                {
+                    "start": 499,
+                    "end": 500,
+                    "text": "9",
+                    "ref_id": null
+                },
+                {
+                    "start": 638,
+                    "end": 640,
+                    "text": "10",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Extracting Infectious Disease Terms"
+        },
+        {
+            "text": "PubCrawler's toponym resolution uses Annie's GeonameAnnotator() class in conjunction with some amended methods from that class. The algorithm uses the GeoNames database as its gazetteer, which consists of over 10,000,000 named locations, including 2,800,000 populated places. 11 GeoNames metadata includes location, alternate names in multiple languages, geographic \"feature class\". Toponyms are resolved in a multi-stage process:",
+            "cite_spans": [
+                {
+                    "start": 276,
+                    "end": 278,
+                    "text": "11",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Extracting Toponyms"
+        },
+        {
+            "text": "\u2022 Candidate locations are extracted by searching 1-through 7-word n-grams (contiguous sequences of words constructed with a \"moving window\" through the text, internally termed \"spans\") for text matches in the GeoNames database, using both the \"name\" and \"alternatenames\" fields (GeoNames's \"alternatenames\" generally includes the toponym in a variety of languages, and with different permutations accent markings and other textual features). Where a span matches multiple GeoName entities, the list of \"alternateLocations\" is recorded. In addition, alternate locations that match different spans (e.g. \"Harare Province\" has \"Harare\" as an alternate name; these would be listed, as would the city \"Harare\"). \u2022 For each location, \"features\" are extracted. Each feature is a property of the location or of its place in the text, and is assigned a score between 1 and 100. Features, scores, and weights (below) were developed through expert evaluation and empirical observation of results from a small test article set. Features used in the current version are as follows (specific scoring criteria can be found in the code): o population_score -categories based on population size o synonymity -categories based on the number of alternate names for a feature o num_spans_score -categories based on the number of times the location occurs in the text o short_span_score -penalties applied for matches under 4 and 5 characters o NEs_contained -a score based on whether the spans matching the text are flagged as named entities by Annie's named entity recognizer o distinctness -a score based on the number of alternate locations matched for a word o max_span_score -a score assigned based on the length of text matching the location, assuming that longer text allows for greater specificity o feature_code_score -a score given to features of certain classes, including continents o canonical_name_used -a score given if any of the text matches for a location use its primary specified name \u2022 Feature scores are weighted post-assignment and used in an algorithm to filter false positives and disambiguate ambiguous toponyms. First, toponyms with a score lower than 50 are removed. The remaining locations are passed to an algorithm that only returns the combination of toponyms for non-overlapping text spans which maximizes the summed feature weights for the document. \u2022 The complete and culled sets of toponyms for the article are stored, referencing the GeoNames database.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Extracting Toponyms"
+        },
+        {
+            "text": "The R package pubcrawler2hotspots contains the code for the spatial aggregation and model fitting workflows described below, used to generate the reporting effort layer in this study.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Spatial Aggregation Workflow"
+        },
+        {
+            "text": "PubCrawler was run on the PMCOAS articles. Locations were exported to CSV for all research articles whose body text matching Human Disease Ontology keywords. Before aggregation, additional filtering was conducted on locations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Spatial Aggregation Workflow"
+        },
+        {
+            "text": "\u2022 Continents were excluded. Continents are frequently matched, but because each GeoName is assigned a single set of coordinates in the centroid of the continent, their inclusion creates a few spurious high-value outliers. Countries are excluded for the same reason. Lower-level administrative divisions did not cause as severe a problem due to the coarse target resolution, and so were not excluded. \u2022 A short list was compiled of 20 frequently-matched, obviously-spurious terms which appeared despite the culling process, here listed in descending order of frequency: \"American River\", \"Candida\", \"Research\", \"Centre\", \"Sigma\", \"Normal\", \"Middle\", \"Tukey\", \"The World\", \"Golgi\", \"Male\", \"Horizontal\", \"Teaching Hospital\", \"Cancer\", \"Altogether\", \"Delta\", \"Excel\", \"Chicken\", \"Basic\", and \"Scheme\".",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Spatial Aggregation Workflow"
+        },
+        {
+            "text": "\u2022 Locations in the GeoNames classes \"spot, building, farm\" and \"undersea\" were excluded, as were zero-population locations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Spatial Aggregation Workflow"
+        },
+        {
+            "text": "Each article was assigned a weight of 1, which was distributed uniformly across the remaining locations. These weights were aggregated to the grid used for the study's main model.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Spatial Aggregation Workflow"
+        },
+        {
+            "text": "The raw layer of weighted counts was not appropriate for use directly in weighting a model. Our data source constitutes only a sample of the research literature, and errors of omission and commission in our toponym resolution add noise to that sample. Practically speaking, this led to a number of zero-count grid cells in low-publication areas and outlying high-count grid cells and resulting in overdispersion (the layer's variance, 4919.2, is much higher than the mean of 7.5). Fitting a model allows us to fill in these gaps and smooth this distribution. We fit a Poisson boosted regression tree to the aggregated layer, and used the predicted values for grid cells as our reporting effort layer.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Model Fitting"
+        },
+        {
+            "text": "Because the data exhibited overdispersion and excess zeros, we explored GLM frameworks for zero-inflated and overdispersed data during our fitting process:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Model Fitting"
+        },
+        {
+            "text": "\u2022 Poisson GLM, which found all variables be significantly associated with the outcome, but was inappropriate for use because of overdispersion; \u2022 Quasipoisson GLMs, which had large dispersion parameters and non-significant pvalues; \u2022 glm.nb() function from the pscl package, for a negative binary GLM, which failed to fit; \u2022 Zero-inflated Poisson models using the zeroinfl() function from the boot package, which encountered problems fitting. \u2022 In case the large number of zeroes was caused by a lack of GeoNames entities in the zero grid cells, we created a variable by summing the number of eligible GeoNames entities in all grid cells (using the same categories as were used to match locations in PubMed Central text). Including this as a coefficient and as an offset in the models did not solve the problems the GLM modules encountered.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Model Fitting"
+        },
+        {
+            "text": "We posited that the fit problems are due to the high number of zeroes (approximately 78% of grid cells were zero) and high-valued outliers among grid cells, which do not conform to the distributional requirements the GLMs and their fitting algorithms. Because of this, we discarded the GLMs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Model Fitting"
+        },
+        {
+            "text": "We selected BRTs largely because they are able to return fairly accurate predictions -as long as they are predicting values which occur within the covariate space in which they were trained -and are robust to data which would be problematic or assumption-violating for other modeling methods, including sparse data and non-normally distributed data. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Model Fitting"
+        },
+        {
+            "text": "We selected predictor datasets based on a priori hypotheses about mechanisms shaping research effort.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "The following predictors were read in at grid-cell resolution:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "\u2022 Human population size, using the GRUMP dataset also included in the main model. We seek to model research on human infectious disease, and such research is also conducted by humans. \u2022 Average travel time to cities with populations > 50,000. Research may be conducted more often in more accessible areas. \u2022 Percentage of grid cell of urbanized land, from the EarthEnv dataset included in the main model. Urbanization may serve as a broad proxy for factors increasing the likelihood of research being conducted, including the presence of funding and resources, above and beyond sheer population density.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "The following predictors were available at country level. We associated them with JSON shapefiles and projected them to the study grid, weighting per capita variables by population per grid cell.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "\u2022 Per capita DALY rates from all causes (WHO). More research may be conducted where there is thought to be a higher burden of disease. \u2022 Per capita health expenditure (WHO). Greater health care expenditure in an area may lead to more research being conducted in that area. \u2022 Per capita GDP (UN). Places with more economic activity may conduct more research.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "Lower-GDP countries generally have a higher burden of infectious disease, and so may see more research conducted in the aggregate, but DALY rates are included in the model.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "The Poisson BRT module used requires that the outcome vector to be an integer, but our counts were weighted, so we rounded the aggregated output values per grid cell to whole numbers. The counts were large enough that this made no meaningful difference to the distribution (R 2 = 1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "The boosted regression tree was fit using the \"gbm.step()\" function in the R package \"dismo\". The tree complexity used in the final model was 3; the learning rate was 0.01; the bag fraction was 0.75; the number of trees added per iteration was 50.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predictor Datasets"
+        },
+        {
+            "text": "Of the 1,266,085 articles in the PMCOAS, 931,087 (73.5%) were research articles, and 204,097 matched our infectious disease keyword search and (16.1%) matched our infectious disease search query. 157,779 articles matched both criteria, and contained matched locations. The mean total deviance for the publication model was 56.5, and the residual deviance was 15.2; the percentage explained was 73%. is theoretically aligned with our outcome of interest at a smaller-than-country resolution, and produces a similar distribution at country level as the previous method in 4 , we think it is a meaningful advancement in disaggregating infectious disease reporting effort past country level. Future research should focus on improving the natural language processing algorithms used to create the measure, and create gold standard datasets to test the accuracy at publication level. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Sample selection bias and presence-only distribution models: implications for background and pseudo-absence data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Phillips",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Ecological Applications",
+            "volume": "19",
+            "issn": "",
+            "pages": "181--197",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Selecting pseudo-absences for species distribution models: how, where and how many?",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Massin",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Jiguet",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Albert",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Methods in Ecology \u2026",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.2041-210X.2011.00172.x"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Accounting for imperfect detection and survey bias in statistical analysis of presence-only data",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dorazio",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Global Ecology and Biogeography",
+            "volume": "23",
+            "issn": "",
+            "pages": "1472--1484",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Global trends in emerging infectious diseases",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature",
+            "volume": "451",
+            "issn": "",
+            "pages": "990--993",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Global Distribution of Outbreaks of Water-Associated Infectious Diseases",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLOS Negl Trop Dis",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Evaluation and Verification of the Global Rapid Identification of Threats System for Infectious Diseases in Textual Data Sources",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Huff",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Breit",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Allen",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Whiting",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Kiley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Interdiscip Perspect Infect Dis",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Disease Ontology 2015 update: an expanded and updated database of human diseases for linking biomedical knowledge through disease data",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Kibbe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nucleic Acids Res",
+            "volume": "43",
+            "issn": "",
+            "pages": "1071--1079",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Locations extracted from publications matching infectious disease keywords. Toponyms with non-zero populations were weighted uniformly, normalized by publication, and aggregated to a 0.25\u00b0 grid. Before plotting, toponym count was truncated at the 90 th percentile, to prevent outlier grid cells from skewing color palette scaling. Partial dependence plot for the BRT model used to smooth the publication layer, plus relative influence of variables.Our reporting effort layer is statistically significantly associated with the layer used by Jones et al.4 when aggregated to country level (McFadden's Pseudo R 2 = 0.78 and p < 0.005 computed with a univariate Poisson glm). Since the new report effort layer represents a new process that",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF1": {
+            "text": "Supplementary Figure 4. EID events post-1970, summed to the study grid in the manner described above but weighted by reporting effort, instead of land area, as in the \"weighted\" model. The color palette is scaled logarithmically to better show differences on the low end of the distribution. These represent the presence sample for the weighted model (compare to bottom-right quadrant of Supp. Figure 3.1 for unweighted model's events with the same color palette scaling). Supplementary Figure 5. Scatterplot matrix and correlation coefficients for variables in the model which exhibit a correlation coefficient of \u2265 0.5 with any other variable, and additional variables of interest. Supplementary Table 1. Quantiles for BRT interaction strength, as assessed by the gbm.interactions() function from the dismo package, across the 1000 runs of the weighted model. following figures show the relative influence and partial dependence plots, and top ten interactions, from the unweighted model. Global Envir. Strat. Supplementary Figure 7. Partial dependence plots for unweighted model.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "EID Event Risk Index (and 90% CI)",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": []
+}

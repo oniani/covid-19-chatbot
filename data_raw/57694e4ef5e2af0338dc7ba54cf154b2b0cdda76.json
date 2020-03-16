@@ -1,0 +1,1392 @@
+{
+    "paper_id": "57694e4ef5e2af0338dc7ba54cf154b2b0cdda76",
+    "metadata": {
+        "title": "Automated vocabulary discovery for geo-parsing online epidemic intelligence",
+        "authors": [
+            {
+                "first": "Mikaela",
+                "middle": [],
+                "last": "Keller",
+                "suffix": "",
+                "affiliation": {},
+                "email": "mikaela.keller@childrens.harvard.edu"
+            },
+            {
+                "first": "Clark",
+                "middle": [
+                    "C"
+                ],
+                "last": "Freifeld",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "John",
+                "middle": [
+                    "S"
+                ],
+                "last": "Brownstein",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Automated surveillance of the Internet provides a timely and sensitive method for alerting on global emerging infectious disease threats. HealthMap is part of a new generation of online systems designed to monitor and visualize, on a real-time basis, disease outbreak alerts as reported by online news media and public health sources. HealthMap is of specific interest for national and international public health organizations and international travelers. A particular task that makes such a surveillance useful is the automated discovery of the geographic references contained in the retrieved outbreak alerts. This task is sometimes referred to as \"geo-parsing\". A typical approach to geo-parsing would demand an expensive training corpus of alerts manually tagged by a human.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Given that human readers perform this kind of task by using both their lexical and contextual knowledge, we developed an approach which relies on a relatively small expert-built gazetteer, thus limiting the need of human input, but focuses on learning the context in which geographic references appear. We show in a set of experiments, that this approach exhibits a substantial capacity to discover geographic locations outside of its initial lexicon.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "The results of this analysis provide a framework for future automated global surveillance efforts that reduce manual input and improve timeliness of reporting.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Web-based information sources such as online news media, government websites, mailing lists, blogs and chatrooms provide valuable epidemic intelligence by disseminating current, highly local information about outbreaks, especially in geographic areas that have limited public health infrastructure. These data have been credited with providing early evidence of disease event, such as SARS (Severe Acute Respiratory Syndrome) and avian influenza [1] . The availability of open source and freely available technology has spawned a new generation of disease \"mashups\" that scour the web and provide real-time outbreak information. HealthMap [2, 3] is one such system that monitors, analyzes and disseminates disease outbreak alerts in news media from all around the world. Each hour, the system automatically queries over 20,000 sources using news aggregators such as Google News, for relevant reports. It filters the retrieved documents into sev-eral taxonomies and provides on its website, http:// www.HealthMap.org, a geographic and disease-based display of the ongoing alerts. HealthMap provides a starting point for real-time intelligence on a broad range of emerging infectious diseases, and is designed for a diverse set of users, including public health officials and international travelers [4, 5] .",
+            "cite_spans": [
+                {
+                    "start": 446,
+                    "end": 449,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 639,
+                    "end": 642,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 643,
+                    "end": 645,
+                    "text": "3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 1298,
+                    "end": 1301,
+                    "text": "[4,",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 1302,
+                    "end": 1304,
+                    "text": "5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "This real-time surveillance platform is composed of a number of Information Retrieval and Natural Language Processing modules, such as outbreak alert retrieval and categorization, information extraction, etc. In the present work we are interested in a critical task of the last phase of the information processing scheme: the geographic parsing (\"geo-parsing\") [6] of a disease outbreak alert or the extraction from one such textual document of its related geographic information. This information is needed for the precise geographic mapping, as well as for the identification/characterization of the particular disease outbreak described in the alert. Indeed each alert is uniquely characterized by its disease category, a set period in time and its precise geographic location. A good characterization of the outbreak allows the system to discriminate between duplications of an alert and new alerts. It is also essential for the evaluation of the system and for longterm analysis. Most importantly, the automated high resolution geographic assignment of alerts aids rapid triaging of important information by system users, including public agencies such as the World Health Organization and the US Centers for Disease Control and Prevention that use these data as part of their daily surveillance efforts.",
+            "cite_spans": [
+                {
+                    "start": 361,
+                    "end": 364,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "So far, HealthMap assigns incoming alerts to a low resolution geographic description such as its country, and in some cases its immediately lower geographic designation (for the USA and Canada, it would provide for example the state or province). The system uses a rule-based approach relying on a specially crafted gazetteer, which was built incrementally by adding relevant geographic phrases extracted from the specific kind of news report intended for mapping. The approach consists in a look-up tree algorithm which tries to find a match between the sequences of words in the alert and the sequences of words in the entries of the gazetteer. It also implements a set of rules which use the position of the phrase in the alert to decide whether or not the phrase is related to the reported disease.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The gazetteer contains around 4,000 key phrases, some of which refers to geographic locations with several resolution levels (from hospitals' to countries'), some are negative phrases (\u2248 500 phrases, eg Brazil nut or turkey flock are not considered location references) as well as phrases that are specific to the kind of data processed (Center for Disease Control, Swedish health officials, etc.).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "While the current limited gazetteer has proven useful for a high level view of ongoing threats, there is a public health need to develop a method that provides the highest resolution geographic assignments, especially for public health practitioners that require this information for outbreak verification and follow-up. The approach presented in the following section is an attempt at producing a geoparser using the prior knowledge encoded in the gazetteer as a base. At first glance, it would seem that in order to increase the resolution of the HealthMap geo-parser, expanding the size of the gazetteer should be enough. However in our experience, adding new terms to the gazetteer, without careful supervision often results in an upsurge of false positives for the system. The ability to predict statistically if a word in a sentence is a geographic reference is a valuable feature for a geo-parser. Indeed no matter the size of the gazetteer, it cannot contain every geographic reference, and even words in the gazetteer might be false positives in the alert (Canada geese). The typical way of obtaining a statistical predictor is to have access to annotated training data. However, data annotation is a very time consuming and expensive task, and thus the approach we present is an attempt at circumventing it by using the already available gazetteer.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The inspiration behind the present approach is based on the intuition that a human reader presented with a text containing a phrase that is out of his vocabulary would most likely be able to guess whether this phrase refers to a geographic location or not. This reader would infer the semantic role of the phrase with a certain accuracy, because he has prior knowledge of the syntactic context in which geographic references appear, maybe also of their particular character distribution or the fact that they generally begin with a capital letter, etc. Our approach in some sense simulates this situation with a learning algorithm in the guise of an artificial \"reader.\" We use the HealthMap gazetteer as the supervision (or reference) for training the reader. Some of the location words in the training texts are purposely hidden from the reader's vocabulary in order to divert the attention of the learning algorithm to the context on which these words appears instead of the words themselves. Previous related natural language processing approaches reported in the literature, like ours, use a limited knowledge base to generate a broader one.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The task we are trying to solve, namely finding geographic location references in a text, falls into the more generic Natural Language Processing problem of Information Extraction [7] [8] [9] , which involves automatically selecting sub-strings, containing specific types of information, from a text. It is in particular closely related to the Named Entity Recognition task [10] , in which texts are parsed in search of references (mainly proper names) to persons, organiza-tions and locations or more recently gene name [11] . However, we are here interested in more than just named entities, since any hint of location, even, for example, adjectives (French authorities) or public health organizations (INSERM: a French institute of medical research), can provide us with desired information.",
+            "cite_spans": [
+                {
+                    "start": 180,
+                    "end": 183,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 184,
+                    "end": 187,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 188,
+                    "end": 191,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 374,
+                    "end": 378,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 521,
+                    "end": 525,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "There have been a number of approaches to named entity recognition and more generally to information extraction problems (see eg [12, 13] or [14] for a name entity recognition system being used in biosurveillance), exploiting as we do, syntactic and contextual information. They however usually rely on supervised approaches, which require heavily annotated datasets to account for the human experience. Building these annotated corpora, is extremely time-consuming, expensive and results in a so-called knowledge-engineering bottleneck. On the other hand, large numbers of unlabeled texts are easily available through, for example, the Internet.",
+            "cite_spans": [
+                {
+                    "start": 129,
+                    "end": 133,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 134,
+                    "end": 137,
+                    "text": "13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 141,
+                    "end": 145,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In order to take advantage of the unlabeled data, while avoiding the cumbersome need of annotation, a number of approaches, sometimes referred to as Automatic Knowledge Acquisition [15] have been developed. The domains to which each of these methods is applied are very diverse. Some concentrate specifically on the named entity classification problem [16, 17] , while others, like ours, have a different information extraction scope [15, 18, 19] . Whether they use a few rules [16, 19] (eg Mr.",
+            "cite_spans": [
+                {
+                    "start": 181,
+                    "end": 185,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 352,
+                    "end": 356,
+                    "text": "[16,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 357,
+                    "end": 360,
+                    "text": "17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 434,
+                    "end": 438,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 439,
+                    "end": 442,
+                    "text": "18,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 443,
+                    "end": 446,
+                    "text": "19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 478,
+                    "end": 482,
+                    "text": "[16,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 483,
+                    "end": 486,
+                    "text": "19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "[Proper Noun] \u2192 Person) or a small lexicon [15] [16] [17] 20] (such as a small gazetteer) as seeds for the information to be extracted, all approaches, including ours, begin with a corpus partially labeled. These approaches are related to semi-supervised learning, where a few labeled examples are used in conjunction of a large number of unlabeled ones. The goal of all these models is to exploit the redundancy of language and to learn a generalization of the context in which labels appear.",
+            "cite_spans": [
+                {
+                    "start": 43,
+                    "end": 47,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 48,
+                    "end": 52,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 53,
+                    "end": 57,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 58,
+                    "end": 61,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Strategies on how to use these few labeled examples diverge. Most of these approaches go through their training sets in several steps and incrementally add inferred labels to their labeled examples, in a bootstrap fashion, [15] [16] [17] [18] 20] . Of course, the addition of every inferred labeled example (even false positives) can quickly produce a drift towards a noisy solution. These approaches have thus heuristics to decide which examples to add at each iteration. Other approaches, like ours, are built to learn everything they need from the initial input only [19] .",
+            "cite_spans": [
+                {
+                    "start": 223,
+                    "end": 227,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 228,
+                    "end": 232,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 233,
+                    "end": 237,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 238,
+                    "end": 242,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 243,
+                    "end": 246,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 570,
+                    "end": 574,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "While our present work focuses on geo-parsing an English-language corpus, HealthMap surveillance so far covers alerts in 4 more languages (Spanish, French, Russian and Chinese), and plans to expand to other languages. Most of these approaches, [15, 16, 19, 20] , use elaborate linguistic knowledge either to represent the words or to target groups of words to tag. Relying on complex linguistic features requires language-specific expert knowledge difficult to obtain. Our approach relies on low level syntactic features making it easily portable to other languages. In addition, it is based on statistical machine learning principles (like [16, 17] ), as opposed to rulebased ones, which also reduces the need of expert knowledge.",
+            "cite_spans": [
+                {
+                    "start": 244,
+                    "end": 248,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 249,
+                    "end": 252,
+                    "text": "16,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 253,
+                    "end": 256,
+                    "text": "19,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 257,
+                    "end": 260,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 641,
+                    "end": 645,
+                    "text": "[16,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 646,
+                    "end": 649,
+                    "text": "17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The core idea behind our approach is to have a dataset of alerts tagged with the gazetteer-based algorithm as well as with more general linguistic knowledge (eg part-of-speech tags, etc.), and then to use this dataset with tags partially hidden to learn a generalization of the parsing. In the example of Figure 1 , a sentence is annotated with its corresponding part-of-speech tags and gazetteer-based geoparsing tags (the blue rectangle). In order to learn a generalization of the geo-parsing scheme, the same sentence would be used in our training dataset with the specific identity of the word New Caledonia hidden, but its part-ofspeech preserved.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 305,
+                    "end": 313,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Core idea"
+        },
+        {
+            "text": "Our dataset consists of English-language disease outbreak alerts retrieved in 2007 by the HealthMap system. We",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional features"
+        },
+        {
+            "text": "Example of training data Figure 1 Example of training data. An illustration of the word-withholding strategy. used the HealthMap rule-based approach to tag the words in the alert that match geographical references found in the gazetteer. To enrich the dataset with syntactic information, we tagged the alerts with a part-of-speech tagger (see Methods section for more details). Provided that, in English, location names often begin with capital letters or appear as acronyms, we assigned to the words in the alerts, in addition to their part-of-speech tags, a capitalization status, ie none, first character, upper case.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 25,
+                    "end": 33,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Additional features"
+        },
+        {
+            "text": "From a more formal perspective, our dataset (or corpus) is",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional features"
+        },
+        {
+            "text": "with a certain number L of words x i , and their corresponding \"location\" labels y = [y 1 , ..., y L ], y i \u2208 {loc, none}, that is, y i is (part of) a location reference or not. The words x i are represented by their part-of-speech tag, their capitalization status and occasionally by their index in a dictionary D, extracted from the training dataset. Figure 2 illustrates the vectorial representation of words. The |D| (size of D) first components of x i correspond to the dictionary indices and are all equal to zero, except for the position coinciding with the word index in D. Similarly, the next K features of x i correspond to the part-of-speech tag indices in the K part-of-speech tag list. And finally, the last three features stand for the three possible capitalization values.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 353,
+                    "end": 361,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Additional features"
+        },
+        {
+            "text": "As explained previously, one important characteristic of this experiment is the fact that the words (that is, the lexical information) are only partially accessible to the learning algorithm. This is implemented by the choice of the dictionary D mentioned in the previous paragraph. As we will explain shortly, some words in the corpus are purposely left out of the dictionary. Consequently, the first components of their sparse representation, the ones referred to as dictionary index in Fig. 2 , are all set to zero. Such words are thus represented only by their part-ofspeech tag and their capitalization status.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 489,
+                    "end": 495,
+                    "text": "Fig. 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Hiding words"
+        },
+        {
+            "text": "How we choose which words to hide is critical to the generalization power of our learning algorithm. Indeed, naively deciding to hide the words tagged as location by the HealthMap gazetteer would be equivalent to giving away the label information to the learning algorithm. It would lead it to learn \"by heart\" what it is that the gazetteer considers a location, while what we are interested in is making it discover new location patterns. The strategy we implemented is based on the idea that words referring to specific locations have a lower frequency (ie number of occurrences/corpus size) (average frequency = 4.9/10 5 (\u00b1 12.3/10 5 )) in the corpus than \"typical\" words (average frequency = 8.9/10 5 (\u00b1 103.3/10 5 )). For example, the word authorities appears 268 times in our 1,000 alerts corpus (\u2248 355,000 words) while, the word Australia appears only 38 times. Continuing the metaphor of the artificial reader, we decide to cut words out of its vocabulary indiscriminately, based solely on their frequency. We make the reasonable assumption that if a word is rare then it is less likely to be \"known\" by the reader. Figure 3 shows that applying this strategy indeed leads to hiding more location words than \"typical\" words. As shown in the figure, for a given word's frequency cutoff, the percentage of hidden words out of all words in the corpus (first bar) is lower than the percentage of hidden location words out of all location words (second bar). The graph shows, for example, that cutting words that appear with a frequency lower than 2.8 \u00d7 1e -5 , hides roughly 10% of the words in the corpus, but close to 25% of the location word occurrences (\u2248 2-3% of the words in the corpus are location words). Lets us call this lower bound on the word frequency \u03bb. We apply \u03bb onto the corpus to decide whether or not a word index is to be hidden, so that only frequent word indices are visible to the model. Another justification of our approach is the following. The list of words present in the training set represents the largest vocabulary the algorithm has access to. In general, it would seem a good idea to diversify and augment this vocabulary, by increasing the size of the training set, so that the algorithm is presented with examples of Words sparse representation Figure 2 Words sparse representation. Each word in the dictionary, its part-of-speech in the text and its capitalization status are associated with 3 indexes in the representation. If a word is out of the dictionary, it will only be represented by its part-ofspeech and capitalization status. usage of the new words -as is typically done in a fully supervised approach. Since we do not have access to fully annotated corpora, but rely on a finite gazetteer to label the data, increasing the size of the training set would eventually be redundant. From another point of view, no matter the size of the training set, there is no guarantee that all words in a new set of texts will fall within the algorithm's dictionary. As an example, Figure 4 shows the percentage of out-of-vocabulary words among the unique words of an evaluation set, for several vocabulary sizes. Our approach reduces the dictionary available to the learning algorithm, placing it, during the training, in the situation that it would eventually face when confronted with new data. In particular, since we reduce the dictionary in a way that respects the distribution of words, we make the hypothesis that the location words that we purposely keep out of the dictionary can work as surrogates of the new location words we want to discover.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1124,
+                    "end": 1132,
+                    "text": "Figure 3",
+                    "ref_id": null
+                },
+                {
+                    "start": 2283,
+                    "end": 2291,
+                    "text": "Figure 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 3017,
+                    "end": 3025,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Hiding words"
+        },
+        {
+            "text": "Using the data just described, we trained an artificial neural network to output a probability estimate of the label value y i for the i th word x i in an alert x,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Hiding words"
+        },
+        {
+            "text": "given a window (n -1 = 2 \u00d7 hw) of preceding and following words. A threshold on NN(i, x) allows us to decide if the input is a location or not. The neural network was trained by negative log-likelihood minimization using stochastic gradient descent. An extensive description of the learning algorithm architecture and optimization is provide in the \"Methods\" section.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Hiding words"
+        },
+        {
+            "text": "The same lack of labeled data that we were faced with for training the geo-parser applies to the question of how we can test the performance of a trained model. Indeed, to measure the accuracy of the outputs of the geo-parser, we would need \"correct\" annotations to compare with. Ideally, we would even have a test corpus annotated by several humans independently and thus be able to measure the difficulty of the task we are trying to solve. As stated previously, annotating such a dataset is a tedious and expensive task and we thus consider it as last resort. In order to nonetheless evaluate the performance of the algorithm we devised two approximate solutions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Evaluation"
+        },
+        {
+            "text": "\u2022 First, as in the training phase we can reuse the HealthMap gazetteer to tag the test corpus and then evaluate how much of the gazetteer annotation the neural network geo-parser (or NN geo-parser) is able to recover. It might seem that retrieving the locations that were used for training is an easy task. However, the same lexical information that was hidden in the training corpus would be hidden in the test dataset as well. As a consequence, both training and test exam- Percentage of words in the Corpus in the dictionary out of dictionary in the dictionary 'loc' out of dictionary 'loc' Figure 4 Percentage of natural out-of-vocabulary words. Percentage of unique words from a separated evaluation set (500 alerts, 11,184 unique words) that are inside or outside of the training set extracted dictionary, for training sets T 0 (1,000 alerts), T 1 (2,500 alerts) and T 2 (5,000 alerts). The percentage of location words is computed with respect to the locations found by the commercial geo-parser (see sect.). Percentage of unique words in test set in the dictionary out of dictionary out of dictionary 'loc' in the dictionary 'loc' ples provide only general context information, and thus rediscovering the HealthMap gazetteer labels is not such a trivial task.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 594,
+                    "end": 602,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Evaluation"
+        },
+        {
+            "text": "\u2022 In a second experiment, we used a comprehensive (subscription only) commercial geo-parser (Meta-Carta GeoTagger [21] ) to tag 500 alerts with what we would consider \"true\" location references. Note however that despite the fact that there is good overlap between the HealthMap gazetteer and the MetaCarta tags, there are also a certain number of tags that are found only in the HealthMap annotation. Taking both sets of tags as a whole: 52.4% are found MetaCarta's only, both geo-parsers agree on 38.7% of the tags and the remaining 8.9% come from the HealthMap gazetteer. Some of the HealthMap only tags are due to minor uninteresting variations in the annotation schema, while others suggest a specialisation of the HealthMap gazetteer to public health content that the more generic MetaCarta geo-parser is obviously not trained to provide.",
+            "cite_spans": [
+                {
+                    "start": 114,
+                    "end": 118,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Percentage of natural out-of-vocabulary words"
+        },
+        {
+            "text": "We trained several neural network geo-parsers on the three datasets T 0 (1,000 alerts), T 1 (2,500 alerts) and T 2 (5,000 alerts), with extracted dictionaries of varying sizes according to our lower bound \u03bb. Given the approximate nature of the solution found when training neural networks by stochastic gradient descent, we repeated the learning process for each condition 5 times to estimate the variance. The evaluation corpus contains 500 disease outbreak alerts subsequent to the ones used for training, in respect of the temporal nature of the HealthMap surveillance process. This represents 201,643 words to tag among which 5,030 are words that are considered locations by the HealthMap gazetteer approach, 7,385 are considered locations by the commercial geo-tagger, of which 3,315 by it alone (whereas 960 words are considered locations only by the HealthMap gazetteer approach). Figure 5 displays the performance, with respect to the HealthMap gazetteer annotation, in terms of F 1 score, of the NN geo-parser trained on T 1 for increasing values of the lower bound \u03bb on the word frequency (ie increasing numbers of words purposely kept out of the algorithm's dictionary). The F 1 score, a measure of accuracy, is a combination of the precision, (or, the proportion of correctly identified locations among the locations retrieved by the system, also referred to in certain fields as positive \"predictive value of the system\") and the recall of the system (the proportion of retrieved locations among the \"true\" locations, or the \"sensitivity\" of the system):",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 888,
+                    "end": 896,
+                    "text": "Figure 5",
+                    "ref_id": null
+                }
+            ],
+            "section": "Percentage of natural out-of-vocabulary words"
+        },
+        {
+            "text": "To show that this approach is not just a memorization of the gazetteer-based approach, the results are sliced into the F 1 scores of words inside and outside the algorithm's dictionary, ie words that were represented with and without their dictionary index feature. As the value of \u03bb increases, the size of the dictionary we allow the NN geoparser to see decreases and thus the number of words in the evaluation corpus that are out of the algorithm's dictionary increases. This makes the task of identifying which words in the text refer to locations more difficult, and as a visible consequence the overall performance of the system decreases (solid red line). On the other hand, however, the increase in out-of-dictionary examples greatly improves the ability of the system to correctly identify locations that are out of the algorithm's dictionary (dashdotted blue line), ability that is non-existent when the whole training set vocabulary is available to the learning algorithm (\u03bb = 0). As explained in previous sections, the Evaluation with respect to HealthMap gazetteer tags Figure 5 Evaluation with respect to HealthMap gazetteer tags. idea behind this approach is to consider those purposely \"hidden\" location words as surrogates of the location words unknown to the gazetteer, those we want to be able to discover. The observed increase in performance in the retrieval of those words suggests that this approach would be appropriate for this task and without having too high a loss in performance for \"visible\" words (dashed green line). Figure 6 and Table 1 display results from the second experiment in which the performance of the NN trained on the training sets T 0 , T 1 and T 2 is compared to \"true\" location tags provided by the MetaCarta geo-tagger, on the same evaluation set as described previously. The performance of the NN geo-parsers are shown in Figure 6 , while Table  1 lists the optimal F 1 score obtained when the HealthMap gazetteer and the NN geo-parser are combined. The 3 graphs in Fig. 6 show that the word-withholding strategy has mainly a positive effect on the accuracy of the NN geoparsers. While there is a decrease in precision, when the number of \"hidden\" words increases, the recall increases enough that their combination in the F 1 score is higher than when the whole training vocabulary is used. Augmenting the size of the training set, as can also be seen in Table 1 , also has a positive effect on the performance. However this positive effect seems to reach a plateau, since by doubling the number of alerts between T 1 and T 2 we only see a small improvement in F 1 score.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1082,
+                    "end": 1090,
+                    "text": "Figure 5",
+                    "ref_id": null
+                },
+                {
+                    "start": 1548,
+                    "end": 1556,
+                    "text": "Figure 6",
+                    "ref_id": null
+                },
+                {
+                    "start": 1561,
+                    "end": 1568,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 1871,
+                    "end": 1879,
+                    "text": "Figure 6",
+                    "ref_id": null
+                },
+                {
+                    "start": 1888,
+                    "end": 1896,
+                    "text": "Table  1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 2015,
+                    "end": 2021,
+                    "text": "Fig. 6",
+                    "ref_id": null
+                },
+                {
+                    "start": 2405,
+                    "end": 2412,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Percentage of natural out-of-vocabulary words"
+        },
+        {
+            "text": "It is worth noting that there are words that are here considered as false positives (and thus contribute to the decrease in precision) that are in fact generalizations of those words that HealthMap sees as location but that the more generic geo-parser ignores.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Percentage of natural out-of-vocabulary words"
+        },
+        {
+            "text": "We have presented an approach to the geo-parsing of disease outbreak alerts in the absence of annotated data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The identification of precise geographic information in the context of disease outbreak surveillance from informal text sources (eg news stories) is essential to the characterization of the actual outbreaks, and would increase the res-olution of a visualization scheme such as the one proposed by HealthMap. Such precise information extraction typically requires a dataset of texts with the desired information carefully annotated by a human expert. A corpus of this kind is expensive and time-consuming to create. Instead, we propose a statistical machine learning approach which generalizes the existing HealthMap rulebased geo-parsing by making use of the lexical and syntactic context in which the existing gazetteer phrases appear. We have demonstrated that the described model has indeed the ability to discover a substantial number of geographic references that are not present in the gazetteer. In addition, our approach also limits the number of false positive it produces.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Nevertheless, there is still a portion of those geographic references that remains a challenge to retrieve. There are several components of this approach that could be refined in order to improve the performance of the algorithm. For example, a more sophisticated word-withholding strategy could be implemented. In addition to relying on the term frequency, the strategy could also account for the part-ofspeech of the word to hide (eg verbs are unlikely surrogates for locations), and on the alert frequency of the term (a word that appear a few times in the corpus but only in a unique alert might be more likely to be location than one with occurrences in several alerts). Another place for improvement could be the representation of words. Other features, aside from part-of-speech and capitalization, could provide additional information about the semantic Evaluation with respect to MetaCarta tags Figure 6 Evaluation with respect to MetaCarta tags. Precision, recall and F 1 -score with respect to MetaCarta labels for increasing dictionary cut-offs according to the \u03bb threshold.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 904,
+                    "end": 912,
+                    "text": "Figure 6",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Performances of models trained on T 0 (1,000 alerts), T 1 (2,500 alerts), T 2 (5,000 alerts) and T 1 with location and disease targets. F-score status of the word. However, these features should be simple enough to implement in several languages, in order to comply with the requirement of portability formulated previously. Another further area of exploration, is the weight given to words tagged as none during training. Some of those words are actually unknown locations that, during the learning process, are strongly supervised as not being locations. Even if we compensate for this error by tuning the decision threshold, it should be also possible to act on the problem by a relaxation of the supervision during the training stage. Finally, the geo-parsing of an alert is only an intermediate step. Finding which terms in an alert are geographic references is crucial, but the final goal is to identify which among these terms is the definitive disease outbreak location and be able to disambiguate it (Paris, Texas vs Paris, France). Ideally, we would like to integrate these different tasks into one, so that the information that is learned from one can benefit the others.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "From a more general point of view, the presented approach also describes a way of incorporating the prior knowledge encoded in a rule-based procedure into a more general statistical framework. This could be adapted to the extraction of other types of information that would also prove useful in the characterization of an outbreak. For example, we are interested in the extraction, from the alerts, of attributes related to the individuals involved in the outbreak such as age, sex, setting, clinical outcomes when specified.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We have presented an approach to the geo-parsing of disease outbreak alerts in the absence of annotated data. The results of this analysis provide a framework for future automated global surveillance that reduce manual efforts and improve timeliness of reporting. Ultimately, the automated content analysis of news media and other nontraditional sources of surveillance data can facilitate early warning of emerging disease threats and improve timeliness of response and intervention.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "Our methodology can be summarized as follows. Using alerts retrieved by HealthMap we generated a dataset specially tailored to train a geo-parsing algorithm. To generate this dataset, the HealthMap gazetteer-based algorithm was first applied to this set of alerts in order to extract the words in the text referring to geographic locations. The same alerts were then run through the part-of-speech tagger algorithm provided by NEC's project SENNA (a Neural Network Architecture for Semantic Extraction) [22] , making the syntax of the text explicit. This part-of-speech tagger has a reported accuracy of 96.85% on the reference Penn Treebank dataset [23] . We then assigned to every word in the alerts a capitalization status, ie none, first character, upper case. After these 3 steps in the data generation process, each word in each alert had 4 features: the word itself, its part-of-speech tag, its capitalization status and a label indicating if the word is a geographic location or not. The last step in the data generation process consisted in replacing the lexical feature of the words with lowest frequency by a blank, as explained in the Results section.",
+            "cite_spans": [
+                {
+                    "start": 503,
+                    "end": 507,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 650,
+                    "end": 654,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "Using the data just described, we trained an artificial neural network to output a probability estimate of the label value y i for the i th word x i in an alert x,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "given a window (n -1 = 2 \u00d7 hw) of preceding and following words. The neural network was trained by negative log-likelihood minimization using stochastic gradient descent. The neural network with an example of input (with hw = 2) is illustrated in Figure 7 . The network architecture can be decomposed as follows. First, each word in the window sequence is given as input to a unique multilayer perceptron (MLP) which has been replicated n = 2 \u00d7 hw + 1 times, in a siamese network fashion [24] . This first MLP can be seen as a function \u03d5 mapping the extremely sparse representation x i of the words into a new representation, \u03d5(x i ) \u2208 R d , which has the advantage of being learned during the training. This approach was applied with success for language modeling in [25] and more recently for semantic role parsing in [22] .",
+            "cite_spans": [
+                {
+                    "start": 488,
+                    "end": 492,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 768,
+                    "end": 772,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 820,
+                    "end": 824,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 247,
+                    "end": 255,
+                    "text": "Figure 7",
+                    "ref_id": null
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "The outputs \u03d5(x i-hw ), ..., \u03d5(x i ), ..., \u03d5(x i+hw ) are concatenated into a vector z \u2208 R d \u00d7 n which is itself given as input to a sec- ond multi-layer perceptron. This second MLP, called \u03c8 in Figure 7 , has as output layer a softmax filtering function which allows us to consider the outputs of the neural network as probabilities. A threshold on P(y i = loc|x i-hw , ..., x i , ..., x i+hw ) allows us to decide if the input is a location or not. This threshold and the hyper-parameters of the neural network are tuned on a separate validation set. Tuning this threshold away from 0.5 compensates for the fact that some none labels are in fact locations unknown to the HealthMap gazetteer.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 195,
+                    "end": 203,
+                    "text": "Figure 7",
+                    "ref_id": null
+                }
+            ],
+            "section": "Methods"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "The Global Public Health Intelligence Network",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mawudeku",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Lemay",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Werker",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Andraghetti",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "John",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Infectious Disease Surveillance Edited by: M'ikanatha N, Lynfield R",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "HealthMap: the development of automated real-time internet surveillance for epidemic intelligence",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Brownstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Freifeld",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Euro Surveill",
+            "volume": "12",
+            "issn": "48",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "HealthMap: Global Infectious Disease Monitoring through Automated Classification and Visualization of Internet Media Reports",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Freifeld",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Mandl",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Reis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Brownstein",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Am Med Inform Assoc",
+            "volume": "15",
+            "issn": "2",
+            "pages": "150--157",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Netwatch: Diseases on the move",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Holden",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "314",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Technology and public health: Healthmap tracks global diseases",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Larkin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Lancet Infect Dis",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "GIPSY: Automated Geographic Indexing of Text Documents",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Woodruff",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Plaunt",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Journal of the American Society for Information Science",
+            "volume": "45",
+            "issn": "9",
+            "pages": "645--655",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Proceedings of the Thrid Message Understanding Conference",
+            "authors": [],
+            "year": 1991,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Proceedings of the Fourth Message Understanding Conference",
+            "authors": [],
+            "year": 1992,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Proceedings of the Fifth Message Understanding Conference",
+            "authors": [],
+            "year": 1993,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Proceedings of the Sixth Message Understanding Conference",
+            "authors": [],
+            "year": 1995,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Identifying gene and protein mentions in text using conditional random fields",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Mcdonald",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Pereira",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "BMC Bioinformatics",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Introduction to the CoNLL-2003 shared task: Language-independent Named Entity recognition",
+            "authors": [
+                {
+                    "first": "Tjong",
+                    "middle": [],
+                    "last": "Kim Sang",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Meulder",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proceedings of the Seventh Conference on Natural Language Learning (CoNLL-03)",
+            "volume": "",
+            "issn": "",
+            "pages": "142--147",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Introduction to the CoNLL-2005 Shared Task: Semantic Role Labeling. Proceedings of the 9th Conference on Natural Language Learning",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Carreras",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "M\u00e0rquez",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "The development of a schema for the annotation of terms in the BioCaster disease/detection tracking system",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kawazoe",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Jin",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Shigematsu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Barrero",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Taniguchi",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Collier",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Proc. of the Int'l Workshop on Biomedical Ontology in Action (KR-MED 2006)",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Unsupervised learning of generalized names",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Yangarber",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Grishman",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Proceedings of the 19th international conference on Computational linguistics",
+            "volume": "2002",
+            "issn": "",
+            "pages": "1--7",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Unsupervised Models for Named Entity Classification",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Collins",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Singer",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Proceedings of the 1999 Joint SIGDAT Conference on EMNLP and VLC",
+            "volume": "",
+            "issn": "",
+            "pages": "1--10",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Language Independent Named Entity Recognition Combining Morphological and Contextual Evidence",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cucerzan",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Yarowsky",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Proceedings of the 1999 Joint SIGDAT Conference on EMNLP and VLC",
+            "volume": "",
+            "issn": "",
+            "pages": "90--99",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A self-learning universal concept spotter",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Strzalkowski",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "Proceedings of the 16th conference on Computational linguistics",
+            "volume": "",
+            "issn": "",
+            "pages": "931--936",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "An Empirical Study of Automated Dictionary Construction for Information Extraction in Three Domains. Artificial Intelligence",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Riloff",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "",
+            "volume": "85",
+            "issn": "",
+            "pages": "101--134",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Automatic acquisition of domain knowledge for Information Extraction",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Yangarber",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Grishman",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Tapanainen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Huttunen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Proceedings of the 18th international conference on Computational linguistics",
+            "volume": "",
+            "issn": "",
+            "pages": "940--946",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "A confidence-based framework for disambiguating geographic terms",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rauch",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bukatin",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Baker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proceedings of the HLT-NAACL, Workshop on Analysis of Geographic References (WS9)",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Fast Semantic Extraction Using a Novel Neural Network Architecture",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Collobert",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Weston",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proceedings of 45th Annual Meeting of the Association for Computational Linguistics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Building a large annotated corpus of English: the Penn Treebank",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Marcus",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Marcinkiewicz",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Santorini",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Computational Linguistics",
+            "volume": "19",
+            "issn": "2",
+            "pages": "313--330",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Signature Verification using a Siamese Time Delay Neural Network",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bromley",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Guyon",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Lecun",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Sackinger",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Shah",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Advances in Neural Information Processing Systems",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "A Neural Probabilistic Language Model",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Bengio",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Ducharme",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Vincent",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Gauvin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "",
+            "volume": "3",
+            "issn": "",
+            "pages": "1137--1155",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF1": {
+            "text": "..., ,..., ) x = \u2212 + Percentage of artificial out-of-vocabulary words Figure 3Percentage of artificial out-of-vocabulary words. Percentage of \"hidden\" words when reducing the dictionary size according to the minimum frequency thresholds \u03bb. The first bar at each \u03bb value shows the number of out-of-vocabulary words among the words of the corpus, and the second bar shows the number of location words outside the vocabulary among the words tagged as location references using the HealthMap gazetteer. Between brackets, the dictionary size corresponding to \u03bb is reported.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "F 1 score with respect to HealthMap gazetteer tags for several values of \u03bb (red plain line). F 1 scores among words with visible lexical index (green dashed line) and among words with hidden dictionary's index (blue pointed-dashed line)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Illustration of the neural network architectureFigure 7Illustration of the neural network architecture. An illustration of geo-parsing neural network with a typical input. monitoring an upsurge in...",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF1": {
+            "text": "",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "This work was supported by grant G08LM009776-01A2 from the National Library of Medicine and the National Institutes of Health and a research grant from Google.org.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "MK conceived the design and implementation of the approach, carried out its evaluation and drafted the manuscript. CF participated in the design of the approach, the collection of the data and helped draft the manuscript. JB participated in the design of the approach, was involved in the outline of its evaluation and helped draft the manuscript. All authors read and approved the final manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

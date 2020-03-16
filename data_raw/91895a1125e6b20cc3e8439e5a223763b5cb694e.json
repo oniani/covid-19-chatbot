@@ -1,0 +1,2221 @@
+{
+    "paper_id": "91895a1125e6b20cc3e8439e5a223763b5cb694e",
+    "metadata": {
+        "title": "Prediction of RNA-protein interactions using conjoint triad feature and chaos game representation",
+        "authors": [
+            {
+                "first": "Hongchu",
+                "middle": [],
+                "last": "Wang",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "South China Normal University",
+                    "location": {
+                        "settlement": "Guangzhou",
+                        "country": "P.R. of China"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Pengfei",
+                "middle": [],
+                "last": "Wu",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Huazhong Agricultural University",
+                    "location": {
+                        "settlement": "Wuhan",
+                        "country": "P.R. of China"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "RNA-protein interactions (RPIs) play a very important role in a wide range of post-transcriptional regulations, and identifying whether a given RNA-protein pair can form interactions or not is a vital prerequisite for dissecting the regulatory mechanisms of functional RNAs. Currently, expensive and time-consuming biological assays can only determine a very small portion of all RPIs, which calls for computational approaches to help biologists efficiently and correctly find candidate RPIs. Here, we integrated a successful computing algorithm, conjoint triad feature (CTF), and another method, chaos game representation (CGR), for representing RNA-protein pairs and by doing so developed a prediction model based on these representations and random forest (RF) classifiers. When testing two benchmark datasets, RPI369 and RPI2241, the combined method (CTF+CGR) showed some superiority compared with four existing tools. Especially on RPI2241, the CTF+CGR method improved prediction accuracy (ACC) from 0.91 (the best record of all published works) to 0.95. When independently testing a newly constructed dataset, RPI1449, which only contained experimentally validated RPIs released between 2014 and 2016, our method still showed some generalization capability with an ACC of 0.75. Accordingly, we believe that our hybrid CTF+CGR method will be an important tool for predicting RPIs in the future.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "RNA-Protein Interactions (RPIs) play significant roles in various post-transcriptional regulation processes, such as RNA splicing, RNA transport, RNA replication, and mRNA translation [1] [2] [3] [4] [5] [6] [7] [8] [9] . A variety of functional RNAs, such as microRNAs (miRNAs), long non-coding RNAs (lncRNAs) and enhancer RNAs (eRNAs), usually work biologically through RNA-Protein Complexes (RPC) formed by the interactions between RNA binding proteins (RBPs) and these RNA macromolecules. Invalid interactions or mispairing could lead to human disease [10, 11] or pathogen resistance in plants [12, 13] . Therefore, determining whether a given RNA and a given RNA binding protein can form interactions or not is an essential prerequisite for dissection of RNA functions and regulatory mechanisms.",
+            "cite_spans": [
+                {
+                    "start": 184,
+                    "end": 187,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 188,
+                    "end": 191,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 192,
+                    "end": 195,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 196,
+                    "end": 199,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 200,
+                    "end": 203,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 204,
+                    "end": 207,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 208,
+                    "end": 211,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 212,
+                    "end": 215,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 216,
+                    "end": 219,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 556,
+                    "end": 560,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 561,
+                    "end": 564,
+                    "text": "11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 598,
+                    "end": 602,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 603,
+                    "end": 606,
+                    "text": "13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "It is commonly believed that the best way to identify PRIs is to obtain the crystal structure of RPC by X-ray crystallography or Nuclear magnetic resonance (NMR) spectroscopy [14, 15] . Nowadays, there are 1973 RPI complexes available in the Protein Data Bank (PDB, as of March 2017), which contains over 15,000 protein chains and more than 3,000 RNA chains. However, according to research using high-throughput sequencing techniques (such as RNA-Seq), at least 30,000 lncRNAs were identified by 2013 [16] . This number will increase rapidly every year, and specifically, studies have identified over 60,000 eRNAs in 2015 [17, 18] . Obviously, the majority of those are not partnered with their target proteins (if they have partners), which calls for in silico prediction of RPIs.",
+            "cite_spans": [
+                {
+                    "start": 175,
+                    "end": 179,
+                    "text": "[14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 180,
+                    "end": 183,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 501,
+                    "end": 505,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 622,
+                    "end": 626,
+                    "text": "[17,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 627,
+                    "end": 630,
+                    "text": "18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "With the rapid development of both highthroughput sequencing techniques and machine-learning algorithms, an increasing number of biological problems demand bioinformatic methods to achieve satisfactory solutions. However, in the area of RPI identifications, the research history is brief, and there are not many existing computational tools [19] [20] [21] [22] [23] [24] [25] [26] [27] [28] because of the scarcity of available data.",
+            "cite_spans": [
+                {
+                    "start": 341,
+                    "end": 345,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 346,
+                    "end": 350,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 351,
+                    "end": 355,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 356,
+                    "end": 360,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 361,
+                    "end": 365,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 366,
+                    "end": 370,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 371,
+                    "end": 375,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 376,
+                    "end": 380,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 381,
+                    "end": 385,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 386,
+                    "end": 390,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The earliest work came from Pancaldi and B\u00e4hler in 2011 [19] , who analysed the relationship between 40 RBPs and their target mRNA for 11 properties (more than 100 unique properties in total) and then trained support vector machine (SVM) and random forest (RF) classifiers using these properties to predict the interactions between RBPs and mRNA. In the same year, Bellucci et al. [20] developed a tool, called catRAPID, to give rapid predictions of RPIs by training on 592 RNA-protein pairs from the PDB. They used the physicochemical properties of sequences as features and found three most predictive features: secondary structure propensities, hydrogen bonding, and van der Waals [20] . Thereafter, Muppirala et al. [21] employed an idea from the Protein-Protein Interaction (PPI) prediction area, called Conjoint Triad Feature (CTF), to formulate protein sequences and then used normalized 4-gram frequencies to encode RNA sequences. They also constructed two benchmark datasets, called RPI369 and RPI2241, from PRIDB (a database of protein-RNA interfaces) [22] and achieved remarkable prediction accuracies by using CTF and 4-gram features on these two datasets. Two years later, Wang et al. [23] proposed a novel extended naive-Bayes-classifier to predict RPIs using the similar features of Muppirala et al. [21] Similar to catRAPID, Lu et al. [24] used the secondary structure, hydrogen-bonding, and the Van der Waals' propensities as features and then employed matrix multiplication to give a score for each protein-lncRNA pairs obtained from the PDB database.",
+            "cite_spans": [
+                {
+                    "start": 56,
+                    "end": 60,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 381,
+                    "end": 385,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 684,
+                    "end": 688,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 720,
+                    "end": 724,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1062,
+                    "end": 1066,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1198,
+                    "end": 1202,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1315,
+                    "end": 1319,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1351,
+                    "end": 1355,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "In 2015, Suresh et al. [25] integrated sequence information and predicted structure together to produce an accurate prediction of non-coding RNA-protein pairs on a newly-constructed dataset, called RPI1807. When tested on the RPI369 and RPI2241 datasets mentioned above, some improvements were achieved on prediction accuracies. Recently, Corrado et al. [26] developed a recommender system, named RNAcommender, to suggest candidate mRNA targets to the given RBPs by considering the domain information of proteins and predicted the structural information of RNA on datasets from the AURA 2, [27] which is a comprehensive database of experimentally determined interactions between transcription factor and human and mouse UTRs (untranslated regions in mRNAs). In 2016, Akbaripour-Elahabad et al. [28] integrated repetitive patterns and sequence motifs together with other traditional sequence composition features to predict RPIs, and the comparisons with other methods showed improvements on several of the datasets used previously.",
+            "cite_spans": [
+                {
+                    "start": 23,
+                    "end": 27,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 354,
+                    "end": 358,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 590,
+                    "end": 594,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 794,
+                    "end": 798,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Here, we propose a novel strategy by which integration of the successfully used CTF features and other important protein features, called chaos game representation (CGR), provides an accurate prediction of RPIs. To the best of our knowledge, there have been no reports in the area of RPI prediction that used the combination of CTF + CGR. CTF is a fundamental group of features to recognize the interaction of RNA and proteins and was shown to be successful in the majority of published prediction tools [21, 23, 25, 28] . Furthermore, CGR is an important group of features for protein studies and achieved remarkable results in many prediction tools [29] [30] [31] [32] [33] . Detailed comparisons with existing tools using RPI369 and RPI2241 demonstrated that the combinations of these two features indeed got achieved improvements, suggesting that our prediction model will be an important tool for RPI prediction.",
+            "cite_spans": [
+                {
+                    "start": 504,
+                    "end": 508,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 509,
+                    "end": 512,
+                    "text": "23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 513,
+                    "end": 516,
+                    "text": "25,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 517,
+                    "end": 520,
+                    "text": "28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 651,
+                    "end": 655,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 656,
+                    "end": 660,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 661,
+                    "end": 665,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 666,
+                    "end": 670,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 671,
+                    "end": 675,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "In this study, we focused on how to use CTF + CGR methods for predicting RPIs. The first task was to transform the raw protein and RNA sequences into appropriate numerical vectors, which can represent intrinsic properties of their interactions. Here, we studied five different groups of representations of protein and RNA sequences and tried to determine which representation was optimal for predicting RPIs. After that, another important task was to choose a powerful machine-learning algorithm or a classifier to discriminate true RPIs and non-RPIs based on the above representations. We employed random forest as our classifier, which had been proven as a successful tool for predicting RPIs [21, 24, 28] . Additionally, the 10-fold cross validation test was adopted for testing the prediction ability of five different models.",
+            "cite_spans": [
+                {
+                    "start": 695,
+                    "end": 699,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 700,
+                    "end": 703,
+                    "text": "24,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 704,
+                    "end": 707,
+                    "text": "28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Predicting rpis with CTF and CGR"
+        },
+        {
+            "text": "For the first model, we used the fundamental feature set, Amino Acid Composition (AAC, 20dimension), for protein combined with Nucleotide Composition (NC, 4-dimension) for RNA as the background for comparisons. Then, four feature sets (CTF, CGR, CTF + CGR and CTF + CGR + AAC + NC) were run with RF to show the prediction results. Note that for CTF, the feature set contains 343 features of CTF protein and 256 features of CTF RNA (for details of these 256 features, please see the subsection 'Features of RNAs for prediction-Conjoint triad feature'), which leads to 599 features (i.e., 343 + 256) in the total CTF feature set. Similarly, for CGR, the feature set contains 24 features of CGR protein and 16 features of CGR RNA (for details of these 16 features, please see the subsection 'Features of RNAs for prediction-Chaos game representation'), which counts 40 features (i.e., 24 + 16) of CGR feature set. Finally, CTF + CGR feature set simply takes the CTF feature set and the CGR feature set together to form a combined feature set which contains 639 features (599 + 40) in total, and CTF + CGR + AAC + NC feature set takes the first three feature set together, which leads to 663 features (599 + 40 + 20 + 4) in all. Importantly, we used RF classifier separately on each feature representation as the training matrix and evaluated the corresponding predicting performance of each feature representation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predicting rpis with CTF and CGR"
+        },
+        {
+            "text": "We listed the detailed prediction results for RPI369 dataset in Table 1 , from which the fundamental feature set AAC + NC clearly demonstrated the highest prediction accuracy (ACC) with 0.6965. The feature set CTF produced a satisfactory result with ACC of 0.7954, which performed much better than AAC + NC. Interestingly, the prediction accuracy increases to 0.7995 with the combination of CTF + CGR, which implies that CTF and CGR are two complementary feature sets.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 64,
+                    "end": 71,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Predicting rpis with CTF and CGR"
+        },
+        {
+            "text": "Similarly, we listed the prediction results on RPI2241 dataset in Table 2 , from which we could find analogous patterns: the prediction accuracy of AAC + NC was lowest (ACC = 0.8134), and CTF + CGR + AAC + NC achieved better ACC of 0.8536. The encouraging result of CTF + CGR showed that the combination got significant improvement with ACC of 0.9520, which further confirmed that CTF and CGR were a powerful combinatory feature set for RPI prediction.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 66,
+                    "end": 73,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Predicting rpis with CTF and CGR"
+        },
+        {
+            "text": "We generated the ROC curves for the five models on RPI369 (Figure 1 (a)) and RPI2241 (Figure 1(b) ). The resulting AUC values showed some interesting results: on RPI369 dataset, the ACC value of a combination of CTF + CGR was optimal with 0.7995, but the AUC value was only 0.7842, which was smaller than that of CTF (0.8295). When turning to RPI2241 dataset, the AUC value of a combination of CTF + CGR achieved 0.9722, which was much larger than that of CTF (0.9163). The conclusion remains consistent comparing either AUC or ACC value, and the relatively low value of the combination of CTF + CGR can be explained by fewer samples in the RPI369 dataset.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 58,
+                    "end": 67,
+                    "text": "(Figure 1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 85,
+                    "end": 97,
+                    "text": "(Figure 1(b)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Predicting rpis with CTF and CGR"
+        },
+        {
+            "text": "The two parameters (ntree and mtry) in the RF models vary significantly between the different datasets. For example, the value for mtry (the number of input variables randomly chosen at each split) is 476 for CTF, 15 for CGR, and 442 for the combination. Recall that the total dimensions of CTF, CGR and the combination are 599, 40 and ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predicting rpis with CTF and CGR"
+        },
+        {
+            "text": "To show the superiority of our method, comprehensive comparisons with four existing tools (Muppirala et al [21] ., Wang et al [23] ., RPI-Pred [25] , rpiCOOL [28] ) were listed in Table 3 . Among existing prediction methods, RPI-Pred [25] performed best of those tested on the RPI369 dataset, and rpiCOOL [28] performed better than others on the RPI2241dataset. Table 3 shows that our method achieved the second rank when testing on RPI369, and encouragingly, our method ranked first when testing on RPI2241. As RPI369 only contained 369 RNA-protein interaction pairs, the models developed on this small sample size will not guarantee generalization capability. In contrast, models developed on RPI2241 used more training samples and will be more reliable for prediction on blind samples (the samples with no experiment information). On this point, because our method achieved the best prediction accuracy of 0.95 on RPI2241, we believe that our method outperforms the four existing prediction tools.",
+            "cite_spans": [
+                {
+                    "start": 107,
+                    "end": 111,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 126,
+                    "end": 130,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 143,
+                    "end": 147,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 158,
+                    "end": 162,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 234,
+                    "end": 238,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 305,
+                    "end": 309,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 180,
+                    "end": 187,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 362,
+                    "end": 369,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Comparisons with existing methods"
+        },
+        {
+            "text": "To test the generalization ability of our model, we constructed a new dataset, named RPI1449, [25] . to confirm that a given protein chain and RNA chain had physical interactions by identifying at least two atoms, one from protein and another from RNA, with an intermolecular distance less than 3.4 \u00c5. From the above three criteria, 1449 RNA-protein pairs (in dataset RPI1449) were considered as the independent test dataset (see Table 4 ). For a blind independent test, all the 1449 newly built RNA-protein pairs were put into the prediction model, which was previously developed based on the RPI2241 dataset, and then recorded the corresponding prediction accuracy. Note that RPI2241 was built in 2011, while 1449 RNA-protein pairs were constructed based on the RNA-protein complexes that were released between 2014 and 2016 in the PDB database. Therefore, no overlap exists between these two datasets, and the experiment is called the blind independent test. We compared our prediction result with the method of Muppirala et al [21] . on the independent test using the measurement of accuracy. The comparison results are shown in Table 4 , which indicate that 1092 out of 1449 RNA-protein pairs were correctly predicted in the independent test, leading to a predicting accuracy of 0.7536. This value is about 3% higher than the accuracy rate produced using the method of Muppirala et al., which implies that our prediction model has generalization capability.",
+            "cite_spans": [
+                {
+                    "start": 94,
+                    "end": 98,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 1031,
+                    "end": 1035,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 430,
+                    "end": 437,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 1133,
+                    "end": 1140,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "In this paper, we used two datasets for training and testing. Now, RPI369 and RPI2241 are two famous benchmark datasets that were used in many previous studies [23] [24] [25] 28] for comparison. Here, we also use RPI369 and RPI2241 for training and testing our method. To download RPI369 and RPI2241 or inquire about detailed information, one can refer to Muppirala et al [21] .",
+            "cite_spans": [
+                {
+                    "start": 160,
+                    "end": 164,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 165,
+                    "end": 169,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 170,
+                    "end": 174,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 175,
+                    "end": 178,
+                    "text": "28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 372,
+                    "end": 376,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Datasets"
+        },
+        {
+            "text": "For feature extraction of protein sequences, each protein chain was formulated as a numerical vector that would be input into RF for classification. Here, we employed the following two methods for representing the protein chains:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "1. Conjoint triad feature Conjoint triad feature (CTF) was a successful method for PPI prediction for its powerful ability to detect interaction interfaces [34] and was first applied to predict RPI by Muppirala et al [21] ., which produced some satisfactory results. It is noteworthy that almost all the subsequent studies used CTF as sequence features, or at least a part of features [23] [24] [25] 28] , and it has since become a dominant method in RPI prediction.",
+            "cite_spans": [
+                {
+                    "start": 156,
+                    "end": 160,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 217,
+                    "end": 221,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 385,
+                    "end": 389,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 390,
+                    "end": 394,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 395,
+                    "end": 399,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 400,
+                    "end": 403,
+                    "text": "28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "Specifically (triad) within a given protein sequence and counts the triad frequencies by computing the occurrence numbers of all 343 triads (7 \u00d7 7 \u00d7 7) (Figure 2 ). Mathematically, we denote a protein sequence P with length L as",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 152,
+                    "end": 161,
+                    "text": "(Figure 2",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "Then, we consider all the successive three amino acids in P, that is P 1 P 2 P 3 ,P 2 P 3 P 4 , \u00c1 \u00c1 \u00c1 P 3 P 4 P 5 , . . ., P L\u00c02 P L\u00c01 P L , The CTF protein is defined as the normalized frequency of each triad in P, i.e.,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "where f i \u00bc m i L\u00c02 , and m i is the occurrence number of the i-th triad \u03bc i with each i\u00f0i \u00bc 1; 2; \u00c1 \u00c1 \u00c1 ; 343\u00de. As a result, CTF protein encodes each protein sequence into a 343-dimensional numerical vector.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "2. Chaos game representation Chaos game representation (CGR) is another important method to formulate protein sequence and was also successfully used in many protein studies [29] [30] [31] [32] [33] . It originally applied the idea of Iterated Function System (IFS) from the fractal theory for generating CGR picture of DNA sequence in 1990 [35] , and then was employed to generate CGR picture of protein sequence in 1997 [36] . Thereafter, several research studies have focused on how to extract useful features from CGR picture and showed that those extracted features played important roles in some protein studies [29] [30] [31] [32] [33] . Here, we adopt one group of the used features, called CGR-24, to formulate protein sequences [31] [32] [33] .",
+            "cite_spans": [
+                {
+                    "start": 174,
+                    "end": 178,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 179,
+                    "end": 183,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 184,
+                    "end": 188,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 189,
+                    "end": 193,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 194,
+                    "end": 198,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 341,
+                    "end": 345,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 422,
+                    "end": 426,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 618,
+                    "end": 622,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 623,
+                    "end": 627,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 628,
+                    "end": 632,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 633,
+                    "end": 637,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 638,
+                    "end": 642,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 738,
+                    "end": 742,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 743,
+                    "end": 747,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 748,
+                    "end": 752,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "More precisely, we first draw a 12-sided regular polygon with each vertex representing a specific group of amino acids (Figure 3) . Then, we set the centre of polygon as the initial point, and when we read an alphabet from a given protein sequence with length L in order, a new point was drawn half way between the initial point and the vertex labelled by this alphabet. Next, we set the point just drawn to be the new initial point, and subsequently, L points can be drawn with such iteration.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 119,
+                    "end": 129,
+                    "text": "(Figure 3)",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "Mathematically, the coordinates of all 12 vertexes (V k \u00f0x; y\u00de; k \u00bc 1; 2; \u00c1 \u00c1 \u00c1 12) can be computed as (V 1 \u00f01; 0\u00de as the first vertex of the polygon):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "The coordinates of L successively-drawn points (CGR i \u00f0x; y\u00de; i \u00bc 1; 2; \u00c1 \u00c1 \u00c1 ; L) can be given by:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "Finally, we divide the whole polygon into 24 segments that are labelled in Figure 3 , and CGR-24 counts the point frequencies of all 24 segments. Under this procedure, CGR-24 transforms a given protein sequence into a 24-dimensional numerical vector. For more detailed information of CGR-24 features, one can refer to some previous studies [31] [32] [33] .",
+            "cite_spans": [
+                {
+                    "start": 340,
+                    "end": 344,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 345,
+                    "end": 349,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 350,
+                    "end": 354,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 75,
+                    "end": 83,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Features of proteins for prediction"
+        },
+        {
+            "text": "In this section, we describe how to formulate RNA chains by CTF RNA and CGR-16 methods. 1. Conjoint triad feature Similar to the algorithm of protein, CTF of a RNA chain considers all the successive four bases in a given RNA sequence and counts the occurrence frequencies of all 4 \u00d7 4 \u00d7 4 \u00d7 4 = 256 4-mer types ( Figure 4) . Mathematically, we denote a RNA sequence \u03c9 with N bases as",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 313,
+                    "end": 322,
+                    "text": "Figure 4)",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "Then, we consider all the successive four bases in \u03c9,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "The CTF RNA features is defined as the normalized frequency of each 4-mer in \u03c9, i.e.,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "(2)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "where f i \u00bc n i N\u00c02 , and n i is the occurrence number of the i-th 4-mer \u03bd i with each i\u00f0i \u00bc 1; 2; \u00c1 \u00c1 \u00c1 ; 256\u00de. This way, CTF RNA encodes each RNA sequence into a 256-dimensional numerical vector.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "2. Chaos game representation The drawing algorithm of CGR picture of RNA is almost the same as that of protein, and the only difference is that the 12-sided regular polygon is replaced by a square with four vertexes representing A, C, G, U ( Figure 5) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 242,
+                    "end": 251,
+                    "text": "Figure 5)",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "Mathematically, the coordinates of four vertexes are denoted as V 1 \u00f00; 0\u00de,V 2 \u00f01; 0\u00de,V 3 \u00f01; 1\u00de,V 4 \u00f00; 1\u00de, and the coordinates of successively-drawn points can be given by:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "Finally, we divide the whole square into 16 segments, as is shown in Figure 5 , and then CGR-16 counts the occurrence frequencies of all 16 segments. More precisely, all 16 segments are denoted by S k ; k \u00bc 1; 2; \u00c1 \u00c1 \u00c1 ; 16, and also denote L k ; k \u00bc 1; 2; \u00c1 \u00c1 \u00c1 ; 16 to be the number of points that fall into S k . Then set",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 69,
+                    "end": 77,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "to be the occurrence frequencies of all 16 segments. This way, CGR-16 encodes each RNA sequence as a 16-dimensional vector\u00f0D 1 ; D 2 ; \u00c1 \u00c1 \u00c1 ; D 16 \u00de.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Features of RNA for prediction"
+        },
+        {
+            "text": "Random forest (RF) is a popular machinelearning method for classification or regression tasks. There are two advantages of RF: 1) easy training that requires researchers to tune only two internal parameters, 'ntree and mtry' during the training approach, and 2) powerful prediction ability on various datasets when comparing other machine-learning or statistical methods. These properties have helped make RF become one of the most successful machine-learning tools in the last two decades. Actually, it is an ensemble machine learning method whose prediction result is voted by a certain number of decision trees. Each tree is independently constructed with a bootstrap sample of the training set. Additionally, comprehensive theory and wide applications of RF can be found in a famous paper written by Breiman [37] . Here, we adopt a MATLAB toolbox of RF, which is available at http://code. google.com/p/randomforest-matlab/, to train and test our model. We chose the optimal combination of the two parameters of 'ntree' in [300,500] and mtry in [1,n] (n is the number of the total features in that dataset) and adopted the grid optimization to find the globe optimal solution.",
+            "cite_spans": [
+                {
+                    "start": 812,
+                    "end": 816,
+                    "text": "[37]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 1048,
+                    "end": 1053,
+                    "text": "[1,n]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Random forest"
+        },
+        {
+            "text": "For evaluating the predicting performance, we adopted 10-fold cross-validation [38] to examine its' effectiveness. Additionally, performance of our predictor is quantitatively measured by the following common-used indexes: sensitivity (Sens), specificity (Spec), accuracy (ACC) and Matthew's correlation coefficient (MCC) value, which are calculated as:",
+            "cite_spans": [
+                {
+                    "start": 79,
+                    "end": 83,
+                    "text": "[38]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Evaluation of the prediction performance"
+        },
+        {
+            "text": "Importantly, the ROC curves and the corresponding area under the curve (AUC) is another important index for testing the balance between true positive and false positive rates. In total, we used five indexes (Sens, Spec, ACC, MCC, AUC) for comprehensively measuring the predicting performance of a given predictor (see Tables 1 and 2 ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 318,
+                    "end": 332,
+                    "text": "Tables 1 and 2",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Evaluation of the prediction performance"
+        },
+        {
+            "text": "In this paper, we integrated CTF and CGR to give appropriate representations of RNA-protein interaction pairs and developed a prediction model of RPIs based on these representations and random forest. A number of previous studies all used CTF as representations of RNA-protein pairs and achieved remarkable prediction performances [21, 23, 25] ; CTF was considered the most important feature for RPI prediction. Up to this point, our work has shown that prediction performance can be significantly improved by adding CGR representations, which is the most significant finding of our current study. For detailed information of prediction results, when training and cross validating two benchmark datasets, RPI369 and RPI2241, the combined representation of CTF + CGR achieved the best prediction performance. Compared with four existing tools [21, 23, 25, 28] , the prediction model constructed from the combinatorial features of CTF + CGR showed some improvements, especially on RPI2241. Furthermore, a new independent testing dataset, RPI1449, was built using new experimentally validated RNA-protein interactions, and a blind independent test was performed. The corresponding prediction accuracy of 0.7536 demonstrated that our method has some generalization capability. In conclusion, the combinational representation of CTF + CGR appears to be a powerful method for RPI prediction, and our model based on CTF + CGR and random forest may prove to be an important tool for prediction of RPIs. ",
+            "cite_spans": [
+                {
+                    "start": 331,
+                    "end": 335,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 336,
+                    "end": 339,
+                    "text": "23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 340,
+                    "end": 343,
+                    "text": "25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 842,
+                    "end": 846,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 847,
+                    "end": 850,
+                    "text": "23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 851,
+                    "end": 854,
+                    "text": "25,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 855,
+                    "end": 858,
+                    "text": "28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "RNA processing and its regulation: global insights into biological networks",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Licatalosi",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Darnell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nat Rev Genet",
+            "volume": "11",
+            "issn": "",
+            "pages": "75--87",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Deciphering the role of RNA-binding proteins in the post-transcriptional control of gene expression",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kishore",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Luber",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zavolan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Brief Funct Genomics",
+            "volume": "9",
+            "issn": "",
+            "pages": "391--404",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "RNA-binding proteins and post-transcriptional gene regulation",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Glisovic",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Bachorik",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Yong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "FEBS Lett",
+            "volume": "582",
+            "issn": "14",
+            "pages": "1977--1986",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Post-transcriptional control of gene expression: a genome-wide perspective",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mata",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Marguerat",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "B\u00e4hler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Trends Biochem Sci",
+            "volume": "30",
+            "issn": "",
+            "pages": "506--514",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "The RNAbinding proteomes from yeast to man harbour conserved enigmRBPs",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Beckmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Horos",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Fischer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nat Commun",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "PTRcombiner: mining combinatorial regulation of gene expression from post-transcriptional interaction maps",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Corrado",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tebaldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Bertamini",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Genomics",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Evolution and functions of long noncoding RNAs",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Ponting",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Oliver",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Reik",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Cell",
+            "volume": "136",
+            "issn": "",
+            "pages": "629--641",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "The role of long noncoding RNAs in the epigenetic control of gene expression",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Morlando",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ballarino",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Fatica",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Chem Med Chem",
+            "volume": "9",
+            "issn": "",
+            "pages": "505--510",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Long non-coding RNAs: insights into functions",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Mercer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Dinger",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mattick",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nat Rev Genet",
+            "volume": "10",
+            "issn": "3",
+            "pages": "155--159",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "RNA-RNA and RNA-protein interactions in coronavirus replication and transcription",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Sola",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mateos-Gomez",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Almazan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "RNA Biol",
+            "volume": "8",
+            "issn": "2",
+            "pages": "237--248",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Emerging roles of RNA and RNA-binding protein network in cancer cells",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hur",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jeong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMB Rep",
+            "volume": "42",
+            "issn": "3",
+            "pages": "125--130",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Genome-wide analysis of RNA-protein interactions in plants",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Barkan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Methods Mol Biol",
+            "volume": "553",
+            "issn": "",
+            "pages": "13--37",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Silencing and innate immunity in plant defense against viral and non-viral pathogens",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Zvereva",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Pooggin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Viruses",
+            "volume": "4",
+            "issn": "11",
+            "pages": "2578--2597",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Crystal structure of rhodopsin: A G protein-coupled receptor",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Palczewski",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kumasaka",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hori",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Science",
+            "volume": "289",
+            "issn": "5480",
+            "pages": "739--745",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Highresolution crystal structure of an engineered human beta2-adrenergic G protein-coupled receptor",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Cherezov",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Rosenbaum",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Hanson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Science",
+            "volume": "318",
+            "issn": "5854",
+            "pages": "1258--1265",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Structure and function of long noncoding RNAs in epigenetic regulation",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Mercer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mattick",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nat Struct Mol Biol",
+            "volume": "20",
+            "issn": "3",
+            "pages": "300--307",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "An atlas of active enhancers across human cell types and tissues",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Andersson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Gebhard",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Miguel-Escalada",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nature",
+            "volume": "507",
+            "issn": "7403",
+            "pages": "455--461",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Transcribed enhancers lead waves of coordinated transcription in transitioning mammalian cells",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Arner",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Daub",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Vitting-Seerup",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Science",
+            "volume": "347",
+            "issn": "6225",
+            "pages": "1010--1014",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "In silico characterization and prediction of global protein-mRNA interactions in yeast",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Pancaldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bahler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "14",
+            "pages": "5826--5836",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Predicting protein associations with long noncoding RNAs",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bellucci",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Agostini",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Masin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nat Methods",
+            "volume": "8",
+            "issn": "",
+            "pages": "444--445",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Predicting RNA-protein Interactions Using Only Sequence Information BMC Bioinformatics",
+            "authors": [
+                {
+                    "first": "U",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Muppirala",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Honavar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dobbs",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "PRIDB: a Protein-RNA Interface database",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lewis",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Walia",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Terribilini",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "",
+            "pages": "277--282",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "De novo prediction of RNA-protein interactions from sequence information",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Mol BioSyst",
+            "volume": "9",
+            "issn": "",
+            "pages": "133--142",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Computational prediction of associations between long non-coding RNAs and proteins",
+            "authors": [
+                {
+                    "first": "Q",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "BMC Genomics",
+            "volume": "14",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "RPI-Pred: predicting ncRNA-protein interaction using sequence and structural information",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Suresh",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Adjeroh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nucleic Acids Res",
+            "volume": "43",
+            "issn": "3",
+            "pages": "1370--1379",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "RNAcommender: genome-wide recommendation of RNA-protein interactions",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Corrado",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tebaldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Costa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Bioinformatics",
+            "volume": "32",
+            "issn": "23",
+            "pages": "3627--3634",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "AURA 2: empowering discovery of post-transcriptional networks",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Dassi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Re",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Leo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Translation",
+            "volume": "2",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "A tool for In Silico RNA-protein interaction detection using random forest",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Akbaripour-Elahabad",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zahiri",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Rafeh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "J Theor Biol",
+            "volume": "402",
+            "issn": "",
+            "pages": "1--8",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Chaos game representation of protein sequences based on the detailed HP model and their multifractal and correlation analyses",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Anha",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lau",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Theor Biol",
+            "volume": "226",
+            "issn": "3",
+            "pages": "341--348",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Prediction of protein structural classes by recurrence quantification analysis based on chaos game representation",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Peng",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Yu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J Theor Biol",
+            "volume": "257",
+            "issn": "4",
+            "pages": "618--626",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Predicting thermophilic proteins with pseudo amino acid composition: approached from chaos game representation and principal component analysis",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Protein Pept Lett",
+            "volume": "18",
+            "issn": "12",
+            "pages": "1244--1250",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "A new hybrid fractal algorithm for predicting thermophilic nucleotide sequences",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J Theor Biol",
+            "volume": "293",
+            "issn": "",
+            "pages": "74--81",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Predicting DNA binding proteins using support vector machine with hybrid fractal features",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Niu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "J Theor Biol",
+            "volume": "343",
+            "issn": "",
+            "pages": "186--192",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Predicting protein-protein interactions based only on sequences information",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Luo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "P Natl Acad Sci",
+            "volume": "104",
+            "issn": "11",
+            "pages": "4337--4341",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Chaos game representation of gene structure",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jeffrey",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "Nucleic Acids Res",
+            "volume": "18",
+            "issn": "8",
+            "pages": "2163--2170",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Chaos game representation of proteins",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Basu",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Pan",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Dutta",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "J Mol Graph Model",
+            "volume": "15",
+            "issn": "5",
+            "pages": "279--289",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Random forests",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Breiman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Mach Learning",
+            "volume": "45",
+            "issn": "",
+            "pages": "5--32",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Review: prediction of protein structural classes",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chou",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Crit Rev Biochem Mol Biol",
+            "volume": "30",
+            "issn": "4",
+            "pages": "275--349",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "ROC curves of five groups of features on RPI369 (A) and RPI2241 (B).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": ", CTF divides all 20 amino acids into seven groups ({AGV}, {ILFP}, {YMTS}, {HNQW}, {RK},{DE}, {C}) according to their physicochemical properties and then considers all the amino acids in the same group as identical. Then, CTF considers all sets of three successive amino acids",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "CTF picture of protein.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "CGR picture of protein. The segments labelled serially with numbers 1-24.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "CTF picture of RNA.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "CGR picture of RNA. The segments labelled serially with numbers 1-16.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Nuclear magnetic resonance (NMR)",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Results in predicting RPIs on RPI369 dataset (10-fold cross-validation test).",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Results in predicting RPIs on RPI2241 dataset (10-fold cross-validation test). 639, respectively; the value of 476 of mtry in the model CTF implies that 476 important features among the total 599 features are selected as the optimal feature set to reach the best prediction result. RF selects 476 optimal features among all the 599 features, which means the unselected features are substitutable and the reasons might be the high correlations between the selected features.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Comparisons with four existing tools.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Independent testing dataset and predicting result.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Hongchu Wang was partially supported by the high-performance computing platform of South China Normal University and Guangdong Engineering Research Center for Data Science.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        },
+        {
+            "text": "No potential conflict of interest was reported by the authors. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Disclosure statement"
+        }
+    ]
+}

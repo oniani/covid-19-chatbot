@@ -1,0 +1,2662 @@
+{
+    "paper_id": "8f9e4f6b34a4b30f54abef008fc8c0fde00ff02f",
+    "metadata": {
+        "title": "Bayesian uncertainty quantification for transmissibility of influenza, norovirus and Ebola using information geometry",
+        "authors": [
+            {
+                "first": "Thomas",
+                "middle": [],
+                "last": "House",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Manchester",
+                    "location": {
+                        "addrLine": "Oxford Road",
+                        "postCode": "M13 9PL",
+                        "settlement": "Manchester",
+                        "country": "UK"
+                    }
+                },
+                "email": "thomas.house@manchester.ac.uk"
+            },
+            {
+                "first": "Ashley",
+                "middle": [],
+                "last": "Ford",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "University of Bristol",
+                    "location": {
+                        "postCode": "BS8 1TW",
+                        "settlement": "Bristol",
+                        "country": "UK"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Shiwei",
+                "middle": [],
+                "last": "Lan",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Samuel",
+                "middle": [],
+                "last": "Bilson",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "Warwick Infectious Disease Epidemiology Research Centre (WIDER)",
+                    "institution": "Warwick Mathematics Institute",
+                    "location": {}
+                },
+                "email": ""
+            },
+            {
+                "first": "Elizabeth",
+                "middle": [],
+                "last": "Buckingham-Jeffery",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "Warwick Infectious Disease Epidemiology Research Centre (WIDER)",
+                    "institution": "Warwick Mathematics Institute",
+                    "location": {}
+                },
+                "email": ""
+            },
+            {
+                "first": "Mark",
+                "middle": [],
+                "last": "Girolami",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Infectious diseases exert a large and in many contexts growing burden on human health, but violate most of the assumptions of classical epidemiological statistics and hence require a mathematically sophisticated approach. Viral shedding data are collected during human studies-either where volunteers are infected with a disease or where existing cases are recruited-in which the levels of live virus produced over time are measured. These have traditionally been difficult to analyse due to strong, complex correlations between parameters. Here, we show how a Bayesian approach to the inverse problem together with modern Markov chain Monte Carlo algorithms based on information geometry can overcome these difficulties and yield insights into the disease dynamics of two of the most prevalent human pathogens-influenza and norovirus-as well as Ebola virus disease.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Infectious diseases continue to pose a major threat to human health, with transmission dynamic models playing a key role in developing scientific understanding of their spread and informing public health policy [1] . These models typically require many parameters to make accurate predictions, which interact with data in complex, nonlinear ways. It is seldom possible to perform a series of individual controlled experiments to calibrate these models, meaning that the use of multiple datasets is often necessary [2] .",
+            "cite_spans": [
+                {
+                    "start": 211,
+                    "end": 214,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 514,
+                    "end": 517,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "At the population level, infectious disease models most frequently involve a 'compartmental' approach in which individuals progress between different discrete disease states, usually at constant rates [3] . We note that alternatives to such a compartmental approach exist, for example, use of a deterministic time-varying infectivity, or allowing for non-Markovian state transitions in a stochastic context [4] . There are theoretical differences between these and compartmental models for predictive epidemic modelling (see [5] for additional discussion), but from the point of view of inference they pose very similar challenges and therefore the rest of this paper will consider a compartmental modelling framework.",
+            "cite_spans": [
+                {
+                    "start": 201,
+                    "end": 204,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 407,
+                    "end": 410,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 525,
+                    "end": 528,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "At the individual level, there are three separate events that can be represented using different compartments: (i) an individual receiving an infectious dose of a pathogen, (ii) the individual becoming infectious and able to infect new cases, and (iii) the individual ceasing to be infectious and becoming unable to infect new cases. For some pathogens, there are also events relating to changes in disease progression during the infectious period. The times elapsed between these events are important for understanding the epidemiology of infectious diseases as well as designing control and mitigation strategies [6, 7] .",
+            "cite_spans": [
+                {
+                    "start": 615,
+                    "end": 618,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 619,
+                    "end": 621,
+                    "text": "7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Here, we consider how the rates of moving between compartments in standard epidemic models can be estimated from shedding data generated either when individuals are given an infectious dose of a virus under controlled conditions, or when existing cases are enrolled in a study, and the level of live virus that they produce (shed) is measured over time. The nature of these models and data means that there are not simple optimal values for the rate parameters, but instead the data constrain the parameters to lie close to a nonlinear curve in parameter space. We show that modern computationally intensive Bayesian methods that make use of information geometry can be used to calculate the posterior density for models of influenza, norovirus and Ebola. We then use forward modelling based on this posterior knowledge to show that some epidemiological conclusions are robust under the remaining uncertainty, but others require additional information to determine. In particular, for influenza, we show that the predicted effectiveness of quarantine-type interventions is unaffected by the remaining uncertainty, but antiviral-like interventions have a bimodal uncertainty structure. For norovirus, we show that the frequency of epidemics is predictable under the remaining uncertainty, but the severity and timing of each seasonal epidemic is not. For Ebola, we are able to distinguish between high-and low-viraemic infectious disease progression, giving results that are consistent with population-level observations of the case fatality ratio.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Our methodological approach involves three related components. We start by defining the different compartmental disease models that we use in \u00a72.2. These are defined in terms of each case's natural history, which we represent mathematically as a continuous-time Markov chain. We also show how these models can be used to make population-level predictions by assuming, for example, that an infectious individual will cause new cases at a rate b.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overview"
+        },
+        {
+            "text": "Then in \u00a72.3 we consider how the natural history parameters can be estimated from shedding data. An important distinction will be between the expected rate at which individuals infect in the population (quantified using a rate like b above) and the measured intensity of shedding (quantified using log titre). We will generally assume a simple linear relationship between these using a scaling parameter that we call t.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overview"
+        },
+        {
+            "text": "Finally in \u00a72.4, we present the Bayesian approach to uncertainty quantification as well as the algorithms necessary to implement this for the complex posterior distributions that arise in the analysis of shedding data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overview"
+        },
+        {
+            "text": "In a compartmental approach, we model the state of an individual who has been infected with a pathogen at time t \u00bc 0 as an integer random variable X(t). We label the possible states after infection i,j, . . . [ f1, . . . ,mg; while more general structures are needed for other pathogens, for both influenza and norovirus we consider the 'linear chain' case where an individual spends an exponentially distributed period of time with mean 1=g i in each state i , m before progressing to state i \u00fe 1, and where m is the 'recovered' state, corresponding to the end of the infection, from which the individual does not move. In the electronic supplementary material, we provide a general solution for the probability of being in disease compartment i at time t, p i \u00f0t; g\u00de :\u00bc Pr\u00bdX\u00f0t\u00de \u00bc ijX\u00f00\u00de \u00bc 1; g, \u00f02:1\u00de and its derivatives with respect to the rates fg i g. For Ebola, we consider a chain that branches, which introduces parameters relating to the probability of following one path or another in addition to rate constants. We also assume that an individual has 'infection rate' l i in state i (with l m \u00bc 0), which is proportional to the rate at which they would infect new cases in a population-level epidemic model. A key quantity is the expected infectiousness of an individual over time",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Compartmental models of infectious disease"
+        },
+        {
+            "text": "where the model parameters are u \u00bc \u00f0g, l\u00de \u00bc \u00f0u a \u00de. Perhaps the most important quantity in any epidemiological model of infections is the basic reproductive ratio, R 0 , defined as the expected number of secondary infections produced by a typical infectious individual early in the epidemic [4] . Under the simplifying (but frequently made) assumption of a homogeneous population, this quantity is given by",
+            "cite_spans": [
+                {
+                    "start": 291,
+                    "end": 294,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Compartmental models of infectious disease"
+        },
+        {
+            "text": "L\u00f0t; u\u00de dt: \u00f02:3\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Compartmental models of infectious disease"
+        },
+        {
+            "text": "Note that the constants of proportionality l depend on the nature and strength of interactions in the population and therefore cannot be determined from measurements of individuals alone.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Compartmental models of infectious disease"
+        },
+        {
+            "text": "One of the simplest models in mathematical epidemiology is the SIR model, in which individuals are susceptible, infectious or removed. We use this model as a simple example of the methodology we propose. An individual infected at time t \u00bc 0 spends an exponentially distributed period of time in the infectious class, with rate g, before recovering, and has infectiousness b. Therefore, p 1 \u00f0t; g\u00de \u00bc e \u00c0gt and L\u00f0t; b,g\u00de \u00bc be \u00c0gt : \u00f02:4\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "At the population level, supposing that we can ignore demographic processes such as births and deaths so the population size is fixed at N, we have a set of ordinary differential equations describing the evolution of an epidemic:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "Here S(t) is the expected number of susceptible individuals in the population, I(t) is the expected number of infectious cases and R(t) is the expected number of removed individuals; we will use a similar notation below generalized in a natural way. In this work, we will consider how to fit expressions such as (2.4) to shedding data in such a way that population-level models such as (2.5) can be parametrized accounting for uncertainty.",
+            "cite_spans": [
+                {
+                    "start": 312,
+                    "end": 317,
+                    "text": "(2.4)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "Influenza is commonly modelled using the 'SEEIIR' or 'SE 2 I 2 R' framework, for example, in the work that was used to inform vaccination policy during the recent H1N1 pandemic [8] . Here m \u00bc 5 and individuals spend a 2-Erlang distributed period of time with mean 1/v in a non-infectious 'exposed' state, and then a 2-Erlang distributed period of time with mean 1/g in the infectious state, before recovering.",
+            "cite_spans": [
+                {
+                    "start": 177,
+                    "end": 180,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "To show the possible different impacts of uncertainty in parameter values, we will consider two models for delayed intervention (implemented after a time period of length d after infection) during an influenza pandemic. The first of these assumes that the intervention is 'quarantine-like' and completely halts transmission after administration, leading to an epidemic with reproduction number",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "L\u00f0t; u\u00de dt:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "\u00f02:6\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "The second, however, assumes that the individual must not have progressed from the 'latent' to the 'infectious' class and is therefore similar to some models of administration of antiviral medication like Tamiflu [9, 10] , leading to an epidemic with reproduction number",
+            "cite_spans": [
+                {
+                    "start": 213,
+                    "end": 216,
+                    "text": "[9,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 217,
+                    "end": 220,
+                    "text": "10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "We note from standard results in mathematical epidemiology [4] that if the infection rate is b, and the mean infectious period is 1/g, then the basic reproductive ratio is R 0 \u00bc b/g, and for an epidemic with reproduction number R the epidemic final size Z is given by the solution to the transcendental equation above, a range of delays, and fitted values of the parameters (v, g) at a fixed value of R 0 \u00bc 1.4 (as in [8] ) to make a direct comparison, although it would be straightforward to place a distribution on R 0 . We note that while all parameter values agree on the value of R 0 \u00bc lim d!1 R d , and that lim d!0 R d \u00bc 0, at finite non-zero d the uncertainty in parameters will lead to posterior variability in R d and hence Z.",
+            "cite_spans": [
+                {
+                    "start": 59,
+                    "end": 62,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 418,
+                    "end": 421,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "Temporal features of an influenza epidemic are often more relevant for policy than the final size [11, 12] and are typically considered using systems of differential equations. As we are considering an intervention with fixed delay, we couple the standard ODE system [8] to a set of terms modelling the delayed intervention leading to the delay-differential equation system where the variable e is 1 if the intervention works for any infected individual and 0 if it only works during the latent period, and d is the intervention delay. p i \u00f0t; v,g\u00de is the probability of being in state i time t after starting in state 1 at time 0 as in (2.1) above and is also determined by the parameters in the shedding model.",
+            "cite_spans": [
+                {
+                    "start": 98,
+                    "end": 102,
+                    "text": "[11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 103,
+                    "end": 106,
+                    "text": "12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 267,
+                    "end": 270,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "Norovirus is usually assumed to follow the 'SEIRS' framework [13] , where after infection an individual spends an exponentially distributed period of time with mean 1/v in a 'latent' class, then an exponentially distributed period of time with mean 1/g in the infectious class. In contrast to influenza, individuals move from the 'recovered' class back to the 'susceptible' class with rate m; this loss of immunity is a relatively slow process that does not impact on the analysis of shedding data. It does, however, influence the population-level disease dynamics of norovirus, which can be described using a set of ordinary differential equations, where S(t) stands for the expected number of people who are susceptible and similarly for other compartments:",
+            "cite_spans": [
+                {
+                    "start": 61,
+                    "end": 65,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Norovirus"
+        },
+        {
+            "text": "Here we have assumed a constant effective population size N and have a time-varying infection rate (which is necessary to reproduce the regular seasonality seen in real data [13] ) that we assume takes a sinusoidal form b\u00f0t\u00de \u00bc b 0 \u00f01 \u00fe Asin\u00f0at\u00de\u00de. Because such external forcing in transmission is typically believed to arise from school terms [14] , we take A \u00bc 1/3 to be close to existing empirical estimates of the impact of school closures on disease spreading [15, 16] , and a can be set to 2p yr \u00c01 . The demographic rate d is standardly set to 1/70 yr -1 . From the results of [17] , we have that R 0 \u00bc b 0 =g; we vary this and the rate of waning immunity m within ranges suggested by Simmons et al. [13] , and then run the model (2.10) to determine its long-term behaviour for different fitted values of the parameters (v, g). A norovirus vaccine is likely to be available in the future [18] , and we model the impact of a vaccination policy starting at time u and with effective coverage v (defined as the product of coverage and efficacy) by modification of the demographic term for S and addition of a vaccinated V compartment:",
+            "cite_spans": [
+                {
+                    "start": 174,
+                    "end": 178,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 342,
+                    "end": 346,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 463,
+                    "end": 467,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 468,
+                    "end": 471,
+                    "text": "16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 582,
+                    "end": 586,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 705,
+                    "end": 709,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 893,
+                    "end": 897,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Norovirus"
+        },
+        {
+            "text": "Here Q is the step function, leaving us with a set of timeinhomogeneous ordinary differential equations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Norovirus"
+        },
+        {
+            "text": "Ebola is both much less common than influenza and norovirus and much more dangerous. This means that the modelling framework for it is less established-although it is typically assumed to follow an SEIR-type framework [19, 20] -and also that challenge studies cannot be performed. Instead, existing cases are recruited and their viral loads are monitored. Our modelling approach is based on the results of such studies [21] . This is shown diagrammatically in figure 1 and is described by equations",
+            "cite_spans": [
+                {
+                    "start": 218,
+                    "end": 222,
+                    "text": "[19,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 223,
+                    "end": 226,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 419,
+                    "end": 423,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Ebola"
+        },
+        {
+            "text": "In this study design, the latent E states are not observed and so the initial condition is J 1 \u00f00\u00de \u00bc 1 with all other quantities initially 0. Parameter interpretations and priors are given in table 1. The transmission rates for low-and high-viraemic pathways are, respectively,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Ebola"
+        },
+        {
+            "text": "Our aim is to extract parameter estimates for compartmental epidemic models from challenge studies in which human volunteers are infected with a pathogen, or observational studies based on rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279 existing cases, and the level of live virus they produce (or 'shed') is measured over time. The concentration of live virus is quantified as a 'titre', which is essentially an estimate of the concentration of live virus. The relationship between this quantity and transmissibility is complex, but generally agreed to be sub-linear [22, 23] . We assume here that at each time point t the log titre y is proportional to the expected intensity of infection L(t) plus additive Gaussian noise representing experimental error and other factors such as individual-level variability, leading to likelihood functions based on products of normal distribution probability mass functions. The details are, however, different for the four scenarios we consider and so we define our models separately below.",
+            "cite_spans": [
+                {
+                    "start": 586,
+                    "end": 590,
+                    "text": "[22,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 591,
+                    "end": 594,
+                    "text": "23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Shedding model and data"
+        },
+        {
+            "text": "For the SIR model, we assume one observation y of shedding with standard deviation s at time t leading to likelihood function L\u00f0yjt, g\u00de \u00bc N \u00f0yjte \u00c0g ; s\u00de:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "\u00f02:14\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "We will use this as a toy model to demonstrate our methodological approach, using numerical values y \u00bc 1, s \u00bc 0.02 and t \u00bc 1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "Note that here and throughout, we write the probability density function for the normal distribution with mean m and standard deviation s evaluated at x as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "\u00f02:15\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The SIR model"
+        },
+        {
+            "text": "For influenza, we use the meta-analysis data of Carrat et al. [24] for viral titre in the nasal passages of individuals infected with influenza A H1N1, which is shown in figure 2a . Here, observations are made at regularly spaced times belonging to a set T . Under our general modelling assumptions, the likelihood of observing a set of mean log-titres ( y t ) among participants, with associated standard deviations (s t ), given the model parameters, is",
+            "cite_spans": [
+                {
+                    "start": 62,
+                    "end": 66,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 170,
+                    "end": 179,
+                    "text": "figure 2a",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Influenza"
+        },
+        {
+            "text": "where N is the normal distribution probability density function intended to capture various sources of experimental error and individual-level variability as would be expected due to the central limit theorem. Here, we assume that the variance at each time point is measured, as given in [24] . Because the infection rate b depends inter alia on the rate of contact between individuals, which cannot be estimated from shedding data, we rescale the infectiousness L using the scaling parameter t meaning that our parameters for estimation are u \u00bc \u00f0t, v, g\u00de.",
+            "cite_spans": [
+                {
+                    "start": 288,
+                    "end": 292,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Influenza"
+        },
+        {
+            "text": "For norovirus, we use data from the study of Atmar et al. [25] , where individuals were infected under controlled conditions and observations of viral titre in faeces made irregularly at times belonging to a set T : These data are shown in figure 3a and since they do not aggregate in the same way as the influenza data the likelihood function is",
+            "cite_spans": [
+                {
+                    "start": 58,
+                    "end": 62,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Norovirus"
+        },
+        {
+            "text": "so s is here an additional parameter that must be estimated, and we have rescaled the infectiousness as before using t. This makes the norovirus parameter space dimension 4, in contrast to dimension 3 for influenza, with u \u00bc \u00f0t, v, g, s\u00de.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Norovirus"
+        },
+        {
+            "text": "For Ebola, we use the data of Ksiazek et al. [21] on viral titre in the blood of hospitalized Ebola cases, which are stratified into low-and high-viraemic disease pathways as shown in figure 1 , together with the model described by equations (2.12) . This leads to a likelihood function that takes the form of a product of low and high trajectories, each of which is similar to the influenza likelihood:",
+            "cite_spans": [
+                {
+                    "start": 45,
+                    "end": 49,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 242,
+                    "end": 248,
+                    "text": "(2.12)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 184,
+                    "end": 192,
+                    "text": "figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Ebola"
+        },
+        {
+            "text": "\u00f02:18\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Ebola"
+        },
+        {
+            "text": "where we use a natural subscripting of 'l' for low and 'h' for high, and the parameters for estimation are \u00f0u 1 , . . . ,u 7 \u00de as shown in table 1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Ebola"
+        },
+        {
+            "text": "It is long-established that fitting of a sum of exponentials to data is potentially troublesome; in particular, Acton [26] high viraemia initial viraemia",
+            "cite_spans": [
+                {
+                    "start": 118,
+                    "end": 122,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical framework 2.4.1. The Bayesian approach to identifiability"
+        },
+        {
+            "text": "low viraemia recovery death Figure 1 . Ebola model compartmental structure and role of parameters.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 28,
+                    "end": 36,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Statistical framework 2.4.1. The Bayesian approach to identifiability"
+        },
+        {
+            "text": "Compartments are shown as circles; flows between compartments are shown as thin black arrows labelled with parameters; and infectiousness is indicated by outward facing block arrows labelled with parameters. considers fitting the model y \u00bc Ae \u00c0at \u00fe Be \u00c0bt to ( y, t) pairs and notes that 'there are many combinations of (a, b, A, B) that will fit most exact data quite well indeed [. . .] and when experimental noise is thrown into the pot, the entire operation becomes hopeless'. Our compartmental models are more complex than sums of exponentials, but exhibit the same lack of a clear mode in the likelihood function. While there are various methods to address this issue in other applications (e.g. [27] ), another response is (informally speaking) to consider all parameter combinations that fit well, and to investigate the epidemiological consequences of this uncertainty in parameter values.",
+            "cite_spans": [
+                {
+                    "start": 702,
+                    "end": 706,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Statistical framework 2.4.1. The Bayesian approach to identifiability"
+        },
+        {
+            "text": "More formally, we work in a Bayesian framework, meaning that we attempt to calculate the posterior density p over parameters u from the likelihood function L and the prior function Given fixed data y, the measure p\u00f0ujy\u00dedu is higher in more credible regions of parameter space, and can be multi-modal and/or with many combinations of parameters having the same level of posterior support.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Statistical framework 2.4.1. The Bayesian approach to identifiability"
+        },
+        {
+            "text": "Here, we attempt to use priors that are broadly speaking uninformative-either uniform or improper if there is sufficient data, or low-rate exponential if there is less data. It is important to note, however, that use of strongly informative priors is another method for restoration of identifiability, in the sense of an approximately multivariate normal posterior distribution that is concentrated in the region of a unique mode. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Statistical framework 2.4.1. The Bayesian approach to identifiability"
+        },
+        {
+            "text": "Typically, the integral in the denominator of (2.19) is not tractable so we adopt the popular methodology of defining a Markov chain on parameter space whose stationary distribution has probability density function p, i.e. Markov chain Monte Carlo (MCMC) [28, 29] , in particular the Metropolis -Hastings algorithm [30, 31] . This is a discrete-time Markov chain in which a change of state from u n to u \u00c3 is proposed with probability q\u00f0u \u00c3 ju n \u00de and the proposal is accepted with probability a \u00bc 1^L \u00f0yju \u00c3 \u00def\u00f0u \u00c3 \u00deq\u00f0u n ju \u00c3 \u00de L\u00f0yju n \u00def\u00f0u n \u00deq\u00f0u \u00c3 ju n \u00de : \u00f02:20\u00de",
+            "cite_spans": [
+                {
+                    "start": 255,
+                    "end": 259,
+                    "text": "[28,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 260,
+                    "end": 263,
+                    "text": "29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 315,
+                    "end": 319,
+                    "text": "[30,",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 320,
+                    "end": 323,
+                    "text": "31]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Markov chain Monte Carlo"
+        },
+        {
+            "text": "We shall now outline five popular approaches to MCMC, three that do not make use of derivatives and two that do, with all being in some sense a special case of (2.20).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Markov chain Monte Carlo"
+        },
+        {
+            "text": "(i) Independence sampling. In independence sampling, there is no dependence on the current state for the proposal distribution.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Derivative-free Markov chain Monte Carlo algorithms"
+        },
+        {
+            "text": "A popular choice is simply to sample from the prior so that q\u00f0u 0 ju\u00de \u00bc f\u00f0u 0 \u00de: \u00f02:21\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Derivative-free Markov chain Monte Carlo algorithms"
+        },
+        {
+            "text": "Intuitively, such an approach is expected to work well when the posterior is 'close' to the prior.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Derivative-free Markov chain Monte Carlo algorithms"
+        },
+        {
+            "text": "(ii) Random walk. In a random walk approach, the current state of the Markov chain is only used to inform the mean of the proposal distribution. The most popular choice is the multivariate normal q\u00f0u 0 ju\u00de \u00bc N \u00f0u 0 ju, S\u00de, \u00f02:22\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Derivative-free Markov chain Monte Carlo algorithms"
+        },
+        {
+            "text": "where the constant matrix S is often adaptively tuned to optimize algorithmic performance [32] . Fisher information as detailed in the main text-as red curves, centred on evenly spaced points, whose radius is inversely proportional to the infinitesimal distance at that angle as defined in (2.28).",
+            "cite_spans": [
+                {
+                    "start": 90,
+                    "end": 94,
+                    "text": "[32]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Derivative-free Markov chain Monte Carlo algorithms"
+        },
+        {
+            "text": "rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279 all parameters are known, then pure Gibbs sampling can be undertaken and involves cycling through proposals (2.23) for all a.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Derivative-free Markov chain Monte Carlo algorithms"
+        },
+        {
+            "text": "In the field of numerical optimization, methods such as gradient descent that make use of the first-order derivatives of the function to be optimized are popular. Significant care must be taken when extending these to stochastic algorithms such as MCMC, but there are two popular methods that make use of the first-order derivatives of L :\u00bc ln\u00f0Lf\u00de. We use the following notation: where U is a vector of independent standard normal random variables and I is the identity matrix. The approximation (2.26) can then be used as a proposal within the Metropolis -Hastings algorithm [33] .",
+            "cite_spans": [
+                {
+                    "start": 576,
+                    "end": 580,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Derivative-based Markov chain Monte Carlo"
+        },
+        {
+            "text": "(ii) HMC. The second family of algorithms starts from the following system of ordinary differential equations that are a special case of Hamiltonian dynamics:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Derivative-based Markov chain Monte Carlo"
+        },
+        {
+            "text": "The randomness in the proposals arises as a result of the starting value of a vector of auxiliary variables v, by default chosen as a vector of standard normal random variables. MCMC algorithms based on Hamilton's equations (2.27 ) are called hybrid [34] or Hamiltonian [35] Monte Carlo (HMC). One important thing to note about these algorithms is that they use likelihood derivatives to improve acceptance rates, but since they include a Metropolis -Hastings step the derivative calculations could be approximate.",
+            "cite_spans": [
+                {
+                    "start": 224,
+                    "end": 229,
+                    "text": "(2.27",
+                    "ref_id": null
+                },
+                {
+                    "start": 250,
+                    "end": 254,
+                    "text": "[34]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 270,
+                    "end": 274,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Derivative-based Markov chain Monte Carlo"
+        },
+        {
+            "text": "While both MALA and HMC remove some of the inefficiencies of random walks through use of local gradients, they are not particularly efficient for the curved 'boomerang'-shaped posteriors that we see for the shedding models and data defined above. To address this issue, recent work has made progress through use of concepts from differential geometry [36] .",
+            "cite_spans": [
+                {
+                    "start": 351,
+                    "end": 355,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "In general, we have n real-valued parameters, where the support for the posterior distribution is a set P # R n . A general vector of parameter values is u \u00bc \u00f0u 1 , . . . ,u n \u00de [ P, and informally speaking a metric is defined as a smooth symmetric map s : P \u00c2 P ! \u00bd0, 1\u00de such that s\u00f0u, u 0 \u00de is the 'distance' between u and u. In practice, we will only need to define this over small local distances, which requires a metric matrix G\u00f0u\u00de \u00bc \u00f0G ab \u00de; explicitly, the infinitesimal distance between u and u \u00fe du is",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "Here G can be any smooth matrix function and conceptually speaking this means that even the most complex posterior can be efficiently sampled with a choice of metric that brings all high-density regions of parameter space sufficiently 'close' to each other. Throughout this work, we will visualize the impact of the metric in the plane for two parameters of a general model using ellipses, which are defined as follows. Let G\u00f0u 1 , . . . ,u n \u00de be the metric matrix and consider the first two parameters \u00f0u 1 ,u 2 \u00de without loss of generality. Now let \u00f0G\u00f0u 1 ,u 2 ,\u00fb 3 , . . . ,\u00fb n \u00de\u00de ab \u00bc \u00f0G ab \u00de, a, b [ f1, 2g, \u00f02:29\u00de",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 593,
+                    "end": 613,
+                    "text": "ab \u00de, a, b [ f1, 2g,",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "where\u00fb i is a point estimate (we choose the posterior median) for the parameter u i . Consider the ellipse defined by the following equation for polar coordinates distance r (from \u00f0u 1 ,u 2 \u00de in the plane) and angle a:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "r\u00f0a\u00de \u00bc (G 11 cos 2 \u00f0a\u00de \u00fe G 12 cos\u00f0a\u00de sin\u00f0a\u00de \u00fe G 21 sin\u00f0a\u00de cos\u00f0a\u00de \u00fe G 22 sin 2 \u00f0a\u00de) \u00c01=2 : \u00f02:30\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "Plotting several such ellipses in the plane allows us to visualize the impact of the metric in the following sense: points on each ellipse are all the same 'distance' from the centre as each other under the assumption of a locally constant metric. While it is not simple to optimize the metric for a particular model, a generally well-motivated choice is the Fisher -Rao metric as suggested by Girolami & Calderhead [36] ",
+            "cite_spans": [
+                {
+                    "start": 416,
+                    "end": 420,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "where the expectation is taken over data. Benefits of this metric include that it ensures the matrix G will be positive definite, and hence that the inverse matrix G 21 will exist and be positive definite. Calculations of the Fisher -Rao metric for the models under consideration are given in the electronic supplementary material, showing that it is also available in a closed form for our models. We note that other metrics are sometimes preferable, as discussed by, for example, Betancourt [37] ; however in our case the Fisher -Rao metric proved to be adequate. We used two different geometric algorithms, chosen based on features of the posterior. (i) SMMALA. The simplified manifold Metropolis-adjusted Langevin algorithm (SMMALA) was introduced in [36] and shown to be competitive in terms of computational effort in several applied contexts by Calderhead and co-workers [38, 39] . In this approach, the proposal distribution is",
+            "cite_spans": [
+                {
+                    "start": 493,
+                    "end": 497,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 878,
+                    "end": 882,
+                    "text": "[38,",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 883,
+                    "end": 886,
+                    "text": "39]",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "with standard MALA recovered if we set G \u00bc I. Note that the inverse of the metric matrix is used to ensure that the expected distance (as defined in (2.28)) of a move is directionally invariant.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "We used SMMALA to sample from the norovirus and Ebola posteriors, which each had one mode but were strongly correlated with variable local correlation structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "(ii) WHLMC. The idea behind wormhole Lagrangian Monte Carlo (WHLMC) is that for a multi-modal posterior, a metric can be defined that dramatically reduces the distance between modes, and a modified form of the dynamics (2.27) can exploit this proximity. Full details of the algorithm are highly technical and are given in the papers that first introduced it [40, 41] , as well as in our electronic supplementary material.",
+            "cite_spans": [
+                {
+                    "start": 358,
+                    "end": 362,
+                    "text": "[40,",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 363,
+                    "end": 366,
+                    "text": "41]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Geometric concepts in Markov chain Monte Carlo"
+        },
+        {
+            "text": "Taking the simple likelihood function (2.14) together with prior distribution uniform ([0, 5] \u00c2 [0, 3]) we were able to rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279 run the full set of MCMC algorithms discussed above to assess their efficiency. Figure 4 shows the results of running these algorithms.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 266,
+                    "end": 274,
+                    "text": "Figure 4",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Selection of Markov chain Monte Carlo algorithm"
+        },
+        {
+            "text": "In terms of the derivative-free algorithms, the lowdimensional nature of the problem means that the independence sampler does relatively well. Both of the random walk and Gibbs samplers are not able to move efficiently through the region of high posterior density due to its narrow, curved structure. By contrast, SMMALA is able to adjust to variations in local posterior structure and as such provides a series of samples from the posterior that are much more independent of each other than other approaches. This is explained by figure 4e,f that visualize the impact of the geometry in this algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Selection of Markov chain Monte Carlo algorithm"
+        },
+        {
+            "text": "show that the Fisher -Rao metric and associated geometry generally correctly resolves the difficulties associated with our highly correlated posterior distributions for influenza, norovirus and Ebola, allowing accurate quantification of uncertainty in epidemiological rates. The question then becomes under what circumstances the additional computational effort of implementation of these algorithms is warranted, which has no simple answer here as in other areas of computational statistics; however, we note the following points.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Figures 2, 3 and 5 also"
+        },
+        {
+            "text": "First, standard measures of performance such as minimum effective sample size per CPU second [36] often overstate the effectiveness of inaccurate algorithms for our models. Figure 4b shows that over iterations 2-3000, random walk sampling appears to be well-behaved and would yield a high ESS despite only being in a small subarea of the region of parameter space from which we would like to sample. Secondly, if the posterior density is concentrated in a nonlinear region, derivative-free methods such as Gibbs, independence sampling and random walk will have a general tendency to get 'stuck' in sub-areas. This will not be problematic if there are sufficient computational resources available to perform significant thinning-i.e. removal of MCMC samples to reduce correlations between those that remain.",
+            "cite_spans": [
+                {
+                    "start": 93,
+                    "end": 97,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 173,
+                    "end": 182,
+                    "text": "Figure 4b",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Figures 2, 3 and 5 also"
+        },
+        {
+            "text": "Thirdly, computational resources for these algorithms will almost certainly become overstretched in any of the following three limits: (i) As the dimensionality of parameter space becomes larger, for example, in our Ebola model. (ii) In the presence of multi-modality as in our influenza model. (iii) For extreme cases of unidentifiability, for example, the s ! 0 limit of our SIR model.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Figures 2, 3 and 5 also"
+        },
+        {
+            "text": "Finally, the geometric methods for MCMC that we present and employ here are designed to be particularly well suited to complex nonlinear relationships between parameters where the derivatives of the log-likelihood and log-prior are available in an analytically closed form, which is the case for our models. Despite this we note that there are many other sophisticated approaches to computationally intensive Bayesian inference [29] that could be of use due to their generality. More importantly, however, the bimodal and highly correlated nature of the posterior distribution means that for some models of antiviral action it is not possible to make firm predictions based on parameter values from challenge studies. Case fatality ratio from shedding data against that obtained for outbreaks [42] . (c) Posterior as for influenza and norovirus, with the ath row/column corresponding to parameter u a .",
+            "cite_spans": [
+                {
+                    "start": 428,
+                    "end": 432,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 793,
+                    "end": 797,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Figures 2, 3 and 5 also"
+        },
+        {
+            "text": "rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279 Figure 6a ,c,e shows the results of a quarantine-like intervention that is always effective after a delay, where the relationship between delay in antiviral administration and epidemic final size at constant R 0 is predictable to within a few percentage points, although there is much greater uncertainty in the peak prevalence. Figure 6b ,d,f shows an antiviral-like intervention that is only effective if administered during the latent period, meaning the absolute uncertainty in final size can be almost 50% and the relative uncertainty in peak prevalence can amount to a factor of four or more. Figure 7 shows that the impact of this uncertainty (for other parameter values as given above) is mainly seen in the height (with peak prevalence differing by a factor of 3 or more) and timing within the year of seasonal epidemics. For the chaotic/irregular scenario (figure 7b) however, the overall epidemic dynamics are subject to significant uncertainty. Fortunately, conditioned on knowing that epidemics are regular and annual and with a particular peak, the broad impact of a vaccine policy can be predicted as shown in figure 7e. [20] . Figure 5a shows that the model produces shedding output that is consistent with the data, and figure 5b compares the posterior for the case fatality ratio obtained from shedding data to the one obtained from known outcomes of previous outbreaks [42] , again suggesting that the model outcome is reasonable but that uncertainties are very large.",
+            "cite_spans": [
+                {
+                    "start": 1202,
+                    "end": 1206,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1454,
+                    "end": 1458,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 66,
+                    "end": 75,
+                    "text": "Figure 6a",
+                    "ref_id": "FIGREF11"
+                },
+                {
+                    "start": 395,
+                    "end": 404,
+                    "text": "Figure 6b",
+                    "ref_id": "FIGREF11"
+                },
+                {
+                    "start": 665,
+                    "end": 673,
+                    "text": "Figure 7",
+                    "ref_id": "FIGREF12"
+                },
+                {
+                    "start": 1209,
+                    "end": 1218,
+                    "text": "Figure 5a",
+                    "ref_id": "FIGREF8"
+                }
+            ],
+            "section": "Influenza parameters and antiviral treatment"
+        },
+        {
+            "text": "In summary, we have shown that it is possible to use modern Bayesian MCMC methods, based on derivatives of the log-likelihood and information geometry, to make a full uncertainty quantification of epidemiological parameters fitted to human viral shedding data. We have performed our analysis for two of the most prevalent pathogens: influenza and norovirus, as well as for Ebola, a highly virulent zoonotic disease. Shedding data allow disease 'natural history' parameters to be fitted; these usually need to be combined with population-level measurements such as the basic reproductive ratio R 0 to specify policy-relevant models fully. Our results show that the epidemiological consequences of uncertainty in natural history parameters can often be highly significant since these are important for interventions such as reducing transmission through quarantine or medication, as well as prediction of long-term disease behaviour and clinical outcomes. Natural history parameters also strongly affect other aspects of infectious disease epidemiology such as outbreak reconstruction and we would expect similarly strong effects in these contexts.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "To make progress, we have had to base our analysis on simplifying assumptions that we would hope can be relaxed in future work as the field develops. One example is that the simple likelihood functions (2.18) and (2.17) assume independence that could be extended to include more general functional relationships, which would be particularly important if the methodology were extended to diseases such as human immunodeficiency virus where there are very different time scales involved in passing between compartments [43] . In such an example, one might wish to consider more general models, for example, ones in which the progression between the latent, infectious and removed classes is governed by more general distributions than those we have considered here. Provided the Laplace transformations of the probability density functions for these distributions are available, then expressions for L and its derivatives with respect to the parameters can be obtained via the convolution theorem, although this can result in a computationally intensive likelihood function. Alternatively, it might be possible to approximate the derivatives since inaccuracies in any such approximation will lead to algorithmic inefficiency rather than bias.",
+            "cite_spans": [
+                {
+                    "start": 517,
+                    "end": 521,
+                    "text": "[43]",
+                    "ref_id": "BIBREF43"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "An additional assumption we have made is that the parameters we are not fitting (for example, the basic reproductive ratio R 0 ) are fixed. This is particularly important to relax if multiple data sources are to be used in a principled way in infectious disease modelling for public health [2] . In particular, the measurements at the population level required to estimate R 0 are likely to carry their own uncertainty, which can be combined with our uncertainty quantification for disease natural history parameters as the next step towards systematic evidence synthesis for infectious diseases.",
+            "cite_spans": [
+                {
+                    "start": 290,
+                    "end": 293,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Modeling infectious disease dynamics in the complex landscape of global health",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Heesterbeek",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Science",
+            "volume": "347",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.aaa4339"
+                ]
+            }
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Four key challenges in infectious disease modelling using data from multiple sources",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Angelis",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Presanis",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Birrell",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Tomba",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "House",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Epidemics",
+            "volume": "10",
+            "issn": "",
+            "pages": "83--87",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.epidem.2014.09.004"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Modeling infectious diseases in humans and animals",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Keeling",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rohani",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Mathematical tools for understanding infectious diseases dynamics",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Diekmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Heesterbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Britton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Real-time growth rate for general stochastic SIR epidemics on unclustered networks",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Pellis",
+                    "suffix": ""
+                },
+                {
+                    "first": "Sef",
+                    "middle": [],
+                    "last": "Spencer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "House",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Math. Biosci",
+            "volume": "265",
+            "issn": "",
+            "pages": "65--81",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.mbs.2015.04.006"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Factors that make an infectious disease outbreak controllable",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proc. Natl Acad. Sci. USA",
+            "volume": "101",
+            "issn": "",
+            "pages": "6146--6151",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0307506101"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Incubation periods of acute respiratory viral infections: a systematic review",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lessler",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Reich",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Brookmeyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Perl",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Nelson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Cummings",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Lancet Infect. Dis",
+            "volume": "9",
+            "issn": "",
+            "pages": "70069--70075",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S1473-3099(09)70069-6"
+                ]
+            }
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Vaccination against pandemic influenza A/H1N1v in England: a real-time economic evaluation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Baguelin",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ajv",
+                    "middle": [],
+                    "last": "Hoek",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Jit",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Flasche",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "White",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Edmunds",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Vaccine",
+            "volume": "28",
+            "issn": "",
+            "pages": "2370--2384",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.vaccine.2010.01.002"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Antiviral therapy and hospitalization estimates during possible influenza pandemic",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gani",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Hughes",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Fleming",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Griffin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Medlock",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Leach",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Emerg. Infect. Dis",
+            "volume": "11",
+            "issn": "",
+            "pages": "1355--1362",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1109.041344"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Effectiveness of neuraminidase inhibitors in reducing mortality in patients admitted to hospital with influenza A(H1N1pdm09) virus infection: a meta-analysis of individual participant data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Muthuri",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Lancet Respir. Med",
+            "volume": "2",
+            "issn": "",
+            "pages": "395--404",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S2213-2600(14)70041-4"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Mitigation strategies for pandemic influenza A: balancing conflicting policy objectives",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hollingsworth",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Klinkenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Heesterbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PLoS Comput. Biol",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1001076"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Closure of schools during an influenza pandemic",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wachtel",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Tegnell",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Saour",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Duncan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Nicoll",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Lancet Infect. Dis",
+            "volume": "9",
+            "issn": "",
+            "pages": "473--481",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S1473-3099(09)70176-8"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Duration of immunity to norovirus gastroenteritis",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Simmons",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gambhir",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Leon",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Lopman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Emerg. Infect. Dis",
+            "volume": "19",
+            "issn": "",
+            "pages": "1260--1267",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1908.130472"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "A simple model for complex dynamical transitions in epidemics",
+            "authors": [
+                {
+                    "first": "Djd",
+                    "middle": [],
+                    "last": "Earn",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rohani",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bolker",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Grenfell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Science",
+            "volume": "287",
+            "issn": "",
+            "pages": "667--670",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.287.5453.667"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Estimating the impact of school closure on social mixing behaviour and the transmission of close contact infections in eight European countries",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Hens",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Ayele",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Goeyvaerts",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Aerts",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mossong",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Edmunds",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Beutels",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Infect. Dis",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2334-9-187"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "The impact of school holidays on the social mixing patterns of school children",
+            "authors": [
+                {
+                    "first": "Ktd",
+                    "middle": [],
+                    "last": "Eames",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Tilston",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Edmunds",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Epidemics",
+            "volume": "3",
+            "issn": "",
+            "pages": "103--108",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.epidem.2011.03.003"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Growth rate and basic reproduction number for population models with a simple periodic factor",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Baca\u00ebr",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Ouifki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Math. Biosci",
+            "volume": "210",
+            "issn": "",
+            "pages": "647--658",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.mbs.2007.07.005"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A norovirus vaccine on the horizon?",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Vinj\u00e9",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J. Infect. Dis",
+            "volume": "202",
+            "issn": "",
+            "pages": "1623--1625",
+            "other_ids": {
+                "DOI": [
+                    "10.1086/657088"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Temporal changes in Ebola transmission in Sierra Leone and implications for control requirements: a real-time modelling study",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Camacho",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Curr. Outbreaks",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/currents.outbreaks.406ae55e83ec0b5193e30856b9235ed2"
+                ]
+            }
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Ebola virus disease among male and female persons in West Africa",
+            "authors": [],
+            "year": 2016,
+            "venue": "New Engl. J. Med",
+            "volume": "374",
+            "issn": "",
+            "pages": "96--98",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMc1510305"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Clinical virology of Ebola hemorrhagic fever (EHF): virus, virus antigen, and IgG and IgM antibody findings among EHF patients in Kikwit, Democratic Republic of the Congo",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Ksiazek",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "J. Infect. Dis",
+            "volume": "179",
+            "issn": "",
+            "pages": "177--187",
+            "other_ids": {
+                "DOI": [
+                    "10.1086/514321"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Estimating variability in the transmission of severe acute respiratory syndrome to household contacts in Hong Kong, China",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Pitzer",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Am. J. Epidemiol",
+            "volume": "166",
+            "issn": "",
+            "pages": "355--363",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwm082"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Relationship between clinical signs and transmission of an infectious disease and the implications for control",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Charleston",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Science",
+            "volume": "332",
+            "issn": "",
+            "pages": "726--729",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1199884"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Time lines of infection and disease in human influenza: a review rsif.royalsocietypublishing.org",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carrat",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Vergu",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lemaitre",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Leach",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J. R. Soc. Interface",
+            "volume": "13",
+            "issn": "",
+            "pages": "775--785",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwm375"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Norwalk virus shedding after experimental human infection",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Atmar",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Opekun",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Gilger",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Estes",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Crawford",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Graham",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Emerg. Infect. Dis",
+            "volume": "14",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1410.080117"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Numerical methods that work",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Acton",
+                    "suffix": ""
+                }
+            ],
+            "year": 1970,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Exponential data fitting and its applications",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Pereyra",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Scherer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Markov chain Monte Carlo in practice",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Gilks",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Richardson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Spiegelhalter",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "2011 Handbook of Markov chain Monte Carlo",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brooks",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gelman",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Equation of state calculations by fast computing machines",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Metropolis",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Rosenbluth",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Rosenbluth",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Teller",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Teller",
+                    "suffix": ""
+                }
+            ],
+            "year": 1953,
+            "venue": "J. Chem. Phys",
+            "volume": "21",
+            "issn": "",
+            "pages": "1087--1092",
+            "other_ids": {
+                "DOI": [
+                    "10.1063/1.1699114"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Monte Carlo sampling methods using Markov chains and their applications",
+            "authors": [],
+            "year": null,
+            "venue": "Biometrika",
+            "volume": "57",
+            "issn": "",
+            "pages": "97--109",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/biomet/57.1.97"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Examples of adaptive MCMC",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Roberts",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Rosenthal",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J. Comput. Graphical Stat",
+            "volume": "18",
+            "issn": "",
+            "pages": "349--367",
+            "other_ids": {
+                "DOI": [
+                    "10.1198/jcgs.2009.06134"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Exponential convergence of Langevin distributions and their discrete approximations",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Roberts",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Tweedie",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "Bernoulli",
+            "volume": "2",
+            "issn": "",
+            "pages": "341--363",
+            "other_ids": {
+                "DOI": [
+                    "10.2307/3318418"
+                ]
+            }
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Hybrid Monte Carlo",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Duane",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kennedy",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Pendleton",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Roweth",
+                    "suffix": ""
+                }
+            ],
+            "year": 1987,
+            "venue": "Phys. Lett. B",
+            "volume": "195",
+            "issn": "",
+            "pages": "216--222",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/0370-2693(87)91197-X"
+                ]
+            }
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "MCMC using Hamiltonian dynamics",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Neal",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Brooks",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Gelman",
+                    "suffix": ""
+                },
+                {
+                    "first": "X-L",
+                    "middle": [],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Meng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "113--162",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Riemann manifold Langevin and Hamiltonian Monte Carlo methods",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Girolami",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Calderhead",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J. R. Stat. Soc. B",
+            "volume": "73",
+            "issn": "",
+            "pages": "123--214",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1467-9868.2010.00765.x"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "A general metric for Riemannian manifold Hamiltonian Monte Carlo",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Betancourt",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "; F Nielsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Barbaresco",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Geometric science of information",
+            "volume": "8085",
+            "issn": "",
+            "pages": "327--334",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/978-3-642-40020-9_35"
+                ]
+            }
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Statistical analysis of nonlinear dynamical systems using differential geometric sampling methods",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Calderhead",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Girolami",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Interface Focus",
+            "volume": "1",
+            "issn": "",
+            "pages": "821--835",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rsfs.2011.0051"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Hamiltonian Monte Carlo methods for efficient parameter estimation in steady state dynamical systems",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kramer",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Calderhead",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Radde",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinform",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-15-253"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Markov chain Monte Carlo from Lagrangian dynamics",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lan",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Stathopoulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Shahbaba",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Girolami",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "J. Comput. Graph. Stat",
+            "volume": "24",
+            "issn": "",
+            "pages": "357--378",
+            "other_ids": {
+                "DOI": [
+                    "10.1080/10618600.2014.902764"
+                ]
+            }
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Wormhole Hamiltonian Monte Carlo",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Streets",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Shahbaba",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Proc. 28th AAAI Conf. on Artificial Intelligence",
+            "volume": "",
+            "issn": "",
+            "pages": "1953--1959",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Epidemiological dynamics of Ebola outbreaks",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "House",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.7554/eLife.03908"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Variation in HIV-1 set-point viral load: epidemiological analysis and an evolutionary hypothesis",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hollingsworth",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Chapman",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "De Wolf",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Hanage",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proc. Natl Acad. Sci. USA",
+            "volume": "104",
+            "issn": "",
+            "pages": "441--458",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0708559104"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "2016 The Authors. Published by the Royal Society under the terms of the Creative Commons Attribution License http://creativecommons.org/licenses/by/4.0/, which permits unrestricted use, provided the original author and source are credited.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "t transmissibility, t transmissibility, t recovery rate, g recovery rate, g recovery rate, g latent rate, w latent rate, w latent rate, w Analysis of influenza shedding data. (a) Data and empirical confidence intervals (black) against model mean and 95% credible interval (red). (b) Posterior samples obtained using WHLMC. (c) Diagonal plots: marginal posterior density estimates for each parameter. Bottom left plots: marginal log posterior for pairs of parameters-first-order gradients will be perpendicular to contours. Top right plots: samples (black) with visualizations of the metric-based on expectations of second-order derivatives as detailed in the main text-as red curves, centred on evenly spaced points, whose radius is inversely proportional to the infinitesimal distance at that angle as defined in (2.28). rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "(iii) Gibbs. If it is possible to sample from the marginal posterior for a parameter u a then we can propose with density q\u00f0u 0 ju\u00de \u00bc p\u00f0u 0 a ju 1 , . . . ,u a\u00c01 ,u a\u00fe1 , . . . ,u n ,y\u00de: \u00f02:23\u00de From (2.19) and (2.20), we then see that the acceptance probability for such a proposal is 1. If the marginal posteriors for",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": ", g recovery rate, g recovery rate, g recovery rate, g latent rate, w latent rate, w latent rate, w latent rate, w variability, s variability, s variability, s variability, Analysis of norovirus shedding data. (a) Data (black circles) with 67% (solid black line) and 95% (dotted black line) against model mean and 95% credible interval (red). (b) Diagonal plots: marginal posterior density estimates for each parameter. Bottom left plots: marginal log posterior for pairs of parameters-first-order gradients will be perpendicular to contours. Top right plots: samples (black) with visualizations of the metric-based on the empirical",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Results for the SIR model with recovery rate g and scaling parameter t (the constant of proportionality for the observed level of shedding at a given expected infectiousness).(a -d) MCMC trajectories for 1000 likelihood evaluations starting from the blue square are shown as red lines, with trace plots for a further 9000 steps shown in insets for different algorithms. (e) Visualizes the impact of the metric through the use of ellipses as detailed in \u00a72.4.5. (f ) Visualizes the impact of the metric through shading with shading intensity dependent on the distance to the starting point of the MCMC run. rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "shows the results for our influenza model given rate-0.1 exponential priors on each parameter (chosen not to influence the posterior significantly but to ensure that the small number of data points does not become problematic). This shows that the credible ranges of individual parameters are close to typical values in the literature-Baguelin et al.[8], for example, consider scenarios with v [ \u00bd0:5, 10 and g [ \u00bd0:5, 2:5.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Ebola results. (a) Point estimate and posterior predictive interval for shedding over time against data for different viraemia levels. (b)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "shows the results for our norovirus model; given the large amount of data we use improper priors and see that the credible ranges of individual norovirus parameters are also close to typical values in the literature; e.g. Simmons et al.[13] take v \u00bc 1 and g \u00bc 0.5.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF10": {
+            "text": "shows the results obtained for our Ebola model. The point estimates and 95% CIs of mean infections period come out at 5.3[3.3, 7.4] days for low-viraemia cases and 6.8[5.1, 10.1] days for high-viraemia cases, which are reasonable values",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "Interventions administered after a constant delay against influenza given parameter uncertainty. (a,c,e) Assuming that the intervention always stops transmission. (b,d,f ) Assuming that the intervention only stops transmission if the individual has not yet become infectious. (a,b) Final sizes for a range of intervention delays. Plots of infection (c,d) and recovery (e,f ) time series are shown for delay d \u00bc 6 (c,e) and d \u00bc 4.5 (d,f ). Intensity of shading is proportional to probability 0.1 to render features visible in regions with large uncertainty. rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF12": {
+            "text": "Implications of uncertainty in norovirus shedding for long-term temporal behaviour. Deterministic ODE trajectories are shown for 50 different posterior samples with two randomly chosen ones highlighted in red and blue. (a) R 0 \u00bc 1.8, T L \u00bc 6 months shows regular annual oscillations. (b) R 0 \u00bc 1.8, T L \u00bc 60 months shows irregular/chaotic behaviour. (c) R 0 \u00bc 4, T L \u00bc 6 months shows annual oscillation but not well-defined epidemics. (d) R 0 \u00bc 4, T L \u00bc 60 months shows bi-annual oscillation but with variable peak heights. (e) Time series for parameters as in plot (a) given vaccination at birth with 90% efficacy.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF2": {
+            "text": "Parameters of the Ebola model, their interpretation and prior distribution. rsif.royalsocietypublishing.org J. R. Soc. Interface 13: 20160279",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Competing interests. We declare we have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "Research Council (refs EP/J016934/2 and EP/L001950/1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Funding. Work funded by the UK Engineering and Physical Sciences"
+        }
+    ]
+}

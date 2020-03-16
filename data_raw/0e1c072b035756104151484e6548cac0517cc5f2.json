@@ -1,0 +1,1477 @@
+{
+    "paper_id": "0e1c072b035756104151484e6548cac0517cc5f2",
+    "metadata": {
+        "title": "Synonym set extraction from the biomedical literature by lexical pattern discovery",
+        "authors": [
+            {
+                "first": "John",
+                "middle": [],
+                "last": "Mccrae",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Institute of Informatics",
+                    "location": {
+                        "addrLine": "Hitotsubashi 2-1-2, Chiyoda-ku",
+                        "postCode": "101-8430",
+                        "settlement": "Tokyo",
+                        "country": "Japan"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Nigel",
+                "middle": [],
+                "last": "Collier",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Institute of Informatics",
+                    "location": {
+                        "addrLine": "Hitotsubashi 2-1-2, Chiyoda-ku",
+                        "postCode": "101-8430",
+                        "settlement": "Tokyo",
+                        "country": "Japan"
+                    }
+                },
+                "email": "collier@nii.ac.jp"
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Although there are a large number of thesauri for the biomedical domain many of them lack coverage in terms and their variant forms. Automatic thesaurus construction based on patterns was first suggested by Hearst [1], but it is still not clear how to automatically construct such patterns for different semantic relations and domains. In particular it is not certain which patterns are useful for capturing synonymy. The assumption of extant resources such as parsers is also a limiting factor for many languages, so it is desirable to find patterns that do not use syntactical analysis. Finally to give a more consistent and applicable result it is desirable to use these patterns to form synonym sets in a sound way.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "We present a method that automatically generates regular expression patterns by expanding seed patterns in a heuristic search and then develops a feature vector based on the occurrence of term pairs in each developed pattern. This allows for a binary classifications of term pairs as synonymous or non-synonymous. We then model this result as a probability graph to find synonym sets, which is equivalent to the well-studied problem of finding an optimal set cover. We achieved 73.2% precision and 29.7% recall by our method, out-performing hand-made resources such as MeSH and Wikipedia.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "We conclude that automatic methods can play a practical role in developing new thesauri or expanding on existing ones, and this can be done with only a small amount of training data and no need for resources such as parsers. We also concluded that the accuracy can be improved by grouping into synonym sets.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Synonymy is one of the most important relations found between different terminology and is of critical importance for building high quality text mining systems for biomedical literature. Thesauri which list synonymous terms have been found to be useful for improving the results of information retrieval systems [2] and synonymy relations are encoded in many ontologies, for example Gene Ontology [3] , and biological databases such as SWISS-PROT [4] . General thesauri, such as WordNet, give relatively poor coverage of specialised domains and thesauri often do not exist for many languages and domains. Domain specific thesauri and ontologies are expensive to construct, due to the scarcity of human expert resources, and often do not give sufficient variants of terminology. Against this background, automatic discovery of synonymy relations between terms has been shown to be useful for both maintaining and expanding existing ontologies [5] and for constructing ontologies [6] , however the accuracy of such methods remains a major issue.",
+            "cite_spans": [
+                {
+                    "start": 312,
+                    "end": 315,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 397,
+                    "end": 400,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 447,
+                    "end": 450,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 942,
+                    "end": 945,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 978,
+                    "end": 981,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "There has been a large amount of interest in constructing thesauri and ontologies automatically, not only for synonymy relations, which we study here, but also for hypernymy (general/specific) relations. Several methods have been suggested, for example, in Morin & Jacquemin [7] they explore using term variation (for example \"mouth cancer\" vs. \"cancer of the mouth\"), to detect synonyms, but many synonymous terms are not simple variants, so this method is limited. Distributional similarity, that is identifying terms by other terms which occur in close proximity, has also been shown to be effective for identifying synonymy, most notably the Latent Semantic Analysis method of Cederberg & Widdows [8] . As shown in Dumais et al [9] , this can be used to improve the recall of a synonym classifier although at the cost of its precision. This method however lacks the ability to differentiate between specific semantic relations (for example synonymy, hypernymy, agent/disease).",
+            "cite_spans": [
+                {
+                    "start": 275,
+                    "end": 278,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 701,
+                    "end": 704,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 732,
+                    "end": 735,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Hearst [1] used patterns including \"X such as Y\" to detect a hypernymy relation between terms, however she chose these patterns by hand. Due to issues of accuracy and scalability to other relations, some work has gone into constructing these patterns automatically, notably in Snow et al [10] . Their pattern extractor was based on using a dependency grammar and so requires a grammar and a parser, which will limit applicability to those few languages where large coverage parsers have been developed. They then generated a large number of patterns and classified them by a logistic regression-based method. Finally they attempted to improve their results by using distributional similarity [11] . They also used a number of handchosen synonymy patterns to detect potential synonyms and used this to improve their detection rate. An attempt to find gene and protein name synonyms was explored in Yu et al [12] , again they manually chose their patterns.",
+            "cite_spans": [
+                {
+                    "start": 7,
+                    "end": 10,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 288,
+                    "end": 292,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 692,
+                    "end": 696,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 906,
+                    "end": 910,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "One of the disadvantages of most of these approaches is that they give only binary classification rather than outputting synonym sets. For practical applications of this problem a simple list of synonymous terms is much more desirable for several reasons, firstly the results are much simpler and easier to store and work with, as you need only list the groups instead of the synonymy relation between each pair. Also the result is self-consistent, so we will not get a result that X is synonymous to Y, which is synonymous to Z, but not that X is synonymous to Z. This may cause problems in applications where only a single term is use to represent the synset, for example a method based on usage of an ontology may require one main term for the synset. An attempt at improving the result of a term similarity classifier by graph clustering was explored in Ibekwe-Sanjuan & Sanjuan [13] , however their method was not based on probabilities and the clustering method suggested would lead to questionable behaviours such as grouping a synset when the vast majority of links are not indicative of synonymy, hence the classifier must have a very high precision. Our work is most closely related to the work in Snow et al [10] for automatically discovering hypernyms. In order to find these patterns we chose to develop a system based on Soderland's WHISK system [14] as it is uses regular expression matching and so requires no prior knowledge of the syntax of the language. There they started with a base pattern consisting only of \"*\"s and slots and grew the pattern by replacing each of these \"*\"s with a word from their corpus. They then attempt to find a set of patterns which maximises the overall performance. We also wish to investigate this method in specific domains, and see if it is still feasible with a smaller seed set as the seed set in Snow et al [10] was the entirety of WordNet. For our experiment we chose to focus on the disease control domain, but our method could easily be applied to many domains in bio-medicine or other areas. We used the number of matches of each pattern for each term pair, to create a feature vector which could be used to statistically classify each term pair as synonymous or not. Finally we used probabilistic analysis to find the most likely set of synsets, based on modelling the output of the classifier as a probability graph.",
+            "cite_spans": [
+                {
+                    "start": 883,
+                    "end": 887,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 1219,
+                    "end": 1223,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 1360,
+                    "end": 1364,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1862,
+                    "end": 1866,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "For our experiment we decided to use an existing ontology to provide a training set from which our system could develop patterns and then train a classifier. Our training set was drawn from the English section of the BioCaster ontology [15] . This ontology was put together by life scientists and its terms relate to some of the most important infectious diseases currently being tracked by epidemiologists. BioCaster was developed for the search and analysis of Internet news and research literature to enable the timely detection of possible disease outbreaks. As such it contains a range of lay terms and technical terms, and we choose 4 categories of terminology from the ontology: infectious diseases, symptoms (of infectious diseases), agents (e.g. viruses, bacteria) and hosts (e.g. mammals, birds). This was useful as it gave us an accurate basis of terminology relating to a specific biomedical domain.",
+            "cite_spans": [
+                {
+                    "start": 236,
+                    "end": 240,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data Collection"
+        },
+        {
+            "text": "To develop a test set we wished to find terms that occurred naturally and so our evaluation would represent the effectiveness of the method in actual implementations. We obtained the top 150 PubMed abstracts containing the term \"infectious diseases\", and manually extracted all the terms in the same four categories. We then grouped these words into synsets attempting to follow the same guidelines as used by the BioCaster ontology. Synonymy can be quite difficult to decide, with granularity being a major problem, in fact even established thesauri can differ in their definitions of synonymy as investigated by Burgun & Bodenreider [16] . We found the following problems frequently occurred.",
+            "cite_spans": [
+                {
+                    "start": 635,
+                    "end": 639,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data Collection"
+        },
+        {
+            "text": "1. Modifiers: Terms often appear with modifiers, such as \"acute headache,\" and although many ontologies would list this as a property of the disease or symptom we decided to list terms separately. It is important to be careful not to confuse this with modifiers which do not change the meaning of the term, for example \"mental retardation.\" More information on the effect of modifiers can be found in Bodenreider et al [17] .",
+            "cite_spans": [
+                {
+                    "start": 419,
+                    "end": 423,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data Collection"
+        },
+        {
+            "text": "2. Granularity: Many terms may turn out to be used interchangeably as the difference in meaning is rarely important. An example of this is \"HIV-1,\" which as the most common strain of HIV is often simply referred to as \"HIV,\" however as these subtle differences in meaning may prove to be important we decided to separate such terms 3. Domain-specific:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data Collection"
+        },
+        {
+            "text": "(a) Method of Transmission: We decided to list terms differing in method of transmission separately, for example \"hospital-acquired MRSA.\" (b) Point of Infection: Terms that differ in only the point of infection were decided not to be synonymous, for example \"syphilis\" and \"neurosyphilis.\" (c) Progression of Disease: It was decided that terms used to describe a disease at a more advanced stage were not synonymous with the disease, for example \"dengue fever\" may develop into the more serious \"dengue shock syndrome.\"",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data Collection"
+        },
+        {
+            "text": "In total the BioCaster database consisted of 450 terms, grouped into 244 synsets, and containing 477 synonym pairs, similarly the test set consisted of 301 terms, 221 synsets and 101 synonym pairs, of which it shared 35 terms and 16 synonym pairs with the BioCaster database. We also had a second annotator group our 301 test terms into synonym groups and this list showed \u03ba = 68.6%",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data Collection"
+        },
+        {
+            "text": "Cohen's agreement with our list, which illustrates that this problem is complicated by very subtle differences in meaning between our terms. We then extracted a large corpus from which we can build patterns and statistics. We simply did this by querying every term in both our training and test sets in the PubMed database. We chose the top 250 abstracts for each term ranked according to Entrez search's ranking, discarding any duplicate documents. This gave us a corpus consisting of 83,492 documents, and 1,506,042 sentences of which term pairs in our training set were found in 46,216 sentences.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data Collection"
+        },
+        {
+            "text": "We decided the best solution would be to first generate a large number of patterns using the training set. For each possible term pair we generate a feature vector which represents the frequency of matching that term pair using each of the patterns generated. This feature vector is then classified, and the posterior probability used in our synset formation algorithm described below.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Method"
+        },
+        {
+            "text": "It should be noted that we used the number of term pairs to calculate these scores, which gives a lower value than might be expected. For example if 4 terms were correctly identified out of a synset of 8 terms, then only 6 out of 28 synonym pairs have been identified, so the score is only 21.4% even though 50% of the terminology was recognised.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Method"
+        },
+        {
+            "text": "Our method for pattern generation is as follows we start with base patterns which consist of three basic operators *, #, and (space), where * represents a sequence of word characters, (space) represents any white-space/punctuation between words, and # represents a term (matched case-invariantly). We generate new patterns by expanding a current pattern in the following ways: * may be replaced by any sequence of alphanumeric characters and (space) may be replaced by any sequence of non-word characters. By starting with a set of seed patterns consisting of only #s, *s and (space)s these patterns can be expanded to give us a search as in Figure 1 . To expand a pattern we search the corpus by taking each synonym pair and replacing the #s with the terms. By considering each possible single expansion of a * or (space) our problem can be viewed as a tree search. Obviously this search space is huge and so we search it heuristically by best-first search. The algorithm is as follows:",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 642,
+                    "end": 650,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Pattern Generation"
+        },
+        {
+            "text": "Input:A set of base patterns P, a set of training term pairs , a corpus C.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Pattern Generation Algorithm"
+        },
+        {
+            "text": "Output:A set of patterns P sorted by a scoring metric 1. Add all the base patterns with a heuristic score to a heap H.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Pattern Generation Algorithm"
+        },
+        {
+            "text": "(a) Select a pattern, p, with maximal score in H. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "For a fixed number of iterations"
+        },
+        {
+            "text": "We experimented with a number of heuristics scoring metrics, including the number of pattern matches, however we found that this gave too strong a bias for terms which occurred very frequently, in particular we noted that many of the patterns contained terms from our training set, which is quite undesirable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Output patterns H sorted by score"
+        },
+        {
+            "text": "We also report a pseudo-F-Measure given as below, where we judged a pattern match to be correct if it corresponded to a term in our training set. Note that as we can only consider a pattern match to be correct if it contains terms in our training set, the precision is under-estimated so this does not represent the true F-Measure associated with this pattern.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Output patterns H sorted by score"
+        },
+        {
+            "text": "Although this gave a good result it significantly increased the search time. In the end we decided that the best answer would be to use the number of synonym pairs found as this was readily computed and did not bias towards more common terminology. In many pattern generation methods, including the WHISK system, significant effort is made to develop a strong set of patterns, we designed this algorithm just to produce lots of reasonable results. The rationale behind this was that we wanted to give the synonym classifier the most information we could, and that too much complexity in the pattern generation duplicated the effort of the statistical classifier. The heuristic we used is as follows. # * * # # also * # #, * * # # known * # # also called # #, known * # # known as # #, known as #",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Output patterns H sorted by score"
+        },
+        {
+            "text": "We let the algorithm run for a fixed number of iterations, we chose this number to find approximately 10 times the number of patterns we plan to use in our classification.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Output patterns H sorted by score"
+        },
+        {
+            "text": "To generate the feature vectors we found that many of the patterns were inflexible and matched very rarely, to combat this we simply allowed * and (space) to match \u03b5, the empty string, by which we mean that allow a match with any of the *s or (space)s omitted. This allowed patterns such as # (* #) to match not only \"term (or abbrev),\" but also \"term (abbrev).\" We found this greatly improved the recall and the precision of the result.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synonymy Classification"
+        },
+        {
+            "text": "We would expect some of the patterns generated to produce reasonably good precision and some relatively good recall, however by combining these all together we should be able to get a much better overall result. For this reason we view the problem as a statistical classification problem.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synonymy Classification"
+        },
+        {
+            "text": "Once we have generated a number of patterns we simple use these to generate a feature vector for each synonym pair, this is simply given by the number of matches of pattern with the #s matching the terms in the candidate synonym pair. Although this in theory would require (n -1) feature vectors for n terms, in fact most pairs of terms do not occur close to each other at all in the corpus so they can be dropped (and their probabilities gained by classifying the zero vector). For our experiment we used the top 6000 patterns from the pattern generation algorithm. This then becomes a standard statistical classification problem, to which any statistical classification algorithm can be applied. We experimented with na\u00efve Bayes, logistic regression, C4.5 and support vector machines with a number of kernel choices. We found that only logistic regression gave a useful spread of probabilities that could be used for synset formation so we built the synsets first with these probabilities and then we used logistic regression on the output of the strongest classifier (SVM).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synonymy Classification"
+        },
+        {
+            "text": "The results we gained from the statistical classification procedure gave only the probability of a particular term pair being synonymous. However we would expect every pair of terms in a synset to be synonymous and these binary classification results do not guarantee that such a transitivity relation exists. As such we shall assume that every pair of terms in a synset are synonymous and no pairs of terms in different synsets are synonymous (although this is technically incorrect as some words may be polysemous). This clearly leads to the result that synsets are complete graphs, so we can consider our goal as that of finding the closest set of complete sub-graphs to our random graph. As an example consider Figure 2 , which shows a graph representation of the output on top, where the nodes represents terms, and they are connected if the classifier predicts the terms are synonymous. It is clear that the graph above should give two synsets as shown in the bottom graph.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 715,
+                    "end": 723,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Synset formation"
+        },
+        {
+            "text": "Let {1..N} correspond to our terms, then our goal is to find a set where I* exactly covers {1..N} and I* maximises c(I*) given by where P ij is the probability of the terms corresponding to i and j being synonymous as given by some statistical classification method (and P ii = 1). Note this logarithmic form is used as it is easier for further calculations and many of the output probabilities from our classifier were near 0 or 1. We also define the inter-node cost, c ij as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synset formation"
+        },
+        {
+            "text": "As the number of potential synsets is 2 N , we can greatly reduce this problem by finding a small set of potential synsets I such that I* \u2282 I \u2282 P({1..N}). Fortunately the majority of the output probabilities P ij are very small, so we can hope to have significant success by generating the set I by a branch and bound algorithm. We find a condition when a set and all of its super-sets are not optimal by observing that J \u2209 I* if c(J \u222a {k}) <c(J) + c({k}) for some k \u2208 I.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synset formation"
+        },
+        {
+            "text": "This is very useful as the set V' is simply the set for which c ik is positive.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synset formation"
+        },
+        {
+            "text": "We also notice that it is possible to divide the problem by using the following lemma This means that only connected components are optimal so we only consider connected sets when generating I (where we define i and j to be connected if c ij \u2265 0). Also when a term has been removed from the search space (i.e. is no longer in J \u222a V), this may result in previously connected components becoming disconnected. For this rea-son we also search for the connected components every time we remove an element from the search space. Table  1 shows the number of synsets generated by by using the branch and bound heuristic (lemma 1), the connected components heuristic (lemma 2), finding the connected components then using branch and bound and the final algorithm as follows (shift(X) returns and removes the first element of X): Figure 2 Random Graph to Synsets. Illustration of conversion from a random graph to a set of synsets. The top graph illustrates the random output from the classifier, which includes a spurious link from \"dandy fever\" to \"yellow fever\". This graph is corrected by forming into synsets removing the spurious link and adding two links which were not found by the classifier. ii. end",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 524,
+                    "end": 532,
+                    "text": "Table  1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 822,
+                    "end": 830,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Synset formation"
+        },
+        {
+            "text": "1. J = \u2205",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Matrix Generation Algorithm"
+        },
+        {
+            "text": "V in {1... N} (a) Sort V by \u2211 k = 1...N c ik (b) generate_matrix(J, V) function generate_matrix(J, V) 1. While length(V) > 0 (a) k = shift(V) (b) if(|J| = 0 or \u2211 i\u2208J c ik > 0 or -\u2211 i\u2208J c ik <max V'\u2282V \u2211 i\u2208V' , c ik ) i. add J \u222a {k} to I ii. generate_matrix(J \u222a {k}, V) (c) if(J \u222a V",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "For each connected component"
+        },
+        {
+            "text": "This problem is in fact the set covering problem, which is NP-complete, however we found exact methods to be suffcient for our problem. To solve this problem, after we have generated I = {I 1 ,... I n } we formed a matrix A = (a ij ), given by",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Solving the synset problem"
+        },
+        {
+            "text": "We also form a vector c where c k = c(I k ) and now finding an exact cover is equivalent to finding the integer vector, x, which maximises c T x subject to Ax = 1 This is a well studied problem, and finding this vector x can be viewed as a branch and bound problem and attacked through the Dancing Links algorithm [18] . This algorithm uses a sparse matrix formation to efficiently remove infeasible row choices, and combined with a branch and bound algorithm can very effectively find optimal solutions. The branch and bound simply discards any partial solution when the most it costs is guaranteed to be less than the best solution found so far. This maximum cost can be found by simply tabulating the best clique available for each unsatisfied column in the matrix. More advanced algorithm use either linear relaxation (that is allowing x to take non-integer values and solving with the simplex algorithm), or Lagrangian relaxation with sub-gradient optimisation [19] to estimate this upper bound, however we did not find this necessary for our data sets.",
+            "cite_spans": [
+                {
+                    "start": 314,
+                    "end": 318,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 966,
+                    "end": 970,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Solving the synset problem"
+        },
+        {
+            "text": "Regardless of the implementation of the solver one general purpose improvement is to attack each of the subproblems (i.e. each of the connected components) separately, and then combine the results. The number of ways of partitioning a set is given by Bell's number Bell's number gives the worst case search space size for the dancing links algorithm. If we can divide the problem into connected components, given by S = {S 1 ,... S n } then the size of the search space is However by attacking each of the problems separately we get the size of the search space as Therefore it now follows that the complexity of this problem is primarily dependent on the size of the largest connected component. In a standard Erd\u0151s-R\u00e9nyi random graph this grows logarithmically if the probability of an edge existing between a pair of nodes is less than n -1 as in our problem. Although our problem is not truly equivalent to an Erd\u0151s-R\u00e9nyi random graph, the false positive links between different synsets can be reasonably modelled by an Erd\u0151s-R\u00e9nyi graph. Still the complexity of the largest connected component B c log(n) is not polynomial so it is still possible that we may not be able to find the optimal solution for larger test sets, however this would only affect the largest connected components, which as the test set grows larger would represent fewer of the terms and so fewer of the links. In this case we can solve most of the problem exactly, and some of it approximately to give a good overall solution. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Solving the synset problem"
+        },
+        {
+            "text": "To provide a comparison of our results we used encyclopedia and thesauri. We chose to use 4 sources: these sources were Wikipedia following the method suggested in [20] , WordNet [21] the widely used machine readable thesaurus and two domain specific resource Medline Encyclopedia [22] which contains a specialised thesaurus on the subject of human diseases, MeSH [23], a very large controlled vocabulary containing synonyms for a huge variety of medical terminology and UMLS [24] , a metathesaurus. MeSH, UMLS and WordNet were queried using their built in tools so differences in spelling, pluralisation were considered. As Wikipedia and Medline encyclopedia were not originally intended to be used as thesauri we had to adapt them as follow 3. Medline Encyclopedia: Many articles in the Medline Encyclopedia, had an \"Alternative Names\" section, which combined with the title of the article gave us synsets. This gave us a good set of medical terminology however it did not cover animals and animal diseases.",
+            "cite_spans": [
+                {
+                    "start": 164,
+                    "end": 168,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 179,
+                    "end": 183,
+                    "text": "[21]",
+                    "ref_id": null
+                },
+                {
+                    "start": 281,
+                    "end": 285,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 476,
+                    "end": 480,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison to Encyclopedia/Thesaurus"
+        },
+        {
+            "text": "All of our test synonym sets, which we found from the 150 abstracts containing the term \"infectious diseases\", were queried against these resources and the number of links correctly found are presented in Table 2 . We found that these encyclopedia and thesauri made a number of mistakes 1. Failing to find a term 2. Producing an entry for the disease caused by the virus, bacteria etc. or vica versa 3. Producing a match that was totally irrelevant e.g. FPV, an abbreviation of \"feline parvovirus\" in bio-medicine, but Wikipedia instead produces a page on \"Ford Performance Vehicles\" (as of 24 July 2007, after our data was obtained, a disambiguation page is shown).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 205,
+                    "end": 212,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Comparison to Encyclopedia/Thesaurus"
+        },
+        {
+            "text": "4. Matching a term that was broader or narrower than the one requested e.g. vCJD was matched as CJD 5 . Some disagreement about synonymy of terms, see the guidelines at the beginning of the data collection section.",
+            "cite_spans": [
+                {
+                    "start": 100,
+                    "end": 101,
+                    "text": "5",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison to Encyclopedia/Thesaurus"
+        },
+        {
+            "text": "First for our evaluation we used a na\u00efve classifier we will call the occurrence classifier, which simply decided that two terms were synonymous if they co-occurred in any of our patterns. This unsurprisingly gives a very low precision but also the recall is only 63.4%, which will limit the recall of any method we try to use on this data. We found that 78.3% of these non-occurring term pairs, involved one or more term which matched less than 100 articles on PubMed. This suggests that this value may be very close to a limit of the recall of the method. Table 3 lists the performance of some single patterns and gives us a baseline for our method and Figure 3 shows the spread of recall and precision for all generated patterns. It can be seen that most of these are variation on parentheses apposition patterns also suggested in Yu et al [12] . We also listed a number of patterns that were domain-specific, to show the value of generating patterns for each specific domain. Finally we examined three more patterns from Yu et al which did not perform so well in our experiments, this was partly due to our syntax-free approach matching sub-terms.",
+            "cite_spans": [
+                {
+                    "start": 842,
+                    "end": 846,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 557,
+                    "end": 564,
+                    "text": "Table 3",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 654,
+                    "end": 662,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "We then tried several statistical pattern recognition algorithms (we used the WEKA implementations [25] in all cases), finally grouping the results into synsets based on the outputted probability of the logistic regression and SVM regression classifier by the method described above. The pattern generation took 51 hours on an Dual Core 1.66 GHz processor with 512 MB of memory, then a further 33 hours to generate feature vectors, but we feel that this could be vastly improved by the use of some kind of indexing of the corpus. The classification took 85 seconds and the synset formation about 5 seconds when based on the SVM Regression data and about 127 seconds when based on the logistic regression probabilities, this was due to more positive links in this data set, hence a larger maximum connected component.",
+            "cite_spans": [
+                {
+                    "start": 99,
+                    "end": 103,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "In Figure 4 we calculated the experimental results that would be outputted if we stopped the synonym set solver before we had found the optimal solution. This illustrates that the theoretical cost c(...) is correlated to the experimental F-Measure, so better theoretical solutions produce better actual results. Looking at the main results (Table 4) we see the grouping the results in synsets improves the results in terms of totally synonymous results, and although the standard error is large we find the difference is significant at a 99% level using the p-test as described in Yeh [26] . Also the results after synset grouping appeared to be closer, so we analysed the results according to the degree of relation",
+            "cite_spans": [
+                {
+                    "start": 585,
+                    "end": 589,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 3,
+                    "end": 11,
+                    "text": "Figure 4",
+                    "ref_id": null
+                },
+                {
+                    "start": 340,
+                    "end": 349,
+                    "text": "(Table 4)",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "\u2022 Modified: Terms differed by inclusion of a modifier",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "\u2022 Variant: We defined this precisely as any organism term referring to organisms of the same species, for example \"feline infectious peritonitis virus\" which is a mutation of \"feline enteric coronavirus\". Also we defined this as diseases caused by the same agent but at different stages of progression, for example \"dengue fever\", which may develop into \"dengue hemorrhagic fever\"",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "\u2022 Method of Transmission/Point of Infection (MoT/PoI): These are diseases (and agents causing them) which differ only in method of transmission, for example \"hospitalacquired\", or point of infection.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "\u2022 Agent/Disease: One term refers to a disease and the second to an agent causing that disease",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "\u2022 Hypernym: The terms showed a clear hypernym/hyponym relation that was not covered by the above groups.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "We then analysed the logistic regression result (see Table  5 ) as the high precision of the SVM based result made this analysis less informative. We can clearly see that although both methods had similar precisions, the term pairs produced by the binary classification were more likely to be unrelated. This is not surprising as erroneous links between terms are likely to be caused by artifacts in the data and method and so be nearly totally at random. In contrast we would expect the pattern-based classification system to be more likely to mistake close synonyms for true synonyms, and so these results should be more consistent in relation to our definition of synset formation. So the reduction in error and an increase in number of near synonyms provides evidence for the validity of our model. Table 6 illustrates some sample output from the process.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 53,
+                    "end": 61,
+                    "text": "Table  5",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 803,
+                    "end": 810,
+                    "text": "Table 6",
+                    "ref_id": null
+                }
+            ],
+            "section": "Experiment Results"
+        },
+        {
+            "text": "In this work we decided to use terms that we found from actual texts as opposed to using a taxonomic thesaurus such as WordNet. This meant that it was difficult to create a test set and as we only found 101 synonymous term pairs we ended up with very large standard errors. It should be noted that for results with low recall the number of results found was so small that we would require a very large test set to accurately estimate the precision. However we found that our results are in line with previous work on both manual and automatic pattern discovery and this indicates that a good result is still obtainable without the use of syntactic knowledge or very large test sets. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Our pattern generation method developed a number of interesting patterns and identified parentheses as the strongest indicator of synonymy (which by itself scored 22.9% F-Measure, see Table 2 ). It also found several domain specific patterns suggesting the effectiveness of generating separate patterns for specific domains. Syntaxfree patterns were also generated allowing application to resource-poor languages, however this does rely on the terms which we wish to find having already been identified. In our experimental setup we inputted terminology that had been manually extracted from PubMed abstracts. There exist many named entity extractors which would allow us to completely automate the whole process and develop a large set of noun phrases for our method to classify, hence we could automatically develop a large thesaurus which would be easy to manually check for errors. One of the more surprising results we saw was that most of the patterns we generated seemed to be of quite high precision, which was unexpected as the scoring metric we chose to use in our search was biased towards patterns with a high recall. The question of how we could generate Solution cost versus F-Measure Figure 4 Solution cost versus F-Measure. Chart illustrating increase of F-Measure versus solution cost. The data points are the synset solutions generated by the synset solver before finding the optimal solution and the optimal solution. The chart shows their cost and true F-Measure against the test set. ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 184,
+                    "end": 191,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 1199,
+                    "end": 1207,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Recall"
+        },
+        {
+            "text": "We conclude that for domains with a large amount of specific vocabulary most of the resources we studied perform worse than the automatic method we have developed here. Also given the amount of effort required to manually construct a resource, automatic thesaurus construction may prove more useful in many situations, either to aid construction or in replacement of manual construction. More importantly we have shown that we can easily automatically find patterns and we do not require any prior knowledge of the language's grammar in order to do this. Even though the patterns we generated were weak by themselves we showed that by statistically combining them we can get a much stronger result. We have also shown that we do not need to know a large number of synsets to develop an accurate classifier; this implies most importantly that this method can be used quickly on a different language. We tested our method on only a limited domain but we feel it would likely generalize well to other domains. Our novel synset grouping method not only converted the result to something more applicable, but also improved on the results for both a strict definition of synonymy, and a more relaxed definition.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "We think given the logical/probabilistic framework for synset formation that the model we described should be applicable to other relations (for example hypernymy) and even combinations of relations. However solving this model efficiently and whether this will improve the result for actual data is an issue for future work.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Automatic Acquisition of Hyponyms from Large Text Corpora",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hearst",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Proc of the Fourteenth International Conference on Computational Linguistics",
+            "volume": "",
+            "issn": "",
+            "pages": "539--545",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Indexing with Word-Net synsets can improve Text Retrieval",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gonzalo",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Verdejo",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Chugur",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Cigarran",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Proceedings of the COLING/ACL '98 Workshop on Usage of WordNet for NLP",
+            "volume": "",
+            "issn": "",
+            "pages": "38--44",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Gene ontology: tool for the unification of biology. The Gene Ontology Consortium",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ashburner",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Ball",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Blake",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Botstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Butler",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Cherry",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Davis",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Dolinski",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dwight",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Eppig",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Harris",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Hill",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Issel-Tarver",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kasarskis",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lewis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Matese",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Richardson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ringwald",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Rubin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Sherlock",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Nature Genetics",
+            "volume": "25",
+            "issn": "",
+            "pages": "25--34",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "The SWISS-PROT protein sequence database and its supplement TrEMBL in 2000",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bairoch",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Nucl Acids Res",
+            "volume": "28",
+            "issn": "",
+            "pages": "45--48",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Enhancing Ontological Knowledge through ontology population and enrichment. Engineering knowledge in the age of the Semantic Web",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Valarakos",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Paliouras",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Karkaletsis",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Vouros",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "",
+            "volume": "1",
+            "issn": "",
+            "pages": "144--156",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "A Method for semi-automatic ontology acquisition from a corporate intranet",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "U"
+                    ],
+                    "last": "Kietz",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Maedche",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Volz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Proc of Workshop Ontologies and Text",
+            "volume": "",
+            "issn": "",
+            "pages": "37--50",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Automatic Acquisition and Expansion of Hypernym Links",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Morin",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Jacquemin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Computers and the Humanities",
+            "volume": "38",
+            "issn": "",
+            "pages": "363--396",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Indexing by Latent Semantic Analysis. American Society for Information Science",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Dumais",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Furnais",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Landauer",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "",
+            "volume": "41",
+            "issn": "",
+            "pages": "391--407",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Using LSA and Noun Coordination Information to Improve the Precision and Recall of Automatic Hyponymy Extraction",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cederberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Widdows",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proc of Seventh International Conference of Computational Natural Language Learning",
+            "volume": "",
+            "issn": "",
+            "pages": "111--118",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Learning syntactic patterns for automatic hypernym discovery",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Snow",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Jurafsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proc of Neural Information Processing Systems",
+            "volume": "",
+            "issn": "",
+            "pages": "1297--1304",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Distributional Clustering of English Words",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Pereira",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Tishby",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Proc of ACL-1993",
+            "volume": "",
+            "issn": "",
+            "pages": "183--190",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Automatic extraction of gene and protein synonyms from MEDLINE and journal articles",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Hatzivassiloglou",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Friedman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rzhetsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wilbur",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Proc AMIA Symp",
+            "volume": "",
+            "issn": "",
+            "pages": "919--923",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Mining Textual Data through Term Variant Clustering: the TermWatch System",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Ibekwe-Sanjuan",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Sanjuan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proc of Recherche d'Information Assist\u00e9e par",
+            "volume": "",
+            "issn": "",
+            "pages": "487--503",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Learning Information Extraction Rules for Semistructured and free texts",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Soderland",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Machine Learning",
+            "volume": "34",
+            "issn": "1-3",
+            "pages": "233--272",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "A multilingual ontology for infectious disease outbreak surveillance: rationale, design and challenges",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Collier",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kawazoe",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Jin",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Shigematsu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dien",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Barrero",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Takeuchi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kawtrakul",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Journal of Language Resources and Evaluation",
+            "volume": "40",
+            "issn": "3",
+            "pages": "405--413",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Comparing terms, concepts and semantic classes in WordNet and the Unified Medical Language System",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Burgun",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Bodenreider",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Proc of NAACL'2001 Workshop",
+            "volume": "",
+            "issn": "",
+            "pages": "77--82",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Lexically-suggested hyponymic relations among medical terms and their representation in the UMLS",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Bodenreider",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Burgun",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Rindflesch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Proc of TIA'2001",
+            "volume": "",
+            "issn": "",
+            "pages": "11--21",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "MRSA\", \"methicillin-resistant Staphylococcus\" ] -MoT/ PoI errors",
+            "authors": [],
+            "year": null,
+            "venue": "Examples of automatically generated synsets",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Dancing Links. Millenial Perspectives in Computer Science",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Knuth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "",
+            "volume": "1",
+            "issn": "",
+            "pages": "187--214",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "A Heuristic Method for the Set Covering Problem",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Caprara",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fischetti",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Toth",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Operations Research",
+            "volume": "47",
+            "issn": "5",
+            "pages": "730--743",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Mining Domain Specific Thesauri from Wikipedia: A case study",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Milne",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Medelyan",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Witten",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Proc of the InternationalConference on Web Intelligence",
+            "volume": "",
+            "issn": "",
+            "pages": "442--448",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Medline Encyclopedia",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "UMLS",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "WEKA",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "More accurate tests for the statistical significance of result differences",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Yeh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Proceedings of the 18th conference on Computational linguistics",
+            "volume": "",
+            "issn": "",
+            "pages": "947--953",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Find all matches of this pattern using all term pairs in S in the corpus C each * or (space) in p, find all matching strings in the corpus (d) For each match to each * or (space), add a new pattern to H",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Example Pattern Search. A tree illustrating a exemplary search space for the pattern generation algorithm. The top of the tree is a seed pattern and the search continues by replacing one of the wild cards with term and punctuation to generate a set of patterns.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "If J {1..N} and K \u2282 {1..N} (J \u2229 K = \u2205) are such that \u2200 j\u2208J \u2200 k\u2208K c jk < 0, then there does not exist \u2205 \u2282 J' \u2286 J and \u2205 \u2282 K' \u2286 K such that J' \u222a K' \u2208 I*. Proof: Follows from c(J' \u222a K') <c(J') + c(K')",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "has more than one connected component) i. for each connected component, C, with |C \u2229 J| > 0 and |C \u2229 V| > 0: generate_matrix(J, C \u2229 V)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Precision/Recall by Pattern. A scatter chart of precision vs recall for all generated patterns. Each point on this corresponds to a pattern generated from the test set and its recall and precision when used as the only variable for a classifier.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Number of synsets generated by different heuristics",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Wikipedia (search): An alternative way to use Wikipedia is to take the top search term using Wikipedia's search engine. Again we classified two terms as the same if they had the same top search result.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Encyclopedia Results (with standard error at 90%)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Individual pattern results and example matches ( \u2020: suggested in Yu et al[12]; *erroneous term pair; terms identified) prevalence of FeLV and FIV prevalence of paratuberculosis (ie, Johne's Disease) patients with # * * * * # * * HTLV-associated myelopathy (HAM)/tropical spastic paraparesis (TSP) * * # * known as # \u2020 HIV/AIDS HTLV-associated myelopathy/tropical spastic paraparesis #, # \u2020 1.7 \u00b1 0.2% 63.4 \u00b1 5.6% 3.3 \u00b1 0.3% *measles,mumps, rubella vaccine due to efforts to eradicate poliomyelitis, polio cases have fallen",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Results by classifiers (with standard error at 90%)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Analysis of Errors",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "patterns with higher recall is an interesting one and deserves further study.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "This work was supported by the MEXT scholarship. We would like to thank all in the BioCaster project, including Lihua Jin for her useful discussions on the BioCaster ontology and her role as secondary annotator for our test set.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "JM participated in the design and conception and carried out the data collection, implementation, analysis of data and drafted the manuscript. NC participated in the design and conception and helped to draft the manuscript. Both authors read and approved the final manuscript ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

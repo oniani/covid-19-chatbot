@@ -1,0 +1,2523 @@
+{
+    "paper_id": "ce05a808109c6307485aeda93945cd3b0e536623",
+    "metadata": {
+        "title": "SEED Servers: High-Performance Access to the SEED Genomes, Annotations, and Metabolic Models",
+        "authors": [
+            {
+                "first": "R",
+                "middle": [
+                    "K"
+                ],
+                "last": "Aziz",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "S",
+                "middle": [],
+                "last": "Devoid",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "T",
+                "middle": [],
+                "last": "Disz",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "R",
+                "middle": [
+                    "A"
+                ],
+                "last": "Edwards",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "C",
+                "middle": [
+                    "S"
+                ],
+                "last": "Henry",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "The remarkable advance in sequencing technology and the rising interest in medical and environmental microbiology, biotechnology, and synthetic biology resulted in a deluge of published microbial genomes. Yet, genome annotation, comparison, and modeling remain a major bottleneck to the translation of sequence information into biological knowledge, hence computational analysis tools are continuously being developed for rapid genome annotation and interpretation. Among the earliest, most comprehensive resources for prokaryotic genome analysis, the SEED project, initiated in 2003 as an integration of genomic data and analysis tools, now contains .5,000 complete genomes, a constantly updated set of curated annotations embodied in a large and growing collection of encoded subsystems, a derived set of protein families, and hundreds of genome-scale metabolic models. Until recently, however, maintaining current copies of the SEED code and data at remote locations has been a pressing issue. To allow high-performance remote access to the SEED database, we developed the SEED Servers (http://www.theseed.org/servers): four network-based servers intended to expose the data in the underlying relational database, support basic annotation services, offer programmatic access to the capabilities of the RAST annotation server, and provide access to a growing collection of metabolic models that support flux balance analysis. The SEED servers offer open access to regularly updated data, the ability to annotate prokaryotic genomes, the ability to create metabolic reconstructions and detailed models of metabolism, and access to hundreds of existing metabolic models. This work offers and supports a framework upon which other groups can build independent research efforts. Large integrations of genomic data represent one of the major intellectual resources driving research in biology, and programmatic access to the SEED data will provide significant utility to a broad collection of potential users.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "The growth in the number of sequenced genomes has exceeded the most ambitious past estimations [1, 2] . Today, tens of thousands of genomes are being sequenced by public and private institutions around the globe [3, 4] , and whole-genome sequencing/re-sequencing has become a routine step of virtually any analysis of microbial behavior. In some fields, researchers are sequencing hundreds of genomes from distant taxa [5] to explore microbial diversity, while elsewhere, hundreds of closely related genomes are being sequenced to understand environmental adaptation, to support pangenome reconstruction [6, 7, 8] , and to build maps of microbial variomes [9] . Sequencing is also being applied to aid in solving urgent biological problems, including the development of strategies to combat emerging or reemerging biothreats, such as the severe acute respiratory syndrome (SARS) virus [10] , the 2009 H1N1 influenza virus [11, 12] , and the 2011 German Escherichia coli outbreak [13, 14] .",
+            "cite_spans": [
+                {
+                    "start": 95,
+                    "end": 98,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 99,
+                    "end": 101,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 212,
+                    "end": 215,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 216,
+                    "end": 218,
+                    "text": "4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 419,
+                    "end": 422,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 604,
+                    "end": 607,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 608,
+                    "end": 610,
+                    "text": "7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 611,
+                    "end": 613,
+                    "text": "8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 656,
+                    "end": 659,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 885,
+                    "end": 889,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 922,
+                    "end": 926,
+                    "text": "[11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 927,
+                    "end": 930,
+                    "text": "12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 979,
+                    "end": 983,
+                    "text": "[13,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 984,
+                    "end": 987,
+                    "text": "14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction and Motivation"
+        },
+        {
+            "text": "With the vast speed and minimal costs of modern sequencing technology, new demands are being placed on the bioinformatics pipelines used to analyze sequence data [1] . Modern bioinformatics must be high throughput and high volume with a strong emphasis on comparative genomics, and the SEED family of resources for genome interpretation and analysis were specifically constructed to embody these characteristics [15] . The SEED resources are built upon the organization of biology into a modular set of subsystems, each describing a specific biological functionality (e.g., flagellar motility or histidine biosynthesis) [16] . Subsystems-based technologies were developed in the SEED with the view that the interpretation of one genome can be made more efficient and consistent if hundreds of genomes are simultaneously annotated in one subsystem at a time [16, 17] . The SEED Project, a multi-institutional effort coordinated by the Fellowship for Interpretation of Genomes (FIG) and Argonne National Laboratory, began with the ambitious goal of consistently annotating 1,000 genomes (http://theseed.org/wiki/ Annotating_1000_genomes); today, over 50,000 viral and prokaryotic genomes have been annotated by the subsystems technology. More recently, the SEED Project has been expanded to include the capacity to automatically generate genome-scale metabolic models based on SEED annotations of genome sequences, and the Model SEED system developed from this pipeline has now been applied to construct metabolic models for thousands of genomes [18, 19, 20] . The SEED family of resources now collectively serves as a repository for almost 5,000 distinct complete prokaryotic genomes, associated with approximately 30,000 annotations, 11,000 metabolic models, 178,000 protein families, 10,250 functional roles, and 1,060 subsystems.",
+            "cite_spans": [
+                {
+                    "start": 162,
+                    "end": 165,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 412,
+                    "end": 416,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 620,
+                    "end": 624,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 857,
+                    "end": 861,
+                    "text": "[16,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 862,
+                    "end": 865,
+                    "text": "17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 975,
+                    "end": 980,
+                    "text": "(FIG)",
+                    "ref_id": null
+                },
+                {
+                    "start": 1544,
+                    "end": 1548,
+                    "text": "[18,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1549,
+                    "end": 1552,
+                    "text": "19,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 1553,
+                    "end": 1556,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction and Motivation"
+        },
+        {
+            "text": "While a web interface is available for visualizing the data within the SEED (http://pubseed.theseed.org), this interface is inadequate to make full effective use of the massive quantities of data now embodied within the SEED. To truly expose the SEED data for efficient large-scale use by the global scientific community, we initially developed a Simple Object Access Protocol (SOAP) server to allow the needed programmatic access to the SEED data [21] ; however, the SOAP server could not scale up with the increased volume of data. To cope with the increasing demands placed on the SEED web services, as well as the increasing volumes of data included within the SEED resources, we developed a secondgeneration of web services to improve throughput, response time, and access to SEED functionality. Here, we describe in detail the four primary servers now available for remotely accessing SEED data and we describe the client-side distribution of server scripts that we provide as examples of how the servers may be applied to perform complex analyses of genome data.",
+            "cite_spans": [
+                {
+                    "start": 448,
+                    "end": 452,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction and Motivation"
+        },
+        {
+            "text": "The Servers and the Services The four servers described here, collectively referred to as the SEED servers, currently support 181 methods that can be invoked to extract data and services (Fig. 1) . The server code resides at the location of the SEED data. Users download a distribution with their choice of runtime environment that they may use to write programs to access SEED data or perform a number of common bioinformatics tasks using a supplied set of preprogrammed scripts. Currently, Perl and Java integrations are supported. The following subsections describe the four servers in more detail.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 187,
+                    "end": 195,
+                    "text": "(Fig. 1)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Design and Implementation"
+        },
+        {
+            "text": "The Sapling Server offers access to the underlying integration of genomic data-including genomes, genes, proteins, annotations, subsystems, FIGfams, and co-occurrence data. On the server side, the Sapling Server accesses a database implemented by an entity-relationship data model (ERDB). The ERDB model is defined by a set of XML metadata describing the entities, relationships, and attributes in a form that can be used to generate queries as well as the documentation and an up-to-date database diagram may be viewed at http://servers.nmpdr.org/ figdisk/FIG/ErdbDocWidget.cgi?database = Sapling. Thus, the public description of the database always remains synchronized with the internal data structures-an important benefit in a database designed for public use.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Sapling Server"
+        },
+        {
+            "text": "The Sapling Server is architected such that new features can be added quickly. New data tables may be added as updates to the XML metadata, which is processed by a special load program to build the initial database tables. The list of services offered is maintained on the server, so that client software does not need to be updated in order for users to access new features. A web application that converts general database queries to Perl code helps speed implementation of new functions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Sapling Server"
+        },
+        {
+            "text": "A database query is specified by naming the entities and relationships along a path through the ERDB diagram ( Fig. 2) along with a list of the data items to be returned and a filter clause that limits the results to the desired data objects (e.g., a particular genome or identifier). The Sapling Server allows direct queries against the database; however, a set of common data requests is implemented as direct server functions. Sapling Server functions typically accept multiple input values within a single call, allowing a client to minimize the number of requests that must be made to the server. Additional input parameters allow a client to modify the query, for example, to request that the output be in FASTA format or to ask for protein rather than DNA sequences.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 111,
+                    "end": 118,
+                    "text": "Fig. 2)",
+                    "ref_id": null
+                }
+            ],
+            "section": "The Sapling Server"
+        },
+        {
+            "text": "In a sample ids_to_sequences request (Fig. 3A) , the user specifies four identifiers, and the server returns them as a table (actually a Perl hash) with the associated DNA sequences attached.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 37,
+                    "end": 46,
+                    "text": "(Fig. 3A)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "The Sapling Server"
+        },
+        {
+            "text": "The Sapling Server currently supports 127 access functions. These functions are listed on a web page generated automatically from the latest version of the code, ensuring that the documentation remains up to date. A sample showing the web page description of ids_to_sequences is shown (Fig. 3B ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 285,
+                    "end": 293,
+                    "text": "(Fig. 3B",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "The Sapling Server"
+        },
+        {
+            "text": "The Annotation Support Server supports two distinct capabilities relating to the annotation of genomes: de novo annotation of protein or DNA sequences, and aggregation of annotations into subsystems. The Annotation Support Server accepts either DNA or protein sequence as input and, depending on the user options, can either use existing gene calls or invoke standard gene callers (e.g., GLIMMER-3 for protein-encoding genes). The server also houses newly developed high-performance methods to assign function to protein sequences or regions of genomic DNA sequences, based on FIGfams [22] . Below is an example application using these methods that produces a relatively accurate annotation of most microbial genomes within a few minutes. To evaluate the technology, users are encouraged to simply submit a known prokaryotic genome to the server for annotation.",
+            "cite_spans": [
+                {
+                    "start": 585,
+                    "end": 589,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "The Annotation Support Server"
+        },
+        {
+            "text": "Sequences can be submitted to the server in three ways:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Annotation Support Server"
+        },
+        {
+            "text": "1. Programs can directly access the services needed to call genes and assign functions to the proteins encoded within the genome. 2. If the protein-encoding genes have already been identified, the program can assign functions to these sequences. An example program is provided in the download library and is described at http://servers.theseed.org/sapling/server.cgi?pod=svr_assign_ using_figfams.pl.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Annotation Support Server"
+        },
+        {
+            "text": "A program can take as input fragments of DNA (e.g., from a metagenomic sample) and use the services to detect pieces of protein-encoding genes. Again, an example program is provided in the download library and is described at http://servers.theseed. org/sapling/server.cgi?pod=svr_assign_to_dna_using_figfams.pl).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "3."
+        },
+        {
+            "text": "The Annotation Support Server also provides the ability to take as input a set of functional roles (in the controlled vocabulary established by the subsystem collection) and to produce a detailed estimate of which subsystems are represented by those functional roles. That is, one can also use the server to develop a metabolic reconstruction based on the functional roles that have been assigned to the protein-encoding genes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "3."
+        },
+        {
+            "text": "The RAST (Rapid Annotations using Subsystems Technology) [23] service provides access to high-throughput, high-quality annotation of prokaryotic genomes, and routinely processes ,25-75 genomes a day, with peak throughputs that have exceeded 200 genomes per day. This service is accessible for individual genome submission via a graphical web interface, and the next generation SEED servers provide new access for programmatic batch submission of genomes via the RAST submission and retrieval server. This server supports programmatic submission of genomes to the RAST Server, retrieval of job status, and retrieval of the final set of annotations. These scripts and the underlying application programming interface (API) enable users to submit genomes to the RAST Server, test the status of submitted jobs, and retrieve the output (i.e., annotated genomes).",
+            "cite_spans": [
+                {
+                    "start": 57,
+                    "end": 61,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "The RAST Submission/Retrieval Server"
+        },
+        {
+            "text": "Three types of input are supported:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The RAST Submission/Retrieval Server"
+        },
+        {
+            "text": "1. A FASTA file of contigs that make up the genome to be annotated 2. A file of GenBank-formatted entries (with the option to retain the gene calls as given in the uploaded files)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The RAST Submission/Retrieval Server"
+        },
+        {
+            "text": "3. An Entrez ID or a Genome Project ID.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The RAST Submission/Retrieval Server"
+        },
+        {
+            "text": "In the case of the first type of input (FASTA file), the RAST Server will perform de novo annotation, i.e., will start by calling RNA-and protein-coding genes, and then will proceed to functional annotation, subsystems assignment, and subsequent metabolic reconstruction. In the second case (GenBank-formatted files), gene calling is optional, since GenBank-formatted files already include the coordinates for open-reading frames and RNA genes. In the last case (Entrez ID or Genome Project ID), the tools provided within the RAST Submission/Retrieval Server will query NCBI using the query ID(s) and will retrieve the sequence (whether that sequence consists of one or a set of contigs that make up the genome project); that sequence then becomes the input to the RAST Server.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The RAST Submission/Retrieval Server"
+        },
+        {
+            "text": "The Metabolic Modeling and Flux Balance Analysis (FBA) Server provides programmatic remote access to the Model SEED biochemistry and genome-scale metabolic model database, as well as some model analysis algorithms. The Model SEED biochemistry database integrates into a single, nonredundant set all the reactions and compounds found in the Kyoto Encyclopedia of Genes and Genomes (KEGG) database [24, 25, 26] , together with additional curated reactions and compounds [18] , and a continuously growing number of published genome-scale metabolic models.",
+            "cite_spans": [
+                {
+                    "start": 396,
+                    "end": 400,
+                    "text": "[24,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 401,
+                    "end": 404,
+                    "text": "25,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 405,
+                    "end": 408,
+                    "text": "26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 468,
+                    "end": 472,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "Currently this database consists of 16,279 compounds and 13,272 reactions. For compounds, the database also includes database IDs from KEGG compounds and SEED models, names/ synonyms, molecular masses, molecular formulas, molecular charge, and estimated Gibbs free energy of formation [27] . For reactions, the database includes database IDs from KEGG reactions and SEED models, names/synonyms, stoichiometry, EC numbers, pathways, and estimated Gibbs free energy change of reactions [27] . Compound charge, formula, formation energies and reaction stoichiometry are all calculated for aqueous conditions at neutral pH. All API functions used to access the Metabolic Modeling and FBA Server capabilities are documented in detail at http://servers.theseed.org/.",
+            "cite_spans": [
+                {
+                    "start": 285,
+                    "end": 289,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 484,
+                    "end": 488,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "The SEED database also contains a large number of genomescale metabolic models, including 14 published models [28] and approximately 11,000 models generated from the annotated genomes stored in the SEED [29] . The Metabolic Modeling and FBA Server also provides the user with an API to remotely obtain a list of the models in the SEED and to download data on the compounds and reactions in each SEED model. The server returns the following data for each reaction in a specified model: (i) all data from the SEED biochemistry database, (ii) a list of the genes associated with each reaction in the model in a format that captures how the protein products encoded by the genes function to catalyze the reaction (as either independent enzymes or multienzyme complexes), and (iii) a list of compartments in the model where the reaction takes place and the directionality/ reversibility of the reaction in each compartment. For the model compounds, the server returns the data from the SEED Figure 2 . Entities and relationships in the SEED. The entities (boxes) are connected to each other by a series of relationships (diamonds) that describe how the two entities relate. To move from one entity (e.g., ''Identifier'') to another (e.g., ''DNA Sequence''), the series of connections shown by the gray arrow is made. This way, any entity can be connected, either directly or indirectly, to any other entity. doi:10.1371/journal.pone.0048053.g002 biochemistry database. As with the biochemistry data, all the model data in the server are accessible either via Perl programs or the API.",
+            "cite_spans": [
+                {
+                    "start": 110,
+                    "end": 114,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 203,
+                    "end": 207,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 986,
+                    "end": 994,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "The Metabolic Modeling and FBA Server also enables users to run various FBA studies on any of the genome-scale metabolic models stored in the SEED database. These studies can be performed while simulating any of 525 distinct media conditions currently encoded in the SEED database (which includes all BiologH [30] media conditions and a variety of complex media formulations). Both the Perl program and the API enable users to obtain a list of the media conditions currently stored in the SEED and details on the compounds included in each formulation. Once a model and media condition have been selected for simulation, the server provides an interface for running three types of FBA simulation: (i) simple growth simulation to predict maximum growth rate of the organism in the selected media, (ii) flux variability analysis (FVA) [31] to classify the reactions and compounds in the model according to their behavior during growth in the selected media, and (iii) single gene knockout analysis to predict the genes essential for growth in the selected media.",
+            "cite_spans": [
+                {
+                    "start": 309,
+                    "end": 313,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 833,
+                    "end": 837,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "The simple growth simulation returns the maximum predicted growth rate of the model given the input parameters, the predicted flux through the model reactions during maximum growth, and the predicted uptake and production of nutrients from and to the environment during maximum growth.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "The FVA simulation returns the predicted class of every reaction and compound in the model during growth given the input parameters. Reactions in the model are classified as forward essential or reverse essential if they are required for growth to occur, with forward and reverse referring to the direction in which the reactions must proceed. Reactions that are not essential for growth, but still active, are classified as forward variable, reverse variable, and variable, with forward and reverse indicating when reactions proceed only in a single direction. Reactions are classified as blocked if they cannot carry flux under the conditions specified by the user. Metabolites in the model are classified as essential nutrients or essential products if their uptake or secretion is required for growth in the input conditions, and they are classified as transported if they can be taken up or secreted but are not essential for growth. In addition to classifying the reactions and compounds in the model, the FVA simulation returns the maximum and minimum values for the flux through each reactions and the uptake/secretion of each metabolite.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "The single gene knockout analysis rapidly simulates the individual knockout of every gene represented in the model during growth in the input conditions. Based on these simulations, the analysis produces a list of the predicted essential genes and the predicted nonessential genes in the model. Both the Perl program and API allow the user to run any of the three simulation types from the command line.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "All three simulation types accept the same user input: the name of the model to be run, the name of the media formulation that growth should be simulated in, a list of genes in the model that should be knocked out during the simulation, and a list of the reactions in the model that should be knocked out during the simulation. See http://servers.theseed.org/for detailed documentation on all Metabolic Modeling and FBA Server functions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The Metabolic Modeling and Flux Balance Analysis Server"
+        },
+        {
+            "text": "The SEED servers can have limitless applications. Below, we demonstrate various applications of SEED servers through a small set of potential applications and coding examples.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Applications"
+        },
+        {
+            "text": "Dealing with IDs of genes or the proteins they encode is often nontrivial. In the SEED database, we use IDs that specify proteinencoding genes in a rapidly growing set of genomes, and we support correspondences between these IDs and those used by other annotation efforts. The SEED has two notions of equivalence: (i) two IDs that represent either protein-encoding genes or protein sequences are said to be sequence equivalent if the protein sequences are identical and (ii) two IDs that represent either exactly the same protein-encoding gene or the precise protein encoded by the gene (that is, ''the protein sequence of gene X in genome Y'') are said to be precisely equivalent. Unfortunately, in the presence of multiple versions of thousands of genomes, perfect maintenance of the ''precisely equivalent'' correspondence is virtually impossible.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Convert Gene and Protein IDs"
+        },
+        {
+            "text": "Our first example script takes a command-line argument containing a single ID and produces a table for all assertions of functions for sequence equivalent IDs. Each ID in the input is associated with the name of the genome containing it, the function for that ID, the source of the functional assignment assertion, and an indication of whether the source of the assertion provided a confidence for their estimate. The code is available at http://servers.theseed.org/sapling/server. cgi?code = server_paper_example1.pl (also provided as Supporting Information S1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Convert Gene and Protein IDs"
+        },
+        {
+            "text": "Given a set of functional roles, one often wishes to understand which subsystems can be inferred from the set. The following example script reads as input a set of functional roles and constructs a table of subsystems that can be identified, along with their variation codes. The data displayed in this simple example could form the start of a research project to gather the functional roles not connected to subsystems to determine whether they were not connected because a small set of functional roles were not present in the input, and to seek candidates for such \"missing functional roles.\" The ability to easily map functional roles into subsystems will improve as the SEED annotation effort improves its collection of encoded subsystems [32] . The code for this example is shown at http://servers.theseed.org/sapling/server. cgi?code=server_paper_example2.pl. (also provided as Supporting Information S1).",
+            "cite_spans": [
+                {
+                    "start": 744,
+                    "end": 748,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Generate a Metabolic Reconstruction"
+        },
+        {
+            "text": "The SEED provides the ability to graphically display the chromosomal regions around a set of genes (normally from distinct genomes); for example, see http://seed-viewer.theseed.org/ seedviewer.cgi?page=Annotation&feature=fig|83333.1.peg.4. The SEED also offers an alternative for creating custom interfaces, moreover, one that does not require the user to know appropriate SEED IDs. This approach exploits the conversion capabilities of the SEED for creating a program to accept arbitrary protein IDs. It also exploits the ability of SEED to map functional roles into subsystems as described in the preceding example. The result is a tool that enables the user to take a SEED ID and a region size, and extract the genes that are found within a region centered on the designated gene. The code for this example is shown at. http://servers.theseed.org/ sapling/server.cgi?code=server_paper_example3.pl (also provided as Supporting Information S1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Create Custom Interfaces"
+        },
+        {
+            "text": "A great deal has been learned from studying genes that tend to occur close to one another in diverse genomes [33, 34, 35, 36, 37, 38] . In particular, the co-occurrence of hypothetical and non-hypothetical proteins can be exploited to suggest the function of the former based on the function of the latter.",
+            "cite_spans": [
+                {
+                    "start": 109,
+                    "end": 113,
+                    "text": "[33,",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 114,
+                    "end": 117,
+                    "text": "34,",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 118,
+                    "end": 121,
+                    "text": "35,",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 122,
+                    "end": 125,
+                    "text": "36,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 126,
+                    "end": 129,
+                    "text": "37,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 130,
+                    "end": 133,
+                    "text": "38]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Analyze Chromosomal Cooccurrence through Access to Functional Coupling Data"
+        },
+        {
+            "text": "The following program at http://servers.theseed.org/sapling/ server.cgi?code=server_paper_example4.pl illustrates the potential for constructing custom tools by going through all of the protein-encoding genes in all of the complete prokaryotic genomes maintained within the SEED looking for ''hypothetical proteins'' that tend to co-occur with genes encoding functions that can be connected to subsystems. The program constructs a table showing the following: This table can therefore be used to suggest functions for hypothetical proteins that could be tested experimentally. A copy of the code is provided (Supporting Information S1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Analyze Chromosomal Cooccurrence through Access to Functional Coupling Data"
+        },
+        {
+            "text": "The SEED can be used to assign functions to a file of protein sequences. The code for this example is at http://servers.theseed. org/sapling/server.cgi?code=server_paper_example6.pl (also provided as Supporting Information S1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Assign Functions to a Set of Protein Sequences"
+        },
+        {
+            "text": "This program reads a FASTA file of protein sequences and attempts to assign function to those sequences using a K-merbased algorithm. When a function is proposed, the program will produce a ''score'' (the number of distinct K-mers that were matched) and an estimate of phylogenetic neighborhood-a representative genome that is ''phylogenetically close'' to the genome containing the protein, if an estimate can reasonably be given.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Assign Functions to a Set of Protein Sequences"
+        },
+        {
+            "text": "A similar approach has been adopted for rapid, real-time analysis of metagenomics samples, which might elsewhere take days or months for BLAST-based analysis. This real-time metagenomics analysis (URL: http://edwards.sdsu.edu/rtmg) can be performed on computers or cellular phones [39] .",
+            "cite_spans": [
+                {
+                    "start": 281,
+                    "end": 285,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Using SEED Servers to Assign Functions to a Set of Protein Sequences"
+        },
+        {
+            "text": "Here, we demonstrate how to run a variety of FBA algorithms on the SEED model of E. coli and how to print all data from the E. coli model and the results of the FBA into an output table. For the code, see http://servers.theseed.org/sapling/server. cgi?code=server_paper_example7.pl (also provided as Supporting Information S1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers for Running FBA on the SEED Model of Escherichia coli"
+        },
+        {
+            "text": "The program starts by obtaining a list of all compounds and reactions in the SEED E. coli model (Seed83333.1) using the ''get_compound_id_list'' and ''get_reaction_id_list'' functions, respectively. The program then uses these lists to obtain detailed data on all the E. coli compounds and reactions (using the ''get_compound_-data'' and ''get_reaction_data'' functions, respectively). These data are stored in two tables: one for compounds and one for reactions. Next the ''classify_model_entities'' function is used to run a FVA on the SEED E. coli model. In this particular FVA, the reactions and compounds in the E. coli model are classified while simulating growth in LB media (called ArgonneLBMedia in the SEED model). At this point, the data returned by the ''classify_model_entities'' function is added onto the compound and reaction tables prepared previously. In the next step, the code uses the ''simulate_model_growth'' function to run a standard FBA on the SEED E. coli model, maximizing the model growth rate in simulated glucose minimal media (called Carbon-D-Glucose in the Model SEED). The data returned by this function are also added to the reaction and compound tables. In the final call to the server, the program uses the ''simulate_all_single_gene_knockout'' function to simulate the single knockout of all E. coli genes, and the results of this study are stored in a gene table. The remainder of the program handles the printing of the compound, reaction, and gene tables to the files CompoundTbl.txt, ReactionTbl.txt, and GeneTbl.txt, respectively.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers for Running FBA on the SEED Model of Escherichia coli"
+        },
+        {
+            "text": "The Gene Ontology (GO) project aims to unify biology by providing a controlled vocabulary of terms for all genes and gene products [40] , but has long had a focus on eukaryotes with less emphasis on prokaryotes and their viruses. On the other hand, the SEED database contains high quality annotations for hundreds of microbial and viral genomes, using subsystems-based controlled vocabulary. Mapping SEED functional roles to GO annotations for a given set of genes or gene products can be achieved via SEED servers. A workflow, detailed elsewhere (Short URL: http://bit.ly/server_paper_example8 ), uses two SEED serversbased programs to update SEED to GO comparisons through the use of UniProt [41, 42] protein identifiers.",
+            "cite_spans": [
+                {
+                    "start": 131,
+                    "end": 135,
+                    "text": "[40]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 694,
+                    "end": 698,
+                    "text": "[41,",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 699,
+                    "end": 702,
+                    "text": "42]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Using SEED Servers for Mapping SEED to Gene Ontology Functions"
+        },
+        {
+            "text": "The workflow consists of the following steps: ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Using SEED Servers for Mapping SEED to Gene Ontology Functions"
+        },
+        {
+            "text": "The SEED project [15] focuses on developing technology to support rapid, high-volume, accurate annotation of genomes, and has so far achieved four advances of central importance:",
+            "cite_spans": [
+                {
+                    "start": 17,
+                    "end": 21,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "1. The subsystems strategy, adopted as the guiding principle of the effort [16] , centers on leveraging expert annotations to define a small set of functional roles in all genomes rather than all the functional roles in a small number of genomes. 2. The subsystem effort provided a convenient framework for the curation of a set of protein families that became known as FIGfams [22, 23] , intended to contain only isofunctional homologsthat is, each family was intended to contain only homologous proteins playing the same functional role. When errors in FiGfams are detected, the underlying subsystems are updated and then the FIGfams are regenerated to correct those errors. The rapid evolution of the FIGfam collection has made possible a number of the services described in this article. 3. Using subsystems and FIGfams as the underlying technology, the RAST server was developed and made available in 2007 [23] . Thousands of viral and prokaryotic genomes have been annotated with the RAST system, and hundreds more are being annotated each week. 4. The high-quality annotations generated by RAST together with the ability to manually modify those annotations by human experts allowed for the automatic generation of genome-scale metabolic models in the Model SEED [18, 19, 20] .",
+            "cite_spans": [
+                {
+                    "start": 75,
+                    "end": 79,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 378,
+                    "end": 382,
+                    "text": "[22,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 383,
+                    "end": 386,
+                    "text": "23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 911,
+                    "end": 915,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1270,
+                    "end": 1274,
+                    "text": "[18,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1275,
+                    "end": 1278,
+                    "text": "19,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 1279,
+                    "end": 1282,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "As indicated above, the improvement in sequencing speed and efficiency led to a rapid accumulation of genome sequences and necessitated more efficient methods for large-scale access to genomes, annotations, subsystems, and genome-scale models within the SEED database. A SOAP server was first developed to allow programmatic access to the SEED data [21] , but several performance issues prevented the service from scaling with the volume of data contained within the SEED database. The server abstraction layer required the loading of numerous large modules on each invocation of server functionality, resulting in a noticeable delay in response to each server request. The encapsulation of the results in SOAP XML conferred significant overhead on the data being transferred. Finally, each operation of the SOAP server was atomic, accepting a single argument and returning a single datum. Trivial requests such as retrieving all the functions for all of the proteins in a genome took unacceptably long to complete, requiring a separate call for each protein and instantiating many threads on the server. The four SEED servers described here provide programmatic access to the SEED data and methods. They expose the current data in a form that is conveniently accessed computationally. The installation and maintenance of the client-side software require minimal effort. We have constructed the underlying methods to support relatively large-grained data transfers, allowing the construction of relatively efficient programs. In comparison to the SOAP server [21] , the new web services provide access to larger amounts of data in less time, and they have been engineered to respond to server requests with little or no server-side delay. Furthermore, the new web services provide a more efficient and flexible computing approach because they are designed to process batches of requests at a time, streaming the responses as they complete. These services provide access to the integrated genomic data, subsystems, FIGfams, co-occurrence data, annotation services, RAST annotation submission and job retrieval (thereby offering access to our continuing improvements in microbial annotation), and metabolic modeling. All client modules, code examples and documentation are available online at http:// servers.theseed.org, and we are continually expanding these services and improving the underlying documentation.",
+            "cite_spans": [
+                {
+                    "start": 349,
+                    "end": 353,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1559,
+                    "end": 1563,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In conclusion, the SEED integration of genomic data now contains over 5,000 complete or nearly complete genomes, a constantly updated set of curated annotations embodied in a large and growing collection of encoded subsystems, and a derived set of protein families. The client-server code discussed in this article gives users easy programmatic access to the data in the SEED. It has already been successfully been used for building other applications, such as finding prophages in microbial genomes [43] , desktop-based RAST genome annotation and comparison (manuscript in preparation), and real-time annotation of metagenomes (RTMG, URL: http://edwards.sdsu.edu/rtmg [39] ). We encourage researchers to use this software to retrieve and analyze data from the SEED database and we believe that the underlying implementation of these new servers is efficient enough to address the needs of most users and we will continue providing occasional stand-alone versions of the SEED to users who need more performance or privacy.",
+            "cite_spans": [
+                {
+                    "start": 500,
+                    "end": 504,
+                    "text": "[43]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 669,
+                    "end": 673,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The latest documentation and downloads are available at the following web addresses: http://servers.theseed.org and http:// blog.theseed.org/servers/ N Project name: SEED Servers N Project home page: http://www.theseed.org/ N Operating system(s): Mac OS, Linux N Programming language: Perl, JAVA N License: SEED Toolkit Public License N Any restrictions to use by non-academics: no limitations",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and Future Directions"
+        },
+        {
+            "text": "The SEED servers project is documented and can be downloaded from the servers' web site, http://servers.theseed.org.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "The Perl distribution contains the following: Client Packages.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "1. The Sapling server -SAPserver.pm 2. The MODEL server -MODELserver.pm 3. The Annotation Support Server -ANNOserver.pm 4. The RAST server -RASTserver.pm",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "Programming using the servers. The SEED servers provide all necessary network operations in a client package that can be used to access the server functions. One uses these like any other Perl package. For instance, to find all genomes in the SEED, one does the following:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "#!/usr/bin/perl w use strict; use SAPserver; my $sapObject = SAPserver-.new(); my $genomes = $sapObject-.all_genomes(); foreach my $g (sort { $genomes-.{$a} cmp $genomes-.{$b} } keys(%$genomes)) { print \"$g\\t$genomes-.{$g}\\n\"; } The function call $sapObject-.all_genomes() marshals the correct server-side function call and arguments into a network package, transmits that package to the server, waits for and retrieves the answer, processes any returned error codes, decodes the return package into a Perl data structure, and returns the result. All function calls in all the client packages perform these basic services.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "The Java Distribution Contains the Following Client Packages. The org.theseed.servers.serverConnections package handles connecting to the server, transmitting and receiving the data, and converting data structures from the server into Java data structures. The classes in org.theseed.servers.servers packages handle connecting to each of the servers and making the appropriate calls.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "Programming using the servers. We recommend that the code be accessed in eclipse (http://www.eclipse.org/), netbeans (http://www.netbeans.org/), or a similar graphical integrated development environment (IDE). These are used like any other class. For instance, to find all genomes in the SEED, one does the following import java.util.HashMap; import org.theseed.servers.SAPserver; public class AllGenomes { public static void main(String [35] args) { SAPserver sapling = new SAPserver(); HashMap,String, String.genomes = sapling. allGenomes(); for (String id : genomes.keySet()) System.out.",
+            "cite_spans": [
+                {
+                    "start": 438,
+                    "end": 442,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "println(id + \"\\t\"+ genomes.get(id)); } } Future directions include expanding the applications and releasing packages for use by other programming languages such as Python.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Distribution of the Server Packages"
+        },
+        {
+            "text": "Supporting Information S1 Examples of programming using the SEED servers (coded in Perl). Eight application examples are provided, seven of which (1-4 and 6-8) are described in detail in the text. (PDF)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supporting Information"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Genomics: what is realistically achievable?",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Genome Biol",
+            "volume": "1",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "A flood of microbial genomes-do we need more?",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Ahmed",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS ONE",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "The Genomes OnLine Database (GOLD) v.4: status of genomic and metagenomic projects and their associated metadata",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Pagani",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Liolios",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Jansson",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Smirnova",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nucleic Acids Res",
+            "volume": "40",
+            "issn": "",
+            "pages": "571--579",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "BioProject and BioSample databases at NCBI: facilitating capture and organization of metadata",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Barrett",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gevorgyan",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Gorelenkov",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Gribov",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nucleic Acids Res",
+            "volume": "40",
+            "issn": "",
+            "pages": "57--63",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Beyond the HapMap genotypic data: prospects of deep resequencing projects",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Dolan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Curr Bioinform",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Evolution of the core and pan-genome of Streptococcus: positive selection, recombination, and genome composition",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lefebure",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Stanhope",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Genome Biol",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Sequencing the species pan-genome",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bentley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nat Rev Microbiol",
+            "volume": "7",
+            "issn": "",
+            "pages": "258--259",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "The microbial pan-genome",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Medini",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Donati",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Tettelin",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Masignani",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Rappuoli",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Curr Opin Genet Dev",
+            "volume": "15",
+            "issn": "",
+            "pages": "589--594",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Pathogen microevolution in high resolution",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Aziz",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Nizet",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Sci Transl Med",
+            "volume": "2",
+            "issn": "",
+            "pages": "16--30",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "The Genome sequence of the SARS-associated coronavirus",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Marra",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Astell",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Holt",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Brooks-Wilson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Science",
+            "volume": "300",
+            "issn": "",
+            "pages": "1399--1404",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Emergence of a novel swine-origin influenza A (H1N1) virus in humans",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Dawood",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jain",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Finelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Shaw",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lindstrom",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "N Engl J Med",
+            "volume": "360",
+            "issn": "",
+            "pages": "2605--2615",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Origins and evolutionary genomics of the 2009 swine-origin H1N1 influenza A epidemic",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Vijaykrishna",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bahl",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lycett",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Worobey",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature",
+            "volume": "459",
+            "issn": "",
+            "pages": "1122--1125",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Origins of the E. coli strain causing an outbreak of hemolytic-uremic syndrome in Germany",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rasko",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Webster",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Sahl",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bashir",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Boisen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "N Engl J Med",
+            "volume": "365",
+            "issn": "",
+            "pages": "709--717",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Genome sequence analyses of two isolates from the recent Escherichia coli outbreak in Germany reveal the emergence of a new pathotype: Entero-Aggregative-Haemorrhagic Escherichia coli (EAHEC)",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Brzuszkiewicz",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Thurmer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Schuldes",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Leimbach",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Liesegang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Arch Microbiol",
+            "volume": "193",
+            "issn": "",
+            "pages": "883--891",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "The SEED: a peer-to-peer environment for genome annotation",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Disz",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Stevens",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Commun ACM",
+            "volume": "47",
+            "issn": "",
+            "pages": "46--51",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "The subsystems approach to genome annotation and its use in the project to annotate 1000 genomes",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Begley",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Butler",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Choudhuri",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Chuang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "5691--5702",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Annotation of bacterial and archaeal genomes: improving accuracy and consistency",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bartels",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Vonstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Meyer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Chem Rev",
+            "volume": "107",
+            "issn": "",
+            "pages": "3431--3447",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Toward the automated generation of genome-scale metabolic networks in the SEED",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Dejongh",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Formsma",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Boillot",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gould",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Rycenga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC Bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "iBsu1103: a new genomescale metabolic model of Bacillus subtilis based on SEED annotations",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Henry",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Zinner",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Cohoon",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Stevens",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Genome Biol",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Highthroughput generation, optimization and analysis of genome-scale metabolic models",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Henry",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Dejongh",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Best",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Frybarger",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Linsay",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nat Biotechnol",
+            "volume": "28",
+            "issn": "",
+            "pages": "977--982",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Accessing the SEED genome databases via Web services API: tools for programmers",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Disz",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Akhter",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Cuevas",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Olson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "BMC Bioinformatics",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "FIGfams: yet another set of protein families",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Meyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rodriguez",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nucleic Acids Res",
+            "volume": "37",
+            "issn": "",
+            "pages": "6643--6654",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "The RAST Server: rapid annotations using subsystems technology",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Aziz",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bartels",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Best",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Dejongh",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Disz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "BMC Genomics",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "The KEGG databases at GenomeNet",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kanehisa",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Goto",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kawashima",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Nakaya",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Nucleic Acids Res",
+            "volume": "30",
+            "issn": "",
+            "pages": "42--46",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "The KEGG resource for deciphering the genome",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kanehisa",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Goto",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kawashima",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Okuno",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hattori",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "",
+            "pages": "277--280",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "KEGG Atlas mapping for global analysis of metabolic pathways",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Okuda",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Yamada",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hamajima",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Itoh",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Katayama",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nucleic Acids Res",
+            "volume": "36",
+            "issn": "",
+            "pages": "423--426",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Group contribution method for thermodynamic analysis of complex metabolic networks",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Jankowski",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Henry",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Broadbelt",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Hatzimanikatis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Biophys J",
+            "volume": "95",
+            "issn": "",
+            "pages": "1487--1499",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Genome-scale metabolic model of Helicobacter pylori 26695",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Schilling",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Covert",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Famili",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Church",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Edwards",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "J Bacteriol",
+            "volume": "184",
+            "issn": "",
+            "pages": "4582--4593",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Connecting genotype to phenotype in the era of high-throughput sequencing",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Henry",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Xia",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Best",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Glass",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Biochim Biophys Acta",
+            "volume": "1810",
+            "issn": "",
+            "pages": "967--977",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Biolog phenotype microarrays",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Shea",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Wolcott",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Daefler",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rozak",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Methods Mol Biol",
+            "volume": "881",
+            "issn": "",
+            "pages": "331--373",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "The effects of alternate optimal solutions in constraint-based genome-scale metabolic models",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Mahadevan",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Schilling",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Metab Eng",
+            "volume": "5",
+            "issn": "",
+            "pages": "264--276",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Environmental genome shotgun sequencing of the Sargasso Sea",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Venter",
+                    "suffix": ""
+                },
+                {
+                    "first": "Remington",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Heidelberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Halpern",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Rusch",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Science",
+            "volume": "304",
+            "issn": "",
+            "pages": "66--74",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Conservation of gene order: a fingerprint of proteins that physically interact",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Dandekar",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Snel",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Huynen",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bork",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Trends Biochem Sci",
+            "volume": "23",
+            "issn": "",
+            "pages": "324--328",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "The use of gene clusters to infer functional coupling",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fonstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Souza",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pusch",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Maltsev",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "96",
+            "issn": "",
+            "pages": "2896--2901",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Use of contiguity on the chromosome to predict functional coupling",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Overbeek",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fonstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Souza",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pusch",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Maltsev",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "In Silico Biol",
+            "volume": "1",
+            "issn": "",
+            "pages": "93--108",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Genome alignment, evolution of prokaryotic genome organization, and prediction of gene function using genomic context",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Wolf",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Rogozin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Kondrashov",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Koonin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Genome Res",
+            "volume": "11",
+            "issn": "",
+            "pages": "356--372",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Inferring functional relationships from conservation of gene order",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Moreno-Hagelsieb",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Methods Mol Biol",
+            "volume": "453",
+            "issn": "",
+            "pages": "181--199",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "The pseudogenes of Mycobacterium leprae reveal the functional relevance of gene order within operons",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Muro",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mah",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Moreno-Hagelsieb",
+                    "suffix": ""
+                },
+                {
+                    "first": "Andrade-Navarro",
+                    "middle": [],
+                    "last": "Ma",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "",
+            "pages": "1732--1738",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Real Time Metagenomics: Using k-mers to annotate metagenomes",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Edwards",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Olson",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Disz",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Pusch",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Vonstein",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Gene ontology: tool for the unification of biology. The Gene Ontology Consortium",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ashburner",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Ball",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Blake",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Botstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Butler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Nat Genet",
+            "volume": "25",
+            "issn": "",
+            "pages": "25--29",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "UniProt: the Universal Protein knowledgebase",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bairoch",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Barker",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Boeckmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "",
+            "pages": "115--119",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "The UniProt-GO Annotation database in 2011",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Dimmer",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Huntley",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Alam-Faruque",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Sawford",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "O&apos;donovan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nucleic Acids Res",
+            "volume": "40",
+            "issn": "",
+            "pages": "565--570",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "PhiSpy: a novel algorithm for finding prophages in bacterial genomes that combines similarity-and composition-based strategies",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Akhter",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Aziz",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Edwards",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nucleic Acids Res",
+            "volume": "40",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Architecture of the SEED servers. The client packages (currently available for Perl or Java) handle the HTTP requests and responses, and parse the data from the appropriate lightweight data exchange formats to data structures. The four servers access the SEED data. doi:10.1371/journal.pone.0048053.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Processing ids_to_sequences. (a) The ids_to_sequences function call accepts multiple IDs as an argument and uses the Sapling server to process the calls. These are returned as a single table. (b) A detailed description of each call (in this example, the ids_to_sequences) is provided online and is automatically generated from the entity-relationship models shown in Figure 2. doi:10.1371/journal.pone.0048053.g003",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Gene N Function of the gene N Genome id containing the gene N Biological name of the genome N Non-hypothetical gene in a subsystem that appears to have the strongest measure of co-occurrence N Measure of gene co-occurrence N Function assigned to the co-occurring gene contained in a subsystem.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Download the latest version of UniProt: ftp://ftp.uniprot.org/ pub/databases/uniprot/current_release/knowledgebase/ complete/uniprot_sprot.dat.gz 3. Download the parser: http://edwards-sdsu.cvs.sourceforge.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We thank Sajia Akhter, Daniel Cuevas, and Josh Hoffman for help with the Java code. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        }
+    ]
+}

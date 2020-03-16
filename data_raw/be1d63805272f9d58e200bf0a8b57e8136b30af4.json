@@ -1,0 +1,1395 @@
+{
+    "paper_id": "be1d63805272f9d58e200bf0a8b57e8136b30af4",
+    "metadata": {
+        "title": "Identifying Hosts of Families of Viruses: A Machine Learning Approach",
+        "authors": [
+            {
+                "first": "Anil",
+                "middle": [],
+                "last": "Raj",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Columbia University",
+                    "location": {
+                        "settlement": "New York",
+                        "region": "New York"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Michael",
+                "middle": [],
+                "last": "Dewar",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Columbia University",
+                    "location": {
+                        "settlement": "New York",
+                        "region": "New York"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Gustavo",
+                "middle": [],
+                "last": "Palacios",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Columbia University",
+                    "location": {
+                        "settlement": "New York",
+                        "region": "New York"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Raul",
+                "middle": [],
+                "last": "Rabadan",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Columbia University College of Physicians and Surgeons",
+                    "location": {
+                        "settlement": "New York",
+                        "region": "New York"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Christopher",
+                "middle": [
+                    "H"
+                ],
+                "last": "Wiggins",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Columbia University",
+                    "location": {
+                        "settlement": "New York",
+                        "region": "New York",
+                        "country": "United States of America"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Identifying emerging viral pathogens and characterizing their transmission is essential to developing effective public health measures in response to an epidemic. Phylogenetics, though currently the most popular tool used to characterize the likely host of a virus, can be ambiguous when studying species very distant to known species and when there is very little reliable sequence information available in the early stages of the outbreak of disease. Motivated by an existing framework for representing biological sequence information, we learn sparse, tree-structured models, built from decision rules based on subsequences, to predict viral hosts from protein sequence data using popular discriminative machine learning tools. Furthermore, the predictive motifs robustly selected by the learning algorithm are found to show strong host-specificity and occur in highly conserved regions of the viral proteome.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Emerging pathogens constitute a continuous threat to our society, as it is notoriously difficult to perform a realistic assessment of optimal public health measures when little information on the pathogen is available. Recent outbreaks include the West Nile virus in New York (1999); SARS coronavirus in Hong Kong (2002 Kong ( -2003 ; LUJO virus in Lusaka (2008); H1N1 influenza pandemic virus in Mexico and the US (2009); and cholera in Haiti (2010). In all these cases, an outbreak of unusual clinical diagnoses triggered a rapid response, and an essential part of this response is the accurate identification and characterization of the pathogen.",
+            "cite_spans": [
+                {
+                    "start": 309,
+                    "end": 319,
+                    "text": "Kong (2002",
+                    "ref_id": null
+                },
+                {
+                    "start": 320,
+                    "end": 332,
+                    "text": "Kong ( -2003",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Sequencing is becoming the most common and reliable technique to identify novel organisms. For instance, LUJO was identified as a novel, very distinct virus after the sequence of its genome was compared to other arenaviruses [1] . The genome of an organism is a unique fingerprint that reveals many of its properties and past history. For instance, arenaviruses are zoonotic agents usually transmitted from rodents.",
+            "cite_spans": [
+                {
+                    "start": 225,
+                    "end": 228,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Another promising area of research is metagenomics, in which DNA and RNA samples from different environments are sequenced using shotgun approaches. Metagenomics is providing an unbiased understanding of the different species that inhabit a particular niche. Examples include the human microbiome and virome, and the Ocean metagenomics collection [2] . It has been estimated that there are more than 600 bacterial species living in the mouth but that only 20% have been characterized.",
+            "cite_spans": [
+                {
+                    "start": 347,
+                    "end": 350,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Pathogen identification and metagenomic analysis point to an extremely rich diversity of unknown species, where partial genomic sequence is the only information available. The main aim of this work is to develop approaches that can help infer characteristics of an organism from subsequences of its genomic sequence where primary sequence information analysis does not allow us to identify its origin. In particular, our work will focus on predicting the host of a virus from the viral genome.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The most common approach to deduce a likely host of a virus from the viral genome is sequence/phylogenetic similarity (i.e., the most likely host of a particular virus is the one that is infected by related viral species). However, similarity measures based on genomic/protein sequence or protein structure could be misleading when dealing with species very distant to known, annotated species. Other approaches are based on the fact that viruses undergo mutational and evolutionary pressures from the host. For instance, viruses could adapt their codon bias for a more efficient interaction with the host translational machinery or they could be under pressure of deaminating enzymes (e.g. APOBEC3G or HIV infection). All these factors imprint characteristic signatures in the viral genome. Several techniques have been developed to extract these patterns (e.g., nucleotide and dinucleotide compositional biases, and frequency analysis techniques [3] ). Although most of these techniques could reveal an underlying biological mechanism, they lack sufficient accuracy to provide reliable assessments [4, 5] . A relatively similar approach to the one presented here is DNA barcoding. Genetic barcoding identifies conserved genomic structures that contain the necessary information for classification.",
+            "cite_spans": [
+                {
+                    "start": 948,
+                    "end": 951,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 1100,
+                    "end": 1103,
+                    "text": "[4,",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 1104,
+                    "end": 1106,
+                    "text": "5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Using contemporary machine learning techniques, we present an approach to predicting the hosts of unseen viruses, based on the amino acid sequences of proteins of viruses whose hosts are well known. Given protein sequence and host information of Picornaviridae and Rhabdoviridae, two well-characterized families of RNA viruses, we learn a multi-class classifier composed of simple sequence-motif based questions (e.g., does the viral sequence contain the motif 'DALMWLPD'?) that achieves high prediction accuracies on held-out data. Prediction accuracy of the classifier is measured by the area under the ROC curve, and is compared to a straightforward nearest-neighbor classifier. Importantly (and quite surprisingly), a post-processing study of the highly predictive sequence-motifs selected by the algorithm identifies strongly conserved regions of the viral genome, facilitating biological interpretation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "We aim to learn a predictive model to identify hosts of viruses belonging to a specific family; we show results for Picornaviridae and Rhabdoviridae. Picornaviridae is a family of viruses that contain a single stranded, positive sense RNA. The viral genome usually contains about 1-2 Open Reading Frames (ORF), each coding for protein sequences about 2000-3000 amino acids long. Rhabdoviridae is a family of negative sense single stranded RNA viruses whose genomes typically code for five different proteins: large protein (L), nucleoprotein (N), phosphoprotein (P), glycoprotein (G), and matrix protein (M). The data consist of 148 viruses in the Picornaviridae family and 50 viruses in the Rhabdoviridae family. For some choice of k and m, we represent each virus as a vector of counts of all possible k-mers, up to mmismatches, generated from the amino-acid alphabet. Each virus is also assigned a label depending on its host: vertebrate/ invertebrate/plant in the case of Picornaviridae, and animal/plant in the case of Rhabdoviridae (see Tables S1 and S2 for the names and label assignments of viruses). Using multiclass Adaboost [6] , we learn an Alternating Decision Tree (ADT) classifier [7] on training data drawn from the set of labeled viruses and test the model on the held-out viruses.",
+            "cite_spans": [
+                {
+                    "start": 1135,
+                    "end": 1138,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1196,
+                    "end": 1199,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data specifications"
+        },
+        {
+            "text": "Given whole protein sequences, a straightforward classifier is given by a nearest-neighbor approach based on the Basic Local Alignment Search Tool (BLAST) [8] . We can use BLAST score (or P-value) as a measure of the distances between the unknown virus and a set of viruses with known hosts. The nearest neighbor approach to classification then assigns the host of the closest virus to the unknown virus. Intuitively, as this approach uses the whole protein to perform the classification, we expect the accuracy to be very high. This is indeed the case -BLAST, along with a 1-nearest neighbor classifier, successfully classifies all viruses in the Rhabdoviridae family, and all but 3 viruses in the Picornaviridae family. What is missing from this approach, however, is the ability to ascertain and interpret host relevant motifs.",
+            "cite_spans": [
+                {
+                    "start": 155,
+                    "end": 158,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "BLAST Classifier accuracy"
+        },
+        {
+            "text": "The accuracy of the ADT model, at each round of boosting, is evaluated using a multi-class extension of the Area Under the Curve (AUC). Here the 'curve' is the Receiver Operating Characteristic (ROC) which traces a measure of the classification accuracy of the ADT for each value of a real-valued discrimination threshold. As this threshold is varied, a virus is considered a true (or false) positive if the prediction of the ADT model for the true class of that protein is greater (or less) than the threshold value. The ROC curve is then traced out in True Positive Rate -False Positive Rate space by changing the threshold value and the AUC score is defined as the area under this ROC curve.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ADT Classifier accuracy"
+        },
+        {
+            "text": "The ADT is trained using 10-fold cross validation, calculating the AUC, at each round of boosting, for each fold using the heldout data. The mean AUC and standard deviation over all folds is plotted against boosting round in Figures 1, 2 . Note that the 'smoothing effect' introduced by using the mismatch feature space allows for improved prediction accuracy for mw0. For Picornaviridae, the best accuracy is achieved at m~5, for a choice of k~12; this degree of 'smoothing' is optimal for the algorithm to capture predictive amino-acid subsequences present, up to a certain mismatch, in rapidly mutating viral protein sequences. For Rhabdoviridae, near perfect accuracy is achieved with merely one decision rule, i.e., Rhabdoviridae with plant or animal hosts can be distinguished based on the presence or absence of one highly conserved region in the L protein.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 225,
+                    "end": 237,
+                    "text": "Figures 1, 2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "ADT Classifier accuracy"
+        },
+        {
+            "text": "Over representation of highly similar viruses within the data used for learning is an important source of overfitting that should be kept in mind when using this technique. Specifically, if the data largely consist of nearly-similar viral sequences (e.g. different sequence reads from the same virus), the learned ADT model would overfit to insignificant variations within the data (even if 10fold cross validation were employed), making generalization to new subfamilies of viruses extremely poor. To check for this, we hold out viruses corresponding to a particular subfamily (see Tables S1 and S2 for subfamily annotation of the viruses used), run 10-fold cross validation on the remaining data and compute the expected fraction of misclassified viruses in the held-out subfamily, averaged over the learned ADT models. Tables 1 and 2 list the mean classifier validation error and number of viruses for subfamilies in Picornaviridae and Rhabdoviridae. Note that the Picornaviridae data used consist mostly of Cripaviruses; thus, the high misclassification rate when holding out Cripaviruses could also be attributed to a significantly lower sample size used in learning. The poorly classified subfamilies contain a very small number of viruses, showing that the method is strongly generalizable on average.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 822,
+                    "end": 836,
+                    "text": "Tables 1 and 2",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "ADT Classifier accuracy"
+        },
+        {
+            "text": "Having learned a highly predictive model, we would like to locate where the selected k-mers occur in the viral proteomes. We visualize the k-mer subsequences selected in a specific ADT by indicating elements of the mismatch neighborhood of each selected subsequence on the virus protein sequences. In Figure 3 , the virus proteomes are grouped vertically by their label with their lengths scaled to \u00bd0,1. Quite surprisingly, the predictive k-mers occur in regions that are strongly conserved among viruses sharing a specific host. Note that the representation we used for viral sequences retained no information regarding the location of each k-mer on the virus protein. To visualize this more explicitly, we aligned the protein sequences using the multiple alignment algorithm COBALT [9] and plotted the alignments in Figure 4 , with gaps in the alignment indicated in grey and the location of the selected k-mers indicated in their respective colors. Furthermore, these selected k-mers are significant as they are robustly selected by Adaboost for different choices of train/test split of the data, as shown in Figure 5 .",
+            "cite_spans": [
+                {
+                    "start": 785,
+                    "end": 788,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 301,
+                    "end": 309,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 819,
+                    "end": 827,
+                    "text": "Figure 4",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1113,
+                    "end": 1121,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Predictive subsequences are conserved within hosts"
+        },
+        {
+            "text": "We can now BLAST the selected k-mers in Figure 3 against the GenBank database [10] of Picornaviridae. It is interesting to point out that most of these motifs are found in regions with an essential biological function. For instance, the motif 'DDLGQNPDGEDC' occurs in a highly conserved region in the 2C protein [11] . The 2C protein functions as ATPase and GTPase [12, 13] , is involved in membrane-binding [14, 15] and RNA-binding activities [16] . In particular, this motif forms part of a larger NTP-binding pattern that is found not only in picornaviruses but in DNA viruses (papova-, parvo-, geminiviruses, and P4 bacteriophage) and RNA viruses (coma-and nepoviruses). While genes coding for these proteins occur in a variety of viruses, this specific motif aligned strongly with proteins from vertebrate viruses like human cosavirus, saffold virus and Theilers murine encephalomyelitis virus. The k-mer 'AHLKDELRKKEK' occurs in a region coding for RNA-dependent RNA polymerase, a protein found in all RNA viruses essential for direct replication of RNA from an RNA template. This motif strongly aligned with proteins from hepatitis A virus, Ljungan virus and rhinovirus isolated in humans and ducks, while the k-mer 'AGKTRVFSAGPQ' occurs in a functionally similar region for invertebrate viruses. Finally, the k-mers 'ASAFHRGRLRIV' and 'KVQVNSQPFQQG' occur in regions coding for viral capsid protein. This motif strongly aligned with proteins from Human parechovirus, Drosophila C virus and Cricket paralysis virus. Variations in the amino acid sequence of these proteins are important both for determining viral host-specificity and contributing to antigenic diversity. For Rhabdoviridae, the motif 'GLPLKASETW' is found highly conserved in the RNA polymerase in the L protein of plant viruses (see Figures S1, S2 ).",
+            "cite_spans": [
+                {
+                    "start": 78,
+                    "end": 82,
+                    "text": "[10]",
+                    "ref_id": null
+                },
+                {
+                    "start": 312,
+                    "end": 316,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 365,
+                    "end": 369,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 370,
+                    "end": 373,
+                    "text": "13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 408,
+                    "end": 412,
+                    "text": "[14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 413,
+                    "end": 416,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 444,
+                    "end": 448,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 40,
+                    "end": 48,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1807,
+                    "end": 1821,
+                    "text": "Figures S1, S2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Predictive subsequences are conserved within hosts"
+        },
+        {
+            "text": "We have presented a supervised learning algorithm that learns a model to classify viruses according to their host and identifies a set of highly discriminative oligopeptide motifs. As expected, the kmers selected in the ADT for Picornaviridae (Figures 3, 5) and Rhabdoviridae (Figures S1, S2 ) are mostly selected in areas corresponding to the replicase motifs of the polymerase -one of the most conserved parts of the viral genome. Thus, given that partial genomic sequence is normally the only information available, we could achieve quicker bioinformatic characterization by focusing on the selection and amplification of these highly predictive regions of the genome, instead of full genomic characterization and contiguing. Moreover, in contrast with generic approaches currently under use, such a targeted amplification approach might also speed up the process of sample preparation and improve the sensitivity for viral discovery.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 243,
+                    "end": 257,
+                    "text": "(Figures 3, 5)",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 276,
+                    "end": 291,
+                    "text": "(Figures S1, S2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Other applications for this technique include identification of novel pathogens using genomic data, analysis of the most informative fingerprints that determine host specificity, and classification of metagenomic data using genomic information. For example, an alternative application of our approach would be the automatic discovery of multi-locus barcoding genes. Multilocus barcoding is the use of a set of genes which are discriminative between species, in order to identify known specimens and to flag possible new species [17] . While we have focused on virus host in this work, ADTs could be applied straightforwardly to the barcoding problem, replacing the host label with a species label. Additional constraints on the loss function would have to be introduced to capture the desire for suitable flanking sites of each selected k-mer in order to develop the universal PCR primers important for a wide application of the discovered barcode [18] .",
+            "cite_spans": [
+                {
+                    "start": 528,
+                    "end": 532,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 948,
+                    "end": 952,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Our overall aim is to discover aspects of the relationship between a virus and its host. Our approach is to develop a model that is able to predict the host of a virus given its sequence; those features of the sequence that prove most useful are then assumed to have a special biological significance. Hence, an ideal model is one that is parsimonious and easy to interpret, whilst incorporating combinations of biologically relevant features. In addition, the interpretability of the results is improved if we have a simple learning algorithm which can be straightforwardly verified.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "Formally, for a given virus family, we learn a function g : S?H, where S is the space of viral sequences and H is the space of viral hosts. The space of viral sequences S is generated by an alphabet A where, jAj~4 (genome sequence) or jAj~20 (primary protein sequence).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "Defining a function on a sequence requires representation of the sequence in some feature space. Below, we specify a representation w : S?X , where a sequence s[S is mapped to a vector of counts of subsequences x[X 5N D 0 . Given this representation, we have the well-posed problem of finding a function f : X ?H built from a space of simple binary-valued functions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "The collected data consist of N genome sequences or primary protein sequences, denoted s 1 . . . s N , of viruses whose host class, denoted h 1 . . . h N is known. For example, these could be 'plant', 'vertebrate' and 'invertebrate'. The label for each virus is represented numerically as y[Y~f0,1g L where \u00bdy l~1 if the index of the host class of the virus is l, and where L denotes the number of host classes. Note that this representation allows for a virus to have multiple host classes. Here and below we use boldface variables to indicate vectors and square brackets to denote the selection of a specific element in the vector, e.g., \u00bdy n l is the l th element of the n th label vector.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Collected Data"
+        },
+        {
+            "text": "A possible feature space representation of a viral sequence is the vector of counts of exact matches of all possible klength subsequences (k-mers). However, due to the high mutation rate of viral genomes [19, 20] , a predictive function learned using this simple representation of counts would fail to generalize well to new viruses. Instead, motivated by the mismatch feature space used in constructing string kernels for kernel-based classification algorithms [21] , we count not just the presence of an individual k-mer but also the presence of subsequences within m mismatches from that k-mer. The mismatch-or m-neighborhood of a k-mer a, denoted N m a , is the set of all k-mers with a Hamming distance [22] at most m from it, as shown in Figure 6 . Let d N m a denote the indicator function of the m-neighborhood of a such that",
+            "cite_spans": [
+                {
+                    "start": 204,
+                    "end": 208,
+                    "text": "[19,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 209,
+                    "end": 212,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 462,
+                    "end": 466,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 708,
+                    "end": 712,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 744,
+                    "end": 752,
+                    "text": "Figure 6",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Mismatch Feature Space"
+        },
+        {
+            "text": "We can then define, for any possible k-mer b, the mapping w from the sequence s onto a count of the elements in b's mneighborhood as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Mismatch Feature Space"
+        },
+        {
+            "text": "Finally, the d th element of the feature vector for a given sequence is then defined element-wise as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Mismatch Feature Space"
+        },
+        {
+            "text": "for every possible k-mer b d [A k , where d~1 . . . D and D~jA k j. Note that when m~0, w k,0 exactly captures the simple count representation described earlier. This biologically realistic relaxation allows us to learn discriminative functions that better capture rapidly mutating and yet functionally conserved regions in the viral genome facilitating generalization to new viruses. proportional to the number of cross-validation folds in which some kmer in that region was selected by Adaboost. Thus, darker spots indicate that some k-mer in that part of the proteome was robustly selected by Adaboost. Furthermore, a vertical cluster of dark spots indicate that region, selected by Adaboost to be predictive, is also strongly conserved among viruses sharing a common host type. doi:10.1371/journal.pone.0027631.g005",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Mismatch Feature Space"
+        },
+        {
+            "text": "Given this representation of the data, we aim to learn a discriminative function that maps features x onto host class labels y, given some training data f(x 1 ,y 1 ), . . . ,(x N ,y N )g. We want the discriminative function to output a measure of ''confidence'' [23] in addition to a predicted host class label. To this end, we learn on a class of functions f : X ?R L , where the indices of positive elements of f(x) can be interpreted as the predicted labels to be assigned to x and the magnitudes of these elements to be the confidence in the predictions.",
+            "cite_spans": [
+                {
+                    "start": 262,
+                    "end": 266,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Alternating Decision Trees"
+        },
+        {
+            "text": "A simple class of such real-valued discriminative functions can be constructed from the linear combination of simple binary-valued functions y : X ?f0,1g. The functions y can, in general, be a combination of single-feature decision rules or their negations:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Alternating Decision Trees"
+        },
+        {
+            "text": "where a p [R L , P is the number of binary-valued functions, II( : ) is 1 if its argument is true, and zero otherwise, h[f0,1, . . . ,Hg, where H~max d,n \u00bdx n d , and S p is a subset of feature indices. This formulation allows functions to be constructed using combinations of simple rules. For example, we could define a function y as the following",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Alternating Decision Trees"
+        },
+        {
+            "text": "where :II( : )~1{II( : ). Alternatively, we can view each function y p to be parameterized by a vector of thresholds h p [f0,1, . . . ,Hg D , where \u00bdh p d~0 indicates y p is not a function of the d th feature \u00bdx d . In addition, we can decompose the weights a p~ap v p into a vote vector v[fz1,{1g L and a scalar weight a[R z [24] . The discriminative model, then, can be written as",
+            "cite_spans": [
+                {
+                    "start": 326,
+                    "end": 330,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Alternating Decision Trees"
+        },
+        {
+            "text": "Every function in this class of models can be concisely represented as an Alternating Decision Tree (ADT) [7] . Similar to ordinary decision trees, ADTs have two kinds of nodes: decision nodes and output nodes. Every decision node is associated with a single-feature decision rule, the attributes of the node being the relevant feature and corresponding threshold. Each decision node is connected to two output nodes corresponding to the associated decision rule and its negation. Thus, binary-valued functions in the model come in pairs (y,\u1ef9 y); each pair is associated with the the pair of output nodes for a given decision node in the tree (see Figure 7 ). Note that y and\u1ef9 y share the same threshold vector h and only differ in whether they contain the associated decision rule or its negation. The attributes of the output node pair are the vote vectors (v,\u1e7d v) and the scalar weights (a,\u00e3 a) associated with the corresponding functions (y,\u1ef9 y).",
+            "cite_spans": [
+                {
+                    "start": 106,
+                    "end": 109,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 648,
+                    "end": 656,
+                    "text": "Figure 7",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Alternating Decision Trees"
+        },
+        {
+            "text": "Each function y has a one-to-one correspondence with a path from the root node to its associated output node in the tree; the single-feature decision rules in y being the same as those rules associated with decision nodes in the path, with negations applied appropriately. Combinatorial features can, thus, be incorporated into the model by allowing for trees of depth greater than 1. Including a new function y in the model is, then, equivalent to either adding a new path of decision and output nodes at the root node in the tree or growing an existing path at one of the existing output nodes. This tree-structured representation of the model will play an important role in specifying how Adaboost, the learning algorithm, greedily searches over an exponentially large space of binary-valued functions. It is important to note that, unlike in ordinary decision trees where each example traverses only one path in the tree, each example runs down an ADT through every path originating from the root node.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Alternating Decision Trees"
+        },
+        {
+            "text": "Having specified a representation for the data and the model, we now briefly describe Adaboost, a large-margin supervised learning algorithm which we use to learn an ADT given a data set. Ideally, a supervised learning algorithm learns a discriminative function f \u00c3 (x) that minimizes the number of mistakes on the training data, known as the Hamming loss [22] :",
+            "cite_spans": [
+                {
+                    "start": 356,
+                    "end": 360,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "II H(\u00bdf(x n ) l )=\u00bdy n l \u00c0 \u00c1 \u00f09\u00de where H(:) denotes the Heaviside function. The Hamming loss, however, is discontinuous and non-convex, making optimization intractable for large-scale problems. Adaboost is the unconstrained minimization of the exponential loss, a smooth, convex upper-bound to the Hamming loss, using a coordinate descent algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "Adaboost learns a discriminative function f(x) by iteratively selecting the y that maximally decreases the exponential loss.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "Since each y is parameterized by a D-dimensional vector of thresholds h, the space of functions y is of size O((Hz1) D ), where H is the largest k-mer count observed in the data, making an exhaustive search at each iteration intractable for high-dimensional problems.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "To avoid this problem, at each iteration, we only allow the ADT to grow by adding one decision node to one of the existing output nodes. To formalize this, let us define Z(h)~fd : \u00bdh d =0g to be the set of active features corresponding to a function y. At the t th iteration of boosting, the search space of possible threshold vectors is then given as fh : Atvt,Z(h)6Z(h t ),jZ(h)j{jZ(h t )j~1g. In this case, the search space of thresholds at the t th iteration is of size O(tHD) and grows linearly in a greedy fashion at each iteration (see Figure 7) . Note, however, that this greedy search, enforced to make the algorithm tractable, is not relevant when the class of models are constrained to belong to ADTs of depth 1.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 543,
+                    "end": 552,
+                    "text": "Figure 7)",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "In order to pick the best function y, we need to compute the decrease in exponential loss admitted by each function in the search space, given the model at the current iteration. Formally, given the model at the t th iteration, denoted f t (x), the exponential loss upon inclusion of a new decision node, and hence the creation of two new paths (y h ,\u1ef9 y h ), into the model can be written as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "where w t nl~e xp {\u00bdy n l \u00bdf t (x n ) l \u00c0 \u00c1 . Here w t nl is interpreted as the weight on each sample, for each label, at boosting round t. If, at boosting round t{1, the model disagrees with the true label l for sample n, then w t nl is large. If the model agrees with the label then the weight is small. This ensures that the boosting algorithm chooses a decision rule at round t, preferentially discriminating those examples with a large weight, as this will lead to the largest reduction in L e .",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "For every possible new decision node that can be introduced to the tree, Adaboost finds the (a,v) pair that minimizes the exponential loss on the training data. These optima can be derived as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "where for each new path y n associated with each new decision node v t +,l~X n:y n y nl~+ 1 w t nl \u00f015\u00de W t +~X n,l:v l y n y nl~+ 1 w t nl :",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "Corresponding equations for the (\u00e3 a,\u1e7d v) pair can be written in terms ofW W t +,l andW W t + obtained by replacing y n with\u1ef9 y n in the equations above. The minimum loss function for the threshold h is then given as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Multi-class Adaboost"
+        },
+        {
+            "text": "where W t o~Pn,l:y n~\u1ef9 y n~0 w t nl . Based on these model update equations, each iteration of the Adaboost algorithm involves building the set of possible binary-valued functions to search over, selecting the one for which the loss function given by Eq. 17 and computing the associated (a,v) pair using Eq. 13 and Eq. 14. The software implementation for the methods described here can be found at http://mkboost.sourceforge.net. Figure S1 Visualizing predictive subsequences for Rhabdoviridae. A visualization of the mismatch neighborhood of the k-mer selected in an ADT for Rhabdoviridae, where k~10,m~2. The virus proteomes are grouped vertically by their label with their lengths scaled to \u00bd0,1. Regions containing elements of the mismatch neighborhood of each k-mer are then indicated on the virus proteome. Note that, for Rhabdoviridae, plant and animal viruses could be distinguished with just one k-mer. ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 430,
+                    "end": 439,
+                    "text": "Figure S1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Multi-class Adaboost"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Genetic detection and characterization of Lujo virus, a new hemorrhagic feverassociated arenavirus from southern Africa",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Briese",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Paweska",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Mcmullan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Hutchison",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Street",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS pathogens",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "The Sorcerer II Global Ocean Sampling Expedition: metagenomic characterization of viruses within aquatic microbial samples",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Williamson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Rusch",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Yooseph",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Halpern",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Heidelberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "PloS one",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "From GC skews to wavelets: a gentle guide to the analysis of compositional asymmetries in genomic data",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Touchon",
+                    "suffix": ""
+                },
+                {
+                    "first": "Epc",
+                    "middle": [],
+                    "last": "Rocha",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Biochimie",
+            "volume": "90",
+            "issn": "",
+            "pages": "648--59",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Frequency Analysis Techniques for Identification of Viral Genetic Data",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Trifonov",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Rabadan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "",
+            "volume": "1",
+            "issn": "",
+            "pages": "156--166",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Oligonucleotide Motifs That Disappear During the Evolution of Influenza in Humans Increase IFN-alpha secretion by Plasmacytoid Dendritic Cells",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jimenez-Baranda",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Greenbaum",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Manches",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Handler",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Rabadan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Virology",
+            "volume": "85",
+            "issn": "",
+            "pages": "3893--3904",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "A desicion-theoretic generalization of on-line learning and an application to boosting",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Freund",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Schapire",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Journal of Computer and System Sciences",
+            "volume": "55",
+            "issn": "",
+            "pages": "119--139",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "The Alternating Decision Tree Algorithm",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Freund",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Mason",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Proceedings of the 16 th International Conference on Machine Learning",
+            "volume": "",
+            "issn": "",
+            "pages": "124--133",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Basic Local Alignment Search Tool",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Altschul",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Gish",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lipman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "Journal of Molecular Biology",
+            "volume": "215",
+            "issn": "",
+            "pages": "403--410",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "COBALT: constraint-based alignment tool for multiple protein sequences",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Papadopoulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Agarwala",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bioinformatics",
+            "volume": "23",
+            "issn": "",
+            "pages": "1073--1082",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "An NTPbinding motif is the most conserved sequence in a highly diverged monophyletic group of proteins involved in positive strand RNA viral replication",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Gorbalenya",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Blinov",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Donchenko",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Koonin",
+                    "suffix": ""
+                }
+            ],
+            "year": 1989,
+            "venue": "Journal of Molecular Evolution",
+            "volume": "28",
+            "issn": "",
+            "pages": "256--268",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Poliovirus protein 2C has ATPase and GTPase activities",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Rodr\u00edguez",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Carrasco",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "The Journal of biological chemistry",
+            "volume": "268",
+            "issn": "",
+            "pages": "8105--8115",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Characterization of the nucleoside triphosphatase activity of poliovirus protein 2C reveals a mechanism by which guanidine inhibits poliovirus replication",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Pfister",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Wimmer",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "The Journal of biological chemistry",
+            "volume": "274",
+            "issn": "",
+            "pages": "6992--7001",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Membrane association and RNA binding of recombinant hepatitis A virus protein 2C",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Kusov",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Probst",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Jecht",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Jost",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Gauss-M\u00fcller",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Archives of virology",
+            "volume": "143",
+            "issn": "",
+            "pages": "931--975",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Induction of Membrane Proliferation by poliovirus proteins 2C and 2BC",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Aldabe",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Carrasco",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Biochemical and biophysical research communications",
+            "volume": "206",
+            "issn": "",
+            "pages": "64--76",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Poliovirus protein 2C contains two regions involved in RNA binding activity",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Rodrguez",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Carrasco",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Journal of Biological Chemistry",
+            "volume": "270",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "How many loci does it take to DNA barcode a crocus?",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Seberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Petersen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PloS one",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "DNA barcodes: genes, genomics, and bioinformatics",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Kress",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Erickson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Proceedings of the National Academy of Sciences of the United States of America",
+            "volume": "105",
+            "issn": "",
+            "pages": "2761--2762",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Rates of evolutionary change in viruses: patterns and determinants",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Duffy",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Shackelton",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Holmes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature Reviews Genetics",
+            "volume": "9",
+            "issn": "",
+            "pages": "267--276",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Evolutionary analysis of the dynamics of viral infectious disease",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Pybus",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature reviews Genetics",
+            "volume": "10",
+            "issn": "",
+            "pages": "540--50",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Mismatch string kernels for discriminative protein classification",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Leslie",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Eskin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cohen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Weston",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Noble",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Bioinformatics",
+            "volume": "20",
+            "issn": "4",
+            "pages": "467--476",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Error detecting and error correcting codes",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Hamming",
+                    "suffix": ""
+                }
+            ],
+            "year": 1950,
+            "venue": "Bell System Technical Journal",
+            "volume": "29",
+            "issn": "",
+            "pages": "147--160",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Improved boosting algorithms using confidencerated predictions",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Schapire",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Singer",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Machine Learning",
+            "volume": "37",
+            "issn": "3",
+            "pages": "297--336",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Accelerating AdaBoost using UCB",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Busa-Fekete",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Kegl",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "JMLR: Workshop and Conference Proceedings",
+            "volume": "7",
+            "issn": "",
+            "pages": "111--122",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Prediction accuracy for Picornaviridae. A plot of (a) mean AUC vs boosting round, and (b) 95% confidence interval vs boosting round. The mean and standard deviation were computed over 10-folds of held-out data, for Picornaviridae, where k~12. Boosting round 0 corresponds to introducing the offset term into the model. Thus, the boosting round can also be interpreted as one-half the number of decision rules (one-half because each round introduces a decision rule and its negation into the model). doi:10.1371/journal.pone.0027631.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Prediction accuracy for Rhabdoviridae. A plot of (a) mean AUC vs boosting round, and (b) 95% confidence interval vs boosting round. The mean and standard deviation were computed over 5-folds of held-out data, for Rhabdoviridae, where k~10. The relatively higher uncertainty for this virus family was likely due to very small sample sizes. Note that the cyan curve lies on top of the red curve. doi:10.1371/journal.pone.0027631.g002",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Visualizing predictive subsequences. A visualization of the mismatch neighborhood of the first 6 k-mers selected in an ADT for Picornaviridae, where k~12,m~5. The virus proteomes are grouped vertically by their label with their lengths scaled to \u00bd0,1. Regions containing elements of the mismatch neighborhood of each k-mer are then indicated on the virus proteome. Note that the proteomes are not aligned along the selected k-mers but merely stacked vertically with their lengths normalized. doi:10.1371/journal.pone.0027631.g003",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Visualizing predictive subsequences on aligned sequences. A visualization of the mismatch neighborhood of the first 6 k-mers selected in an ADT for Picornaviridae, where k~12,m~5. The virus proteomes are aligned using the multiple alignment algorithm COBALT and the alignments are grouped vertically by their label with gaps in the alignment indicated in grey. Regions containing elements of the mismatch neighborhood of each k-mer are then indicated on the alignment. doi:10.1371/journal.pone.0027631.g004",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Visualizing predictive regions of protein sequences. A visualization of the mismatch neighborhood of the first 7 k-mers, selected in all ADTs over 10-fold cross validation, for Picornaviridae, where k~12,m~5. Regions containing elements of the mismatch neighborhood of each selected k-mer are indicated on the virus proteome, with the grayscale intensity on the plot being inversely",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Mismatch feature space representation. The mismatch feature space representation of a segment of a protein sequence (shown on top of figure). doi:10.1371/journal.pone.0027631.g006",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Alternating Decision Tree. An example of an ADT where rectangles are decision nodes, circles are output nodes and, in each decision node, \u00bdb~w k,m (s,b) is the feature associated with the k-mer b in sequence s. The output nodes connected to each decision node are associated with a pair of binary-valued functions (y,\u1ef9 y). The binaryvalued function corresponding to the highlighted path is given as y y(x; h 3 )~II(\u00bdAKNELSID \u00a72)|:II(\u00bdAAALASTM \u00a71) and the associated\u00e3 a~0:3. doi:10.1371/journal.pone.0027631.g007",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "S2 Visualizing predictive regions for Rhabdoviridae. A visualization of the mismatch neighborhood of the k-mers selected in an ADT for Rhabdoviridae, where k~10,m~2. The virus proteomes are grouped vertically by their label with their lengths scaled to \u00bd0,1. Regions containing elements of the mismatch neighborhood of each k-mer are then indicated on the virus proteome. (TIFF)",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Validation error for virus subfamilies in Picornaviridae.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "List of viruses in Picornaviridae family used in learning. (PDF)Table S2 List of viruses in Rhabdoviridae family used in learning. (PDF)",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The authors thank Vladimir Trifonov and Joseph Chan for interesting suggestions and discussions. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        }
+    ]
+}

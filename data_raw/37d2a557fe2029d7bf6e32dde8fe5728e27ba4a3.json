@@ -1,0 +1,2539 @@
+{
+    "paper_id": "37d2a557fe2029d7bf6e32dde8fe5728e27ba4a3",
+    "metadata": {
+        "title": "A binning tool to reconstruct viral haplotypes from assembled contigs",
+        "authors": [
+            {
+                "first": "Jiao",
+                "middle": [],
+                "last": "Chen",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jiayu",
+                "middle": [],
+                "last": "Shang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jianrong",
+                "middle": [],
+                "last": "Wang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Yanni",
+                "middle": [],
+                "last": "Sun",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Infections by RNA viruses such as Influenza, HIV still pose a serious threat to human health despite extensive research on viral diseases. One challenge for producing effective prevention and treatment strategies is high intra-species genetic diversity. As different strains may have different biological properties, characterizing the genetic diversity is thus important to vaccine and drug design. Next-generation sequencing technology enables comprehensive characterization of both known and novel strains and has been widely adopted for sequencing viral populations. However, genome-scale reconstruction of haplotypes is still a challenging problem. In particular, haplotype assembly programs often produce contigs rather than full genomes. As a mutation in one gene can mask the phenotypic effects of a mutation at another locus, clustering these contigs into genome-scale haplotypes is still needed. Results: We developed a contig binning tool, VirBin, which clusters contigs into different groups so that each group represents a haplotype. Commonly used features based on sequence composition and contig coverage cannot effectively distinguish viral haplotypes because of their high sequence similarity and heterogeneous sequencing coverage for RNA viruses. VirBin applied prototype-based clustering to cluster regions that are more likely to contain mutations specific to a haplotype. The tool was tested on multiple simulated sequencing data with different haplotype abundance distributions and contig sizes, and also on mock quasispecies sequencing data. The benchmark results with other contig binning tools demonstrated the superior sensitivity and precision of VirBin in contig binning for viral haplotype reconstruction. Conclusions: In this work, we presented VirBin, a new contig binning tool for distinguishing contigs from different viral haplotypes with high sequence similarity. It competes favorably with other tools on viral contig binning. The source codes are available at: https://github.com/chjiao/VirBin.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "High genetic diversity within viral populations has been observed in patients with chronic infection with RNA viruses such as Human Immunodeficiency Virus (HIV), Hepatitis C Virus (HCV), etc [1] [2] [3] [4] [5] . The genetic diversity could be caused by multiple infections of different strains or by mutations during the virus replication inside the host. In the latter case, the high replication rate, coupled with the low fidelity of the viral polymerase in most RNA viruses, results in a group of different but related strains infecting the same host, which is often termed as *Correspondence: yannisun@cityu.edu.hk 2 Electrical Engineering, City University of Hong Kong, Hong Kong, China Full list of author information is available at the end of the article \"quasispecies\" [6] . Previous studies have revealed that patients with chronic virus infections, such as Acquired Immune Deficiency Syndrome (AIDS), are often the reservoir of new viral variants, which are likely produced during the replication process [7] . Because different strains could have very different biological properties such as virulence, transmissibility, antiviral drug resistance etc, characterizing the genetic diversity within viral populations is very important for developing effective prevention and treatment strategies. For example, if some strains have developed antiviral drug resistance, they may become the dominant strains and lead to treatment failure. Thus, characterization of the strain-level diversity of viral populations is indispensable for understanding the viruses and is of great clinical importance.",
+            "cite_spans": [
+                {
+                    "start": 191,
+                    "end": 194,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 195,
+                    "end": 198,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 199,
+                    "end": 202,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 203,
+                    "end": 206,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 207,
+                    "end": 210,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 779,
+                    "end": 782,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1017,
+                    "end": 1020,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Sequencing viral quasispecies for genetic diversity analysis was one of the first applications of nextgeneration sequencing (NGS) technologies [3] . Applying whole genome shot-gun sequencing to viral quasispecies does not require cultivation and can sequence divergent strains from known virus families. It thus has become a favored choice for characterizing the diversity of quasispecies.",
+            "cite_spans": [
+                {
+                    "start": 143,
+                    "end": 146,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Given the sequenced viral quasispecies, different types of analysis can be conducted to probe the genetic diversity. A relatively straightforward analysis is to understand the local diversity of known viruses by performing read mapping against reference genomes. While this type of analysis can produce a collection of local changes (mutations, insertions, or deletions) of the strains inside the quasispecies, it is not sufficient to infer the biological properties of the strains, which are more likely to be determined by multiple genes. In particular, epistatic interactions are abundant in RNA viruses, where the mutation of one gene masks the phenotypic effects of a mutation at another locus. Thus genome-scale reconstruction of the strains is essential for phenotype prediction of viruses [8] .",
+            "cite_spans": [
+                {
+                    "start": 797,
+                    "end": 800,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Reconstructing the genome-scale strain sequences inside quasispecies is often referred to as genome-scale haplotype reconstruction, where the genomes of strains are called haplotypes. The goal is to assemble short reads from sequenced viral populations into correct haplotype sequences. When the reference genome is available, read mapping can be conducted first to identify local mutations and then cluster the local mutations (or short contigs) into genome-scale haplotypes. When quality reference genomes are not available, which is often the case for emerging viruses such as Severe Acute Respiratory Syndrome (SARS) coronavirus, read mapping is not a very effective strategy to identify all mutations. Thus, de novo assembly is needed to stitch the reads into haplotypes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "With or without reference genomes, genome-scale haplotype reconstruction in quasispecies remains a computationally challenging problem. High similarity between haplotypes in the same quasispecies and the heterogeneous sequencing depth along the viral genomes present barriers to adoption of existing assembly programs. A recently published comparison showed that none of the tested haplotype reconstruction tools were able to successfully reconstruct the five known strains for a mock HIV quasispecies [9] . We had the same observations when comparing several popular metagenomic assembly tools and haplotype assembly tools such as IDBA-UD [10] , IVA [11] , SAVAGE [12] , MLEHaplo [13] on the same data set [14] . Many methods output a set of contigs with various sizes that are much shorter than the genomes. With these outputted contigs from assembly programs, it still remains to infer the number of haplotypes and to match the contigs to their originating haplotypes. Thus, there is a need to cluster the contigs into different groups so that each group represents a haplotype. This step is called contig scaffolding or binning and has been applied for bacterial strain characterization.",
+            "cite_spans": [
+                {
+                    "start": 502,
+                    "end": 505,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 640,
+                    "end": 644,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 651,
+                    "end": 655,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 665,
+                    "end": 669,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 681,
+                    "end": 685,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 707,
+                    "end": 711,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Contig binning for viral quasispecies has its unique challenges. First, the goal of binning is to distinguish contigs from different viral strains rather than species. Thus, composition-based features such as tetranucleotide frequencies or GC contents are not informative enough to separate contigs from different haplotypes, which usually share high sequence similarity (over 90%). Tools that heavily rely on sequence composition-based features will not be able to estimate the number of haplotypes correctly. Second, RNA virus sequencing tends to be compounded by gene expression and fast degradation and thus the observed sequencing coverage along each haplotype, or even a contig, can be more heterogeneous than expected. In addition, if a contig contains a region that is common to multiple haplotypes, that region tends to have higher coverage than a haplotype-specific segment. All these challenges require carefully designed methods to use the coverage information for contig binning.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Although a number of contig binning algorithms have been developed [15] [16] [17] [18] [19] [20] [21] , they all possess limitations in distinguishing contigs from different viral strains of the same species. Most of the existing contig binning tools for microbiome sequencing data are designed for bacteria. These methods usually estimate the bin number by aligning metagenomic data to a pre-established marker gene database, and then assign assembled contigs to different bins using sequence composition information and read coverage levels. For example, MaxBin [15] uses both tetranucleotide frequencies and contig coverage levels to assign assembled contigs into different bins. Some binning tools [18] leverage co-abundance of genes across multiple metagenomic samples. The rationale is that if two contigs are from the same bin, their coverage profiles across multiple samples should be highly correlated.",
+            "cite_spans": [
+                {
+                    "start": 67,
+                    "end": 71,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 72,
+                    "end": 76,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 77,
+                    "end": 81,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 82,
+                    "end": 86,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 87,
+                    "end": 91,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 92,
+                    "end": 96,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 97,
+                    "end": 101,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 564,
+                    "end": 568,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 702,
+                    "end": 706,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "Recently, there are a couple of newly developed tools for strain level analysis from metagenomic data, such as Constrain [20] and StrainPhlAn [21] . Both rely on species identification using clade-specific genes, then zoom in to identify the strains. However, both tools were mainly tested on bacteria.",
+            "cite_spans": [
+                {
+                    "start": 121,
+                    "end": 125,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 142,
+                    "end": 146,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "Our method is designed to cluster contigs produced by existing assembly tools. There are another group of methods conducting haplotype reconstruction via read clustering [22, 23] , which groups variant sites obtained by read mapping against reference genomes. These tools don't usually output contigs and thus do not use contig binning.",
+            "cite_spans": [
+                {
+                    "start": 170,
+                    "end": 174,
+                    "text": "[22,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 175,
+                    "end": 178,
+                    "text": "23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "Here we present VirBin, a method designed specifically for binning contigs derived from viral quasispecies data. The input to VirBin is a set of contigs derived from assembly tools. The output includes the estimated number of haplotypes, the grouped contigs for each haplotype, and the corresponding relative abundances. Unlike many bacterial contig binning tools that require multiple samples, our method works on a single sample.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "We evaluate the haplotype number estimation and clustering performance of VirBin on both simulated and mock HIV quasispecies sequencing data. The simulated data provide us with known ground-truth for accurate evaluation of the clustering performance. To evaluate how the number of haplotypes affects the haplotype inference performance, we produced simulated quasispecies sequencing data consisting of 5 haplotypes and 10 haplotypes, respectively.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "For each experiment, we evaluate the performance of VirBin from three aspects: haplotype number estimation, clustering performance, and the computed haplotype abundance. When the originating haplotypes of the input contigs are known, we can evaluate both the recall and precision for the clustering step. First, we map the clusters to haplotypes based on the consensus haplotype label of the component contigs. If there is no consensus haplotype membership (e.g. a tie), we map the clusters to haplotypes based on the ranking of the abundance. Let a cluster be B and its paired haplotype be H. As the input to our program is a set of contigs, let the contig set originating from H be C H . Define B \u2229 C H as the common regions between the two contig sets. Following other contig binning tools [15, 18] , the base-level recall for H is thus |B\u2229C H | |C H | , which quantified how many of the bases in C H are correctly clustered in B. The base-level precision is defined as |B\u2229C H | |B| , which quantifies how many of the bases in cluster B are from contig set C H . Similar metrics can be defined for contig-level, which can be found in the Additional file 1.",
+            "cite_spans": [
+                {
+                    "start": 793,
+                    "end": 797,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 798,
+                    "end": 801,
+                    "text": "18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "First, we constructed 5 haplotypes with average sequence similarity around 93%. Second, in order to simulate haplotypes of different relative abundances, we generated 3 sets of reads following different abundance distributions. Third, we generated contigs using two different methods. In method 1, we simulated 5 sets of error-free contigs of different sizes directly from the reference genomes. In method 2, we applied available assembly tools to generate contigs from the reads. The simulated contigs are not dependent on any assembly tool and thus are ideal for evaluating the binning method. For simulated contigs, we have 3 (sets of reads) \u00d75 (sets of simulated contigs), i.e., 15 sets of input to our program. For assembled contigs, we have 3 (sets of reads) \u00d72 (sets of assembled contigs) as input to VirBin because we applied two assembly tools. Additional file 1: Figure S1 sketches the process of input data generation. The data simulation details can be found below.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 873,
+                    "end": 882,
+                    "text": "Figure S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Simulated 5-haplotype quasispecies data"
+        },
+        {
+            "text": "HIV haplotype construction: There are many sequenced HIV strains in the HIV Sequence Database [24] . However, many of the strains do not possess sufficiently high similarity to be included in simulated quasispecies. Thus, we use both real and simulated strain sequences to simulate haplotypes of high similarity. Simulated strains were produced by mutating, deleting, or inserting bases at random positions from a real strain in the HIV database. As a result, the five-haplotype dataset contains a HIV-1 strain FJ061 from HIV Sequence Database, 3 simulated haplotypes from FJ061, and another HIV-1 strain FJ066. The sequence similarity between the simulated haplotypes and its originating sequence is 97%. The average sequence similarity between all the five haplotypes is around 93%, which is comparable to the sequence similarity between haplotypes in a mock HIV quasispecies dataset [9] .",
+            "cite_spans": [
+                {
+                    "start": 94,
+                    "end": 98,
+                    "text": "[24]",
+                    "ref_id": null
+                },
+                {
+                    "start": 886,
+                    "end": 889,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data simulation"
+        },
+        {
+            "text": "Reads simulation using different haplotype abundance distributions: With available HIV haplotypes, simulated reads were generated from them by ART-illumina [25] as error-containing MiSeq paired-end reads, with read length of 250 bp, average insert size of 600 bp, and standard deviation of 150 bp. With the total coverage of 1000-x, three sets of reads are produced using different abundance distributions. The first one is based on the power law equation [26] . The second and the third sets of reads represent challenging cases where different haplotypes have similar abundances, which create difficulties for abundance-based binning algorithms. The abundance differences in the second and third data set are 0.06 and 0.03, respectively. In total, there are 38,914 simulated reads for 5 HIV haplotypes. The relative abundance for five haplotypes in each read set can be found in Table 1 . \"power\" is the read sets generated based on the power law equation. \"equal (6%)\" is the abundance distribution with equal difference of 0.06. \"equal (3%)\" is the abundance distribution with equal difference of 0.03",
+            "cite_spans": [
+                {
+                    "start": 156,
+                    "end": 160,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 456,
+                    "end": 460,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 881,
+                    "end": 888,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Data simulation"
+        },
+        {
+            "text": "As the total coverage is 1000-x, the sequencing coverage of each haplotype is the product of the total coverage and the relative abundance. Contig simulation: For each reference genome (denote its length as L), we randomly generated a list of location pairs (p 1 , p 2 ), where 1 \u2264 p 1 < p 2 \u2264 L. Each location pair represents a candidate contig's starting and ending position. Then, in the simulated contigs, we only keep the ones above 500 bp (i.e. p 2 \u2212 p 1 + 1 \u2265 500). In addition, we would like to simulate the hard case where the contigs cannot be extended any more using large overlaps. Thus, we sort all the remaining contigs by p 1 and remove the ones that have overlaps of size above 100 bp with previous contigs in the sorted list. The five sets of simulated contigs have different N50 values and are referred to as \"1000\" to \"5000\", indicating the upper bound of the contig length in each set. Additional file 1: Table S1 shows the detailed properties of the five sets of contigs. All the simulated data sets can be downloaded from VirBin's Github repository.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 925,
+                    "end": 933,
+                    "text": "Table S1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Data simulation"
+        },
+        {
+            "text": "According to our methods, the haplotype number estimation only depends on the alignment results of contigs. For all five sets of simulated contigs with different average lengths, the consensus window depth of the 50 longest windows is 5 for all. The histogram of window depth for 5 simulated contig sets is shown in Fig. 1 . It is clear that window depth 5 dominates longest windows. Thus, the estimated number of haplotypes is 5, reflecting the truth for our data sets. In general, the percentage of windows with depth 5 increases with increasing contig lengths.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 316,
+                    "end": 322,
+                    "text": "Fig. 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Haplotype number estimation"
+        },
+        {
+            "text": "We applied VirBin to cluster contigs into 5 groups. Since the ground truth about the haplotype membership of each contig is known, we were able to evaluate the clustering results by calculating the precision and recall at the base level. The evaluation results are shown in Fig. 2 . The performance of clustering is worst for shortest contig set (denoted as 1000 along the Y-axis). With increasing contig lengths, the clustering performance becomes better for all three different abundance distributions. When the contigs are long, the clustering performance for haplotypes with different abundance distributions is comparable.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 274,
+                    "end": 280,
+                    "text": "Fig. 2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Clustering"
+        },
+        {
+            "text": "The results were compared with MaxBin, which is a binning tool for metagenomic contigs based on tetranucleotide frequencies and reads coverage levels. MaxBin requires marker genes to identify seed contigs for binning. We were able to run the core clustering program of MaxBin by inputting both the number of haplotypes (i.e. 5) and the seed contigs manually. We randomly chose one contig from each haplotype as the seed contig and calculated the contigs' abundances by mapping reads to them using Bowtie2. Although the haplotype number was explicitly provided to MaxBin, empty clusters can be produced by MaxBin. The results from MaxBin are shown in Fig. 3 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 650,
+                    "end": 656,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Clustering"
+        },
+        {
+            "text": "For the shortest contig set, MaxBin only reported two clusters with one contig for each cluster, leaving 59 (96.7%) contigs unclassified. For contigs sets from 2000 -5000, MaxBin was able to generate five clusters, but with~30% contigs unclassified. The results of MaxBin usually have lower precision or recall values than VirBin\u0130n addition, Fig. 1 The histogram of window depth for the 50 longest windows. X-axis: the observed window depth, from 3 to 7. Y-axis: the number of windows with the corresponding window depth on X-axis. \"1000\" to \"5000\" represent the five sets of contigs for contig sets from 1000 -4000, there are haplotypes without correctly assigned contigs. The lower sensitivity of MaxBin could be caused by its dependency on both sequence composition and contig coverage for clustering. Due to high sequence similarities between viral haplotypes, sequence composition is not informative enough in differentiating contigs from different viral strains. Instead, MaxBin could mistakenly cluster contigs from the homogeneous regions of the viral genome, leading to more chimeric clusters.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 342,
+                    "end": 348,
+                    "text": "Fig. 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Clustering"
+        },
+        {
+            "text": "StrainPhlAn [21] is also able to to characterize the genetic structure of viral strains in metagenomes. It takes the raw sequencing reads and MetaPhlAn2 [27] database of species-specific reference sequences as input and aims to output the most abundant strain for each sample. However, it failed to detect any viral species at the first step running MetaPhlAn2. ConStrains [20] is another tool designed to identify strain structures from metagenomic data. It uses bowtie2 to map reads to a set of universal genes and infers the within-species strains abundances by Fig. 3 The recall and precision of contig binning results by MaxBin. X-axis represents each haplotype, in decreasing order of relative abundance. Y-axis is the index of the 15 data sets utilizing single-nucleotide polymorphism (SNP) patterns. This tool again did not get enough mapped reads to report any strain abundance. And it takes considerable efforts for us to modify their codes for our inputs. Thus, we cannot report the results from StrainPhlAn or ConStrains.",
+            "cite_spans": [
+                {
+                    "start": 12,
+                    "end": 16,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 153,
+                    "end": 157,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 373,
+                    "end": 377,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 565,
+                    "end": 571,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Clustering"
+        },
+        {
+            "text": "Relative abundance computation: Once the iterative clustering algorithm converges, the abundance of each cluster can be computed as the weighted average abundances for all contigs from this cluster. Fig. 4 compares the known haplotype abundance profiles with our computed ones. There are three read sets with different abundance distributions (Table 1) . For each distribution, there are five sets of contigs (Additional file 1: Table S1 ). Thus, three plots of five curves are presented to compare the ground truth and the computed abundance. In addition, we applied \u03c7 2 -test to compare the ground-truth distribution and each computed abundance distribution. The p-values from all the tests are larger than 0.99, indicating that the distributions are not statistically different. As MaxBin only correctly clustered several contigs, we did not include the abundance comparison. Fig. 4 Compare the known haplotype abundance distributions with computed ones by VirBin. X-axis represents each haplotype. Y-axis is the ground truth or predicted abundance for each haplotype",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 199,
+                    "end": 205,
+                    "text": "Fig. 4",
+                    "ref_id": null
+                },
+                {
+                    "start": 343,
+                    "end": 352,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 429,
+                    "end": 437,
+                    "text": "Table S1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 879,
+                    "end": 885,
+                    "text": "Fig. 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Clustering"
+        },
+        {
+            "text": "In addition to simulated contigs, we also tested VirBin on assembled contigs by two de novo assembly tools: a generic assembly tool SGA [28] and a viral haplotype reconstruction tool PEHaplo. The assembled contigs were evaluated by MetaQuast [29] and the results are listed in Additional file 1: Table S2 . Both PEHaplo and SGA produced enough contigs to cover almost all the five haplotypes. Contigs produced by PEHaplo have larger N50 values than contigs by SGA. While both tools apply overlap graph for assembly, PEHaplo utilizes a pairedend information guided method for path finding, which can potentially connect some of the nodes together. Therefore, it produced longer contigs than SGA. The contigs are paired with haplotypes based on the highest sequence similarity. All of the contigs and their originating haplotypes have similarity of at least 98%.",
+            "cite_spans": [
+                {
+                    "start": 136,
+                    "end": 140,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 242,
+                    "end": 246,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 296,
+                    "end": 304,
+                    "text": "Table S2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Results on assembled contigs"
+        },
+        {
+            "text": "For all three sets of contigs assembled by PEHaplo and SGA on three sets of reads, the consensus window depth of the 50 longest windows is 5, revealing the actual haplotype number. Figure 5a presents the clustering results on contigs generated by PEHaplo and SGA. It shows that VirBin achieved good clustering results on contigs assembled by both assembly tools. The clustering results on SGA's contigs are similar to PEHaplo's contigs, with both high precision and recall. This observation is consistent with the results on simulated contigs that when the contigs are long enough, VirBin can produce good results.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 181,
+                    "end": 190,
+                    "text": "Figure 5a",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Results on assembled contigs"
+        },
+        {
+            "text": "Again we compared our results with MaxBin. The clustering results of MaxBin on assembled contigs are shown in Fig. 5b . For contigs assembled by PEHaplo, MaxBin correctly clustered all corresponding contigs to the strain FJ061-h2 as the recall is 1.0. However, this cluster also The comparison between the predicted abundance by VirBin and the ground-truth on two sets of assembled contigs is presented in Additional file 1: Figure S2 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 110,
+                    "end": 117,
+                    "text": "Fig. 5b",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 425,
+                    "end": 434,
+                    "text": "Figure S2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Results on assembled contigs"
+        },
+        {
+            "text": "We also simulated reads from 10 haplotypes and tested VirBin on this data set. The data generation and also the detailed results, clustering results is presented in Additional file 1: Table S3 and the relative abundances for each haplotype are shown in Additional file 1: Figure S3 , can be found in the Section 3 of Additional file 1.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 184,
+                    "end": 192,
+                    "text": "Table S3",
+                    "ref_id": null
+                },
+                {
+                    "start": 272,
+                    "end": 281,
+                    "text": "Figure S3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results on assembled contigs"
+        },
+        {
+            "text": "In this experiment, we applied VirBin to a mock HIV quasispecies data set (SRR961514), sequenced from the mix of five HIV-1 strains (89.6, HXB2, JRCSF, NL43, YU2) with Illumina MiSeq sequencing technology [30] . This data set contains 1,429,988 (250 bp) of reads that cover the five strains to 20,000x. The raw data set was preprocessed with FaQCs/1.3 [31] and Trimmomatic [32] to trim and filter low-quality reads or adapters. The remaining reads were then error-corrected with Karect [33] . After pre-processing, 774,044 reads were left. By mapping pre-processed reads to the available 5 reference genomes by bowtie2, we were able to estimate the abundance for each haplotype as shown in Fig. 6 .",
+            "cite_spans": [
+                {
+                    "start": 205,
+                    "end": 209,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 352,
+                    "end": 356,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 373,
+                    "end": 377,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 486,
+                    "end": 490,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 690,
+                    "end": 696,
+                    "text": "Fig. 6",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Mock HIV population MiSeq data set"
+        },
+        {
+            "text": "We use the contigs assembled by PEHaplo as input for VirBin. PEHaplo produced 24 contigs from the real MiSeq HIV data set that can cover about 92% of the five HIV-1 strains. These contigs have a N50 value of 2223 bp and the longest contig is 9133 bp.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Mock HIV population MiSeq data set"
+        },
+        {
+            "text": "VirBin was applied to the aligned contigs for haplotype number estimation. All the windows were sorted in descending order of window length. Out of the top 50 windows, 27 contain 5 contigs, 16 contain 6 contigs, and 2 contain 4 contigs. Out of the top 25 windows, 17 contain 5 contigs, 5 contain 6 contigs, and 1 contains 4 contigs. Similar to the simulated data, using the consensus window depth (i.e. 5) correctly predicted the haplotype number.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Haplotype number estimation:"
+        },
+        {
+            "text": "Clustering results: The clustering algorithm was applied to cluster the contigs into 5 groups. For each contig, its originating haplotype is determined by comparing the contig with all reference genomes. The haplotype with the highest similarity and above 98% is assigned. The outputs of VirBin and MaxBin are shown in Table 2 . StrainPhlAn and ConStrains were applied on this real HIV data set. StrainPhlAn was able to identify the HIV species, but could not report any strain information. ConStrains could not align enough reads to marker genes for further strain-level analysis.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 319,
+                    "end": 326,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Haplotype number estimation:"
+        },
+        {
+            "text": "Compared to the simulated contigs or assembled contigs using simulated reads, the results of VirBin on the real sequencing data have generally lower sensitivity and precision. There are two major reasons. First, the assembled contigs for real reads are more likely to contain errors. Second, this data set has several haplotypes with very similar average abundances. Referring to Fig. 6 , the abundance difference between the 2 least abundant haplotypes is < 2%. Thus, the clustering algorithm could mix contigs from these haplotypes. For the mock data experiment, we also present the recall and precision at contig level in Additional file 1: Table S4 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 380,
+                    "end": 386,
+                    "text": "Fig. 6",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 644,
+                    "end": 652,
+                    "text": "Table S4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Haplotype number estimation:"
+        },
+        {
+            "text": "We again compared the predicted abundance profile with the known one in Fig. 6 . The \u03c7 2 -test output p-value 0.9999 and 0.9995 for VirBin and MaxBin, respectively, indicating that the predicted abundance distributions by VirBin and MaxBin are not statistically different from the ground truth.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 72,
+                    "end": 78,
+                    "text": "Fig. 6",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Haplotype number estimation:"
+        },
+        {
+            "text": "Overall, VirBin can cluster more contigs into their originating haplotypes than MaxBin. While VirBin focuses on sub-contigs that are more likely unique to one haplotype, MaxBin clusters whole contigs, which could contain regions common to multiple haplotypes and makes read coverage more heterogeneous. In addition, sequence composition-based features such as tetranucleotide frequencies are not effective in distinguishing highly similar viral strains. Our experimental results show that VirBin works better for longer contigs that can cover bigger regions of the underlying genomes. When the genome coverage by the contigs is below 70%, the performance of VirBin deteriorates because it becomes harder to estimate the correct number of haplotypes. In addition, the empirical experience shows that it is difficult to classify two viral strains when the abundance difference between them is below 3%. Thus, although we have demonstrated much better contig binning performance for distinguishing viral ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In this work, we presented VirBin, a new contig binning tool for distinguishing contigs from different viral haplotypes with high sequence similarity. By conducting experiments on multiple simulated data sets of different haplotype abundance distribution, different number of haplotypes, and different sets of simulated or assembled contigs, we demonstrated that our tool can produce more accurate clustering results than popular contig binning tools for viral haplotype reconstruction.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "The overall pipeline of our method is shown in Fig. 7 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 47,
+                    "end": 53,
+                    "text": "Fig. 7",
+                    "ref_id": null
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "There are mainly two steps: (1) estimate the number of haplotypes by aligning contigs and identifying windows;",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "(2) calculate relative abundances in each window and apply a clustering algorithm to group clusters of the same haplotype.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "The underlying algorithm of grouping contigs into haplotypes is prototype-based clustering [34] . Features such as the overlaps and paired-end connections have limited usage in grouping distant contigs from the same haplotype. The clustering will mainly use the features based on the abundance distributions. Although abundance-based clustering has been used for contig binning from multiple samples [15, 19] , existing tools are not designed Fig. 7 The pipeline of VirBin to tackle key challenges of distinguishing contigs of different haplotypes. First, the observed coverage of each contig not only depends on the abundance of the underlying haplotype, but also depends on whether it is a unique or shared region by two or more haplotypes. Second, heterogeneous coverage of each haplotype in an RNA viral quasispecies is common, which is caused by sequencing-related biases and compounded by gene expression. Thus, directly applying existing prototypebased clustering models such as Gaussian-mixture model to contigs is not expected to produce accurate clustering. Our solution to this problem is to cut the contigs into \"windows\" and to apply the clustering on sub-contigs that are more likely to represent one haplotype. In addition, instead of assuming any parametric distribution, which is usually not the case for haplotype contigs, we will use a non-parametric distribution.",
+            "cite_spans": [
+                {
+                    "start": 91,
+                    "end": 95,
+                    "text": "[34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 400,
+                    "end": 404,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 405,
+                    "end": 408,
+                    "text": "19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 443,
+                    "end": 449,
+                    "text": "Fig. 7",
+                    "ref_id": null
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "Although the high similarity between haplotypes presents a barrier to adoption of kmer-based features for distinguishing contigs from different haplotypes, it brings opportunities for haplotype number estimation. With stringent alignment threshold, contigs that can be aligned with each other usually come from the same region of the virus and thus the number of aligned contigs can be carefully used for haplotype number estimation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "We progressively build multiple sequence alignments using contigs' pairwise alignments. In this step, base-level accuracy of the alignment is not a major concern and thus progressive construction of the alignment between contigs can serve the purpose well. We first sort the contigs by their lengths in descending order. The longest contig will be used as the first reference. All the other contigs will be aligned to the reference using blast+ [35] to generate an alignment profile similar to multiple sequence alignment. Two types of alignments are kept from the output of blast+. One is the alignment that is local to the reference but global to the shorter contigs. The other is overlap alignment, which is the alignment between the suffix/prefix strings of the contigs. If not all the shorter contigs can be aligned to the reference contig, this process will continue by using the second longest contig as the reference until all the contigs are used. Figure 8c shows the alignment between contigs from three haplotypes in Fig. 8a using the longest contig as the reference, which is usually produced for the most abundant haplotype.",
+            "cite_spans": [
+                {
+                    "start": 445,
+                    "end": 449,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 957,
+                    "end": 966,
+                    "text": "Figure 8c",
+                    "ref_id": null
+                },
+                {
+                    "start": 1028,
+                    "end": 1035,
+                    "text": "Fig. 8a",
+                    "ref_id": null
+                }
+            ],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Each multiple alignment can be divided into many windows, which are formed whenever there is a change of the sequences in the alignment. We define the number of contigs inside each window as the window depth, d. Based on these definitions, we have the following observations. When each position of the underlying haplotypes can be covered by at least one contig, d is equal to or larger than the number of haplotypes. Note that the common regions between different haplotypes are regarded as different positions and thus should be covered by different contigs. This conclusion can be proved by contradiction easily. Fig. 8b shows the contigs satisfying the conditions in the ideal case. There are three haplotypes with different abundances. They only contain mutations at three positions that are far away from each other. Because of the long common regions among them, assembly programs usually won't be able to recover all the three genomes. Instead, they can generate short but correct contigs. In Fig. 8b , each position in the three haplotypes is covered by at least one contig. In this case, all the windows have depth of at least 3. If every position of a haplotype is only covered by one contig, the windows will have depth N, which is the number of haplotypes. As some positions can be covered by multiple contigs, the overlaps between contigs contribute to window depth larger than N. For example, in Fig. 8b , the middle window contains the overlaps between Fig. 8 Window construction from aligned contigs. a Three haplotypes with mutations at three locations. Line weights represent the haplotype abundance. S 1 and S 2 are two mutation-free regions common to three haplotypes. S 1 and S 2 are at least 1k bp. b The alignment of contigs that satisfy the ideal condition. The grey-scale intensity represents the coverage of a contig. Three windows are produced. c The contigs that cannot cover all the three haplotypes. There are six windows. Their depth values are denoted below each window. For contig marked with \"A S 2 \", its sequencing coverage is plotted above the contig two contigs from each haplotype and thus has depth 6. In this ideal case, we can choose the smallest window depth as the number of haplotypes in a sample.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 616,
+                    "end": 623,
+                    "text": "Fig. 8b",
+                    "ref_id": null
+                },
+                {
+                    "start": 1001,
+                    "end": 1008,
+                    "text": "Fig. 8b",
+                    "ref_id": null
+                },
+                {
+                    "start": 1411,
+                    "end": 1418,
+                    "text": "Fig. 8b",
+                    "ref_id": null
+                },
+                {
+                    "start": 1469,
+                    "end": 1475,
+                    "text": "Fig. 8",
+                    "ref_id": null
+                }
+            ],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "In practice though, the assumptions about the contigs' properties are not always true. Thus, in our implementation, we will use the consensus window depth as the number of haplotypes, by assuming that most windows cover all haplotypes and contain haplotype-specific mutations. For the contigs shown in Fig. 8c, window depth 3 is the most frequent one.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 302,
+                    "end": 325,
+                    "text": "Fig. 8c, window depth 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "In the implementation, we first sort all the windows in descending order of window length. Then we choose the most frequent window depth of the top X windows as the number of haplotypes. The default value of X is 50 in our implementation. We will present the results of haplotype number estimation using consensus window depth for both simulated and real quasispecies data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Step 2: contig clustering based on relative abundance distribution Let the number of haplotypes estimated by step 1 be N. The final goal of the pipeline is to divide the contigs into N groups so that each group contains contigs originating from the same haplotype. In this step, we conduct clustering on subcontigs from windows with depth N.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Unlike many existing contig clustering tools, our clustering is not applied to a complete contig. Because each contig can contain both haplotype-specific region and shared regions among different haplotypes, using the read coverage profile of the whole contig will confuse the clustering algorithm and makes the convergence slow or leads to wrong assignment of the objects. For example, in Fig. 8c , the contig \"A S 2 \" contains mutation A from one haplotype and also a shared region S 2 . Thus, significantly more reads will be mapped to the shared region and make the coverage for this contig highly heterogeneous. Thus, the objects as input to the clustering algorithm are \"subcontigs\" in windows of depth N, where the sub-contigs are substrings of the contigs in these windows. They are more likely to represent the relative abundance of one haplotype. After clustering on sub-contigs, a post-processing step will be applied to get the cluster membership for each contig based on its sub-contigs' memberships.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 390,
+                    "end": 397,
+                    "text": "Fig. 8c",
+                    "ref_id": null
+                }
+            ],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "The clustering algorithm we adopt is prototype-based clustering and is essentially an augmented K-means algorithm. In a standard K-means algorithm, the centroid of the objects in a cluster is the prototype of the cluster. In our algorithm, the prototype is a distribution that is derived from the sub-contigs and empirically describes the relative abundance distribution.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "The clustering algorithm will assign each sub-contig to one cluster based on the posterior probability of the abundance distribution. Although different clustering methods such as Gaussian mixture model can be applied to cluster the sub-contigs, the augmented K-means as shown below has the fastest convergence with better clustering accuracy according to our tests. Before we describe the main components, we first introduce the notations. The average relative abundance (denote asc) for a sub-contig c i in a window of depth N is calculated as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "where S(c i ) is the total number of reads covering subcontig c i . Similarly, we can calculate the position-specific relative abundance vector c for a sub-contig c i as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "where c i [k] represents the reads coverage at position k of sub-contig c i . |c i | is the number of bases in the sub-contig. N is the number of bins or haplotypes estimated by Step 1. VirBin utilizes the position-specific relative abundances of sub-contigs in windows with depth N to estimate the probability that a sub-contig belongs to a bin. Let the N bins be H 1 , H 2 , . . . , H N . Let\u1ebc i (x) be the probability density function of relative abundance for sub-contigs from bin i, where x is an observed abundance.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "The iterative clustering algorithm contains four steps as shown below:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Initialization: Initialize N groups by randomly assign sub-contigs to them.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Updating the empirical abundance distribution\u1ebc i : For each bin i, the component sub-contigs' relative abundance profiles cs are aggregated to calculate the empirical probability density function\u1ebc i . The aggregation is performed by calculating the normalized histograms for these relative abundance profiles, so that the summation of histogram values will be 1. The number of bars of the histogram is a parameter that can be set by users. The default number is 1000. Given an abundance value x, it is normalized to its closest bar value to get the corresponding probability\u1ebc i (x).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Re-assignment of the sub-contigs: Once\u1ebc i is derived, the relative likelihood of c j being produced from the ith prototype distribution can be calculated as\u1ebc i (c j ). The prior probability of each bin (or haplotype) is a weighted sum of the likelihoods of all the component sub-contigs. The weights are determined by the total bases in the sub-contigs. This weighted sum enables us to incorporate both the total sub-contig bases and also the associated abundance generation likelihood for estimating the prior probability of a particular haplotype. The prior probability Pr(H i ) for bin i is:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "With both likelihood and prior from iteration t, the expected probability that c j belongs to haplotype H i at iteration t +1 can be calculated as likelihood * prior, that is",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "With the posterior probabilities calculated for each group distribution, we can reassign the sub-contig c i to the haplotype with the maximum posterior probability. The same reassigning procedures are applied for all the subcontigs. With the assignment results, the distribution E i and prior probability P(H i ) can be updated.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Iteration: Iterate step 2 and 3 until the clustering results do not change or the maximum number of runs have been achieved. The default maximum number of runs is 100.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "Step 3: post-processing",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "The output of the augmented K-means is the clustered sub-contigs. For each cluster, its average abundance is calculated as the weighted average of the abundances of all sub-contigs in the cluster and the weight is determined by the length of a sub-contig. The haplotypes' abundances are the average abundances of the clusters.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        },
+        {
+            "text": "As each contig can contain multiple sub-contigs, which could have different membership, the contig's membership is determined by the dominant membership of its sub-contigs. For example, if a sub-contig is not in the window of depth N, it is not an input to the clustering step and will not be clustered. This could happen when a region of a contig is common to multiple haplotypes. It is also possible that the sub-contigs of a contig are assigned to different clusters, which could be caused by assembly errors.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Step 1: estimate the number of haplotypes via contig alignment"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Hepatitis C Virus Dynamics during Natural Infection Are Associated with Long-Term Histological Outcome of Chronic Hepatitis C Disease",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Sullivan",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bruden",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Deubner",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mcardle",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Chung",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Christensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hennessy",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Homan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Williams",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Mcmahon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Gretch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "J Infect Dis",
+            "volume": "196",
+            "issn": "2",
+            "pages": "239--287",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "HIV Treatment Failure: Testing for HIV Resistance in Clinical Practice",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Perrin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Telenti",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Science",
+            "volume": "280",
+            "issn": "5371",
+            "pages": "1871--1874",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Deep sequencing of evolving pathogen populations: applications, errors, and bioinformatic solutions",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Mcelroy",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Luciani",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Microb Inform Experimentation",
+            "volume": "4",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/2042-5783-4-1"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Contribution of intra-and interhost dynamics to norovirus evolution",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bull",
+                    "suffix": ""
+                },
+                {
+                    "first": "J-S",
+                    "middle": [],
+                    "last": "Eden",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Luciani",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Mcelroy",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Rawlinson",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "White",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J Virol",
+            "volume": "86",
+            "issn": "6",
+            "pages": "3219--3248",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Deep sequencing reveals mixed infection with 2009 pandemic influenza a (H1N1) virus strains and the emergence of oseltamivir resistance",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Ghedin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Laplante",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Depasse",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Wentworth",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Santos",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Lepow",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Porter",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Stellrecht",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Operario",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Infect Dis",
+            "volume": "203",
+            "issn": "2",
+            "pages": "168--74",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Evolutionary dynamics: Exploring the equations of life",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Nowak",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Chapter 3 -pathogenesis of viral infections and diseases",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Maclachlan",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Dubovi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Fenner's Veterinary Virology",
+            "volume": "",
+            "issn": "",
+            "pages": "47--78",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Viral quasispecies assembly via maximal clique enumeration",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "T\u00f6pfer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Marschall",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bull",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Luciani",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sch\u00f6nhuth",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Beerenwinkel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS Comput Biol",
+            "volume": "10",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "ViQuaS: an improved reconstruction pipeline for viral quasispecies spectra generated by next-generation sequencing",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Jayasundara",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Saeed",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Maheswararajah",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S-L",
+                    "middle": [],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Halgamuge",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Bioinformatics",
+            "volume": "31",
+            "issn": "6",
+            "pages": "886--96",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Idba-ud: a de novo assembler for single-cell and metagenomic sequencing data with highly uneven depth",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Peng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "S-M",
+                    "middle": [],
+                    "last": "Yiu",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Chin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Bioinformatics",
+            "volume": "28",
+            "issn": "11",
+            "pages": "1420--1428",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Iva: accurate de novo assembly of rna virus genomes",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hunt",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gall",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Ong",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Brener",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Ferns",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Goulder",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Nastouli",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Keane",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Kellam",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Otto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Bioinformatics",
+            "volume": "31",
+            "issn": "14",
+            "pages": "2374--2380",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "De novo assembly of viral quasispecies using overlap graphs",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Baaijens",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "El Aabidine",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rivals",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sch\u00f6nhuth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Genome Res",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1101/080341"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Maximum likelihood de novo reconstruction of viral populations using paired end sequencing data",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Malhotra",
+                    "suffix": ""
+                },
+                {
+                    "first": "Mms",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Rodrigo",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Poss",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Acharya",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "arXiv": [
+                    "arXiv:1502.04239"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "De novo haplotype reconstruction in viral quasispecies using paired-end read guided path finding",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sun",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Bioinformatics",
+            "volume": "1",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "MaxBin: an automated binning method to recover individual genomes from metagenomes using an expectation-maximization algorithm",
+            "authors": [
+                {
+                    "first": "Y-W",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y-H",
+                    "middle": [],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Tringe",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Simmons",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Singer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Microbiome",
+            "volume": "2",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Binning metagenomic contigs by coverage and composition",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Alneberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Bjarnason",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "De Bruijn",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Schirmer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Quick",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Ijaz",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Lahti",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Loman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Andersson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Quince",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nat Methods",
+            "volume": "11",
+            "issn": "",
+            "pages": "1144--1150",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Metabat, an efficient tool for accurately reconstructing single genomes from complex microbial communities",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Kang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Froula",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Egan",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PeerJ",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Cocacola: binning metagenomic contigs using sequence composition, read coverage, co-alignment and paired-end read linkage",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Fuhrman",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Sun",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Bioinformatics",
+            "volume": "33",
+            "issn": "6",
+            "pages": "791--799",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "DESMAN: a new tool for de novo extraction of strains from metagenomes",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Quince",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Delmont",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Raguideau",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Alneberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Darling",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Collins",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Eren",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Genome Biol",
+            "volume": "18",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Constrains identifies microbial strains in metagenomic datasets",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Luo",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Knight",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Siljander",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Knip",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Xavier",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Gevers",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nat Biotechnol",
+            "volume": "33",
+            "issn": "",
+            "pages": "1045--52",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Microbial strain-level population structure and genetic diversity from metagenomes",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Truong",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Tett",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Pasolli",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Huttenhower",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Segata",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Genome Res",
+            "volume": "27",
+            "issn": "4",
+            "pages": "626--664",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Viral quasispecies reconstruction via tensor factorization with successive read removal",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ahn",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Ke",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Vikalo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Bioinformatics",
+            "volume": "34",
+            "issn": "13",
+            "pages": "23--31",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Qsdpr: Viral quasispecies reconstruction via correlation clustering",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Barik",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Das",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Vikalo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Genomics",
+            "volume": "110",
+            "issn": "6",
+            "pages": "375--81",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Art: a next-generation sequencing read simulator",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Marth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Bioinformatics",
+            "volume": "28",
+            "issn": "4",
+            "pages": "593--597",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Quasispecies dynamics with network constraints",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Barbosa",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Donangelo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Souza",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J Theor Biol",
+            "volume": "312",
+            "issn": "",
+            "pages": "114--123",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Metaphlan2 for enhanced metagenomic taxonomic profiling",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Truong",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Franzosa",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Tickle",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Scholz",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Weingart",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Pasolli",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Tett",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Huttenhower",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Segata",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nat Methods",
+            "volume": "12",
+            "issn": "10",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Efficient de novo assembly of large genomes using compressed data structures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Simpson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Durbin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Genome Res",
+            "volume": "22",
+            "issn": "3",
+            "pages": "549--56",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Metaquast: evaluation of metagenome assemblies",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mikheenko",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Saveliev",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gurevich",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Bioinformatics",
+            "volume": "32",
+            "issn": "7",
+            "pages": "1088--90",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Full-length haplotype reconstruction to infer the structure of heterogeneous virus populations",
+            "authors": [
+                {
+                    "first": "Di",
+                    "middle": [],
+                    "last": "Giallonardo",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "T\u00f6pfer",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rey",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Prabhakaran",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Duport",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Leemann",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Schmutz",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Campbell",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Joos",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Lecca",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nucleic Acids Res",
+            "volume": "42",
+            "issn": "14",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Rapid evaluation and quality control of next generation sequencing data with FaQCs",
+            "authors": [
+                {
+                    "first": "C-C",
+                    "middle": [],
+                    "last": "Lo",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Chain",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Trimmomatic: a flexible trimmer for Illumina sequence data",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bolger",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lohse",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Usadel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Bioinformatics",
+            "volume": "30",
+            "issn": "15",
+            "pages": "2114--2134",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Karect: accurate correction of substitution, insertion and deletion errors for next-generation sequencing data",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Allam",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Kalnis",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Solovyev",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Bioinformatics",
+            "volume": "415",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btv415"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Introduction to Data Mining",
+            "authors": [
+                {
+                    "first": "P-N",
+                    "middle": [],
+                    "last": "Tan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "BLAST+: architecture and applications",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Camacho",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Coulouris",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Avagyan",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Ma",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Papadopoulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Bealer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Madden",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Bioinformatics",
+            "volume": "10",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Publisher's Note",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "VirBin clustering results (recall and precision) on 15 simulated data sets. X-axis represents each haplotype, in decreasing order of relative abundance. Y-axis represents the 15 data sets",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "The clustering results of VirBin (a) and MaxBin (b) on contigs assembled by PEHaplo and SGA involves many contigs from other strains as the precision value is low.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "The true abundance distribution for real HIV quasispecies data and the computed relative abundance profiles by VirBin and MaxBin. The true average abundances sorted in descending order are: 29.79%, 25.18%, 21.68%, 12.62%, 10.87%",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Relative abundance for 5 simulated HIV haplotypes in three read sets",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Base-level clustering results on assembled 5 real haplotype contigs for VirBin and MaxBin",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Not applicable. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Supplementary information accompanies this paper at https://doi.org/10.1186/s12859-019-3138-1. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Supplementary information"
+        },
+        {
+            "text": "This work was supported by Michigan State University (East Lansing, USA) and City University of Hong Kong (Hong Kong, China SAR) project 7200620. The funding did not play any role in design/conclusion.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Funding"
+        },
+        {
+            "text": "VirBin can be download from https://github.com/chjiao/VirBin. Data are available upon request.Ethics approval and consent to participate Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

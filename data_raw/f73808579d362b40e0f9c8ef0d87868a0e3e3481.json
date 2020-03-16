@@ -1,0 +1,1820 @@
+{
+    "paper_id": "f73808579d362b40e0f9c8ef0d87868a0e3e3481",
+    "metadata": {
+        "title": "An efficient simulated annealing algorithm for the RNA secondary structure prediction with Pseudoknots",
+        "authors": [
+            {
+                "first": "Zhang",
+                "middle": [],
+                "last": "Kai",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Wang",
+                "middle": [],
+                "last": "Yuting",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Lv",
+                "middle": [],
+                "last": "Yulin",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Liu",
+                "middle": [],
+                "last": "Jun",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "He",
+                "middle": [],
+                "last": "Juanjuan",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: RNA pseudoknot structures play an important role in biological processes. However, existing RNA secondary structure prediction algorithms cannot predict the pseudoknot structure efficiently. Although random matching can improve the number of base pairs, these non-consecutive base pairs cannot make contributions to reduce the free energy. Result: In order to improve the efficiency of searching procedure, our algorithm take consecutive base pairs as the basic components. Firstly, our algorithm calculates and archive all the consecutive base pairs in triplet data structure, if the number of consecutive base pairs is greater than given minimum stem length. Secondly, the annealing schedule is adapted to select the optimal solution that has minimum free energy. Finally, the proposed algorithm is evaluated with the real instances in PseudoBase.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "The experimental results have been demonstrated to provide a competitive and oftentimes better performance when compared against some chosen state-of-the-art RNA structure prediction algorithms.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "RNA is a linear molecular compound formed by polymerization of ribonucleotides with phosphodiester bonds, the ribonucleotides are composed of phosphoric acid, ribose and bases. The RNA sequence consists of Adenine (A), Uracil (U), Guanine (G) and Cytosine (C), the four-base arrangement allows RNA to have a variety of functions that can play great role in genetic coding, translation, regulation, and gene expression. The search for the secondary structure of RNA sequence has been widely used as the first step to understand biological functions [1] .",
+            "cite_spans": [
+                {
+                    "start": 548,
+                    "end": 551,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Pseudoknot is a special RNA secondary structure that is found in many important biologically molecules [2, 3] , it usually contains not well-nested base pairs. These non-nested base pairs make the presence of pseudoknots in RNA sequences more difficult to be predicted by dynamic programming, which use a recursive scoring system to identify paired stems. The general problem of predicting minimum free energy (MFE) structures with pseudoknots is NP-complete problem [4] . In general, researchers apply the principle of MFE to evaluate RNA secondary structure. When the RNA sequence is freely folded in space to form the secondary structure of MFE under fixed experimental conditions, the change is stopped, meanwhile, the stable state of the RNA sequence is formed. For the calculation of the free energy of RNA secondary structure, the stem energy is defined as a negative, the energy of loop is defined as a positive, and the free single strand does not participate. Deng found that the molecular free energy is related to a single complementary base pair, but adjacent base pairs also affect the free energy calculation of the molecule [5] . In the secondary structure prediction, if the free energy calculation of each part does not affect each other, the free energy of the entire structure is accumulated form the energy of each part, and the calculation principle is shown in Eq. (1) .",
+            "cite_spans": [
+                {
+                    "start": 103,
+                    "end": 106,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 107,
+                    "end": 109,
+                    "text": "3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 467,
+                    "end": 470,
+                    "text": "[4]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 1140,
+                    "end": 1143,
+                    "text": "[5]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 1388,
+                    "end": 1391,
+                    "text": "(1)",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In the above formula, \u0394G S means the stem free energy; \u0394G H , \u0394G I , \u0394G B , and \u0394G M represent the free energy of hairpin, internal, bulged, and multi-branch loop, respectively; \u0394G P represent the pseudoknot free energy, which is generally split into loop for calculation to simplify the calculation process; \u0394\u03b4 is a threshold set to balance the error during the experiment process. After the RNA secondary structure is calculated in the Eq. (1), researcher can objectively evaluate whether the current structure is stable by numerical changes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "At present, existing algorithms for the prediction of RNA secondary structure with pseudoknots can be classified into two categories. The first category is dynamic programming (DP) based approaches. DP is the initial computational approach used to predict RNA structure [6] . The idea of dynamic programming is to divide a complex problem into many simple subproblems to facilitate their treatment [7] . Combining the DP idea with the principle of MFE, researchers have proposed many RNA secondary structure prediction algorithms. Rivas and Eddy [8] proposed pknots-RE algorithm that can predict RNA sequence with pseudoknot structure. Dirks and Pierce [9] proposed NUPACK algorithm which calculate a series of recursion probabilities that can be used to compute base-pairing probabilities with or without pseudoknots. However, these algorithms are very time-consuming to predict long-chain sequence, and its maximum predictive sequence length cannot exceed 150.",
+            "cite_spans": [
+                {
+                    "start": 270,
+                    "end": 273,
+                    "text": "[6]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 398,
+                    "end": 401,
+                    "text": "[7]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 546,
+                    "end": 549,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 653,
+                    "end": 656,
+                    "text": "[9]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The second category is Heuristic based approaches, which can handle long RNA sequences and obtain high quality feasible solution efficiently [10] . Ren et al. [11] proposed HotKnots to build up candidate secondary structures by adding substructures one by one to partially formed structures. Zuker et al. [12] and Turner et al. [13] integrate thermodynamic model into their algorithms to search for secondary structure with minimal free energy. SARNA-predict-pk [14] algorithm is an extended version of SARNA-Predict [10] which predicts RNA secondary structures with pseudoknots. This algorithm employs a new thermodynamic model that was described by Rastegari and Condon [15] and implemented in the HotKnots software. The model can be used to evaluate RNA sequences with pseudoknots. IPknot [16] algorithm proposed a computational method for predicting RNA secondary structures with pseudoknots based on maximizing the expected accuracy of a predicted structure. Iterative HFold [17] takes as input a pseudoknot-free structure, and produces a possibly pseudoknotted structure whose energy is at least as low as that of any (density-2) pseudoknotted structure containing the input structure. It leverages strengths of earlier methods, namely the fast running time of HFold, a method that is based on the hierarchical folding hypothesis and the energy parameters of HotKnots V2.0. Fatmi et al. [18] proposed a new algorithm that combines between the Greedy Randomized Adaptive Search Procedure (GRASP) and the Genetic Algorithm (GA) principle. This method repeats a process consisting of two phases: the construction phase and the local search phase. During the construction phase, a list of feasible solutions is iteratively constructed. The local search phase comes with the wake of the construction step; it aims to improve the solution obtained from the first phase by launching a local search to find the local optimum solution.",
+            "cite_spans": [
+                {
+                    "start": 141,
+                    "end": 145,
+                    "text": "[10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 159,
+                    "end": 163,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 305,
+                    "end": 309,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 328,
+                    "end": 332,
+                    "text": "[13]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 462,
+                    "end": 466,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 517,
+                    "end": 521,
+                    "text": "[10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 672,
+                    "end": 676,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 792,
+                    "end": 796,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 980,
+                    "end": 984,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1393,
+                    "end": 1397,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In this paper, a novel efficient simulated annealing (SA) algorithm is proposed to predict RNA secondary structure with pseudoknot. Firstly, an efficient base pairing method is designed, which is based on the minimum stem length and the minimum loop length, and a completed conflict resolution is provided for the conflicting bases; Then a simple and effective fitness function is proposed, and the number of stem and the total number of base pairs of the RNA sequence is used as metrics for evaluating the secondary structure of RNA; Finally, the annealing schedule is selected to systematically decrease the temperature as the algorithm proceeds, the final solution is the structure with MFE. In this paper, eighteen test sequences are randomly selected from the PseudoBase [19] , and the results are compared with other leading prediction algorithms such as HotKnots [11] , IPknot [16] , TT2NE [20] , CombFold [21] , RnaStructure [22] , Cylo-Fold [23] and RNAflod [24] which shows, the effectiveness of our algorithm.",
+            "cite_spans": [
+                {
+                    "start": 776,
+                    "end": 780,
+                    "text": "[19]",
+                    "ref_id": null
+                },
+                {
+                    "start": 870,
+                    "end": 874,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 884,
+                    "end": 888,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 897,
+                    "end": 901,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 913,
+                    "end": 917,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 933,
+                    "end": 937,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 950,
+                    "end": 954,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 967,
+                    "end": 971,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The RNA secondary structure folds itself by forming hydrogen bonds between G-C, A-U, and G-U. Therefore, the prediction of all hydrogen connections among the primary structure of the sequence become the first in predicting RNA secondary structure. Many components can be identified in the secondary structure, such as stem, hairpin loop, multi-branched loop or multi-loops, bulge loop, internal loop, and pseudoknot, as shown in Fig. 1 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 429,
+                    "end": 435,
+                    "text": "Fig. 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "For a given RNA sequence X = 5\u2032-x 1 x 2 \u2026, x i , \u2026 x n -3\u2032 of length n, i is defined as the initial index of the current base and Y(X) is the mapping string of consecutive complementary base pairs of X, Y(X) = (y 1 , y 2 , \u2026, y i , \u2026, y n ), y i is assigned to be j, if base x i bond with base x j , as shown in Eq. 2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Definition"
+        },
+        {
+            "text": "As shown in Fig. 2 , when the base is paired, the sequence numbers of the paired bases are exchanged and stored in Y(X), then Y(X) = (1, 14, 13, 12, 5, 6, 7, 8, 9, 10, 11, 4, 3, 2, 15) . Each mapping string Y(X) is a candidate solution, the solution with MFE is the optimal solution, which is the most stable secondary structure.",
+            "cite_spans": [
+                {
+                    "start": 133,
+                    "end": 136,
+                    "text": "(1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 137,
+                    "end": 140,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 141,
+                    "end": 144,
+                    "text": "13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 145,
+                    "end": 148,
+                    "text": "12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 149,
+                    "end": 151,
+                    "text": "5,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 152,
+                    "end": 154,
+                    "text": "6,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 155,
+                    "end": 157,
+                    "text": "7,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 158,
+                    "end": 160,
+                    "text": "8,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 161,
+                    "end": 163,
+                    "text": "9,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 164,
+                    "end": 167,
+                    "text": "10,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 168,
+                    "end": 171,
+                    "text": "11,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 172,
+                    "end": 174,
+                    "text": "4,",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 175,
+                    "end": 177,
+                    "text": "3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 178,
+                    "end": 180,
+                    "text": "2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 181,
+                    "end": 184,
+                    "text": "15)",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 12,
+                    "end": 18,
+                    "text": "Fig. 2",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Definition"
+        },
+        {
+            "text": "In order to better simulate the folding process of RNA secondary structure in the program, we define each part of the RNA secondary structure as follows:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Definition"
+        },
+        {
+            "text": "Definition 2 (stem):",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Definition"
+        },
+        {
+            "text": ". To simplify calculations, stem can be expressed as a m i = (i, j, k), where parameters i and j are the index of beginning base and ending base, and parameter k is the length of this stem.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Definition"
+        },
+        {
+            "text": "Definition 3 (hairpin Loop): There must be at least MinLoop (MinLoop \u2265 3) unpaired bases in any hairpin loop structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Definition"
+        },
+        {
+            "text": "Definition 4 (consecutive complementary base paired set): The complete RNA secondary structure of a sequence X is called a consecutive complementary base pair set, recorded as M(X), M(X) = (m 1 , m 2 ,\u2026, m i , \u2026,m n ). Each m i represents a stem, according to the above definition, any m i can be recorded as (i, j, k). In the sequence X, the secondary structure formed by the pairing of M(X) is represented by Y(X).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Definition"
+        },
+        {
+            "text": "Definition 5 (pseudoknot): \u2200 x p , x q , x r , x s , \u2208 X, (x p , x q ), (x r , x s ) \u2208 W, and the number of four bases in X satisfies 1 \u2264 p < r < q < s \u2264 n or 1 \u2264 r < p < s < q \u2264 n, then the structure formed by these two base pairs is called a pseudoknot structure, as shown in Fig. 3 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 278,
+                    "end": 284,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Definition"
+        },
+        {
+            "text": "According to the above definition, the secondary structure prediction problem with pseudoknot can be converted to find the number of stems in all possible stem of the X sequence. These stems are so unique that secondary structure formed by their base complementarity has MFE state. Thus, an efficient Prediction algorithm of RNA secondary structure with pseudoknot based on SA (PRSA) is proposed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Definition"
+        },
+        {
+            "text": "Since single base pairs cannot contribute to the reduction of free energy, the PRSA algorithm considers consecutive base pairs. In order to find all the stem structures, we defined the minimum stem length (MinStem \u2265 2) and the minimum loop length (MinLoop \u2265 3) parameters, as shown in Fig. 4 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 285,
+                    "end": 291,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Set of K consecutive base pairs"
+        },
+        {
+            "text": "After initially setting the parameters MinStem and MinLoop, all the reasonable m i can be calculated.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Set of K consecutive base pairs"
+        },
+        {
+            "text": "Parameters i, j and k need to satisfy the following three constraints:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Set of K consecutive base pairs"
+        },
+        {
+            "text": "For example, Mengo_PKB is an RNA molecule from the PseudoBase, whose sequence is 5 \u2032 \u2212 ACGUGAAGGC UACGAUAGUGCCAG \u2212 3 \u2032 . Let MinStem and MinLoop be 3, all possible triplets (i, j, k) are (2,14,3), (2, 14, 4) , (2, 20, 3) , (3, 13, 3) , (3, 21, 3) , (8, 22, 3) , (9, 19, 4) , (10, 18, 3) , (11, 20, 3) . The pseudo code of calculation consecutive base pairs is shown as Algorithm 1.",
+            "cite_spans": [
+                {
+                    "start": 197,
+                    "end": 200,
+                    "text": "(2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 201,
+                    "end": 204,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 205,
+                    "end": 207,
+                    "text": "4)",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 210,
+                    "end": 213,
+                    "text": "(2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 214,
+                    "end": 217,
+                    "text": "20,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 218,
+                    "end": 220,
+                    "text": "3)",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 223,
+                    "end": 226,
+                    "text": "(3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 227,
+                    "end": 230,
+                    "text": "13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 231,
+                    "end": 233,
+                    "text": "3)",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 236,
+                    "end": 239,
+                    "text": "(3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 240,
+                    "end": 243,
+                    "text": "21,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 244,
+                    "end": 246,
+                    "text": "3)",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 249,
+                    "end": 252,
+                    "text": "(8,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 253,
+                    "end": 256,
+                    "text": "22,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 257,
+                    "end": 259,
+                    "text": "3)",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 262,
+                    "end": 265,
+                    "text": "(9,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 266,
+                    "end": 269,
+                    "text": "19,",
+                    "ref_id": null
+                },
+                {
+                    "start": 270,
+                    "end": 272,
+                    "text": "4)",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 275,
+                    "end": 279,
+                    "text": "(10,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 280,
+                    "end": 283,
+                    "text": "18,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 284,
+                    "end": 286,
+                    "text": "3)",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 289,
+                    "end": 293,
+                    "text": "(11,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 294,
+                    "end": 297,
+                    "text": "20,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 298,
+                    "end": 300,
+                    "text": "3)",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Set of K consecutive base pairs"
+        },
+        {
+            "text": "But in all base pairs, the same position of bases may have different consecutive base pair numbers, we need to merge these same positions. Like the above Mengo_PKB sequence, the set of base pairs after the merge is (2, 14, (3, 4) ), (2, 20, (3)), (3, 13, (3)), (3, 21, (3)), (8, 22, (3) ), (9, 19, (3, 4) ), (10, 18, (3) ), (11, 20, (3) ). The pseudo code that saves the merged result to the K consecutive base pair set is shown in Algorithm 2.",
+            "cite_spans": [
+                {
+                    "start": 247,
+                    "end": 254,
+                    "text": "(3, 13,",
+                    "ref_id": null
+                },
+                {
+                    "start": 275,
+                    "end": 286,
+                    "text": "(8, 22, (3)",
+                    "ref_id": null
+                },
+                {
+                    "start": 290,
+                    "end": 304,
+                    "text": "(9, 19, (3, 4)",
+                    "ref_id": null
+                },
+                {
+                    "start": 308,
+                    "end": 320,
+                    "text": "(10, 18, (3)",
+                    "ref_id": null
+                },
+                {
+                    "start": 324,
+                    "end": 336,
+                    "text": "(11, 20, (3)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 215,
+                    "end": 229,
+                    "text": "(2, 14, (3, 4)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Set of K consecutive base pairs"
+        },
+        {
+            "text": "As known that most predicted algorithms require more effort to calculate the MFE structure after calculating the free energy of the current prediction, which makes their algorithm converge very slowly. A pool of candidate structures is generated by constructing a set of K consecutive base pairs, which makes the PRSA algorithm converge faster than other prediction algorithms. This also makes each iteration more valuable because each iteration generates a new structure from the candidate pool.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Set of K consecutive base pairs"
+        },
+        {
+            "text": "When the secondary structure prediction is performed on any of the RNA molecules, the PRSA algorithm would first calculate the K consecutive base pair set by parameter preprocessing, and then generate a neighbor state through a random function in the simulated annealing algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "Taking the TMEV molecule as an example, after the preprocessing process of the upper section 'Set of K consecutive base pairs', a K consecutive base pairs set of TMEV molecules is obtained, as shown in Fig. 5 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 202,
+                    "end": 208,
+                    "text": "Fig. 5",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "Divided according to the base start position and end position of stem, this set contains 13 elements. Since the base start and end positions of the stem are the same, different stem lengths may exist, so the algorithm determines one stem by generating two random numbers. The first random number is between 1 and 13, and the second random number is related to its corresponding set of K consecutive base pairs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "For example, take two random values as 10 and 1, respectively. At this time, m 1 = (9, 19, 3), a local RNA secondary structure is formed. In order to be recorded in the programming, this section of the algorithm has been processed in 4 steps:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "(1) The paired base numbers are exchanged as shown in Fig. 6 , m 1 is added to the consecutive base pair set M(X), at this time M(X) = {m 1 = (9, 19, 3)}, and the secondary structure corresponding to M(X) is represented by Y 1 (X).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 54,
+                    "end": 60,
+                    "text": "Fig. 6",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "(2) A randomly generated m i that may conflict with elements in the set M(X). When the algorithm program performs the next iteration of the loop, a new stem m 2 = (2, 20, 3) is generated. At this time, a base pairing conflict occurs, that is, the bases originally numbered 18 and 19 have been paired with the bases at other positions, and the base complementary pairing conflicts are shown in Fig. 7 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 393,
+                    "end": 399,
+                    "text": "Fig. 7",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "(3) If there is a conflict, the position number of the conflicting base is exchanged again to remove the conflict, and the m 1 in the M(X) is updated, and the schematic diagram of removing the base pairing conflict is shown in Fig. 8 . The M(X) is updated to {m 1 = (11, 17, 1)} after removal.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 227,
+                    "end": 233,
+                    "text": "Fig. 8",
+                    "ref_id": "FIGREF7"
+                }
+            ],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "(4) Determine whether the updated m i meets the constraint. If it does not, remove it; if it does, it will not be considered. When the constraint is initialized, the Fig. 3 A arc representation for pseudoknot structure algorithm program sets the minimum length of the stem to be no smaller than MinStem. Assume that the initial value of MinStem is 3, therefore, the remaining pairing mode of m 1 needs to be removed, and the element is deleted from M(X), and M(X) is an empty set. The operation process is shown in Fig. 9 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 166,
+                    "end": 172,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                },
+                {
+                    "start": 515,
+                    "end": 521,
+                    "text": "Fig. 9",
+                    "ref_id": "FIGREF8"
+                }
+            ],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "After the conflicts and constraints are resolved, the base pairing is performed in the new stem and added to M(X), as shown in Fig. 10 . At this time, M(X) = {m 2 = (2, 20, 3)}, the secondary structure corresponding to M(X) is represented by Y 2 (X), and Y 2 (X) is the neighbor state of Y 1 (X).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 127,
+                    "end": 134,
+                    "text": "Fig. 10",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Neighbor state and its conflict"
+        },
+        {
+            "text": "For most MFE based RNA secondary structure prediction algorithm, the complex thermodynamic model is often used to evaluate candidate solutions [21] . However, there is no useful information to guide the candidate solution to find lower neighbor energy state. Consequently, the convergence of these MFE based prediction algorithms is very slow. Actually, only the consecutive base pairs stem \u0394G S provide negative free energy which contributes to the reduction of free energy. The stability of RNA sequence can also be approximately evaluated by consecutive base pairs stem.",
+            "cite_spans": [
+                {
+                    "start": 143,
+                    "end": 147,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Fitness function"
+        },
+        {
+            "text": "Where Group is the number of stems of the secondary structure of the RNA sequence, TP is the sum of the number of all base pairs in the sequence, TP divided by Group is the average number of base pairs (AP), PG is the predicted number of pseudoknots by the algorithm, MG is the expected number of pseudoknots, and k is the length of the stem. The evaluation function for random candidate M(X) can be seen in the following Equation:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Fitness function"
+        },
+        {
+            "text": "The two structures of the BCRV1 molecule are evaluated using the custom fitness function, Fig. 11b . We produce the images of RNA structure with jViz. Rna [25] .",
+            "cite_spans": [
+                {
+                    "start": 155,
+                    "end": 159,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 90,
+                    "end": 98,
+                    "text": "Fig. 11b",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Fitness function"
+        },
+        {
+            "text": "After evaluation, the calculated data of the secondary structure of BCRV1 molecule are shown in Table 1 . According to the fitness function values of the two structures, it indicates that M 2 is better than M 1 . ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 96,
+                    "end": 103,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Fitness function"
+        },
+        {
+            "text": "The PRSA algorithm initializes the parameters to determine the constraints of the RNA sequence, thereby calculating a set of K consecutive base pairs. According to this set, the neighbor state is randomly generated, and the custom fitness function is adopted to evaluate the quality of the current solution (Curren-tPairs) and the previous generation solution (Max-Pairs). If the CurrentPairs performs better, it would replace the MaxPairs directly. Otherwise, it will determine whether to accept the new pairing structure based on probability from Boltzmann distribution. The final predicted solution structure is stored in MaxPairs, which has MFE and includes pseudoknot. The pseudo-code of the overall algorithm is shown in Algorithm 3.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overall algorithm"
+        },
+        {
+            "text": "In section 'method', Predicting RNA secondary structures with pseudoknots is implemented using the PRSA algorithm. In the following, we first present the datasets, the exiting methods and accuracy measures we use for the evaluation of the algorithm, then the prediction performance of the PRSA algorithm is demonstrated by comparative experiments.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Result"
+        },
+        {
+            "text": "The eighteen benchmark instances from PseudoBase were used to test the proposed method. The characteristic of each sequence is shown in Table 2 . The second column is the Abbreviation of the RNA sequence, the third column is the RNA PKB number, the fourth column is the RNA type, the fifth column is the sequence length and the last column is the number of base pairs in the known structure. The predicted structure should be similar to the base pairs of the known structure.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 136,
+                    "end": 143,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Data sets"
+        },
+        {
+            "text": "The prediction accuracy is calculated by comparing the predicted structure with the known structure. In order to assess the quality of the results produced, three evaluation criteria were used: sensitivity (SN%), specificity (SP%) and F-measure(%) [26] . The evaluation criteria are as follows:",
+            "cite_spans": [
+                {
+                    "start": 248,
+                    "end": 252,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Accuracy measures"
+        },
+        {
+            "text": "Where TP represents the number of correctly predicted base pairs; FP represents the number of incorrectly predicted base pairs; FN represents the number of unpredicted base pairs compared with the known structure. When the prediction results are accurate, both SN and SP should be close to 100%.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy measures"
+        },
+        {
+            "text": "To better reflect the accuracy of the algorithm proposed in this paper, the computational results of the PRSA algorithm are compared with seven state-of-the-art algorithms, including HotKnots [11] , IPknot [16] , TT2NE [20] , CombFold [21] , RnaStructure [22] , CyloFold [23] and RNAflod [24] . Among these algorithms, the Hot-Knots algorithm and the IPknot algorithm use heuristic ideas to predict the secondary structure. The names of the seven algorithms and the website links to the algorithm-based Web sites are listed in Table 3 .",
+            "cite_spans": [
+                {
+                    "start": 192,
+                    "end": 196,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 206,
+                    "end": 210,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 219,
+                    "end": 223,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 235,
+                    "end": 239,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 255,
+                    "end": 259,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 271,
+                    "end": 275,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 288,
+                    "end": 292,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 527,
+                    "end": 534,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Comparison with existing methods"
+        },
+        {
+            "text": "The comparisons of the proposed method with the other methods are shown in Tables 4, 5 and 6. If the value in the table is \"#\", it means that the algorithm does not support the prediction of the length of the sequence, such as TT2NE. The results of the proposed method and the compared methods are all run 10 times for each sequence. Table 4 , in terms of sensitivity, the proposed method provides the best results in nineteen sequences, of which 9 sequences predict 100%. In addition, there are 3 sequences predicting with sensitivities greater than 90%. In terms of specificity, the specificity of 8 sequences in Table 5 is more than 90%, including that the specificity of 6 sequences is 100%. For F-measure, there are 14 sequences exceeding 82%, including 9 sequences above 90%.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 334,
+                    "end": 341,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 615,
+                    "end": 622,
+                    "text": "Table 5",
+                    "ref_id": null
+                }
+            ],
+            "section": "Overall results"
+        },
+        {
+            "text": "The proposed method has average sensitivity, specificity, and F-measure of 91.1, 86.9, and 88.0%, respectively. In addition, the average sensitivity of the proposed method is better than the CyloFold method by 7%, better than the TT2NE method by 4.4% and better than the HotKnots method by 12.3%. In case of the average of specificity, the proposed method is better than the CyloFold method by 3.2%, better than the TT2NE method by 13.7% and better than the Hot-Knots method by 13.1%. In case of the average of Fmeasure, the proposed method is better than the CyloFold method by 5.3%, better than the TT2NE method by 8.9% and better than the HotKnots method by 13.1%.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overall results"
+        },
+        {
+            "text": "According to Section 'Accuracy comparison tests', we can find that the PRSA algorithm has obvious advantages in the quality of the solution compared with other algorithms. Taking the BCRV1 molecule as an example, the sequence of this method is predicted by the PRSA algorithm and the CyloFold algorithm, respectively. The arc representation of the obtained secondary structure is shown in Fig. 12 . It can be seen from the figure that the secondary structure predicted by the algorithm in this paper has become infinitely close to the real structure.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 389,
+                    "end": 396,
+                    "text": "Fig. 12",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Discussion and conclusion"
+        },
+        {
+            "text": "In this paper, we propose an efficient simulated annealing algorithm for the RNA secondary structure predicting with pseudoknots, combined with the evaluation function to compensate for the high time complexity of the free energy calculation model. The algorithm sets the MinStem and MinLoop parameters to determine the pseudoknot structure formed by the base pair crosscombination, and optimizes the pool of candidate solutions, thereby reducing the time cost of the algorithm. The custom evaluation function is used to improve the efficiency of RNA secondary structure prediction algorithms. Moreover, the performance of the PRSA algorithm is compared with state of art algorithms including eighteen PseudoBase benchmark instances, and the comparison results show that the PRSA algorithm is more accurate and competitive with higher sensitivity and specificity values.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion and conclusion"
+        },
+        {
+            "text": "However, as the size of RNA molecules becomes larger, this superiority will gradually disappear. The reason for the analysis may be that the algorithm for evaluating individuals is based on the average base pairs length rather than the standard thermodynamic model. As the length of the RNA molecule increases, the number of groups of complementary bases M(X) will become larger, so that the effect of average basepairs on prediction results becomes weaker, the accuracy of the PRSA algorithm will be reduced. Besides, the parameter settings of the PRSA algorithm will also affect the prediction results, which will be studied further in the future. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion and conclusion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "How RNA folds",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Tinoco",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bustamante",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "293",
+            "issn": "2",
+            "pages": "271--81",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Pseudobase: structural information on RNA pseudoknots",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Van Batenburg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Gultyaev",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Pleij",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Nucleic Acids Res",
+            "volume": "29",
+            "issn": "1",
+            "pages": "194--199",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Pseudoknots: a vital feature in viral RNA",
+            "authors": [
+                {
+                    "first": "Balm",
+                    "middle": [],
+                    "last": "Deiman",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cwa",
+                    "middle": [],
+                    "last": "Pleij",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Semin Virol",
+            "volume": "8",
+            "issn": "3",
+            "pages": "166--75",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "12 Comparison of predicted secondary structure by PRSA and CyloFold algorithm",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Using RNA-seq for Analysis of Differential Gene Expression in Fungal Species",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Schr\u00f6der",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Hammel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Yeast Functional Genomics",
+            "volume": "",
+            "issn": "",
+            "pages": "1--40",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Data-directed RNA secondary structure prediction using probabilistic modeling",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ledda",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Vaziri",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "RNA",
+            "volume": "22",
+            "issn": "8",
+            "pages": "1109--1128",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "RNA secondary structure prediction using soft computing",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Ray",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Pal",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "IEEE/ACM Trans Comput Biol Bioinform",
+            "volume": "10",
+            "issn": "1",
+            "pages": "2--17",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A review on RNA pseudoknot structure prediction techniques",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Jiwan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Singh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "IEEE International Conference on Computing. Electronics and Electrical Technologies",
+            "volume": "",
+            "issn": "",
+            "pages": "975--983",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "A dynamic programming algorithm for RNA structure prediction including pseudoknots",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rivas",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "285",
+            "issn": "5",
+            "pages": "2053--68",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "A partition function algorithm for nucleic acid secondary structure including pseudoknots",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dirks",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pierce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Comput Chem",
+            "volume": "24",
+            "issn": "13",
+            "pages": "1664--77",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "SARNA-predict: accuracy improvement of RNA secondary structure prediction using permutation-based simulated annealing",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Tsang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wiese",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "IEEE/ACM Transac Comput Biol Bioinformatics",
+            "volume": "7",
+            "issn": "4",
+            "pages": "727--767",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "HotKnots: heuristic prediction of RNA secondary structures including pseudoknots",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rastegari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "",
+            "volume": "11",
+            "issn": "",
+            "pages": "1494--504",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Predicting thermodynamic properties of RNA",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Serra",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Turner",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Methods Enzymol",
+            "volume": "259",
+            "issn": "259",
+            "pages": "242--61",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Expanded sequence dependence of thermodynamic parameters improves prediction of RNA secondary structure",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sabina",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "288",
+            "issn": "5",
+            "pages": "911--951",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "SARNA-Predict-pk: Predicting RNA secondary structures including pseudoknots, IEEE",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Tsang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wiese",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "1--8",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Linear time algorithm for parsing RNA secondary structure",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rastegari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "International Workshop on Algorithms in Bioinformatics",
+            "volume": "",
+            "issn": "",
+            "pages": "341--52",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "IPknot: fast and accurate prediction of RNA secondary structures with pseudoknots using integer programming",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kato",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hamada",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Bioinformatics",
+            "volume": "27",
+            "issn": "13",
+            "pages": "85--93",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A fast and robust iterative algorithm for prediction of RNA pseudoknotted secondary structures",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Jabbari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "1",
+            "pages": "147--63",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "A heuristic algorithm for RNA secondary structure based on genetic algorithm, IEEE Intelligent Systems and Computer Vision (ISCV)",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "El Fatmi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Chentoufi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bekri",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "1--7",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "TT2NE: a novel algorithm to predict RNA secondary structures with pseudoknots",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Micha\u00ebl",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Henri",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "14",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "RNAsoft: a suite of RNA secondary structure prediction and design software tools",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Andronescu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Aguirre-Hern\u00e1ndez",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nucleic Acids Res",
+            "volume": "31",
+            "issn": "13",
+            "pages": "3416--3438",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Using an RNA secondary structure partition function to determine confidence in base pairs predicted by free energy minimization",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "RNA",
+            "volume": "10",
+            "issn": "8",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "CyloFold: secondary structure prediction including pseudoknots",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Eckart",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Tanner",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Shapiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nucleic Acids Res",
+            "volume": "38",
+            "issn": "",
+            "pages": "368--72",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "The Vienna RNA websuite",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Gruber",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Lorenz",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Bernhart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nucleic Acids Res",
+            "volume": "36",
+            "issn": "",
+            "pages": "70--74",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Rna -An Interactive Graphical Tool for Visualizing RNA Secondary Structure Including Pseudoknots",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wiese",
+                    "suffix": ""
+                },
+                {
+                    "first": "Glen",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Jviz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "19th IEEE Symposium on Computer-based Medical Systems",
+            "volume": "",
+            "issn": "",
+            "pages": "659--64",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Assessing the accuracy of prediction algorithms for classification: an overview",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Baldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brunak",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Chauvin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Bioinformatics",
+            "volume": "16",
+            "issn": "5",
+            "pages": "412--436",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Publisher's Note",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "RNA Secondary Structure and Substructures",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "One of the mapping string Y(X) for sequence X",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "M 1 (X) = {m 1 = (5,47,6), m 2 = (14,80,6), m 3 = (20,38,5), m 4 = (26,98,7), m 5 = (53,74,9)}, as shown in Fig. 11a; M 2 (X) = {m 1 = (4,48,8), m 2 = (19,39,6), m 3 = (26,98,7), m 4 = (52,75,10)}, as shown in",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Consecutive paired MinStem and unpaired MinLoop",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "K consecutive base pairs set of TMEV molecules",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "New neighboring state generation process",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "m 1 base number exchange process",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "Remove base pairing conflicts",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Check the rationality of remaining m i Fig. 10 m 2 base number exchange",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "Two different secondary structures of BCRV1From",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Evaluation results",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Benchmark Instances from RNA PseudoBase",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "State-of-the-art RNA structure predication algorithms TT2NE http://eole2.lsce.ipsl.fr/ipht/tt2ne/tt2ne.php",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Sensitivity Comparison Results ID #BP Sensitivity (%)",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The author would like to thank the editors and reviewers for their suggestions, which is a great help for this article. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "The best Sensitivity values for each algorithm are shown in boldface ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "Pseudoknots sequencing data are available from the PseudoBase database (http://www.ekevanbatenburg.nl/PKBASE/PKB.HTML).Ethics approval and consent to participate Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "The authors declare that they have no competing interests. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

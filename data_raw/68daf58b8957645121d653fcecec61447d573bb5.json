@@ -1,0 +1,3093 @@
+{
+    "paper_id": "68daf58b8957645121d653fcecec61447d573bb5",
+    "metadata": {
+        "title": "A Likelihood Approach for Real-Time Calibration of Stochastic Compartmental Epidemic Models",
+        "authors": [
+            {
+                "first": "Christoph",
+                "middle": [],
+                "last": "Zimmer",
+                "suffix": "",
+                "affiliation": {},
+                "email": "*christoph.zimmer@yale.edu"
+            },
+            {
+                "first": "Reza",
+                "middle": [],
+                "last": "Yaesoubi",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "\u2021",
+                "middle": [],
+                "last": "",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Ted",
+                "middle": [],
+                "last": "Cohen",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Stochastic transmission dynamic models are especially useful for studying the early emergence of novel pathogens given the importance of chance events when the number of infectious individuals is small. However, methods for parameter estimation and prediction for these types of stochastic models remain limited. In this manuscript, we describe a calibration and prediction framework for stochastic compartmental transmission models of epidemics. The proposed method, Multiple Shooting for Stochastic systems (MSS), applies a linear noise approximation to describe the size of the fluctuations, and uses each new surveillance observation to update the belief about the true epidemic state. Using simulated outbreaks of a novel viral pathogen, we evaluate the accuracy of MSS for real-time parameter estimation and prediction during epidemics. We assume that weekly counts for the number of new diagnosed cases are available and serve as an imperfect proxy of incidence. We show that MSS produces accurate estimates of key epidemic parameters (i.e. mean duration of infectiousness, R 0 , and R eff ) and can provide an accurate estimate of the unobserved number of infectious individuals during the course of an epidemic. MSS also allows for accurate prediction of the number and timing of future hospitalizations and the overall attack rate. We compare the performance of MSS to three state-of-the-art benchmark methods: 1) a likelihood approximation with an assumption of independent Poisson observations; 2) a particle filtering method; and 3) an ensemble Kalman filter method. We find that MSS significantly outperforms each of these three benchmark methods in the majority of epidemic scenarios tested. In summary, MSS is a promising method that may improve on current approaches for calibration and prediction using stochastic models of epidemics.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "The sporadic emergence and spread of novel human pathogens poses a continuing threat to global public health. Early and accurate prediction of epidemic behavior is needed to inform effective public health policy decisions which much balance the risk of major PLOS Computational Biology | outbreaks with the substantial costs of interventions. Key parameters governing the behavior of epidemics, however, cannot be directly observed and hence computational techniques are required for parameter estimation and prediction on the basis of imperfect surveillance data. In this paper, we develop a method (Multiple Shooting for Stochastic Systems, MSS) that utilizes accumulating epidemic data to estimate in real-time (1) key epidemic parameters including the average number of secondary cases and the mean duration of infectiousness, (2) the future number of cases, and (3) the unobserved number of infected individuals in the population. Employing comprehensive simulation experiments, we demonstrate that MSS outperforms the existing state-of-the-art calibration and prediction techniques in the majority of simulated scenarios. MSS may thus allow policy makers to respond more effectively and use resources more efficiently in the face of emerging epidemic threats. Real-Time Calibration of Stochastic Compartmental Epidemic Models PLOS Computational Biology |",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "a1111111111 a1111111111 a1111111111 a1111111111 a1111111111",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "The sporadic emergence of novel human pathogens (e.g. SARS, MERS, new strains of influenza) serves as a reminder of the importance of monitoring the spillover into and spread of pathogens in human populations. Accurate estimates of the fundamental epidemic parameters during the earliest phase of disease emergence can facilitate rational public health policy decisions [1, 2] and are thus of high priority [3, 4] .",
+            "cite_spans": [
+                {
+                    "start": 370,
+                    "end": 373,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 374,
+                    "end": 376,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 407,
+                    "end": 410,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 411,
+                    "end": 413,
+                    "text": "4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Estimating epidemic parameters is challenging during this initial period of disease emergence because the dynamics are stochastic and the processes governing disease spread are complex and usually only partially observable. Public health decision makers, therefore, require tools to make inference about the true state of the epidemic and the values of fundamental epidemic parameters using observations that can only imperfectly represent the true epidemic state (e.g. reported disease-related illnesses serve as an imperfect measure of incident cases).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "There has been substantial recent progress in the development of methods to infer epidemic parameters from partial epidemic observations [5] [6] [7] [8] [9] [10] [11] . For example, infection network models are commonly used when symptom onset date for each reported case is available [12] [13] [14] [15] [16] [17] . In these models, disease spread is described as a directed network in which the nodes represent cases and the directed edges between nodes represent transmission links. In the absence of the type of detailed individual-level data required by infection network methods, compartmental transmission dynamic models have been used for parameter estimation and for projecting epidemic trajectory. These models divide the population into disjoint subgroups (e.g. susceptible, infectious, and recovered) and transitions between the epidemic states are described using ordinary differential equations (for deterministic models) [18] or Markov chains (for stochastic models) [19] .",
+            "cite_spans": [
+                {
+                    "start": 137,
+                    "end": 140,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 141,
+                    "end": 144,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 145,
+                    "end": 148,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 149,
+                    "end": 152,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 153,
+                    "end": 156,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 157,
+                    "end": 161,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 162,
+                    "end": 166,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 285,
+                    "end": 289,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 290,
+                    "end": 294,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 295,
+                    "end": 299,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 300,
+                    "end": 304,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 305,
+                    "end": 309,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 310,
+                    "end": 314,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 936,
+                    "end": 940,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 982,
+                    "end": 986,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "A wide variety of methods have been described to calibrate these compartmental models which differ based how they estimate the likelihood of observations. These methods make use of deterministic [20] [21] [22] or stochastic [23] models to describe the underlying epidemic process, and may involve Markov Chain Monte Carlo [24] or filtering techniques [25] [26] [27] [28] [29] [30] [31] [32] to sample parameter space and the unobserved states.",
+            "cite_spans": [
+                {
+                    "start": 195,
+                    "end": 199,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 200,
+                    "end": 204,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 205,
+                    "end": 209,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 224,
+                    "end": 228,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 322,
+                    "end": 326,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 351,
+                    "end": 355,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 356,
+                    "end": 360,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 361,
+                    "end": 365,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 366,
+                    "end": 370,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 371,
+                    "end": 375,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 376,
+                    "end": 380,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 381,
+                    "end": 385,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 386,
+                    "end": 390,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "In this paper, we describe an alternative method for calibrating a general class of stochastic compartmental models using the types of data that would be available during the early period of epidemic spread. Unlike deterministic models, stochastic models capture chance events, a feature that proves essential for the accuracy of model-based parameter estimation and prediction during pathogen emergence.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Our calibration method, Multiple Shooting for Stochastic systems (MSS), utilizes a linear noise approximation (LNA) approach and a state-updating procedure to approximate the likelihood of observations while explicitly accounting for the interdependency between subsequent epidemic observations. Using simulation experiments, we compare the performance of MSS with several competing approaches in terms of accuracy in estimating parameters, predicting future behaviors, and inferring the current epidemic state. We test the sensitivity of the performance of these approaches to observational noise and model misspecification.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "During an epidemic, surveillance systems may be able to capture a variety of measures, such as the number of disease-related diagnoses, hospitalizations or deaths. We use y i to denote the vector of epidemic measures that can be observed during the period [t i\u22121 , t i ] (see Fig 1) . Let Y i = (y 1 , y 2 , . . ., y i ) be the epidemic history up to time t i . To measure the fit of an epidemic model to the observations accumulated up to time t i , we use the following likelihood function:",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 276,
+                    "end": 282,
+                    "text": "Fig 1)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "P\u00f0 y i jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de; \u00f01\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "where P\u00f0 y i jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de is the probability of observing y i given the previous observations (y 1 , y 2 , . . ., y i\u22121 ) and the model parameters \u03b8. For many epidemics, the probability function P\u00f0\u00c1jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de may not be readily available and can be computationally expensive to evaluate. Therefore, the likelihood function (1) is often approximated by assuming that the epidemic observations in each period follow a discrete probability distribution (e.g. Poisson distribution) and are independently distributed across observation periods [23, 33] . For example, to approximate the likelihood function (1), Riley and colleagues assume that epidemic observations follow independent Poisson distributions where means are chosen to match the means generated from 250 model replications [23] . The method we develop here to approximate the likelihood function (1) does not retain the unrealistic assumption that these observations are independent.",
+            "cite_spans": [
+                {
+                    "start": 581,
+                    "end": 585,
+                    "text": "[23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 586,
+                    "end": 589,
+                    "text": "33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 825,
+                    "end": 829,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "Below, we first describe an algorithm to efficiently approximate the probability function P\u00f0\u00c1jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de which can then be used to evaluate the likelihood function (1) for observations accumulated up to any point in the epidemic. settings, particularly if the disease has a complicated natural history, the true distribution of individuals in each state over the course of epidemic progression, \u03bd i , i 2 {0, 1, 2, . . .}, is not fully observable. Hence, to form statistical inference about the true epidemic state, we utilize belief states which define a probability distribution over all possible epidemic states given past observations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "Let P(\u00c1|Y i ) denote the belief state at time t i given the accumulated observations Y i . Now by conditioning on the epidemic state at time t i\u22121 , i.e. \u03bd i\u22121 , the probability function P\u00f0\u00c1jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de in Eq (1) can be calculated as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "P\u00f0 y i jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de \u00bc X",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "P\u00f0 y i jn i\u00c0 1 ; y\u00de P\u00f0n i\u00c0 1 jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de; \u00f02\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "where O i\u22121 is the set of feasible epidemic states (i.e. the support of the belief state P) at time t i\u22121 . By conditioning on the state of the epidemic at time t i , the probability function P\u00f0\u00c1jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de in Eq (2) can be calculated as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "P\u00f0 y i jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "P\u00f0 y i jn i ; n i\u00c0 1 ; y\u00dep\u00f0n i jn i\u00c0 1 ; y\u00de P\u00f0n i\u00c0 1 jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "Calculating the probability function (3) can be computationally difficult. First, it requires calculating or approximating the transition probability p( ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "wheren i\u00c0 1 represents the most likely epidemic state given observations Y i\u22121 = (y 1 , y 2 , . . ., y i\u22121 ). By the definition of epidemic states, the transition from state \u03bd i\u22121 to \u03bd i generates a unique set of observations, and it is trivial to find whether the state transitionn i\u00c0 1 to \u03bd i can generate the observation y i (see design of performance analysis for an illustrative example). Therefore, for a given observation y i , the probability P\u00f0 y i jn i ;n i\u00c0 1 ; y\u00de in Eq (4) is equal to 1 if the transition from staten i\u00c0 1 to \u03bd i results in observing y i , and is zero otherwise. To calculateP \u00f0 y i jn i\u00c0 1 ; y\u00de in Eq (4), it only remains to identify the state transition probability function p\u00f0n i jn i\u00c0 1 ; y\u00de and a state estimation scheme. In the next subsections, we propose an algorithm to achieve this. Approximating state transition probabilities. Finding the exact state transition probability function p(\u00c1) can be difficult, and in many cases impossible, as state spaces in epidemic models can be quite large or unbounded. To overcome this problem, we employ a linear noise approximation (LNA) method to approximate the probability distribution of the new epidemic state \u03bd i given the previous state \u03bd i\u22121 , i.e. p(\u03bd i |\u03bd i\u22121 ; \u03b8). The LNA has been previously used to estimate parameters of stochastic biochemical reaction models [35, 36] . Here we extend Zimmer and Sahle's method [36] to calibrate stochastic epidemic models where the true epidemic state is only partially observable.",
+            "cite_spans": [
+                {
+                    "start": 1352,
+                    "end": 1356,
+                    "text": "[35,",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 1357,
+                    "end": 1360,
+                    "text": "36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 1404,
+                    "end": 1408,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "To approximate the probability distribution of \u03bd i given the state \u03bd i\u22121 , the LNA method uses an ordinary differential equations (ODE) model to approximate the expected behavior of the epidemic over the period [t i\u22121 , t i ] and to identify a co-variance matrix to characterize the uncertainty around the epidemic behavior over this interval. We use the following notation to denote the ODE epidemic model used by the LNA method:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "x\u00f0t; x 0 ; y\u00de \u00bc GL\u00f0x\u00f0t; x 0 ; y\u00de; y\u00de;",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "In the ODE system (5), the vector x(t, x 0 ; \u03b8) is the epidemic state of the ODE model at time t given the initial state x 0 , the vector \u039b(x(t, x 0 ; \u03b8), \u03b8) denotes the instantaneous changes in the epidemic when at state x(t, x 0 ; \u03b8), and the matrix \u0393 describes how the instantaneous changes at time t impact the epidemic state at time t + \u0394t (see subsequent sections for an example). The LNA assumes that the probability distribution of \u03bd i |\u03bd i\u22121 can be properly approximated by a normal distribution N \u00f0m i ; cov i \u00de. The mean vector \u03bc i is the solution of ODE system (5) with \u03bd i\u22121 as the initial condition (i.e. \u03bc i = x(t i \u2212 t i\u22121 , \u03bd i\u22121 ; \u03b8)) and the variance matrix",
+            "cite_spans": [
+                {
+                    "start": 573,
+                    "end": 576,
+                    "text": "(5)",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "is the solution of the following ODE systems [37, 38] :",
+            "cite_spans": [
+                {
+                    "start": 45,
+                    "end": 49,
+                    "text": "[37,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 50,
+                    "end": 53,
+                    "text": "38]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "S\u00f0t; n i\u00c0 1 ; y\u00de \u00bc J\u00f0x; y\u00deS\u00f0t; n i\u00c0 1 ; y\u00de \u00fe S\u00f0t; n i\u00c0 1 ; y\u00deJ\u00f0x; y\u00de T \u00fe D\u00f0x; y\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "In the ODE system (6), J\u00f0x; y\u00de \u00bc G d dx L\u00f0x; y\u00de and D is a K \u00d7 K matrix with the (i, j) entity equal to P K k\u00bc1 G jk G jk L\u00f0x; y\u00de, where K is the number of compartments in the epidemic model. An important question remains about how well this proposed LNA method approximates the probability distribution of epidemic states. Relying on an extensive numerical analysis, we will demonstrate in the Results section that for the epidemic scenarios considered, our method yields accurate parameter estimations and reliable predictions. We also note that our method does not rely on a single LNA model to approximate the entire epidemic trajectory. For each observation period [t i\u22121 , t i ], it generates a new LNA model to approximate the epidemic behavior only over this particular period.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "Updating belief states. We now describe how to update our belief about the true state of the epidemic, denoted by P(\u00c1), once new observations y i are obtained. We first note that P(\u00c1) is defined to return 1 for the most likely staten, and zero elsewhere. Therefore, given the stat\u00ea n i\u00c0 1 at time t i\u22121 , the probability of observing y i during the interval [t i\u22121 , t i ] is equal to P\u00f0 y i jn i ;n i\u00c0 1 ; y\u00dep\u00f0n i jn i\u00c0 1 ; y\u00de (see the discussion prior to Eq (3)). Now, the most probable state at time t i ,n i , is the one that leads to the highest probability of observing y i :n",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "P\u00f0 y i jn i ;n i\u00c0 1 ; y\u00dep\u00f0n i jn i\u00c0 1 ; y\u00de: \u00f07\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "As discussed above, P\u00f0 y i jn i ;n i\u00c0 1 ; y\u00de is either 0 or 1, and the probability function p\u00f0\u00c1jn i\u00c0 1 ; y\u00de is approximated with a Normal distribution. Therefore, it is straightforward to solve the optimization problem (7) . Note that in compartmental models, the support O i can be recursively updated as new observations become available (see [39] for details and the S1 Text subsection 8 \"Detailed pseudo code for our MSS\" for an illustration).",
+            "cite_spans": [
+                {
+                    "start": 219,
+                    "end": 222,
+                    "text": "(7)",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 345,
+                    "end": 349,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Problem formulation"
+        },
+        {
+            "text": "One of the main goals of model calibration is to leverage information from accumulating observations to characterize the uncertainty around model parameters. To this end, we employ a Bayesian approach that updates the probabilistic information on model parameters as new observations become available. This updating is performed according to the following Bayes rule:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Estimating model parameters"
+        },
+        {
+            "text": "where \u03c0 i\u22121 (\u00c1, Y i\u22121 ) is the prior distribution before obtaining the i th observation and \u03c0 i (\u00c1|Y i ) is the posterior distribution after obtaining the i th observation. In Eq (8), the likelihood function L (MSS) (\u00c1|\u03b8) is estimated using the approach described in the preceding sections. Note that \u03c0 is used for both prior and posterior as the posterior is recursively calculated from the prior upon obtaining subsequent observations. (1) should be calculated. This set can be built by sampling from the prior distribution \u03c0 0 (\u03b8) or via other sampling methods including random, Latin hypercube, or orthogonal sampling. Obviously, the sample set \u0398 can be modified as new observations become available and the prior distribution \u03c0 0 (\u03b8) is being updated. However, the main advantage of fixing the sample set \u0398 at the beginning of the algorithm is to allow the algorithm to update the likelihood function (1) in a recursive manner as new observations are accumulating over time. That is, to find the likelihood value L (MSS) (Y i ; \u03b8) at time t i , we only need to know the value of the likelihood function from the previous time step (i.e. L (MSS) (Y i\u22121 ; \u03b8)) and the probability P(y i |Y i\u22121 ; \u03b8) (see Step 2.c). The parameter posterior distribution obtained by using observations Y i\u22121 can be used as a prior distribution once a new observation y i becomes available.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Estimating model parameters"
+        },
+        {
+            "text": "A central motivation for developing better methods for calibration of stochastic epidemic models is to improve predictions about the future course of epidemics.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predicting epidemic behavior"
+        },
+        {
+            "text": "To demonstrate how our method can be used for prediction, let Z denote the quantity that we wish to predict (e.g. the number of diagnoses during the subsequent week) and P\u00f0Zjn i ; y\u00de denote the probability density function of the random variable Z if the epidemic is at state \u03bd i 2 O i at time t i and the epidemic parameters have value \u03b8 2 \u0398. Now, the probability distribution of the random variable Z given the accumulated observations at time t i , Y i = (y 1 , y 2 , . . ., y i ), can be calculated as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Predicting epidemic behavior"
+        },
+        {
+            "text": "In Eq (9), the belief state P(\u00c1|Y i ; \u03b8) and the parameter posterior distribution \u03c0 i (\u00c1|Y i ) are both obtained from the algorithm described in Fig 2. To calculate the distribution of the random variable Z|Y i , we assume that we have access to a stochastic simulation model to sample from the random variable Z|\u03bd i for a given set of parameter values \u03b8. For the numerical results presented here, we use the Gillespie algorithm [40] (see SI document) to generate realizations for Z|Y i that can be used to estimate the probability function P(Z|Y i ) in Eq (9), or to calculate mean or other moments of the random variable Z|Y i .",
+            "cite_spans": [
+                {
+                    "start": 429,
+                    "end": 433,
+                    "text": "[40]",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 145,
+                    "end": 151,
+                    "text": "Fig 2.",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Predicting epidemic behavior"
+        },
+        {
+            "text": "We compare the performance of our method with three competing state-of-the-art approaches. The first benchmark method, which is based on an assumption of independent Poisson observations, is straightforward to understand and to implement and has been used to infer basic fundamental parameters during the early appearance of novel pathogens [23] . For the second and third approaches, we consider Particle Filter and Ensemble Kalman Filter [27] as these methods won the 2014 \"Predict the Influenza Season Challenge\" sponsored by the U. S. Center for Disease Control and Prevention [41] and also demonstrate competitive performance against four other methods in a recent comparison study [27] . Benchmark method A: Likelihood approximation with the assumption of independent Poisson observations (I.Poi). We use the method from Riley and colleagues [23] as the first benchmark. This method assumes that the observations y i are independent and factorizes the likelihood function L(Y i ; \u03b8) (Eq (1)) to where P \u00f0I:Poi\u00de \u00f0\u00c1jy\u00de $ Poisson\u00f0m i \u00de. To calculate the mean \u03bc i , we obtain 1000 stochastic trajectories using parameter values \u03b8 and shift them so that the first observation for each trajectory lies within the first observation period [t 0 , t 1 ]. We then calculate the mean of observations over period [t i\u22121 , t i ] (i.e. \u03bc i ) using these simulated trajectories. This approach ignores the interdependencies between observations y 1 , y 2 , . . ., y i and approximates P\u00f0 y i jy 1 ; . . . ; y i\u00c0 1 ; y\u00de by P \u00f0I:Poi\u00de \u00f0 y i ; y\u00de. Without the knowledge of an updated belief state P(\u00c1|\u03bd i ; \u03b8), Eq (9) for prediction reduces to",
+            "cite_spans": [
+                {
+                    "start": 341,
+                    "end": 345,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 440,
+                    "end": 444,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 687,
+                    "end": 691,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 848,
+                    "end": 852,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Benchmark methods"
+        },
+        {
+            "text": "The mean and variance of random variable Z can be estimated using simulated trajectories with parameter values selected according to the probability function \u03c0 i (\u03b8|Y i ). These simulated trajectories can also be used to make inference about the epidemic state at time t i . To make predictions at time t i , our implementation of the benchmark approach uses only simulated trajectories that have not been extinguished before t i . Benchmark method B: Particle Filter. The Particle Filter (PF) approach described by [27] also seeks to approximate the likelihood function (1) to calculate an a-posteriori distribution \u03c0 i (\u03b8|Y i ) using the epidemic history Y i . This method, however, uses a different approximation to calculate the probability P\u00f0 y i jY i\u00c0 1 ; y\u00de:",
+            "cite_spans": [
+                {
+                    "start": 516,
+                    "end": 520,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Benchmark methods"
+        },
+        {
+            "text": "While the belief state is also a point distribution, the state update is performed based on the solution of ODE system (5):n i \u00bc x\u00f0t i \u00c0 t i\u00c0 1 ;n i\u00c0 1 ; y\u00de:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Benchmark methods"
+        },
+        {
+            "text": "In Eq (12), the forward propagation p (PF) (\u03bd i |\u03bd i\u22121 ; \u03b8) is a point distribution with mass 1 atn i , and P (PF) (y i |\u03bd i , \u03bd i\u22121 ; \u03b8) is assumed to follow a normal distribution N \u00f0h\u00f0n i \u00de; s 2 obs;i \u00de where the function h maps state to observations and the observational variance s 2 obs;i is assumed to be:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Benchmark methods"
+        },
+        {
+            "text": "This observational variance is identical to the one used in [27] . Our sensitivity analysis reveals that the choice of observational variance, Eq (13), does not have a significant effect on the comparative performance of PF compared to the methods studied here (see Discussion). Since this approach calculates belief states and posterior distribution for \u03b8, the prediction is performed in an identical fashion as for the MSS approach as described in Eq (9) . The pseudo code and the full implementation of this approach for an epidemic model is described in the SI (S1 Text subsection 6 \"Pseudo code for the PF\" and S1 Text subsection 10 \"Detailed pseudo code for PF\").",
+            "cite_spans": [
+                {
+                    "start": 60,
+                    "end": 64,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 453,
+                    "end": 456,
+                    "text": "(9)",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Benchmark methods"
+        },
+        {
+            "text": "Benchmark method C: Ensemble Kalman Filter (EnKF). We selected the ensemble Kalman Filter (EnKF) [27] for the third benchmark method. EnKF does not use a likelihood function L(Y i ; \u03b8) and instead it propagates an initial ensemble that contains both epidemic states and epidemic parameters. Each new observation is then used to update this ensemble. After such updating, the ensemble is considered as a sample from the posterior distribution for both the parameters and the states.",
+            "cite_spans": [
+                {
+                    "start": 97,
+                    "end": 101,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Benchmark methods"
+        },
+        {
+            "text": "Similar to PF and MSS, this approach calculates belief states and posterior distribution for \u03b8, and hence predictions can be performed using Eq (9) . The pseudo code and the full implementation of this approach for an epidemic model is described in the SI (S1 Text subsection 7 \"Pseudo code for the EnKF\" and S1 Text subsection 11 \"Detailed pseudo code for the EnKF\").",
+            "cite_spans": [
+                {
+                    "start": 144,
+                    "end": 147,
+                    "text": "(9)",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Benchmark methods"
+        },
+        {
+            "text": "To compare the performance of our approach with that of the three competing benchmark methods (described above), we use several different simulated scenarios after the introduction of a novel viral pathogen epidemic. We develop a simple stochastic compartmental model where population members are grouped into four mutually exclusive compartments (see Fig  3) . In this model, Infective individuals may infect Susceptibles with whom they come into contact. We assume that Infective individuals will eventually seek treatment due to worsening symptoms (and move to the Treatment compartment). Here, cases under treatment do not transmit infection and those who recover from the disease have full immunity against reinfection with the pathogen (and moved to the Recovered compartment).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 352,
+                    "end": 359,
+                    "text": "Fig  3)",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "Let x S (t), x I (t), x T (t) and x R (t), respectively, denote the number of individuals in compartments Susceptible, Infective, Treatment, and Recovered, and N(t) = x S (t) + x I (t) + x T (t) + x R (t) denote the population size at time t. Disease transmission can be modeled using the following ODE model: ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "where \u03b8 1 is the disease transmission rate, \u03b8 2 is the rate of seeking treatment while infectious, and \u03b8 3 is the rate of recovering. This model can be presented in the format of the ODE system (5) by choosing",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "L\u00f0x\u00f0t; x 0 ; y\u00de; y\u00de \u00bc :",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "In our analysis, we assume that at time t = 0 one population member becomes infected. The model initial condition can therefore be defined as x 0 = (x S (0), x I (0), x T (0), x R (0)) = (N \u2212 1, 1, 0, 0). To evaluate the performance of the calibration methods considered here, we used nine epidemic scenarios that differ by population size N 2 {1000, 10,000, 10,0000} and the epidemic attack rate (moderate: [30% \u2212 50%], severe: [50% \u2212 70%] and extreme [70% \u2212 100%]). To produce epidemic trajectories for each scenario, we first drew R 0 from U( [1, 3] ) and mean duration of infectiousness from U( [1, 20] ), and then used the Gillespie algorithm [40] (see S1 Text subsection 1 \"The Gillespie Algorithm\" implemented in the software COPASI [42] ) to simulate the SITR model of . We assumed that the delay until recovery after the onset of treatment is 4 days and that this is a known quantity (that is, \u03b8 3 = 0.25). To ensure that our selected simulated trajectories reflect expected shapes of outbreaks (rather than slow, simmering transmission), we only included trajectories with an epidemic peak that occurs between weeks 10 and 20 after takeoff. Fig 4A and S1 to S8 Figs show the 50 simulated trajectories chosen for each scenario. In our evaluation, we assumed that the weekly number of disease-associated diagnoses was observed throughout the outbreak; this was calculated for each week as the number of people that transitioned from I to T. For our model, the number of diagnoses in week i is calculated as",
+            "cite_spans": [
+                {
+                    "start": 546,
+                    "end": 549,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 550,
+                    "end": 552,
+                    "text": "3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 599,
+                    "end": 602,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 603,
+                    "end": 606,
+                    "text": "20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 648,
+                    "end": 652,
+                    "text": "[40]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 740,
+                    "end": 744,
+                    "text": "[42]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1151,
+                    "end": 1164,
+                    "text": "Fig 4A and S1",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": ", where t i \u2212 t i\u22121 = 7 days to obtain weekly data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "We implemented each of the calibration methods in Mathematica [43] and evaluated their performance based on their ability to accurately (1) estimate R 0 , effective R (R eff ), the duration of infectiousness, and the current number of infectious individuals, and (2) predict the incident number of diagnoses (for the subsequent week and 3 weeks in the future) and the total cumulative cases (over the subsequent 3 weeks and over the whole epidemic). We note that in our analysis, we calibrate R 0 and mean duration of infectiousness, and \u03b8 1 and \u03b8 2 are calculated based on the samples of R 0 and mean duration of infectiousness for likelihood evaluations. For each simulated trajectory shown in Fig 4A and S1A to S8A Figs, we evaluated the performance of our method at several different times during the epidemic: 8 weeks to peak incidence, 4 weeks to peak, at peak, 4 weeks after the peak, and 8 weeks after the peak. To quantify the performance of these methods based on each target metric M i (e.g. estimating R 0 or prediction of the number of incident cases in the subsequent period after observing Y i ), we used the integrated relative error (IRE):",
+            "cite_spans": [
+                {
+                    "start": 62,
+                    "end": 66,
+                    "text": "[43]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 696,
+                    "end": 710,
+                    "text": "Fig 4A and S1A",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "where f M i |\u03b8 (m|\u03b8) is the probability density function of target M i given the estimated parameter values \u03b8,M i is the true value of target M i . C i is the set of possible values that the target M i can take (i.e. the support of the probability density function f), and \" Y represents the set of all parameter values (see SI for further details). We chose IRE as the performance metric since it provides a precise measure for how well the mass of the posterior distribution covers the true value of the targets to estimate. Alternative performance metrics such as relative error or mean square error do not account for the variance of predictions and hence are not suitable for this purpose.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "When fitting the model in Fig 3 to the simulated trajectories, we did not assume that the length of the period between the onset of the outbreak and the first observation is known. We therefore considered this delay as an additional model parameter that must be estimated through the calibration procedures in MSS. (16)) in estimating R 0 , effective R, duration of infectiousness, and infection prevalence from applying calibration methods described above on 50 simulated trajectories shown in Fig 4A for a severe scenario with attack rate between 50% and 70% for a population of 10000. See S1 to S8 Figs for the performance of these methods under other epidemic and population size scenarios.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 26,
+                    "end": 34,
+                    "text": "Fig 3 to",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 495,
+                    "end": 501,
+                    "text": "Fig 4A",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Design of the performance analysis"
+        },
+        {
+            "text": "In all 9 scenarios (defined by epidemic severity and population size) and 5 estimation times (8 and 4 weeks to peak, at the peak, and 4 and 8 weeks after the peak), the MSS method either outperforms the competing benchmark methods or demonstrates similar performance. In particular, we note that in contrast to other approaches, the MSS method offers continuous improvement in the accuracy of parameter estimation as epidemics progress and more observations become available. At the peak and thereafter, MSS displays dominating performance, which is attributable to the more accurate likelihood approximation offered by this approach (see Fig 4B-4E and S1B-S1E to S8B-S8E Figs.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 639,
+                    "end": 648,
+                    "text": "Fig 4B-4E",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Performance evaluation: Parameter estimation"
+        },
+        {
+            "text": "Furthermore, the MSS method performs significantly better than the other competing methods in estimating the true (and unobserved) prevalence of infection. This suggests that the state updating procedure utilized by MSS method is more effective than the state updating methods employed by PF and EnKF. It is worth noting that the high IRE for infection prevalence at the beginning and the end of epidemics is the result of the small number of infectious individuals during these phases. While this impacts the performance of all methods (including MSS), the effect is small for MSS as the state updating procedure leads to more reliable state estimates. Also, since the estimation of the effective R requires an estimate of the current number of susceptibles, the MSS method again shows a superior behavior. Fig 5A-5C shows the results of testing the hypothesis that the MSS method outperforms all benchmark methods at 0.05 significance level at different epidemic times. This figure suggests that, in the majority of cases, the MSS method demonstrates either statistically superior or similar performance to the benchmark methods (represented by Green, Blue and Black colors). We note that even for the small number of situations in which MSS is statistically dominated by another benchmark method, the absolute difference in mIRE (as shown in Fig 4B-4E and S1B-S1E to S8B-S8E Figs is small.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 808,
+                    "end": 817,
+                    "text": "Fig 5A-5C",
+                    "ref_id": "FIGREF8"
+                },
+                {
+                    "start": 1345,
+                    "end": 1354,
+                    "text": "Fig 4B-4E",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Performance evaluation: Parameter estimation"
+        },
+        {
+            "text": "The performance of each method tested does not change markedly between scenarios which differ by host population size (Fig 4B-4E and S1B-S1E to S8B-S8E Figs). Even though the trajectories appear less stochastic when larger host populations are considered, because all scenarios assume a small number of infective persons in the early phase, there remains substantial stochasticity during the period of initial take-off which influences the timing of the epidemic peak.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 118,
+                    "end": 128,
+                    "text": "(Fig 4B-4E",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Performance evaluation: Parameter estimation"
+        },
+        {
+            "text": "We note that the performance of I.Poi (in terms of estimating R 0 and R eff ) deteriorates as more observations accumulate (Fig 4B and 4C and S1B-S1C to S8B -S8C Figs. A potential explanation of this observation is that I.Poi uses the mean of 1000 stochastic simulations which is likely to be close to the deterministic solution. If the observed stochastic trajectory peaks early or late, each additional observation will deviate from the expected behavior (for the true parameter) and, therefore, the precision worsens.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 123,
+                    "end": 137,
+                    "text": "(Fig 4B and 4C",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Performance evaluation: Parameter estimation"
+        },
+        {
+            "text": "In the analyses presented so far, we assumed that the model structure is correct and that the calibration target (i.e. weekly number of diagnoses) can be accurately measured. To test the robustness of the results to imperfect calibration targets, we allowed for accumulating observations to be disturbed by an error term that follows a Gaussian distribution with mean zero and standard deviation 100. In this sensitivity analysis, the MSS method demonstrated the ability to cope with noisy data and sustain its performance (S9 Fig) . We next considered a scenario for which the epidemic trajectories are provided by an SEITR model (see S1 Text subsection 2 \"Equations of the SEITR model\") but an SITR model is chosen for parameter estimation and prediction. This allowed us to test to what extent model misspecification could erode the performance of these approaches, which is important because the true epidemic process may not be known. This sensitivity analysis revealed that each of the calibration methods considered here maintained their performance under this particular model misspecification scenario with respect to most performance criteria, but had problems with estimates for R eff (S10 and S11 Figs). Each method failed to accurately estimate R eff after the peak, which may be explained by the fact that in extreme epidemic scenarios used in this experiment, only a few number of individuals remain in the Susceptible compartment. Since the misspecified model used for calibration does not include the additional Exposed compartment, the size of Susceptible compartment is overestimated by all calibration methods, which leads to inaccurate R eff estimates after the peak.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 527,
+                    "end": 531,
+                    "text": "Fig)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Performance evaluation: Parameter estimation"
+        },
+        {
+            "text": "The F-I panels of Fig 4 and S1 to S8 Figs display the median of integrated relative errors (defined in Eq (16)) in predicting the number of diagnoses during the subsequent week, three weeks from now, accumulated over the next three weeks, and accumulated until the end of the epidemic from applying calibration methods described above on 50 simulated trajectories shown their A panels.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 18,
+                    "end": 30,
+                    "text": "Fig 4 and S1",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Performance evaluation: Prediction"
+        },
+        {
+            "text": "In all 9 scenarios (defined by epidemic severity and population size) and 5 epidemic times (8 and 4 weeks to peak, at the peak, and 4 and 8 weeks after the peak), the MSS method demonstrates superior or similar performance against the competing benchmark methods. As for the estimation targets, benchmark methods show higher integrated relative errors during both early and late phases of epidemics. This behavior occurs due to the small number of infectious individuals (which results in a low number of diagnoses) during these epidemic phases. The state updating procedure employed by the MSS method plays a central role in sustaining the performance of MSS method under these conditions. Fig 6A-6C displays the results of testing the hypothesis that the MSS method outperforms all benchmark methods at 0.05 significance level at different epidemic times. This figure suggest that in the majority of cases the MSS method demonstrates statistically superior than or similar performance to the benchmark methods (represented by Green, Blue and Black colors). We note that even for case where MSS is statistically dominated by another benchmark method, the absolute difference in mIRE (as shown in Fig 4 and S1 to S8 Figs) is not substantial.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 691,
+                    "end": 700,
+                    "text": "Fig 6A-6C",
+                    "ref_id": "FIGREF9"
+                },
+                {
+                    "start": 1197,
+                    "end": 1221,
+                    "text": "Fig 4 and S1 to S8 Figs)",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Performance evaluation: Prediction"
+        },
+        {
+            "text": "The prediction ability of all methods is not strongly influenced by a slight model mis-specification as shwon in S10 Fig, but, importantly, the superiority holds as well despite lack of knowledge of the exact model.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 117,
+                    "end": 126,
+                    "text": "Fig, but,",
+                    "ref_id": null
+                }
+            ],
+            "section": "Performance evaluation: Prediction"
+        },
+        {
+            "text": "Our results suggest that the MSS calibration method can address several major challenges inherent in parameter estimation and model-based prediction during outbreaks, when the true epidemic state can be only partially observed and the behavior of disease spread is most stochastic. Using a comprehensive set of simulation studies, we compare the performance of our method to several existing state-of-the-art calibration methods including a particle filter (PF) [27] , an ensemble Kalman filter (EnKF) [27] , and a likelihood approximation with the assumption of independent Poisson observations (I.Poi) [23] . For the majority of epidemic scenarios we evaluated, we find that MSS either outperforms or does as well as existing methods in terms of the ability to provide accurate estimates for the basic reproductive number (R 0 ), effective R, mean duration of infectiousness, unobserved number of infected individuals, the epidemic final attack rate and the number of cases during future weeks.",
+            "cite_spans": [
+                {
+                    "start": 462,
+                    "end": 466,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 502,
+                    "end": 506,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 604,
+                    "end": 608,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The superior performance of MSS can be attributed to the use of LNA to capture the correlations between epidemic compartments throughout the simulated outbreak, and to the state updating procedure employed by MSS. While it would be in principal possible to incorporate an LNA approximation into a PF framework, we used the version of PF that is commonly used [27] for the purpose of this comparison study. The main difference between EnKF and MSS is that EnKF does not use an approximation for the likelihood for an observation but rather updates states and parameters based on correlation between compartments and data using multiple parameter vectors. The MSS state updating procedure allows the calculation of these correlations using a single parameter vector. This results in a more accurate description of correlations between compartments as epidemic data are accumulating.",
+            "cite_spans": [
+                {
+                    "start": 359,
+                    "end": 363,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The LNA has been successfully applied to describe intrinsic stochastic fluctuations in various contexts [44] [45] [46] and has a solid theoretical basis [47, 48] . The LNA provides accurate approximation for large populations or when the fluctuations are small compared to the steady state of the system. As also suggested by the results presented here, LNA can perform well even when the system is not in steady state as long as the intervals over which the LNA projections are made are sufficiently small (here, observations occurred at weekly time steps for epidemics that lasted up to 100 weeks).",
+            "cite_spans": [
+                {
+                    "start": 104,
+                    "end": 108,
+                    "text": "[44]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 109,
+                    "end": 113,
+                    "text": "[45]",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 114,
+                    "end": 118,
+                    "text": "[46]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 153,
+                    "end": 157,
+                    "text": "[47,",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 158,
+                    "end": 161,
+                    "text": "48]",
+                    "ref_id": "BIBREF47"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "A main advantage of the MSS technique is that the LNA needs only to be employed on the relatively short time intervals between recordings and not over the whole course of the epidemics. This is possible by employing the state estimation procedure to initialize the LNA on the succeeding interval. Additionally, the simulation studies presented here and previous work in a Systems Biology context [35, 36] show that LNA can yield accurate estimates for parameters for stochastic systems. Nevertheless, if required, LNA accuracy can be improved by using higher order terms for correction [49] . For additional discussion on the LNA in a calibration setting (LNA on a whole system) see [50] , for additional theoretical remarks [48] or the original work [47] .",
+            "cite_spans": [
+                {
+                    "start": 396,
+                    "end": 400,
+                    "text": "[35,",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 401,
+                    "end": 404,
+                    "text": "36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 586,
+                    "end": 590,
+                    "text": "[49]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 683,
+                    "end": 687,
+                    "text": "[50]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 725,
+                    "end": 729,
+                    "text": "[48]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 751,
+                    "end": 755,
+                    "text": "[47]",
+                    "ref_id": "BIBREF46"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The computationally challenging part of the MSS is the interval-wise evaluation of the LNA which consists of n c + n c (n c + 1)/2 ODEs where n c stands for the number of compartments. PF and EnKF, on the other hand, only require the solution of the ODE system that consists of n c equations. The I.Poi. requires the execution of stochastic simulations for each parameter and is the most cost intensive of all four alternatives tested. MSS can be easily carried out without the use of a computing cluster: calibration and prediction for one time-series at the peak of the epidemic takes roughly 5 minutes on an Intel Xeon CPU E5-2630 v3 with 16GM RAM, see the S1 Text subsection 4 \"Computational Effort\" for a comparison of runtimes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We note that the performance of filtering methods can be impaired by filter degeneracy, a phenomenon where particles or members of an ensemble or filter have a very small likelihood value that varies over orders of magnitude even for the best members/particles. Our implementation of PF and EnKF is consistent with the original implementation by [27] and both methods are equipped with suitable mechanisms to handle filter degeneracy. Despite the fact that the MSS approach proposed here does not include such a mechanism to address filter degeneracy, MSS demonstrated very competitive performance in these simulated epidemic scenarios. We believe that speaks to the promise of MSS and potential extensions of this methodology.",
+            "cite_spans": [
+                {
+                    "start": 346,
+                    "end": 350,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The I.Poi method assumes that epidemic observations gathered over time are independent, an assumption that may be violated in many epidemic scenarios. For example, S12 Fig shows a clear correlation pattern among observations of epidemics trajectories produced by the SITR model of Fig 3. Despite lacking a mechanism to account for correlations between epidemic observations, I.Poi remained competative under several of the epidemic scenarios studied here.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 281,
+                    "end": 287,
+                    "text": "Fig 3.",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Our numerical analysis suggests that the combination of noisy observations and model mis-specification will erode the performance of all calibration methods considered here S11 Fig. However, our results indicate that mis-specification of model structure far outweighs the impact of observational noise in these simulations (compare S8 and S9 Figs which show similar results fort he noise-free and noisy scenarios). This finding highlights the importance of selecting a model structure that adequately reflects the complexity of the disease.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 177,
+                    "end": 190,
+                    "text": "Fig. However,",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "The performance of PF and EnKF can be affected by the choice of observational variance (Eq 13). The observation variance we selected for our analyses is adapted from [27] , which is a heuristic choice but has proved reliable in previous studies [26] . We ran a sensitivity analysis on this parameter by dropping the absolute variance term from 10,000 to 1, and observed no major change in the performance of PF and EnKF methods in populations of various size. This suggests that the absolute term in the observational variance is not the determining factor in the relative performance of EnKF, PF and MSS.",
+            "cite_spans": [
+                {
+                    "start": 166,
+                    "end": 170,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 245,
+                    "end": 249,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We note four main limitations of our study. First, while including the necessary complexity to offer a suitable platform for our analyses, the epidemic model used to evaluate the comparative performance of calibration methods is highly simplified. Investigating the impact of model complexity level on the performance of calibration methods would be of immediate interest for future research. Second, our evaluation are based on \"simulated\" epidemic trajectories. While only simulated scenarios can allow us to calculate the relative errors in estimating the unknown parameters (e.g. R 0 , mean duration of infectiousness), further investigation using real-world data is required to comprehensively evaluate the performance of MSS along with other existing calibration methods.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Third, in our analyses, we used an SITR model of influenza epidemics that allows for a delay between the time of infection and time of diagnosis. Our model, however, does not account for the fact that in reality only a portion of influenza cases will be reported as not all infected individuals will have severe enough symptoms to seek care. If the fraction of cases that remains undetected is known and fixed, this is easily handled in the model with the addition of compartments and parameters to reflect the observation process, However, the degree of underreporting is often unknown and may change over the course of an epidemic. Such underreporting impacts the performance of all available calibration methods, and the development of novel approaches that can better account for this phenomenon is an important direction for future research.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "And finally, our simulation study assumed that epidemic parameters, such as contact rate, remain constant through the outbreak. In reality, however, some epidemic parameters may vary over time due to changes in population behavior and interactions. We also note that for simplicity, our analysis used only one type of real-time observations (i.e. weekly diagnoses), but the methods presented here can be extended for scenarios where multiple sources of realtime data (e.g. disease-related hospitalizations and deaths) are available.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In summary, precise and timely estimation of key epidemic parameters (e.g. expected number of secondary cases, or mean duration of infectiousness) remains a critical component of accurate model-based prediction and effective response to infectious disease outbreaks. The increase in accuracy offered by the MSS method could enable public health officials to response more effectively to epidemic threats. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Improving the evidence base for decision making during a pandemic: The example of 2009 influenza A/ H1 N1. Biosecurity and bioterrorism: biodefense strategy, practice, and science",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Finelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Heffernan",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Redd",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "9",
+            "issn": "",
+            "pages": "89--115",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Transmissibility of 1918 pandemic influenza",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Mills",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Robins",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nature",
+            "volume": "432",
+            "issn": "7019",
+            "pages": "904--906",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nature03063"
+                ],
+                "PMID": [
+                    "15602562"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Household transmission of 2009 pandemic influenza A (H1N1) virus in the United States",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Reed",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ghani",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Kent",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "New England Journal of Medicine",
+            "volume": "361",
+            "issn": "27",
+            "pages": "2619--2627",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMoa0905498"
+                ],
+                "PMID": [
+                    "20042753"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "The effective reproduction number of pandemic influenza: prospective estimation",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cowling",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lau",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ho",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Chuang",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Tsang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Epidemiology",
+            "volume": "21",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1097/EDE.0b013e3181f20977"
+                ],
+                "PMID": [
+                    "20805752"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "A new framework and software to estimate time-varying reproduction numbers during epidemics",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cori",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "American journal of epidemiology",
+            "volume": "178",
+            "issn": "9",
+            "pages": "1505--1512",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwt133"
+                ],
+                "PMID": [
+                    "24043437"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Using routine surveillance data to estimate the epidemic potential of emerging zoonoses: application to the emergence of US swine origin influenza A H3N2v virus",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Epperson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Biggerstaff",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Swerdlow",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Finelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS Med",
+            "volume": "10",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pmed.1001399"
+                ],
+                "PMID": [
+                    "23472057"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "A Bayesian MCMC approach to study transmission of influenza: application to household longitudinal data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Carrat",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Viboud",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Valleron",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Boelle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Statistics in medicine",
+            "volume": "23",
+            "issn": "22",
+            "pages": "3469--3487",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.1912"
+                ],
+                "PMID": [
+                    "15505892"
+                ]
+            }
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Inference in disease transmission experiments by using stochastic epidemic models",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "H\u00f6hle",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "J\u00f8rgensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Journal of the Royal Statistical Society: Series C (Applied Statistics)",
+            "volume": "54",
+            "issn": "2",
+            "pages": "349--366",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1467-9876.2005.00488.x"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "A likelihood-based method for real-time estimation of the serial interval and reproductive number of an epidemic",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "White",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pagano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Stat Med",
+            "volume": "27",
+            "issn": "16",
+            "pages": "2999--3016",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/sim.3136"
+                ],
+                "PMID": [
+                    "18058829"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "A tutorial introduction to Bayesian inference for stochastic epidemic models using Markov chain Monte Carlo methods",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "O&apos;neill",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Mathematical biosciences",
+            "volume": "180",
+            "issn": "1",
+            "pages": "103--114",
+            "other_ids": {
+                "PMID": [
+                    "12387918"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "The R0 package: a toolbox to estimate reproduction numbers for epidemic outbreaks",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Obadia",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Haneef",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Boelle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "BMC Med Inform Decis Mak",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1472-6947-12-147"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Real-time estimates in early detection of SARS. Emerging Infect Dis",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Boelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "12",
+            "issn": "",
+            "pages": "110--113",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1201.050593"
+                ],
+                "PMID": [
+                    "16494726"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Estimating in real time the efficacy of measures to control emerging communicable diseases",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Valleron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "American Journal of Epidemiology",
+            "volume": "164",
+            "issn": "6",
+            "pages": "591--597",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwj274"
+                ],
+                "PMID": [
+                    "16887892"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Different epidemic curves for severe acute respiratory syndrome reveal similar impacts of control measures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Teunis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "American Journal of Epidemiology",
+            "volume": "160",
+            "issn": "6",
+            "pages": "509--516",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwh255"
+                ],
+                "PMID": [
+                    "15353409"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Early real-time estimation of the basic reproduction number of emerging infectious diseases",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Davoudi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Meza",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Meyers",
+                    "suffix": ""
+                },
+                {
+                    "first": "Djd",
+                    "middle": [],
+                    "last": "Earn",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Pourbohloul",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Physical Review X",
+            "volume": "2",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1103/PhysRevX.2.031005"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Methods to infer transmission risk factors in complex outbreak data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J R Soc Interface",
+            "volume": "9",
+            "issn": "68",
+            "pages": "456--469",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rsif.2011.0379"
+                ],
+                "PMID": [
+                    "21831890"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Modelling development of epidemics with dynamic small-world networks",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Saramaki",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Kaski",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "J Theor Biol",
+            "volume": "234",
+            "issn": "3",
+            "pages": "413--421",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jtbi.2004.12.003"
+                ],
+                "PMID": [
+                    "15784275"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Infectious Diseases of Humans: Dynamics and Control",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "May",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Epidemic Modelling: An Introduction. Cambridge",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Daley",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Gani",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Probabilistic projections of HIV prevalence using Bayesian melding. The Annals of Applied Statistics",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Alkema",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Raftery",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Clark",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "229--248",
+            "other_ids": {
+                "DOI": [
+                    "10.1214/07-AOAS111"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Uncertainty in predictions of disease spread and public health responses to bioterrorism and emerging diseases",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Elderd",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dukic",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Dwyer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "103",
+            "issn": "42",
+            "pages": "15693--15697",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0600816103"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Bayesian modeling to unmask and predict influenza A/H1N1pdm dynamics in London",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Birrell",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Ketsetzis",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Gay",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Cooper",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Presanis",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Harris",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "108",
+            "issn": "45",
+            "pages": "18238--18243",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.1103002108"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Transmission dynamics of the etiological agent of SARS in Hong Kong: impact of public health interventions",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Riley",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ghani",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Abu-Raddad",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hedley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Science",
+            "volume": "300",
+            "issn": "5627",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1086478"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Inference for discretely observed stochastic kinetic networks with applications to epidemic modeling",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Choi",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rempala",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Biostatistics",
+            "volume": "13",
+            "issn": "1",
+            "pages": "153--165",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/biostatistics/kxr019"
+                ],
+                "PMID": [
+                    "21835814"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Inference for nonlinear dynamical systems",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ionides",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Breto",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "King",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "103",
+            "issn": "49",
+            "pages": "18438--18443",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0603181103"
+                ],
+                "PMID": [
+                    "17121996"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Real-time influenza forecasts during the 2012-2013 season",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Karspeck",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tamerius",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nat Commun",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/ncomms3837"
+                ],
+                "PMID": [
+                    "24302074"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Comparison of Filtering Methods for the Modeling and Retrospective Forecasting of Influenza Epidemics",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Karspeck",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLOS Computational Biology",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003583"
+                ],
+                "PMID": [
+                    "24762780"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Forecasting Influenza Epidemics in Hong Kong",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cowling",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Lau",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Comput Biol",
+            "volume": "11",
+            "issn": "7",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1004383"
+                ],
+                "PMID": [
+                    "26226185"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Forecasting seasonal outbreaks of influenza",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Karspeck",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "109",
+            "issn": "50",
+            "pages": "20425--20430",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.1208772109"
+                ],
+                "PMID": [
+                    "23184969"
+                ]
+            }
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Real-time epidemic monitoring and forecasting of H1N1-2009 using influenza-like illness from general practice and family doctor clinics in Singapore",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Ong",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Cook",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS ONE",
+            "volume": "5",
+            "issn": "4",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0010036"
+                ],
+                "PMID": [
+                    "20418945"
+                ]
+            }
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Tracking Epidemics With Google Flu Trends Data and a State-Space SEIR Model",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Dukic",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Lopes",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Polson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Journal of the American Statistical Association",
+            "volume": "107",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1080/01621459.2012.713876"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Influenza forecasting in human populations: a scoping review",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Chretien",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "George",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shaman",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Chitale",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Mckenzie",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS ONE",
+            "volume": "9",
+            "issn": "4",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0094130"
+                ],
+                "PMID": [
+                    "24714027"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Real time Bayesian estimation of the epidemic potential of emerging infectious diseases",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bettencourt",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ribeiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "PLoS One",
+            "volume": "3",
+            "issn": "5",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0002185"
+                ],
+                "PMID": [
+                    "18478118"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "An examination of the Reed-Frost theory of epidemics",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Abbey",
+                    "suffix": ""
+                }
+            ],
+            "year": 1952,
+            "venue": "Human biology",
+            "volume": "24",
+            "issn": "3",
+            "pages": "201--233",
+            "other_ids": {
+                "PMID": [
+                    "12990130"
+                ]
+            }
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Deterministic inference for stochastic systems using multiple shooting and a linear noise approximation for the transition probabilities",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Zimmer",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sahle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "IET Systems Biology",
+            "volume": "9",
+            "issn": "",
+            "pages": "181--192",
+            "other_ids": {
+                "DOI": [
+                    "10.1049/iet-syb.2014.0020"
+                ],
+                "PMID": [
+                    "26405142"
+                ]
+            }
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Reconstructing the hidden states in time course data of stochastic models",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Zimmer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Mathematical BioSciences",
+            "volume": "269",
+            "issn": "",
+            "pages": "117--129",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.mbs.2015.08.015"
+                ],
+                "PMID": [
+                    "26363082"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Intrinsic noise analyzer: a software package for the exploration of stochastic biochemical kinetics using the system size expansion",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Matuschek",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Grima",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PloS one",
+            "volume": "7",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0038518"
+                ],
+                "PMID": [
+                    "22723865"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Stochastic processes in physics and chemistry",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Van Kampen",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "",
+            "volume": "1",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Generalized Markov models of infectious disease spread: A novel framework for developing dynamic health policies",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Yaesoubi",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Cohen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "European Journal of Operational Research",
+            "volume": "215",
+            "issn": "",
+            "pages": "679--687",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.ejor.2011.07.016"
+                ],
+                "PMID": [
+                    "21966083"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "A General Method for Numerically Simulating the Stochastic Time Evolution of coupled Chemical Reactions",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Gillespie",
+                    "suffix": ""
+                }
+            ],
+            "year": 1976,
+            "venue": "Journal of Computational Physics",
+            "volume": "22",
+            "issn": "4",
+            "pages": "90041--90044",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/0021-9991(76)90041-3"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Influenza prediction challenge. Center for disease control and prevention",
+            "authors": [],
+            "year": 2016,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "COPASI-a COmplex PAthway SImulator",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Hoops",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sahle",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gauges",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Pahle",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Simus",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Bioinformatics",
+            "volume": "22",
+            "issn": "24",
+            "pages": "3067--3074",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btl485"
+                ],
+                "PMID": [
+                    "17032683"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Biochemical fluctuations, optimisation and the linear noise approximation",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Pahle",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Challenger",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Mendes",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Mckane",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "BMC Systems Biology",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1752-0509-6-86"
+                ]
+            }
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Multi-compartment linear noise approximation",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Challenger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Mckane",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Pahle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Journal of Statistical Mechanics: Theory and Experiment",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1088/1742-5468/2012/11/P11010"
+                ]
+            }
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "LiNA-A Graphical Matlab Tool for Analyzing Intrinsic Noise in Biochemical Reaction Networks. online tutorial",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Straube",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Von Kamp",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Stochastic processes in physics and chemistry",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Van Kampen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "An effective rate equation approach to reaction kinetics in small volumes: Theory and application to biochemical reactions in nonequilibrium steady-state conditions",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Grima",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "The Journal of Chemical Physics",
+            "volume": "133",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1063/1.3454685"
+                ],
+                "PMID": [
+                    "20649359"
+                ]
+            }
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Intrinsic Noise Analyzer: A Software Package for the Exploration of Stochastic Biochemical Kinetics Using the System Size Expansion",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Thomas",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Matuschek",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Grima",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Plos ONE",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0038518"
+                ],
+                "PMID": [
+                    "22723865"
+                ]
+            }
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Bayesian inference of biochemical kinetic parameters using the linear noise approximation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Komorowski",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Finkenst\u00e4dt",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Harper",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rand",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Bioinformatics",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-10-343"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Fig 2 summarizes the steps of our proposed method for calibrating stochastic epidemic models. The set \u0398 in Step 1.b includes parameter values for which the likelihood function",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "An algorithm for real-time calibration of stochastic compartmental epidemic models. doi:10.1371/journal.pcbi.1005257.g002",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "A model for the outbreak of a novel viral pathogen. doi:10.1371/journal.pcbi.1005257.g003",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 10 000 with 50% \u2212 70% attack rate. A) Epidemic scenarios used to evaluate the performance of calibration methods. Each scenario consists of 50 stochastic trajectories obtained by simulating the model in Fig 3 using the Gillespie algorithm. B) results for estimating R 0 , C) results for estimating R eff , D) results for estimating the mean duration of infectiousness, E) results for estimating the infection prevalence, F) results for predicting the next week diagnoses, G) results for predicting the diagnoses 3 weeks from now, H) results for predicting the diagnoses over the next 3 weeks, I) results for predicting the attack rate. In each panel: MSS: Multiple Shooting for Stochastic systems (the method proposed here); I.Poi: Independent Poisson (Benchmark Method A); PF: Particle Filter (Benchmark Method B); EnKF: Ensemble Kalman Filter (Benchmark Method C). P-values are from Wilcoxon Signed-Rank test evaluating the hypothesis that the median of relative errors for the MSS approach is smaller than that of I.Poi (first row), PF (second row), and EnKF (third row); p-values smaller than 0.001 are displayed as ***, p-values in between 0.001 and 0.01 as ** and between 0.01 and 0.05 as *. The values of mIRE for some scenarios fall above the vertical axis range and are not displayed. doi:10.1371/journal.pcbi.1005257.g004",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "4E displays the median of IRE (defined in Eq",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Identifying the calibration method with statistically dominant performance at 0.05 significance level for estimating model parameters and infection prevalence. Red, if MSS is statistically better than all benchmark methods. White, if all methods fail to demonstrate statistically dominant performance. Blue if I.Poi (Benchmark A), Green if Particle Filter (Benchmark B) and Black if the Ensemble Kalman filter (Benchmark C) statistically outperform the MSS method. Multiple colors are displayed if more than one method is significantly better than MSS.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "Identifying the calibration method with statistically dominant performance for predictions at 0.05 significance level. Red, if MSS is statistically better than all benchmark methods. White, if all methods fail to demonstrate statistically dominant performance. Blue if I.Poi (benchmark A), Green if Particle Filter (benchmark B) and Black if the Ensemble Kalman filter (benchmark C) statistically outperform the MSS method. Multiple colors can occur if more than one method is significantly better than MSS.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF10": {
+            "text": ". Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 1 000 with 30% \u2212 50% attack rate. Same setting as in Fig 4. (TIF) S2 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 10 000 with 30% \u2212 50% attack rate. Same setting as in Fig 4. (TIF) S3 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 100 000 with 30% \u2212 50% attack rate. Same setting as in Fig 4. (TIF) S4 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 1 000 with 50% \u2212 70% attack rate. Same setting as in Fig 4. (TIF) S5 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 100 000 with 50% \u2212 70% attack rate. Same setting as in Fig 4. (TIF) S6 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 1 000 with 70% \u2212 100% attack rate. Same setting as in Fig 4. (TIF) S7 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 10 000 with 70% \u2212 100% attack rate. Same setting as in Fig 4. (TIF) S8 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 100 000 with 70% \u2212 100% attack rate. Same setting as in Fig 4. (TIF) S9 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 100 000 with 70% \u2212 100% attack rate and additive observation noise. Same setting as in Fig 4. (TIF) S10 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 100 000 with 70% \u2212 100% attack rate with a mis-specified model. Same setting as in Fig 4. (TIF) S11 Fig. Median integrated relative errors (mIRE) in estimating model parameters and infection prevalence as well as prediction for simulated epidemics in a population of 100 000 with 70% \u2212 100% attack rate with a mis-specified model and additive observation noise. Same setting as in Fig 4. (TIF) S12 Fig. Correlation structure of the SITR model: Inter-temporal correlation for new cases in SITR model, calculated from the 50 stochastic simulations shown in Fig 4A. (TIF) S1 File. Mathematica Code of the method and all simulation studies. (TAR.GZ) Author Contributions Conceptualization: CZ RY TC. Data curation: CZ.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "Formal analysis: CZ RY TC. Funding acquisition: RY TC. Investigation: CZ RY TC. Methodology: CZ RY TC. Resources: CZ TC. Software: CZ. Supervision: RY TC. Validation: CZ RY TC.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "and second, it involves enumeration over the set O i \u00d7 O i\u22121 , which can be prohibitively large even for simple epidemic models. One way to simplify the computational complexity of Eq (3) is to represent the belief state P(\u00c1|Y i ) as a step function that takes 1 for the most probable state (denoted byn) and 0 elsewhere. This allows us to approximate the function P\u00f0\u00c1\u00de in Eq (3) with:P \u00f0 y i jy 1 ; y 2 ; . . . ; y i\u00c0 1 ; y\u00de \u00bc P\u00f0 y i jn i ;n i\u00c0 1 ; y\u00dep\u00f0n i jn i\u00c0 1 ; y\u00de;",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Writing -review & editing: CZ RY TC.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Writing -original draft: CZ RY TC."
+        }
+    ]
+}

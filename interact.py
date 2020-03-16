@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # encoding: UTF-8
+
 """
 Filename: interact.py
-Date: 2020-03-06 01:48:59 PM
-Author: David Oniani
-E-mail: oniani.david@mayo.edu
+Author:   David Oniani
+E-mail:   oniani.david@mayo.edu
 
 Description:
 

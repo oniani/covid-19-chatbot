@@ -1,0 +1,2136 @@
+{
+    "paper_id": "3a3c6a9ff71461bd81862fc711d5605cfbbb975d",
+    "metadata": {
+        "title": "outbreaker2: a modular platform for outbreak reconstruction",
+        "authors": [
+            {
+                "first": "Finlay",
+                "middle": [],
+                "last": "Campbell",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Xavier",
+                "middle": [],
+                "last": "Didelot",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Rich",
+                "middle": [],
+                "last": "Fitzjohn",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Neil",
+                "middle": [],
+                "last": "Ferguson",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Anne",
+                "middle": [],
+                "last": "Cori",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Thibaut",
+                "middle": [],
+                "last": "Jombart",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Reconstructing individual transmission events in an infectious disease outbreak can provide valuable information and help inform infection control policy. Recent years have seen considerable progress in the development of methodologies for reconstructing transmission chains using both epidemiological and genetic data. However, only a few of these methods have been implemented in software packages, and with little consideration for customisability and interoperability. Users are therefore limited to a small number of alternatives, incompatible tools with fixed functionality, or forced to develop their own algorithms at considerable personal effort. Results: Here we present outbreaker2, a flexible framework for outbreak reconstruction. This R package re-implements and extends the original model introduced with outbreaker, but most importantly also provides a modular platform allowing users to specify custom models within an optimised inferential framework. As a proof of concept, we implement the within-host evolutionary model introduced with TransPhylo, which is very distinct from the original genetic model in outbreaker, and demonstrate how even complex model results can be successfully included with minimal effort. Conclusions: outbreaker2 provides a valuable starting point for future outbreak reconstruction tools, and represents a unifying platform that promotes customisability and interoperability. Implemented in the R software, outbreaker2 joins a growing body of tools for outbreak analysis.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Determining 'who infected whom' during an outbreak can yield precious insights into transmission dynamics of an infectious disease and subsequently inform infection control policies. Transmission tree reconstruction has been used to specify the contribution of individual cases and locations to overall transmission [1] , characterise heterogeneous infectiousness within outbreaks [2, 3] , evaluate the impact of control measures on transmission intensity [4, 5] and identify transmission routes [6] . Consequently there exists significant interest in designing methodologies for the inference of transmission trees from outbreak data, including temporal data (e.g. date of symptom onset), contact data, pathogen whole genome sequences (WGS) and geographic locations.",
+            "cite_spans": [
+                {
+                    "start": 316,
+                    "end": 319,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 381,
+                    "end": 384,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 385,
+                    "end": 387,
+                    "text": "3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 456,
+                    "end": 459,
+                    "text": "[4,",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 460,
+                    "end": 462,
+                    "text": "5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 496,
+                    "end": 499,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "A large number of studies have addressed this problem in recent years (Table 1) [6] [7] [8] [9] [10] [11] [12] [13] [14] [15] . These approaches differ in multiple ways, including in their underlying epidemiological models (e.g. SIR [8, 11] , SEIR [9, 12] or branching process models [7, 14, 15] ) and genetic models (e.g. non-phylogenetic [7, 10, 12, 16] or phylogenetic models [11, [13] [14] [15] ), as well as their ability to account for unobserved cases and multiple infectious introductions. This methodological diversity is beneficial, providing various theoretical frameworks for outbreak reconstruction in different epidemic scenarios.",
+            "cite_spans": [
+                {
+                    "start": 80,
+                    "end": 83,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 84,
+                    "end": 87,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 88,
+                    "end": 91,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 92,
+                    "end": 95,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 96,
+                    "end": 100,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 101,
+                    "end": 105,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 106,
+                    "end": 110,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 111,
+                    "end": 115,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 116,
+                    "end": 120,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 121,
+                    "end": 125,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 233,
+                    "end": 236,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 237,
+                    "end": 240,
+                    "text": "11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 248,
+                    "end": 251,
+                    "text": "[9,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 252,
+                    "end": 255,
+                    "text": "12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 284,
+                    "end": 287,
+                    "text": "[7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 288,
+                    "end": 291,
+                    "text": "14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 292,
+                    "end": 295,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 340,
+                    "end": 343,
+                    "text": "[7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 344,
+                    "end": 347,
+                    "text": "10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 348,
+                    "end": 351,
+                    "text": "12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 352,
+                    "end": 355,
+                    "text": "16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 379,
+                    "end": 383,
+                    "text": "[11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 384,
+                    "end": 388,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 389,
+                    "end": 393,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 394,
+                    "end": 398,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 70,
+                    "end": 79,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Background"
+        },
+        {
+            "text": "Unfortunately, the implementation of these methodologies in a user-friendly computational framework to encourage their use by the wider scientific community has so far remained limited. Primarily, a large proportion of the methods described in the literature is not available as readily useable software (Table 1) , requiring the user either to directly modify the original code if it is available, or implement the algorithm themselves if not. Moreover, the existing software tools were developed in parallel with little consideration for interoperability, accepting similar types of data or outputting similar results in different formats. This results in unnecessary time spent preparing and formatting the data, and hinders effective comparison of results produced under different models. Finally, the current software are generally inflexible, with few options to specify algorithm behaviour without modifying the often complex source code (e.g. [7] ). This ranges from simple implementation issues, such as being limited to specific distributions for priors [14, 15] , to more fundamental restrictions on the inferential process itself, in that the underlying epidemiological and genetic models are hardcoded and not customisable by the user.",
+            "cite_spans": [
+                {
+                    "start": 951,
+                    "end": 954,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1064,
+                    "end": 1068,
+                    "text": "[14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1069,
+                    "end": 1072,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 304,
+                    "end": 313,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Background"
+        },
+        {
+            "text": "To address these issues, we have developed out-breaker2, a flexible software tool for outbreak reconstruction. outbreaker2 exploits the fact that most transmission tree inference methods, though based on very different models, are generally implemented in a similar manner. Most consider the same data, namely WGS and some form of temporal data (i.e. dates of symptom onset and assumptions on the distribution of incubation and infectious periods [7, 9, 12, 14, 15] , or explicitly defined exposure intervals [10, 13] ). The majority are also implemented in a Bayesian framework, and therefore describe prior distributions on parameters and likelihood functions that evaluate the plausibility of a given parameter sets under specific transmission and evolutionary models. Unobserved data, including the transmission tree itself, times of infection and unobserved cases, are generally modelled using augmented data [17] . Finally most methods use a Markov Chain Monte-Carlo (MCMC) algorithm to derive samples from the posterior distributions, using often complex proposal functions to explore alternative transmission scenarios.",
+            "cite_spans": [
+                {
+                    "start": 447,
+                    "end": 450,
+                    "text": "[7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 451,
+                    "end": 453,
+                    "text": "9,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 454,
+                    "end": 457,
+                    "text": "12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 458,
+                    "end": 461,
+                    "text": "14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 462,
+                    "end": 465,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 509,
+                    "end": 513,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 514,
+                    "end": 517,
+                    "text": "13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 914,
+                    "end": 918,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "outbreaker2 generalises this procedure and allows the user to implement their own models by specifying custom prior distributions, likelihood functions and movement functions, which are then employed within a wider inference framework. This enables sophisticated customisation of the algorithm with minimal effort by the user, allowing a greater focus on methodological developments rather than their implementation. Importantly, it also permits for different modules to be developed and easily combined, so that outbreak reconstruction approaches can be tailored to specific diseases and epidemiological contexts. outbreaker2 is implemented as a package for the R software [18] , as part of a larger toolkit for epidemics analysis developed under the R Epidemics Consortium (www.repidemicsconsortium.org). In the following, we explain the rationale of this implementation and illustrate its modularity using a simple case study. Implementation outbreaker2 is written in R and C++, making extensive use of Rcpp [19] to facilitate the integration of C++ into R. The original method for outbreak reconstruction introduced with outbreaker [7] has been entirely re-implemented using a modular and highly customisable approach ( Fig. 1 ). This was achieved by distinguishing the architecture which underpins the inferential process from model-specific regions of code (i.e. code that varies between model implementations), and treating these components as independent modules (Fig. 1) . Non-specific components of the implementation include data and overall configuration infrastructure, as well as all post-processing of outputs including summaries and graphics. The three central, model-specific components of our Bayesian inference framework are the prior distributions, likelihood functions and MCMC functions defining movements of the parameters. By abstracting these components into algorithmic functions with predefined input and output structures, we designed simple procedures allowing users to customise most aspects of the outbreak reconstruction, including the model itself and the MCMC used to explore the parameter space ( Fig. 1 ). The following sections describes the structure of the core components of outbreaker2, and the mechanisms by which they can be changed. Extensive documentation, including a full description of the API and example of customised models, are available from the outbreaker2 website (http://www.repidemicsconsortium.org/outbreaker2/).",
+            "cite_spans": [
+                {
+                    "start": 674,
+                    "end": 678,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1011,
+                    "end": 1015,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1224,
+                    "end": 1230,
+                    "text": "Fig. 1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1471,
+                    "end": 1479,
+                    "text": "(Fig. 1)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 2132,
+                    "end": 2138,
+                    "text": "Fig. 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Background"
+        },
+        {
+            "text": "outbreaker2 defines several S3 object classes used to transfer information across modules. The outbreaker_data class stores the data which remains unchanged throughout the inference process. Users pass temporal data (e.g. sampling times) as a vector of dates, and genetic data as either DNA sequences (DNAbin objects [20] ) or phylogenetic trees (phylo objects [20] ). Generation time and incubation period distributions are also specified by the user. Extensive data validation is achieved by the constructor of this class to prevent often intractable errors at a later stage. The outbreaker_config class stores the global properties of the algorithm and can be optionally specified by the user. Importantly, this allows the user to declare which parameters and augmented data should be moved and inferred during the MCMC procedure. Again, the constructor of this class ensures validation of the inputs. The outbreaker_param class is used internally for storing a single state in the MCMC chain, and describes parameters and augmented data. Objects of this class are proposed, accepted or rejected, and sampled during the MCMC procedure. The advantage of this fixed internal structure is that it greatly simplifies writing new, customised movement functions. Finally, results of the reconstruction are output as outbreaker_chains objects, for which various methods (e.g. plot, print, summary) have been defined to summarise and visualise results, or carry on further secondary analyses.",
+            "cite_spans": [
+                {
+                    "start": 317,
+                    "end": 321,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 361,
+                    "end": 365,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Object classes"
+        },
+        {
+            "text": "A prior distribution describes the probability of observing a parameter given our previous knowledge of the infectious disease under observation. In outbreaker2, custom priors are specified as functions with a single argument of class outbreaker_param, which return a log-probability of a given parameter value (all probabilities are treated on a log scale). Custom priors can take any shape as long as this structure is satisfied. Priors can be specified for each parameter in the model by passing a named list of functions to the priors argument of the outbreaker function. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Custom prior distributions"
+        },
+        {
+            "text": "Likelihood functions define the probability of a set of parameters (outbreaker_param object) given some observed data (outbreaker_data object) under a specific model. In outbreaker2, the overall likelihood is decomposed in separate likelihood components, which can be evaluated independently during the MCMC and therefore boost computer efficiency. Customised likelihood functions can be specified by the user for each of these components, to use alternative epidemiological or evolutionary models. Note that additional likelihood components can also be added, in which case the overall likelihood function will also need to be re-defined. Likelihood components can have any form, as long as they take an outbreaker_data and an outbreaker_param objects as arguments, and return a log-probability. As a result, users can combine different epidemiological and evolutionary models to fit specific needs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Custom likelihood functions"
+        },
+        {
+            "text": "In an MCMC algorithm, movement functions are used to update the set of parameters and augmented data, from one MCMC iteration to the next. For example, a commonly used strategy is to use a Metropolis-Hastings move, where an update is first proposed and then accepted or rejected depending on its likelihood. Well designed movement functions are necessary to achieve efficient chain convergence and ensure rapid and representative sampling from the posterior distribution. In outbreaker2, the MCMC is decomposed as a list of movement functions, each of which is evaluated at each step of the chain. Given the size and complexity of the parameter space when inferring temporally resolved transmission trees with unobserved cases, efficient movement functions are difficult and time-intensive to develop. outbreaker2 allows users to access the optimised, default movement functions for various parameters and augmented data (including, crucially, the transmission tree) while using custom prior distributions and likelihood functions. Default movements, likelihood and prior functions can all be accessed through the function get_cpp_api, so that these components can be used when designing new MCMC procedures.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Custom movements functions"
+        },
+        {
+            "text": "Unlike priors and likelihood functions which always take the same arguments, movement functions may have varying arguments including the data, general settings, custom priors and likelihoods. To simplify the specification of custom movements by the user, outbreaker2 only requires that new movement functions have an outbrea-ker_param object for first argument; further arguments such as data and custom likelihood components are automatically detected, and internally replaced by the corresponding components of the code. In other words, the whole machinery of the code is added seamlessly to custom movement functions where it is needed. Importantly, as the acceptance-rejection step is specified within movement functions, users are not restricted to Metropolis-Hastings methods [21] , and could use alternative MCMCs such as a Gibbs sampler [22] .",
+            "cite_spans": [
+                {
+                    "start": 782,
+                    "end": 786,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 845,
+                    "end": 849,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Custom movements functions"
+        },
+        {
+            "text": "The main asset of outbreaker2 is its ability to define new models easily. We tested this flexibility by implementing the genetic model developed by Didelot et al. [8, 15] in the TransPhylo package. In contrast to the model of evolution used by outbreaker2 [7] , which treats mutations between all transmission pairs as independent events, TransPhylo uses a phylogenetic tree to account for patterns of common evolution amongst the sampled isolates. Briefly, TransPhylo takes a time-stamped phylogenetic tree as input, and explores ways of \"coloring\" this tree with one color for each infected host, thus revealing the evolution that occurred within this host. Transmission events are therefore also represented as the points of transition from one color to another, or in other words from one host to another. This approach is completely different from the one implemented in the default setting of outbreaker2, making it a good case study for the flexibility of implementation of custom models in the outbreaker2 framework.",
+            "cite_spans": [
+                {
+                    "start": 163,
+                    "end": 166,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 167,
+                    "end": 170,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 256,
+                    "end": 259,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Implementing a custom model"
+        },
+        {
+            "text": "The genetic likelihood of TransPhylo was already implemented within the original package, and was therefore easily passed on to outbreaker2 as a custom likelihood. To account for restrictions on the topology of the transmission tree in the TransPhylo model, a custom movement function on ancestries and infection times was also developed. This work was implemented in the R package o2mod.TransPhylo (standing for 'outbreaker2 module: TransPhylo'), which infers transmission trees using the TransPhylo genetic model while benefiting from the epidemiological model exploiting data on the incubation period and generation time distributions [7] , extending the original Wallinga & Teunis model [5] . The total effort required to implement this model was minimal: only 185 lines of code (LOC) were necessary to design o2mod.TransPhylo, which is negligible compared to the 1434 LOC in the original TransPhylo package, or the 7633 LOC of outbreaker2.",
+            "cite_spans": [
+                {
+                    "start": 638,
+                    "end": 641,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 691,
+                    "end": 694,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Implementing a custom model"
+        },
+        {
+            "text": "We compared the performance of o2mod.TransPhylo and TransPhylo by reconstructing simulated outbreaks, using the simulator in the phybreak package described described by Klinkenberg et al. [14] . We used epidemiological and evolutionary parameters of Ebola virus as a plausible use case (Table 2) , and assumed a linearly growing within-host pathogen population size. A total of 100 outbreaks each with 20 cases were simulated, and reconstructed using o2mod.TransPhylo, TransPhylo, and the default outbreaker2 algorithm.",
+            "cite_spans": [
+                {
+                    "start": 188,
+                    "end": 192,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 286,
+                    "end": 295,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Implementing a custom model"
+        },
+        {
+            "text": "MCMC chains of o2mod.TransPhylo converged rapidly, and mixed more efficiently than those of TransPhylo as demonstrated both by visual chain inspection (Fig. 2) and lower autocorrelation between log-likelihood values (0.31 and 0.72 at a lag of 50, respectively). This resulted in a significantly higher effective sample size per iteration (95.2 and 27.2 across a 5000 iteration window, respectively). However, individual iterations were significantly slower, taking on average 555.2 s per 1000 iterations, compared to 4.6 s for TransPhylo and 4.5 s for the basic model of outbreaker2. The vast majority of computational time by o2mod.TransPhylo was spent in the custom functions, which could be re-written in C++ for a performance boost. However, running times of o2mod.TransPhylo were acceptable for a complex Bayesian model: final results (well-mixed chain with Time-to-collection in days (SD) 14.4 (8.9) Assumed same as generation time Basic reproduction number R 0 1.8 [33] Mutation rate (per site per day) 3.1 \u00d7 10 \u2212 6 [35] [36] [37] Genome length (bases) 18,958 [35, 38] o2mod.TransPhylo 10,000 iterations) could be obtained in 1.5 h on a standard desktop computer. Users can therefore implement their models entirely in R and expect reasonable runtimes.",
+            "cite_spans": [
+                {
+                    "start": 972,
+                    "end": 976,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 1023,
+                    "end": 1027,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 1028,
+                    "end": 1032,
+                    "text": "[36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 1033,
+                    "end": 1037,
+                    "text": "[37]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 1067,
+                    "end": 1071,
+                    "text": "[35,",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 1072,
+                    "end": 1075,
+                    "text": "38]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 151,
+                    "end": 159,
+                    "text": "(Fig. 2)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Algorithm performance"
+        },
+        {
+            "text": "Visual inspection of ancestry assignments for a single outbreak suggests that outbreaker2 successfully explored the posterior distribution, and demonstrates that the inference framework is general enough to accommodate new models (Fig. 3) . Encouragingly, o2mod.TransPhylo and TransPhylo appear to describe highly similar posterior distributions of ancestries, and agree on many assignments even if these have a very low posterior frequency.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 230,
+                    "end": 238,
+                    "text": "(Fig. 3)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Model outputs"
+        },
+        {
+            "text": "To better compare the ancestry assignments made by o2mod.TransPhylo and TransPhylo, we used a consensus tree, defined as the tree with the highest posterior infector probability for each case, as a summary statistic. Across 100 outbreaks, on average 76.5% of ancestry assignments were equivalent. This represents a significant increase over the baseline similarity between the default outbreaker2 model and TransPhylo, which agree on only 41.3% of ancestries on average, as confirmed by individual comparisons of consensus trees in reconstructed outbreaks (Fig. 4) . It is important to note that 100% agreement between o2mod.TransPhylo and TransPhylo is not expected, as the epidemiological model of the latter parametrizes an offspring distribution and incorporates additional prior knowledge on its shape. However, the significant convergence in results upon using a custom likelihood acts as a proof of concept that outbreaker2 can accurately recreate high level behaviour of largely different inference frameworks, and therefore represents a promising starting point for the implementation of future models.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 556,
+                    "end": 564,
+                    "text": "(Fig. 4)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Model outputs"
+        },
+        {
+            "text": "outbreaker2 is introduced as a flexible platform for outbreak reconstruction. We believe most future developments will occur through the creation of new modules Fig. 3 Posterior distribution of ancestry assignments using o2mod.TransPhylo and the original TransPhylo package. The size of each circle indicates the frequency of a given individual (\"infector\") in the posterior distribution of infectors for a given case (\"infectee\"). An infector of 0 (bottom row) indicates that the individual is the index case. Black crosses represent the true simulated ancestries by the community, distributed as separate R packages. Further adjustments may be made to accommodate additional epidemiological and evolutionary data and parameters currently not implemented in outbreaker2, and which may limit the scope for additional modules. Such changes will however be merely incremental, and should not represent any substantial development challenges.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 161,
+                    "end": 167,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Future developments"
+        },
+        {
+            "text": "Conclusion outbreaker2 is a highly flexible outbreak reconstruction tool that can implement complex epidemiological and genetic models within an optimised and robust transmission tree inference framework. It allows users to focus on model development rather than software implementation, and provides a unifying platform for outbreak reconstruction tools that promotes interoperability and ease of use. We encourage the development of extensions to outbreaker2 by the wider scientific community, with the goal of accumulating an extensive and sophisticated repertoire of methods for outbreak reconstruction within the R software. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Future developments"
+        },
+        {
+            "text": "We are thankful to the R community for sustaining the development of free, open-source statistical software, to github (http://www.github.com) for providing code hosting facilities, and to travis (https://travis-ci.org/), appveyor (https://www.appveyor.com/), and codecov (https://codecov.io/) for providing free resources for unit testing. The funders had no role in the design of the study, the collection, analysis, and interpretation of data and in writing the manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "The datasets generated and analysed during the current study are available in the github repository https://github.com/finlaycampbell/BMC_outbreaker2. Fig. 4 Similarity of consensus trees inferred by o2mod.TransPhylo and outbreaker2 compared to TransPhylo. The consensus tree of a reconstructed outbreak is defined as the tree with the ancestor of the highest posterior probability for each case. The similarity between consensus trees is calculated as the proportion of identically assigned ancestries. The x-axis indicates individual simulated outbreaks. Each outbreak was reconstructed once using the default outbreaker2 model (white dots), and once using o2mod.TransPhylo (black dots). The colour of the line represents the change in similarity to the consensus tree returned by the original TransPhylo package",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 151,
+                    "end": 157,
+                    "text": "Fig. 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Availability of data and materials"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Chains of transmission and control of Ebola virus disease in Conakry, Guinea, in 2014: an observational study",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Faye",
+                    "suffix": ""
+                },
+                {
+                    "first": "P-Y",
+                    "middle": [],
+                    "last": "Bo\u00eblle",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Heleze",
+                    "suffix": ""
+                },
+                {
+                    "first": "Faye",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Loucoubar",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Magassouba",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Lancet Infect Dis",
+            "volume": "15",
+            "issn": "",
+            "pages": "320--326",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Superspreading and the effect of individual variation on disease emergence",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Lloyd-Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Schreiber",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kopp",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Getz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nature",
+            "volume": "438",
+            "issn": "",
+            "pages": "355--364",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Ebola superspreading",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Althaus",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Lancet Infect Dis",
+            "volume": "15",
+            "issn": "",
+            "pages": "507--515",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Transmission intensity and impact of control policies on the foot and mouth epidemic in Great Britain",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Donnelly",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Nature",
+            "volume": "413",
+            "issn": "",
+            "pages": "542--550",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Different epidemic curves for severe acute respiratory syndrome reveal similar impacts of control measures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Teunis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Am J Epidemiol",
+            "volume": "160",
+            "issn": "",
+            "pages": "509--525",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Relating phylogenetic trees to transmission trees of infectious disease outbreaks",
+            "authors": [
+                {
+                    "first": "Rjf",
+                    "middle": [],
+                    "last": "Ypma",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Van Ballegooijen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Genetics",
+            "volume": "195",
+            "issn": "",
+            "pages": "1055--62",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Bayesian reconstruction of disease outbreaks by combining epidemiologic and genomic data",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Jombart",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cori",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Cauchemez",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Ferguson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS Comput Biol",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Bayesian inference of infectious disease transmission from whole-genome sequence data",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gardy",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Mol Biol Evol",
+            "volume": "31",
+            "issn": "",
+            "pages": "1869--79",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "A Bayesian approach for inferring the dynamics of partially observed endemic infectious diseases from space-time-genetic data",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mollentze",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Nel",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Townsend",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Le Roux",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Hampson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Haydon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Proc Biol Sci",
+            "volume": "281",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Reconstructing transmission trees for communicable diseases using densely sampled genetic data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Worby",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "O&apos;neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kypraios",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Robotham",
+                    "suffix": ""
+                },
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Angelis",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Cartwright",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ejp",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Ann Appl Stat",
+            "volume": "10",
+            "issn": "",
+            "pages": "395--417",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Epidemic Reconstruction in a Phylogenetics Framework: Transmission Trees as Partitions of the Node Set",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Woolhouse",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Comput Biol",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "A Systematic Bayesian Integration of Epidemiological and Genetic Data",
+            "authors": [
+                {
+                    "first": "Msy",
+                    "middle": [],
+                    "last": "Lau",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Marion",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Streftaris",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gibson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Comput Biol",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "SCOTTI: Efficient Reconstruction of Transmission within Outbreaks with the Structured Coalescent",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "De Maio",
+                    "suffix": ""
+                },
+                {
+                    "first": "C-H",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wilson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "PLoS Comput Biol",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Simultaneous inference of phylogenetic and transmission trees in infectious disease outbreaks",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Klinkenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Backer",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "PLoS Comput Biol",
+            "volume": "13",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Genomic infectious disease epidemiology in partially sampled and ongoing outbreaks",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Didelot",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gardy",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Mol Biol Evol",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/molbev/msw275"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Infectious disease transmission as a forensic problem: who infected whom?",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Teunis",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jcm",
+                    "middle": [],
+                    "last": "Heijne",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Sukhrie",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Van Eijkeren",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Koopmans",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kretzschmar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J R Soc Interface",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "The Calculation of Posterior Distributions by Data Augmentation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Tanner",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Wong",
+                    "suffix": ""
+                }
+            ],
+            "year": 1987,
+            "venue": "J Am Stat Assoc",
+            "volume": "82",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "R: A Language and Environment for Statistical Computing. R Foundation for Statistical Computing",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Development Core Team",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/978-3-540-74686-7"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Rcpp: Seamless R and C++ Integration",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Eddelbuettel",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Francois",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Stat Softw",
+            "volume": "40",
+            "issn": "",
+            "pages": "1--18",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "ape 3.0: New tools for distance-based phylogenetics and evolutionary analysis in R",
+            "authors": [
+                {
+                    "first": "A-A",
+                    "middle": [],
+                    "last": "Popescu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Huber",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Paradis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Bioinformatics",
+            "volume": "28",
+            "issn": "",
+            "pages": "1536--1543",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Monte Carlo sampling methods using Markov chains and their applications",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Hastings",
+                    "suffix": ""
+                }
+            ],
+            "year": 1970,
+            "venue": "Biometrika",
+            "volume": "57",
+            "issn": "",
+            "pages": "97--109",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Stochastic relaxation, gibbs distributions, and the bayesian restoration of images",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Geman",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Geman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1984,
+            "venue": "IEEE Trans Pattern Anal Mach Intell",
+            "volume": "6",
+            "issn": "",
+            "pages": "721--762",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Integrating genetic and epidemiological data to determine transmission pathways of foot-and-mouth disease virus",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Cottam",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Th\u00e9baud",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wadsworth",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gloster",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Mansley",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Paton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Proc Biol Sci",
+            "volume": "275",
+            "issn": "",
+            "pages": "887--95",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Two-phase importance sampling for inference about transmission trees",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Numminen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Chewapreecha",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sir\u00e9n",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Turner",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Turner",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Bentley",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Proc Biol Sci",
+            "volume": "281",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Modelling the spread of infectious salmon anaemia among salmon farms based on seaway distances between farms and genetic relationships between infectious salmon anaemia virus isolates",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Aldrin",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Lyngstad",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Kristoffersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Storvik",
+                    "suffix": ""
+                },
+                {
+                    "first": "\u00d8",
+                    "middle": [],
+                    "last": "Borgan",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Jansen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J R Soc Interface",
+            "volume": "8",
+            "issn": "",
+            "pages": "1346--56",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Reconstructing disease outbreaks from genetic data: a graph approach",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Jombart",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Eggo",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Dodd",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Balloux",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Heredity",
+            "volume": "106",
+            "issn": "",
+            "pages": "383--90",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Unravelling transmission trees of infectious diseases by combining genetic and epidemiological data",
+            "authors": [
+                {
+                    "first": "Rjf",
+                    "middle": [],
+                    "last": "Ypma",
+                    "suffix": ""
+                },
+                {
+                    "first": "Ama",
+                    "middle": [],
+                    "last": "Bataille",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Stegeman",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Koch",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Van Ballegooijen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Proc Biol Sci",
+            "volume": "279",
+            "issn": "",
+            "pages": "444--50",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rspb.2011.0913"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "A Bayesian inference framework to reconstruct transmission trees using epidemiological and genetic data",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Morelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Th\u00e9baud",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Chadoeuf",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "King",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Haydon",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Soubeyrand",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS Comput Biol",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Construction of semi-Markov genetic-space-time SEIR models and inference",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Soubeyrand",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Journal de la Soci\u00e9t\u00e9 Fran\u00e7aise de Statistique",
+            "volume": "157",
+            "issn": "",
+            "pages": "129--52",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Uncovering epidemiological dynamics in heterogeneous host populations using phylogenetic methods",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Stadler",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bonhoeffer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Philos Trans R Soc Lond Ser B Biol Sci",
+            "volume": "368",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Molecular Infectious Disease Epidemiology: Survival Analysis and Algorithms Linking Phylogenies to Transmission Trees",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Kenah",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Britton",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Halloran",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Longini",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "PLoS Comput Biol",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Shared genomic variants: identification of transmission routes using pathogen deep sequence data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Worby",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lipsitch",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Hanage",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Am J Epidemiol",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwx182"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "WHO Ebola Response Team. Ebola Virus Disease in West Africa -The First 9 Months of the Epidemic and Forward Projections",
+            "authors": [],
+            "year": 2014,
+            "venue": "N Engl J Med",
+            "volume": "371",
+            "issn": "",
+            "pages": "1481--95",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "West African Ebola Epidemic after One Year -Slowing but Not Yet under Control",
+            "authors": [],
+            "year": 2015,
+            "venue": "N Engl J Med",
+            "volume": "372",
+            "issn": "",
+            "pages": "584--591",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Complete Genome Sequences of Three Ebola Virus Isolates from the 2014 Outbreak in West Africa",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hoenen",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Groseth",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Feldmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Marzi",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ebihara",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Kobinger",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Genome Announc",
+            "volume": "2",
+            "issn": "",
+            "pages": "647--655",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Genomic surveillance elucidates Ebola virus origin and transmission during the 2014 outbreak",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Gire",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Goba",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Andersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Rsg",
+                    "middle": [],
+                    "last": "Sealfon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Kanneh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Science",
+            "volume": "345",
+            "issn": "",
+            "pages": "1369--72",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Genetic diversity and evolutionary dynamics of Ebola virus in Sierra Leone",
+            "authors": [
+                {
+                    "first": "Y-G",
+                    "middle": [],
+                    "last": "Tong",
+                    "suffix": ""
+                },
+                {
+                    "first": "W-F",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Di",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Qian",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Liang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X-C",
+                    "middle": [],
+                    "last": "Bo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nature",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nature14490"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Emergence of Zaire Ebola Virus Disease in Guinea -Preliminary Report",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Baize",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Pannetier",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Oestereich",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Rieger",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Koivogui",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Magassouba",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "N Engl J Med",
+            "volume": "371",
+            "issn": "15",
+            "pages": "1418--1443",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Schematic representation of the code design of outbreaker2. Each disk represents a different component of the code. Disk size matches the size of the corresponding component, indicated by numbers (in lines of code, rounded to 50). Separate disks for likelihoods, priors and movements indicate independent C++ modules. Links represent flows of information between components, colored according to the input. Infrastructure and tests are globally connected to all components. Functions indicated within rectangles are entry points into the code, indicating possible customisation by the user",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "MCMC traces of posterior likelihood for o2mod.TransPhylo and the original TransPhylo package",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Studies on outbreak reconstruction and their availability as software",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Epidemiological and evolutionary parameters for Ebola virus. When several studies are cited, the mean value weighted by the sample size of the study was used",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Project name: outbreaker2 Project home page: http://www.repidemicsconsortium.org/outbreaker2/ Project development page: https://github.com/reconhub/outbreaker2 Operating system(s): Platform independent Programming language: R, C++ Other requirements: C++ 11 License: MIT Any restrictions to use by non-academics: None Abbreviations LOC: Lines of code; MCMC: Markov Chain Monte Carlo",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "FC is funded by the Wellcome Trust. XD is funded by the UK Medical Research Council. RF is funded by UK Medical Research Council Centre for Outbreak Analysis and Modelling. NF is funded by UK Medical Research Council; UK National Institute for Health Research under the Health Protection Research Unit initiative; National Institute of General Medical Sciences under the Models of Infectious Disease Agent Study initiative; Bill and Melinda Gates Foundation. AC is funded by the Medical Research Council Centre for Outbreak Analysis and Modelling. TJ is funded by the National Institute for Health Research -Health Protection Research Unit for Modelling Methodology, and by the Medical Research Council Centre for Outbreak Analysis and Modelling.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "This article has been published as part of BMC Bioinformatics Volume 19 Supplement 11, 2018 : Proceedings from the 6th Workshop on Computational Advances in Molecular Epidemiology (CAME 2017). The full contents of the supplement are available online at https://bmcbioinformatics.biomedcentral.c om/articles/supplements/volume-19-supplement-11.Authors' contributions FC wrote the majority of the manuscript, run the analyses, and contributed to model development and software implementation. XD developed the o2mod.TransPhylo module for outbreaker2, and edited the manuscript. RF provided advice on code design. AC and NF provided advice on the outbreaker2 model. TJ wrote the outbreaker2 package, supervised new developments, and contributed to writing the manuscript. All authors read and approved the final manuscript.Ethics approval and consent to participate Not applicable.",
+            "cite_spans": [
+                {
+                    "start": 72,
+                    "end": 91,
+                    "text": "Supplement 11, 2018",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "About this supplement"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Publisher's Note"
+        }
+    ]
+}

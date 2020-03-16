@@ -1,0 +1,2911 @@
+{
+    "paper_id": "2debc2b3a63c04c798cb30f704911b63d44ec841",
+    "metadata": {
+        "title": "TAR-VIR: a pipeline for TARgeted VIRal strain reconstruction from metagenomic data",
+        "authors": [
+            {
+                "first": "Jiao",
+                "middle": [],
+                "last": "Chen",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jiating",
+                "middle": [],
+                "last": "Huang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Yanni",
+                "middle": [],
+                "last": "Sun",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Strain-level RNA virus characterization is essential for developing prevention and treatment strategies. Viral metagenomic data, which can contain sequences of both known and novel viruses, provide new opportunities for characterizing RNA viruses. Although there are a number of pipelines for analyzing viruses in metagenomic data, they have different limitations. First, viruses that lack closely related reference genomes cannot be detected with high sensitivity. Second, strain-level analysis is usually missing. Results: In this study, we developed a hybrid pipeline named TAR-VIR that reconstructs viral strains without relying on complete or high-quality reference genomes. It is optimized for identifying RNA viruses from metagenomic data by combining an effective read classification method and our in-house strain-level de novo assembly tool. TAR-VIR was tested on both simulated and real viral metagenomic data sets. The results demonstrated that TAR-VIR competes favorably with other tested tools. Conclusion: TAR-VIR can be used standalone for viral strain reconstruction from metagenomic data. Or, its read recruiting stage can be used with other de novo assembly tools for superior viral functional and taxonomic analyses. The source code and the documentation of TAR-VIR are available at https://github.com/chjiao/TAR-VIR.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Pathogenic human viruses such as human immunodeficiency virus (HIV), hepatitis C virus (HCV), Severe Acute Respiratory Syndrome (SARS) coronavirus (SARS-CoV), and H1N1 flu virus, still claim millions of lives each year despite centuries studies of the vaccine and treatment [1, 2] . Thus, characterizing human viral pathogens, including recognizing novel ones, remains crucial. Development of the next-generation sequencing (NGS) technologies sheds lights on characterizing the virus composition in both natural environmental and clinical samples. In particular, viral metagenomic sequencing, which allows us to circumvent the need for virus isolation and cultivation, can conduct comprehensive sequencing of all viruses in a sample. Thus, multiple viruses, including new ones, can be identified in viral metagenomic sequencing data.",
+            "cite_spans": [
+                {
+                    "start": 274,
+                    "end": 277,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 278,
+                    "end": 280,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "*Correspondence: yannisun@cityu.edu.hk 3 Electronic Engineering, City University of Hong Kong, Hong Kong, China SAR Full list of author information is available at the end of the article Today, viral metagenomic data have become the primary source of virome analysis and virus discovery [3] . For example, in order to test whether increased levels of anelloviruses or other viruses in plasma are associated with higher levels of persistent T-cell activation during anti-retroviral therapy (ART), Li et al. detected all viruses using metagenomic data of plasma samples from 19 adults on effective ART [4] . Lim et al. characterized the gut virome and bacterial microbiome in a longitudinal cohort of healthy infant twins in order to study the dynamics of eukaryotic RNA and DNA viruses during the first years of life [5] . There are also global-scale studies on viruses in natural environmental samples such as ocean water [6, 7] . In addition to these examples, a more comprehensive review about the studies using viral metagenomic data in diagnostics, surveillance and outbreak source tracing, and biodiversity studies can be found in [8] .",
+            "cite_spans": [
+                {
+                    "start": 39,
+                    "end": 40,
+                    "text": "3",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 287,
+                    "end": 290,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 600,
+                    "end": 603,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 816,
+                    "end": 819,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 922,
+                    "end": 925,
+                    "text": "[6,",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 926,
+                    "end": 928,
+                    "text": "7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1136,
+                    "end": 1139,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We are particularly interested in characterizing RNA viruses in metagenomic data because many of them are clinically important. RNA viruses can form quasispecies, which contain related but distinct haplotypes generated during RNA virus replication. Different haplotypes can lead to different biological properties such as virulence. Accurate RNA virus characterization needs to assembly the reads into strain-specific contigs for downstream taxonomic and functional analyses. Generic assembly tools are often error prone for metagenomic data and are also resource demanding. Thus, a commonly adopted strategy is to classify reads into different biological entities such as species before conducting assembly.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In this study, our goal is to develop a new pipeline that can classify RNA viral reads and also produce the assembled viral strains (i.e. haplotypes) from classified reads. Various methods and tools have been developed [9] [10] [11] [12] to characterize viruses in viral metagenomic data. Despite their promising results in virus identification and discovery, there is room to improve in two aspects. First, read classification in many of these tools rely on read mapping against characterized reference genomes [8] , which are not always available for fast mutating RNA viruses. For example, emerging pathogenic viruses such as SARS-CoV could only have local conservation with available genomes. Second, most of these tools adopt generic assembly tools, which cannot distinguish different viral strains.",
+            "cite_spans": [
+                {
+                    "start": 219,
+                    "end": 222,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 223,
+                    "end": 227,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 228,
+                    "end": 232,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 233,
+                    "end": 237,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 512,
+                    "end": 515,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Depending on the required inputs, existing programs for analyzing virus composition can be roughly divided into two groups. One group take assembled contigs as input for functional and compositional analyses. Another group of tools classify reads first and then conduct assembly for classified reads. Below we describe both types of tools and their limitations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "Viral metagenomic analysis tools in group one require metagenomic assembly. For example, Espino et al. [13] identify viral sequences from assembled metagenomic contigs of sizes greater than 5kb. VirSorter [14] detects viruses in assembled contigs at least 3kb. The viral sequences are usually screened by comparing the contigs with a curated set of viral protein families. However, conducting de novo assembly for metagenomic data is still one of the most difficult computational problems. Unknown number of species in a sample and heterogeneous sequencing coverage can lead to erroneous assemblies.",
+            "cite_spans": [
+                {
+                    "start": 103,
+                    "end": 107,
+                    "text": "[13]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 205,
+                    "end": 209,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "Therefore, most of the viral metagenomic data analysis methods combine reference-based classification and de novo assembly. This strategy classifies reads into different taxonomies or functional groups using referencebased methods and then conducts de novo assembly for reads within the same group. For example, VIP [15] , drVM [16] , and VirusTAP [17] all apply this strategy. They classify viral reads by either aligning reads to available viral references or removing reads of the host and other species. Next, existing assembly tools such as SPAdes [18] are employed to the virus-like reads to produce the final assembly results. While these tools made significant contributions in purifying the data by removing non-virus reads and then classifying virus-like reads into functional/taxonomic groups, their performance heavily depends on the quality of the references.",
+            "cite_spans": [
+                {
+                    "start": 316,
+                    "end": 320,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 328,
+                    "end": 332,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 348,
+                    "end": 352,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 553,
+                    "end": 557,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "The limitation of reference genomes poses a critical challenge of applying reference-based tools for RNA virus analysis in metagenomic data. While being regarded as the most abundant biological entities on earth, only a small portion of viruses have been sequenced and characterized. Besides, for RNA viruses with high mutation rates, high-quality reference genomes of a viral population are not always available. For example, many emerging viral diseases are caused by zoonotic viruses, which originate in vertebrates but can infect human. The genomes of some emerging viruses may only share medium sequence identity with their peers in animals, creating difficult circumstances for reference-based read classification.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "For RNA virus characterization, related tools also include haplotype reconstruction pipelines designed to assemble viral strains in quasispecies. A majority of these tools are reference-based and take the alignments of reads against reference genomes as input. HaploClique [19] , ViQuas [20] , VGA [21] all belong to this group.",
+            "cite_spans": [
+                {
+                    "start": 273,
+                    "end": 277,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 287,
+                    "end": 291,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 298,
+                    "end": 302,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related work"
+        },
+        {
+            "text": "Here we introduce TAR-VIR, which provides a useful addition to existing tools for identifying targeted RNA viruses and their haplotypes in metagenomic data. The \"targeted\" viruses are those that still possess local sequence similarity with the reference genomes. A completely new virus that does not share any conservation with any reference genome won't be detected by our method.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overview of our work"
+        },
+        {
+            "text": "Our pipeline combines reference-based strategy and de novo assembly and is optimized for the following applications. 1) Identifying host-switching viruses such as SARS-CoV using remotely related viruses in other hosts as the references. 2) Reconstructing viral haplotypes that are divergent from a known virus family. 3) Recovering viruses and their genomes that contain genes or functional sites of interest to users. TAR-VIR is faster and more effective in identifying targeted viruses than applying generic assembly programs to the whole metagenomic data set. This is particularly important for large and complicated metagenomic data sets containing a small percentage of viruses. Meanwhile, TAR-VIR is more tolerant to incomplete or low-similarity references than existing reference-based tools.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overview of our work"
+        },
+        {
+            "text": "We applied TAR-VIR to a simulated metagenomic data set containing five haplotypes of SARS-CoV and a real human blood plasma metagenomic data set. The comparisons with both de novo assembly tools and referencebased haplotype reconstruction tools demonstrated the utility of TAR-VIR in recovering RNA viruses from metagenomic data with limited references.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Overview of our work"
+        },
+        {
+            "text": "We have developed a modular structured tool named TAR-VIR for reconstructing viral haplotypes from metagenomic data. The final outputs of this tool are assembled viral contigs corresponding to different strains. We focus on evaluating the performance of the read recruiting stage and also its impact on the final assembly.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "In this experiment, we mimic the scenario in which SARS-CoV [22] is an emerging virus infecting humans. Our goal is to reconstruct the SARS-CoV haplotypes using other coronaviruses as references. During the breakout of SARS, electron microscope image reveals the crown-like shape of the infectious agent, providing clues to use coronaviruses as references.",
+            "cite_spans": [
+                {
+                    "start": 60,
+                    "end": 64,
+                    "text": "[22]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Exp1: reconstruct the SARS haplotypes using the bat coronavirus as the reference"
+        },
+        {
+            "text": "To test this, we assume that the bat coronavirus (NC_014470.1) was sequenced and available to use as a reference, although it was actually sequenced after the breakout of SARS.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Exp1: reconstruct the SARS haplotypes using the bat coronavirus as the reference"
+        },
+        {
+            "text": "A viral metagenomic dataset containing Influenza (NC_002023.1), hepatitis C virus (HCV, NC_004102.1), and 5 SARS-CoV haplotypes, was simulated. The SARS-CoV haplotypes were created from the SARS-CoV reference (NC_004718.3) genome by mutating bases at randomly selected locations. The sequence similarity between any two haplotypes is above 96%. The abundance of each haplotype is calculated based on a power law equation [23] . The total sequencing depths for the 5 SARS-CoV haplotypes are 1000-x, with 438-x, 219-x, 146-x, 109-x, and 88-x for each haplotype, respectively. The sequencing depths for Influenza and HBV are 700-x and 300-x, respectively. All the data sets were simulated by ART-illumina [24] as error-containing MiSeq pairedend reads, with the read length of 250 bp, the average insert size of 600 bp, and the standard deviation of 150 bp. In total, there are 173,703 simulated reads, of which 119,002 reads are from the five SARS-CoV haplotypes.",
+            "cite_spans": [
+                {
+                    "start": 421,
+                    "end": 425,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 702,
+                    "end": 706,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data properties and evaluation metrics"
+        },
+        {
+            "text": "With the available bat coronavirus as the reference, the simulated reads were aligned with both Bowtie2 [25] and BWA [26] . We then applied the overlap extension component of TAR-VIR to isolate and enrich SARS-CoV reads, and assembled them with de novo assembly tools. Both the read recruitment and the assembly performance were evaluated. For the simulated data, the ground truth of the originating haplotype and position of each read is known. Thus read recruiting performance can be evaluated using the reads' positions and originating haplotypes. In summary, we examine how many reads are correctly recruited for each haplotype and report the haplotype coverage and depth.",
+            "cite_spans": [
+                {
+                    "start": 104,
+                    "end": 108,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 117,
+                    "end": 121,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data properties and evaluation metrics"
+        },
+        {
+            "text": "The assembly performance was evaluated using the known genomes of the 5 SARS-CoV haplotypes and MetaQuast [27] . Similar to other works, we quantified the assembly continuity, completeness, and accuracy in terms of number of contigs, N50, genome coverage, and mismatch rate. N50 is defined as the maximal length so that all contigs above this length contain at least 50% of all the contig bases. Genome coverage is the percentage of the five haplotypes' genomes being aligned by at least one contig. Mismatch rate is the percentage of mismatches between the aligned contigs and the references. In all cases, contigs of at least 500 bp are aligned to the viral reference sequences for evaluation. The assembly results were also benchmarked with other popular assembly tools SGA [28] , SPAdes [18] , and SAVAGE [29] .",
+            "cite_spans": [
+                {
+                    "start": 106,
+                    "end": 110,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 777,
+                    "end": 781,
+                    "text": "[28]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 791,
+                    "end": 795,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 809,
+                    "end": 813,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data properties and evaluation metrics"
+        },
+        {
+            "text": "We applied both Bowtie and BWA in the read mapping stage. By adjusting the scoring function related parameters, we constructed different sets of seed reads that can be aligned to the references with different approximate match constraints. For each seed set, the recruited reads generated by TAR-VIR with overlap cutoff 150 are recorded. Table 1 compares the aligned and recruited reads for each SARS-CoV haplotype. Besides approximate match rates, we also considered local and \"glocal\" alignment mode, where the glocal mode requires the endto-end alignment of the read against the reference. Using local alignment mode for read mapping can usually produce a larger seed set. However, it is possible that some of the locally aligned reads are not sequenced from the underlying haplotypes. In Table 1 , we used local alignment mode for BWA and glocal model for Bowtie. Thus, the seed sets constructed by BWA is larger than Bowtie.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 338,
+                    "end": 345,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 792,
+                    "end": 799,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Performance of read recruitment"
+        },
+        {
+            "text": "Even with the least stringent threshold, the aligned reads have lower genome coverage than recruited reads, which is expected because SARS-CoV does not share genomescale high similarity with the bat coronavirus (Fig. 1c) . In particular, with the parameter \"-B 1\", BWA can align slightly more reads than what Bowtie2 can recruit with the parameter \"L, 0, -0.9\" ((52,688 vs. 52,377). The recruited reads (52,377), however, cover 20%-30% more genomes for the five haplotypes. This indicates that alignmentbased methods tend to identify reads sequenced from highly similar regions between the target and the reference viruses, while the recruitment method is more The \"Alignment\" section contains results for aligned reads. The \"Recruitment\" section contains results for recruited reads by TAR-VIR using the aligned reads. For each row, the aligned reads in \"Alignment\" section are the seed set for the recruited reads in \"Recruitment\" section. For Bowtie2, the \"-score-min\" parameter was set to allow different alignment error rates corresponding to 5%, 10%, 15%, and 20%, respectively. For BWA, \"-A\" is fixed as its default value 1. \"-B\" was modified to allow different error rate similar to Bowtie2. \"Number\" is the number of aligned or recruited reads. \"Depth\" is the average sequencing coverage. \"Coverage\" is the percentage of genome covering by at least one read. h1 to h5 represent the five SARS-CoV haplotypes likely to obtain reads from the whole genome of the target viruses. Worth noting is all the recruited reads are from SARS-CoV (no contamination from Influenza and HBV). Figure 1a and b compared the genome coverage of seed reads and recruited reads. Directly aligning the reads to the bat coronavirus covers only a small proportion of the whole genome (Fig. 1a) , leading to incomplete assembly. Using these aligned reads as seeds, TAR-VIR is able to recruit many more reads that nearly cover the whole genome of SARS-Cov, as shown in Fig. 1b . Table 1 also shows that the numbers of recruited reads do not heavily rely on the number of the seed reads. Even when the seed set is small (e.g. the seed sets constructed using Bowtie2), many new reads can be recruited during each iteration. After multiple iterations, the final set of recruited reads can be significantly larger than the seed set, bounded by the sequencing depth of the haplotypes. On the other hand, if the seed sets contain many reads from non-relevant species, the final set of recruited reads could even include all the reads from the input, which makes the read recruiting useless. Because of this, we prefer to construct the seed set using glocal mode to ensure high quality.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 211,
+                    "end": 220,
+                    "text": "(Fig. 1c)",
+                    "ref_id": null
+                },
+                {
+                    "start": 1585,
+                    "end": 1594,
+                    "text": "Figure 1a",
+                    "ref_id": null
+                },
+                {
+                    "start": 1767,
+                    "end": 1776,
+                    "text": "(Fig. 1a)",
+                    "ref_id": null
+                },
+                {
+                    "start": 1950,
+                    "end": 1957,
+                    "text": "Fig. 1b",
+                    "ref_id": null
+                },
+                {
+                    "start": 1960,
+                    "end": 1967,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Performance of read recruitment"
+        },
+        {
+            "text": "Both the aligned and recruited reads were assembled with de novo assembly tools. PEHaplo is the default assembly component in TAR-VIR. As TAR-VIR has a modular Fig. 1 Enriching SARS-CoV reads using the bat coronavirus genome as the reference. a and b show the aligned and recruited reads profile. The dataset was aligned by BWA with the default parameter (\"-B 4, -A 1\"). BWA is chosen to include more locally aligned reads in (a). The reads were recruited using the overlap cutoff of 150 bp. c displays the sequence identity between SARS-Cov and the bat coronavirus. The profile was generated using VISTA [41] structure, other de novo assembly tools including SGA, SPAdes, and SAVAGE are also used to replace PEHaplo for haplotye reconstruction. SPAdes was run with -meta option, which is same as metaSPAdes [30] . As the aligned reads cover at most 80% of the genomes even with the least stringent alignment threshold, it is not proper to apply the conventional reference-based assembly methods for this data set.",
+            "cite_spans": [
+                {
+                    "start": 605,
+                    "end": 609,
+                    "text": "[41]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 808,
+                    "end": 812,
+                    "text": "[30]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 160,
+                    "end": 166,
+                    "text": "Fig. 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Recruited reads lead to better assembly performance"
+        },
+        {
+            "text": "The complete de novo assembly results using both aligned and recruited reads are presented in Additional file 1: Table S1 . Part of the results are shown in Table 2 due to space limiation. For all assembly tools, using recruited reads produces better results: longer contigs and higher genome coverage. Significantly, this is not simply due to the increased number of reads. For example, as shown in Table 2 , the reads recruited by Bowtie2 with parameter \"L, 0, -0.9\" is less than BWA-aligned reads when B is 1 (52,337 vs. 52,668). But the recruited reads produce contigs at least ten times longer than the aligned reads, and twice higher in the genome coverage. By comparing the assembly performance of all tested tools on the recruited reads, our assembly component PEHaplo consistently has higher N50 and genome coverage than others. Overall, PEHaplo and SGA perform better than the other two assembly tools.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 113,
+                    "end": 121,
+                    "text": "Table S1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 157,
+                    "end": 164,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 400,
+                    "end": 407,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Recruited reads lead to better assembly performance"
+        },
+        {
+            "text": "PRICE [31] applies extension-based strategies for contig assembly. Using the seed reads as initial contigs, PRICE can be readily used to perform targeted viral assembly from metagenomic data. Therefore, the results of TAR-VIR was also benchmarked against PRICE's results, as shown in Table 3 . PRICE produced one long contig (similar N50 to ours) for the most abundant haplotype. Thus, its genome coverage is only about 20%.",
+            "cite_spans": [
+                {
+                    "start": 6,
+                    "end": 10,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 284,
+                    "end": 291,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Recruited reads lead to better assembly performance"
+        },
+        {
+            "text": "In this experiment, TAR-VIR is tested on a real metagenomic data set, which was sequenced from the plasma of 19 antiretroviral-treated HIV patients (SRR2083204) [4] . The samples were pre-amplified by random RT-PCR amplification (RA) for both viral RNAs and DNAs and then sequenced by Illumina Miseq, producing about 23 million reads. All these samples contain low levels of HIV because of the antiretroviral treatment. But it may contain other human pathogens. In our study, we focused on identifying hepatitis viruses. Although our pipeline is designed to tackle the challenges of characterizing RNA viral quasispecies, we also include in the references DNA hepatitis viruses such as HBV. The default assembly tool in TAR-VIR is PEHaplo. Definition of the metrics can be found in \"Data properties and evaluation metrics\" section",
+            "cite_spans": [
+                {
+                    "start": 161,
+                    "end": 164,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Exp2: characterizing hepatitis viruses from the human plasma data"
+        },
+        {
+            "text": "The raw data set contains reads that come from varied sources: human, bacteria, phages, etc. The reads of the target viruses comprise less than 30% of the entire data set. Since the primary focus is human viruses, removing those reads from the host (human), bacteria, and phages is ideal before pathogen detection. Following canonical quality control and trimming, we used bamtagger [32] to remove human reads, and Bowtie2 to remove reads from bacteria and phage by aligning reads against their reference genomes. The remaining reads were corrected by error correction tool Karect [33] . After the preprocessing step, 8,145,722 reads were left.",
+            "cite_spans": [
+                {
+                    "start": 383,
+                    "end": 387,
+                    "text": "[32]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 581,
+                    "end": 585,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Preprocessing"
+        },
+        {
+            "text": "In the first step, we conducted read mapping to obtain the seed reads. Both BWA and Bowtie2 could be used.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Recruited reads by TAR-VIR can improve the performance of de novo assembly"
+        },
+        {
+            "text": "However, although BWA aligned more reads, many reads yielded only short local alignments and are unlikely to be sequenced from the target viruses. Using these reads as seeds tends to cause contamination during the read recruitment stage. For example, when BWA (\"-B 8, -A 1\") was used to generate the seed set, roughly 3.5 million reads were recruited, while a portion of them can be aligned to other genomes (such as phages). Although BWA's output can be processed to remove local alignments, the seed set can be more reliably produced using Bowtie2's output. Therefore, Bowtie2 was chosen as the aligner for all real data experiments. We downloaded the reference genomes of HBV (NC_003977.2), multiple genotypes of HCV (NC_009827.1, NC_009823.1, NC_009825.1, NC_030791.1, NC_004102.1, NC_009826.1, NC_009824.1), and human pegivirus (HPgV, NC_001710.1) from the viral genome database of NCBI. The preprocessed reads were then aligned to the references under mismatch rates of 5%, 10%, 15%, and 20%, respectively. These initially aligned reads were used as the seed read sets. Although there are multiple genotypes for HCV, only genotype 1 has a decent amount of aligned reads. Other genotypes have less than 50 reads mapped. Thus, to produce a reliable evaluation of the assembly results, only the results of HCV genotype 1 were used. The numbers of reads before and after read recruiting are shown in Table 4 . As this is a real metagenomic data set without known ground truth of the viral haplotypes, the evaluation metrics for read recruiting are different from the simulation data set. We cannot evaluate whether every recruited read is correct because its originating location is unknown. Thus, instead of evaluating the depth and genome coverage for each haplotype, we focus on evaluating whether using recruited reads can improve the performance of genome assembly.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1402,
+                    "end": 1409,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Recruited reads by TAR-VIR can improve the performance of de novo assembly"
+        },
+        {
+            "text": "Therefore, both the aligned reads and the recruited reads from TAR-VIR were assembled by de novo assembly tools, and the results were compared in Table 5 . The assembly results demonstrate that the reads recruited by TAR-VIR usually improve the assembly results by producing longer contigs and higher genome coverage for PEHaplo, SGA, and SPAdes. The improvement is not simply due to the increased number of reads after the recruitment stage. For example, according to Table 4 , by using 15% mismatch rate, the recruited reads are less than the aligned reads under 20% mismatch rate (263,029 vs. 294,448). However, the assembly results using the recruited reads are better than or comparable to the results using the aligned reads for all the assembly tools. Among the four assemblers used, PEHaplo of TAR-VIR and SPAdes produced good results with large N50 and high genome coverage. SGA generated larger number of contigs with low N50 value. While we have tried the best parameters for SAVAGE based on our empirical experience, its results are not consistent with the other three tools. Better parameters may exist for SAVAGE to produce better results. However, the long-running time and high memory usage of this tool made continuing to tune the parameters difficult.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 146,
+                    "end": 153,
+                    "text": "Table 5",
+                    "ref_id": "TABREF4"
+                },
+                {
+                    "start": 469,
+                    "end": 476,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Recruited reads by TAR-VIR can improve the performance of de novo assembly"
+        },
+        {
+            "text": "With the reference genomes available, reference-based tools can be applied for viral metagenomic data analysis. Therefore, we also benchmarked TAR-VIR against reference-based haplotype reconstruction tools including Haploclique [19] , drVM [16] , and ViQuas [20] . VirusTap [17] can also conduct reads classification and then assembly. While we were planning to compare TAR-VIR with VirusTap, a large data set could not be uploaded to the website-based VirusTap. In addition, about 3000 jobs were waiting at the website. Therefore, the results from VirusTap could not be reported.",
+            "cite_spans": [
+                {
+                    "start": 228,
+                    "end": 232,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 240,
+                    "end": 244,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 258,
+                    "end": 262,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 274,
+                    "end": 278,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison with reference-based and extension-based assembly methods"
+        },
+        {
+            "text": "The reads aligned with the mismatch rate of 15% were used as input for Haploclique and ViQuas. For drVM, the reference genomes were built from human viruses, and it ran on the raw fastq files (with simple quality control and trimming) dumped from SRA file with default parameters. The seed read set of TAR-VIR were also the reads mapped with 15% mismatch rate. The assembly results are shown in Table 6 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 395,
+                    "end": 402,
+                    "text": "Table 6",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Comparison with reference-based and extension-based assembly methods"
+        },
+        {
+            "text": "The results show that TAR-VIR performs better than Haploclique and drVM by producing fewer but longer contigs with higher genome coverage. With the complete and also the likely \"true\" virus genomes as the reference, ViQuas has produced near-complete genomes. However, it produces almost 400 contigs with similar lengths (full genomes), indicating a high probability of overestimation of the haplotypes. Since the ground truth of the actual number of haplotypes in this data set is unknown, we intended to test this hypothesis using a dataset with known haplotypes. Therefore, we tested ViQuas on the SARS-CoV simulated data set with 5 haplotypes. It reported 113 contigs, each covering 99.98% of the genome with high mismatch rate (> 9.0%). Thus, the long contigs produced by ViQuas are not likely the true haplotypes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparison with reference-based and extension-based assembly methods"
+        },
+        {
+            "text": "Similar to SARS-CoV data, we also benchmarked our results against the extension-based tool PRICE. The initial contigs of PRICE were also the reads mapped with 15% mismatch rate. PRICE generated 164 contigs, with a N50 value of 791, and genome coverage of 87.3%. PRICE's results have a slightly larger genome coverage but a much smaller N50 value comparing to TAR-VIR.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparison with reference-based and extension-based assembly methods"
+        },
+        {
+            "text": "As SGA and SPAdes are highly efficient and have been used by various virus analysis pipelines, it may be possible to directly apply them to all the preprocessed reads for recovering the three viruses ((HBV, HCV genotype 1, and HPgV). Thus, we applied SGA and SPAdes to the preprocessed reads. The assembled contigs were compared with the reference genomes of the three viruses. SGA took The results from SGA verified that although the preprocessed data set contains all the reads from the target viruses, the sheer data size and the low proportion of the three viruses make generic assembly difficult. Meanwhile, assembling a large data set consumes significant computing resources.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Assembling the whole data set directly"
+        },
+        {
+            "text": "In some situations, the researchers are only interested in the viral genomes containing a partial or complete gene. In these cases, it is difficult for existing reference-based virus identification tools to construct the whole viral genome.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Identifying viruses containing target genes"
+        },
+        {
+            "text": "Here, we demonstrate that with the overlap extension method, the most of a genome can be built from a partial gene reference.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Identifying viruses containing target genes"
+        },
+        {
+            "text": "In this experiment, we show that with a non-complete gene sequence of length 1073 bp for HPgV as reference, most of the genome can be assembled. The reference sequence (Sequence name: 10MYKJ037) was downloaded from Virus Pathogen Database and Analysis Resource (ViPR) [34] , which is a partial coding DNA sequence (CDS) of HPgV isolated from Malaysia in 2010. The total length of HPgV genome is 9392 bp. From the results of our previous experiments, overlap extension from aligned reads under mismatch rate of 15% was able to recruit adequate reads while keeping away unreliable reads as seeds. Therefore, we aligned the raw reads to this CDS reference by allowing mismatch rate of 15%, from which 19,714 reads were aligned. ViQuas and drVM were used to assemble the aligned reads. However, ViQuas could only produce contigs similar to the short CDS sequence. In addition to provided CDS reference, drVM also downloaded references from Internet. It correctly recognized the HPgV but failed to produce any contig. The results confirm that reference-based methods do not apply in this case. With overlap cutoff of 150 bp, 118,339 reads were recruited from the overlap extension step. They were then assembled by PEHaplo of TAR-VIR, SGA, SPAdes, and SAVAGE, as shown in Table 7 .",
+            "cite_spans": [
+                {
+                    "start": 268,
+                    "end": 272,
+                    "text": "[34]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1267,
+                    "end": 1274,
+                    "text": "Table 7",
+                    "ref_id": "TABREF6"
+                }
+            ],
+            "section": "Identifying viruses containing target genes"
+        },
+        {
+            "text": "While the length of reference strain being only 11.42% of the whole HPgV genome, the contigs assembled from recruited reads by TAR-VIR and SPAdes are able to cover the nearly complete genome. The results reveal that even with a gene/CDS sequence as reference, sufficient reads can still be collected to construct the virus at the whole genome level. As there is only one target virus, SPAdes produced the best results. Applying SPAdes to the whole human plasma data set failed to finish on the cluster after 24 h, but by using recruited reads, SPAdes can produce better assemblies with the minimum amount of resources.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Identifying viruses containing target genes"
+        },
+        {
+            "text": "We evaluated the time and memory usage of TAR-VIR on the real human plasma data. After preprocessing, 8,145,722 reads were left. The data size is 2.9 GB, and the total length of the sequences are 2,447,741,491 bp. To reduce memory usage, the raw data was split into 5 parts, with 5 BWTs being built for the whole data. The splitting process is embedded in our program, and the number of segments can be set by users. For each partition, the file sizes for the BWT, Occ array, and the read ID array are 490M, 200M, and 13M, respectively. The total size of built indexes is 3.5 GB. The detailed time and memory usage for the overlap extension is shown in Table 8 below. A user can load each partition separately to reduce the memory usage. In that case, the memory usage is about the size of each partition. In addition, we may further reduce the memory usage of the recruiting process by applying more compact implementation of the BWT [35] . For all the assembly tools, Table 8 recorded their running times and memory usage on the recruited reads. Our experiments have shown that applying the assembly tools to the recruited reads can be more efficient and accurate. In addition, some tools cannot return results when being applied to the whole metagenomic data.",
+            "cite_spans": [
+                {
+                    "start": 935,
+                    "end": 939,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 653,
+                    "end": 660,
+                    "text": "Table 8",
+                    "ref_id": "TABREF7"
+                },
+                {
+                    "start": 970,
+                    "end": 977,
+                    "text": "Table 8",
+                    "ref_id": "TABREF7"
+                }
+            ],
+            "section": "Computational time and memory usage"
+        },
+        {
+            "text": "All the experiments were tested on an MSU HPCC CentOS 6.8 node with Two 2.4Ghz 14-core Intel Xeon E5-2680v4 CPUs and 128GB memory. We used 4 threads for the assembly component of TAR-VIR, 8 threads for SGA, 16 threads for SAVAGE, 8 threads for PRICE, 1 thread for Haploclique and ViQuas, and 2 threads for drVM.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Computational time and memory usage"
+        },
+        {
+            "text": "Our results on both simulated and real metagenomic data have demonstrated the utilities of TAR-VIR in viral read classification. In this section, we discuss three practical issues related to using TAR-VIR.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "TAR-VIR requires seed reads as input, which can be constructed using read mapping against homologous genomes or genes of interest to users. We compared several modes of popular read mapping tools including Bowtie2 and BWA. It is true that using local alignment mode for read mapping can produce a larger seed set. However, the size of the recruited reads depends more on the sequencing depth rather than the number of seed reads. Our experimental results also show that even a small seed set can recruit sufficient reads to cover the targeted genomes if the reads from these genomes share overlaps larger than the threshold. The quality of the seed set is more important to the performance of the read Extension-based assembly PRICE 1h46m 5",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The de novo assembly time and memory usage were evaluated on recruited reads based on mismatch rate from 5% to 20%. HaploClique, Viquas, drVM and PRICE were applied only on recruited reads based on mismatch rate of 15% recruiting step. The local alignment mode may introduce contamination from unrelated species, leading to a read set containing non-targeted genomes. Thus, we recommend to use glocal mode to construct the seed set. If local mode is chosen, users should screen the read mapping results using alignment length and score. A related issue is the choice of the overlap threshold. We have provided guidance on choosing appropriate overlap cutoffs based on the analysis of the common string sizes between different species. However, when the sequencing coverage is low, a smaller overlap threshold should be used. This is a similar problem to choosing overlap threshold or kmer size for assembly. Users can start with the recommended overlap threshold and test smaller ones gradually. If the size of the recruited set increases significantly at one step during the test, the process should stop.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "TAR-VIR has a modular structure and the default assembly tool is PEHaplo. Users can replace PEHaplo with other assembly tools depending on the applications. For example, TAR-VIR can be extended to find bacterial species containing genes of interest to users. Thus, an assembly tool designed for bacterial species can replace PEHaplo.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In this study, we presented a novel pipeline for viral reads classification and strain-level assembly from viral metagenomic data named TAR-VIR. When a virus in a metagenomic dataset is only remotely related to a characterized virus in public databases, our pipeline can be applied to first classify the reads belonging to these viruses and then conduct strain-level assembly. Or if a user is interested in detecting a virus that contains a given gene, our method can be employed to recover the whole genome of the gene-containing virus.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "We also made contributions by conducting careful analysis of the common region sizes between and within viral quasispecies. These analyses laid the foundation for using overlap detection to classify reads of the same quasispecies without introducing contamination. Our unique implementation of the indexing structure also make our method economical in both memory and CPU usages.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "We demonstrated the tool's utilities on a simulated viral metagenomic data containing SARS-Cov and a real viral metagenomic data set sequenced from human plasma. The simulated data enables us to evaluate the performance of read classification to the resolution of each single read. It shows that TAR-VIR can successfully classify enough reads to cover the whole genome. In addition, it produced contigs covering five different haplotypes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "On the human plasma data, we were able to enrich enough reads from the target viruses for downstream assembly even with a small seed read set. With a partial CDS sequence for HPgV as reference, TAR-VIR was able to produce near complete genome assemblies. The results clearly showed the effectiveness of TAR-VIR. In summary, TAR-VIR provides complementary functions to existing virus detection tools when the quality or complete references are not available.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Following a stand-alone error-correction step, our pipeline performs the following three steps. First, we construct the set of \"seed reads\" by mapping the reads against provided reference sequences, which could be sequenced genomes or functional sites such as genes. All the reads that can be mapped to the reference constitute the set of \"seed reads\". The read mapping process can be conducted using existing tools such as Bowtie2 [25] . Second, we recruit reads that form significant overlaps with the seed reads. Newly recruited reads will be added to the seed set. This process will iterate until no new reads can be recruited. Third, we conduct strain-level assembly using the reads identified in the second step.",
+            "cite_spans": [
+                {
+                    "start": 432,
+                    "end": 436,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "The above pipeline is visualized for two scenarios in Fig. 2 . In scenario 1, users are trying to detect viruses that contain a functional site, such as a gene. Unlike the wellstudied gene-centric assembly in metagenomic data, our goal is to recover the whole genome that contains a particular gene. In this method, the gene is provided as a reference, and reads mapped to it are the seed reads. Overlap detection is then applied to recruit more reads that belong to the same viruses as the seed reads. The read recruitment process is presented in Fig. 2a .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 54,
+                    "end": 60,
+                    "text": "Fig. 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 548,
+                    "end": 555,
+                    "text": "Fig. 2a",
+                    "ref_id": null
+                }
+            ],
+            "section": "Two scenarios"
+        },
+        {
+            "text": "In scenario 2, the goal is to identify viruses that lack quality reference genomes. This is particularly important for host-switching viruses, which may not always conserve high sequence similarity with their related peers in other hosts. For example, SARS-CoV shares about 80% of sequence identity with the bat coronavirus according to BLAST [36] . And the identity is lower than 50% at different loci. Thus, conventional read mapping methods cannot capture all reads from the targeted viruses when they lack high similarity with the available references. Figure 2b presents the process of identifying reads of the target virus with a remotely related virus as the reference. Although the mapped reads are scattered along the reference genome with low coverage, sufficient reads belonging to the target virus can be recruited through overlap detection.",
+            "cite_spans": [
+                {
+                    "start": 343,
+                    "end": 347,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 557,
+                    "end": 566,
+                    "text": "Figure 2b",
+                    "ref_id": null
+                }
+            ],
+            "section": "Two scenarios"
+        },
+        {
+            "text": "In this section, we will conduct careful analysis to examine whether using overlaps will be both sensitive and accurate for classifying reads in the same quasispecies. An A B Fig. 2 Two scenarios. a. The reference is a gene or a functional site (long green bar). The reads are represented by short lines. Short green lines can be mapped to the reference sequence and define the set of seed reads. The first iteration of overlap detection will identify new reads (blue lines) overlapping with the seed reads. The second iteration of overlap detection will identify more reads (red lines). b. The reference is a remotely related genome (long green bar). The seed reads can be mapped to the reference genome and are represented by short green lines. Two iterations of overlap detection will recruit new reads (blue lines and red lines, respectively) ideal read recruiting process should only capture the reads from the targeted viral quasispecies. If many microbes share long common regions with the targeted viruses, the overlap extension will recruit a large number of reads from unrelated species. Therefore, we computed the sizes of longest common substrings (LCSs) between different viruses. The LCSs between viruses and other microbial species were also examined. The details for LCS calculation can be found in Additional file 1: Section 1. The results are shown in Additional file 1: Figure S1 (A-C).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 175,
+                    "end": 181,
+                    "text": "Fig. 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 1389,
+                    "end": 1398,
+                    "text": "Figure S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Validity of read recruitment using overlap detection"
+        },
+        {
+            "text": "In summary, the sizes of LCSs between different viral genomes or between human viruses and bacteria are usually smaller than 100 bp. LCSs longer than 100 bp are mostly between viruses from the same genus or different genotypes of the same virus. For example, Vaccinia virus and Variola virus share an LCS of 469 bp, and HCV genotype 7 and HCV genotype 5 share an LCS of 154 bp.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Validity of read recruitment using overlap detection"
+        },
+        {
+            "text": "Meanwhile, it is also necessary to evaluate whether reads belonging to the same quasispecies can be recruited using overlap detection. As the characterized haplotypes for different RNA viruses are very limited, instead of computing the LCS using available data, we estimated the LCSs within a quasispecies using a probability model. With the mutation rate \u03bc at each base during virus replication, the probability distribution of LCS length between two viral strains that are n generations apart can be calculated with dynamic programming [37] . As an example, the probability distribution of LCS sizes between two HIV strains is shown in Additional file 1: Figure S1 (D).",
+            "cite_spans": [
+                {
+                    "start": 538,
+                    "end": 542,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 657,
+                    "end": 666,
+                    "text": "Figure S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Validity of read recruitment using overlap detection"
+        },
+        {
+            "text": "The result reveals that the LCSs between different haplotypes of the same viral population are usually much longer than LCSs between different viruses or an Illumina read size, which is about 250 bp for MiSeq reads in our experiments. Thus, even with the initial seed reads aligned to only one haplotype, the reads of other haplotypes can be recruited through the long common regions shared by different haplotypes. The reads sequenced from the common regions act like baits to recruit reads from different haplotypes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Validity of read recruitment using overlap detection"
+        },
+        {
+            "text": "In order to use the LCS size distribution to provide guidance for overlap cutoff choice, we plot the ROC curve using the data from Additional file 1: Figure S1 . In the ROC curve, the true positive rate (TPR) for a given size l defines the probability that two strains within a quasispecies have a LCS at least l. The false positive rate (FPR) for a given size l defines the probability that two different microbial species have an LCS at least l. TPR can be derived using the area size in Additional file 1: Figure  S1 (D) while FRP can be computed using Additional file 1: Figure S1 (A)-(C). The final ROC curve has a AUC close to 1, which is expected because of the small overlap between the LCS values for haplotypes and different species. The ROC curve is shown in Additional file 1: Figure S2 . Meanwhile, because there are 142,021,586 pairs of viruses vs. other microbes, which can lead to a very small FPR value, we thus also show the actual number of virus-vs-other pairs with LCS size above l in Additional file 1: Figure  S3 . For example, there are 86 virus-vs-other pairs (out of 142,021,586) with LCS value above 100 bp. In practice, not all these microbes live in the same niche and thus are included in the same metagenomic data set. Thus, this is the worst-case contamination analysis using characterized genomes. Additional file 1: Figures S1-S3 show that choosing overlap size above 100 can lead to high sensitivity and near zero FPR. With a bigger cutoff, the FPR can be further reduced. But if the cutoff is too big, reads from low coverage regions cannot be recruited.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 150,
+                    "end": 159,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 509,
+                    "end": 519,
+                    "text": "Figure  S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 575,
+                    "end": 584,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 789,
+                    "end": 798,
+                    "text": "Figure S2",
+                    "ref_id": null
+                },
+                {
+                    "start": 1025,
+                    "end": 1035,
+                    "text": "Figure  S3",
+                    "ref_id": null
+                },
+                {
+                    "start": 1350,
+                    "end": 1363,
+                    "text": "Figures S1-S3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Validity of read recruitment using overlap detection"
+        },
+        {
+            "text": "One recent study revealed that chimeric reads, which contain sequences from more than one species, can be generated in vitro during the preparation of highthroughput sequencing libraries [38] . These chimeras may have overlaps with more than one species, thus introducing contamination from the host or unrelated microbes. Figure 3a illustrates how contamination can be introduced via chimeric reads. In our experiments, we set the overlap threshold longer than half of the read size to prevent recruiting these chimeric reads or extending from them. To justify our choice of the overlap threshold for preventing contamination via chimeric reads, consider a chimeric read that is a concatenation of the sequences from the target virus and another species. There are two cases. In the first case, if the region from the target virus is shorter than half of the read size, this chimeric read will not be recruited. In the second case, if the region from the target virus is longer than half of the read size, this chimeric read will be recruited. However, as the other part of this chimeric read must be shorter than half of the read size (i.e. overlap threshold), this read will not be extended in the next iteration. Figure 3b shows this case. If the chimeric read contains regions from more than two species, it becomes harder for this read to form an overlap above the cutoff with reads from the target virus.",
+            "cite_spans": [
+                {
+                    "start": 187,
+                    "end": 191,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 323,
+                    "end": 332,
+                    "text": "Figure 3a",
+                    "ref_id": null
+                },
+                {
+                    "start": 1217,
+                    "end": 1226,
+                    "text": "Figure 3b",
+                    "ref_id": null
+                }
+            ],
+            "section": "Chimeric reads"
+        },
+        {
+            "text": "In our experiments, we set the overlap cutoff as 150 for all reads of 250 bp long.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Chimeric reads"
+        },
+        {
+            "text": "Sequencing errors will shorten overlaps between reads and may prevent recruiting all reads belonging to the same quasispecies. To recruit sufficient reads for assembly, we can construct either approximate overlaps by allowing mismatches/gaps or exact overlaps on error-corrected reads. Considering the risk of contamination by approximate overlap detection, we chose to use stand-alone error correction tools paired with exact overlap detection. The default error correction tool in our pipeline is Karect [33] .",
+            "cite_spans": [
+                {
+                    "start": 506,
+                    "end": 510,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sequencing errors"
+        },
+        {
+            "text": "Low sequencing depth will lead to small overlaps and thus affects the performance of read recruitment. There is a possibility that the reads from regions of low coverage cannot be recruited and assembled.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequencing errors"
+        },
+        {
+            "text": "In order to describe the algorithm, we formally define overlap. Let r i and r j be two reads. If there is a proper suffix of r i that is the prefix of r j or vice versa, r i and r j form an overlap. In practice, we will also account for the overlaps formed by r i and r j s reverse complement. There are a few data structures and methods available for efficient overlap detection [28, 39] . We apply the methods with BWT and FM-index [28] for efficient search. In the first step, all reads are concatenated into a single sequence T[ 1.",
+            "cite_spans": [
+                {
+                    "start": 380,
+                    "end": 384,
+                    "text": "[28,",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 385,
+                    "end": 388,
+                    "text": "39]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 434,
+                    "end": 438,
+                    "text": "[28]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Read recruiting"
+        },
+        {
+            "text": ".n] using $ as a delimiter, where n is the number of reads in T. Then, multi-key \"quicksort\" is applied to sort all the suffixes of T for constructing a generalized suffix array SA(T) [40] . ",
+            "cite_spans": [
+                {
+                    "start": 184,
+                    "end": 188,
+                    "text": "[40]",
+                    "ref_id": "BIBREF40"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Read recruiting"
+        },
+        {
+            "text": "With T and BWT(T), the backward search can be used to detect overlaps between a query read and all other reads. After matching \u03c4 (the overlap threshold) characters, we search for the delimiter '$' to find the prefixes overlapping with the query's suffix.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Read recruiting"
+        },
+        {
+            "text": "Although there are available implementations of the BWT-based overlap detection, ours differs from the existing ones in the following aspects. The first difference is the storage of the read ID information. For a constructed BWT and a query, the output of the backward search is the set of reads (i.e., their IDs) that form overlaps with the query. Theoretically, different reads can be distinguished by appending unique delimiters at the end of each read. In our implementation, we use '$' as the delimiter for all reads. The read ID array RID is created only for suffixes starting with '$' . This works because the backward search algorithm needs to retrieve the read ID in the final A B Fig. 3 Chimeric reads may introduce contamination. The reference is a gene or a functional site (long green bar). The reads are represented by short lines. Green reads are sequenced from the reference. Red color represents sequences from another species. a. When the overlap cutoff is small, a chimeric read can be extended and thus recruits reads from other species. b. When the overlap cutoff is bigger than half of the read size, a chimeric read could be recruited but will not be extended in the following iterations step, where the character to search is '$' . This modification reduced the size of RID from |T| integers to n (number of reads) integers, where T is roughly the product of n and the read size.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 690,
+                    "end": 696,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Unique implementation strategies"
+        },
+        {
+            "text": "Overlap detection will be iteratively applied to recruit reads sequenced from targeted viruses. Let R 0 be the set of seed reads that can be mapped to given reference sequences (i.e., seed read set). First, BWT(T) for T is built. The seed reads in R 0 are used as queries to BWT(T).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative search"
+        },
+        {
+            "text": "Then newly identified reads that overlap with the seed reads will be used as new queries to the BWT. The iterations will continue until no new reads can be retrieved. Its pseudocode is described in Additional file 1: Section 2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative search"
+        },
+        {
+            "text": "In the above pipeline, once the BWT is constructed, the suffix array will be deleted. The running time of suffix array and BWT construction is linear to |T|. The memory usage of BWT is the product of |T| and the size of each character and thus is linear to |T|. The memory usage of the RID is the product of n and the size of saving a read ID. When creating BWT for all reads becomes too expensive, our program supports distributed construction of the BWT and FM-index for large input. Specifically, the program can automatically partition input data into multiple smaller files. BWT is then constructed for each divided data set. The read overlap detection can be run in parallel for each BWT. The identified reads are combined and used as the query for the next iteration of read recruitment. In this case, the largest memory footprint is determined by the size of each divided read set. By default, the number of partitions is five. This number can be modified by users.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Running time and memory usage"
+        },
+        {
+            "text": "The final outputs of our program are assemblies of viral strains. All recruited reads will be used as input to assembly programs. As our program has a modular structure, this step can be executed by any assembly tool chosen by the users. By default, we include in the package our in-house developed tool PEHaplo [37] for viral haplotype reconstruction. PEHaplo does not require any reference sequences and conducts strain-level assembly using paired-end reads. For the input paired-end reads, PEHaplo constructs a paired-end overlap graph, which augmented standard overlap graphs by adding edges connecting nodes that can form ends of read pairs. Then, a greedy path finding algorithm is applied to search for the paths with the best supports from paired-end reads, where the supports are quantified by the number of contained read pairs and also their distances. For the detailed algorithm and implementation of PEHaplo, we refer the readers to the manuscript.",
+            "cite_spans": [
+                {
+                    "start": 312,
+                    "end": 316,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Strain-level assembly"
+        },
+        {
+            "text": "Additional file 1: Supplementary information for LCS sizes, iterative search, complete assembly results for SARS-CoV data, and tool commands. (PDF 790 kb)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional file"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Lessons from Ebola: Improving infectious disease surveillance to inform outbreak management",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Woolhouse",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Kellam",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Sci Transl Med",
+            "volume": "7",
+            "issn": "307",
+            "pages": "307--53075",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Unraveling the web of viroinformatics: computational tools and databases in virus research",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Sharma",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Priyadarshini",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Vrati",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "J Virol",
+            "volume": "89",
+            "issn": "3",
+            "pages": "1489--501",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Discovery of an expansive bacteriophage family that includes the most abundant viruses from the human gut",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Yutin",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Makarova",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Gussow",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Krupovic",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Segall",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Edwards",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Koonin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Nat Microbiol",
+            "volume": "3",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Virome analysis of antiretroviral-treated HIV patients shows no correlation between T-cell activation and anelloviruses levels",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                },
+                {
+                    "first": "Da",
+                    "middle": [],
+                    "last": "Costa",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Bruhn",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Deeks",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Delwart",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "J Clin Virol",
+            "volume": "72",
+            "issn": "",
+            "pages": "106--119",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Early life dynamics of the human gut virome and bacterial microbiome in infants",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lim",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Bauer",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Droit",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ndao",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Warner",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Tarr",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Holtz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nat Med",
+            "volume": "21",
+            "issn": "10",
+            "pages": "1228--1262",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Expanding the marine virosphere using metagenomics",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Mizuno",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Rodriguez-Valera",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kimes",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Ghai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS Genet",
+            "volume": "9",
+            "issn": "12",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Ecogenomics and potential biogeochemical impacts of globally abundant ocean viruses",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Roux",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Brum",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Dutilh",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sunagawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Duhaime",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Loy",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Poulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Solonenko",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Lara",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Poulain",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Nature",
+            "volume": "537",
+            "issn": "7622",
+            "pages": "689--93",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Overview of virus metagenomic classification methods and their biological applications",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Nooij",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Schmitz",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Vennema",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kroneman",
+                    "suffix": ""
+                },
+                {
+                    "first": "Mpg",
+                    "middle": [],
+                    "last": "Koopmans",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Front Microbiol",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "The metagenomics RAST server-a public resource for the automatic phylogenetic and functional analysis of metagenomes",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Meyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Paarmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "D&apos;",
+                    "middle": [],
+                    "last": "Souza",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Olson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Glass",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Kubal",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Paczian",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Rodriguez",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Stevens",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Wilke",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "BMC Bioinformatics",
+            "volume": "9",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Metavir 2: new tools for viral metagenome comparison and assembled virome analysis",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Roux",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tournayre",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mahul",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Debroas",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Enault",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "A cloud-compatible bioinformatics pipeline for ultrarapid pathogen identification from next-generation sequencing of clinical samples",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Naccache",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Federman",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Veeraraghavan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zaharia",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Samayoa",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Bouquet",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Greninger",
+                    "suffix": ""
+                },
+                {
+                    "first": "K-C",
+                    "middle": [],
+                    "last": "Luk",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Enge",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "ViromeScan: a new tool for metagenomic viral community profiling",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Rampelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Soverini",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Turroni",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Quercia",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Biagi",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Brigidi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Candela",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "BMC Genomics",
+            "volume": "17",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Nontargeted virus sequence discovery pipeline and virus clustering for metagenomic data",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Paez-Espino",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pavlopoulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Ivanova",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Kyrpides",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Nat Protocol",
+            "volume": "12",
+            "issn": "8",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "VirSorter: mining viral signal from microbial genomic data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Roux",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Enault",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hurwitz",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Sullivan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PeerJ",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "VIP: an integrated pipeline for metagenomics of virus identification and discovery",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Nie",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Niu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Ma",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Sci Rep",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "drVM: a new tool for efficient genome assembly of known eukaryotic viruses from metagenomes",
+            "authors": [
+                {
+                    "first": "H-H",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y-C",
+                    "middle": [],
+                    "last": "Liao",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "GigaScience",
+            "volume": "6",
+            "issn": "2",
+            "pages": "1--10",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "VirusTAP: viral genome-targeted assembly pipeline",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Yamashita",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Sekizuka",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kuroda",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Front Microbiol",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "SPAdes: a new genome assembly algorithm and its applications to single-cell sequencing",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bankevich",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Nurk",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Antipov",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Gurevich",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Dvorkin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Kulikov",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Lesin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Nikolenko",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Pham",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Prjibelski",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J Comput Biol",
+            "volume": "19",
+            "issn": "5",
+            "pages": "455--77",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Viral quasispecies assembly via maximal clique enumeration",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "T\u00f6pfer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Marschall",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bull",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Luciani",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sch\u00f6nhuth",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Beerenwinkel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "PLoS Comput Biol",
+            "volume": "10",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "ViQuaS: an improved reconstruction pipeline for viral quasispecies spectra generated by next-generation sequencing",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Jayasundara",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Saeed",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Maheswararajah",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S-L",
+                    "middle": [],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Halgamuge",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Bioinformatics",
+            "volume": "31",
+            "issn": "6",
+            "pages": "886--96",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "VGA: a method for viral quasispecies assembly from ultra-deep sequencing data",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mangul",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mancuso",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Zelikovsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Sun",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Eskin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "2014 IEEE 4th International Conference on Computational Advances in Bio and Medical Sciences (ICCABS)",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Quasispecies dynamics with network constraints",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Barbosa",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Donangelo",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Souza",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J Theor Biol",
+            "volume": "312",
+            "issn": "",
+            "pages": "114--123",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "ART: a next-generation sequencing read simulator",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Marth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Bioinformatics",
+            "volume": "28",
+            "issn": "4",
+            "pages": "593--597",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Fast gapped-read alignment with bowtie 2",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Langmead",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nat Methods",
+            "volume": "9",
+            "issn": "4",
+            "pages": "357--366",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Fast and accurate short read alignment with Burrows-Wheeler transform",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Durbin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Bioinformatics",
+            "volume": "25",
+            "issn": "14",
+            "pages": "1754--60",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "MetaQUAST: evaluation of metagenome assemblies",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mikheenko",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Saveliev",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gurevich",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Bioinformatics",
+            "volume": "32",
+            "issn": "7",
+            "pages": "1088--90",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Efficient de novo assembly of large genomes using compressed data structures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Simpson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Durbin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Genome Res",
+            "volume": "22",
+            "issn": "3",
+            "pages": "549--56",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "De novo assembly of viral quasispecies using overlap graphs",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Baaijens",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "El Aabidine",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rivals",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sch\u00f6nhuth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Genome Res",
+            "volume": "27",
+            "issn": "5",
+            "pages": "835--883",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "metaSPAdes: a new versatile metagenomic assembler",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Nurk",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Meleshko",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Korobeynikov",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pevzner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Genome Res",
+            "volume": "27",
+            "issn": "5",
+            "pages": "824--858",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "PRICE: software for the targeted assembly of components of (Meta) genomic sequence data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Ruby",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bellare",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Derisi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Genes Genomes Genet",
+            "volume": "3",
+            "issn": "5",
+            "pages": "865--80",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Best Match Tagger for removing human reads from metagenomics datasets",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Rotmistrovsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "Agarwala",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Bmtagger",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Karect: accurate correction of substitution, insertion and deletion errors for next-generation sequencing data",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Allam",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Kalnis",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Solovyev",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Bioinformatics",
+            "volume": "31",
+            "issn": "21",
+            "pages": "3421--3429",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "ViPR: an open bioinformatics database and analysis resource for virology research",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Pickett",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Sadat",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Noronha",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Squires",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Hunt",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kumar",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zaremba",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Gu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "40",
+            "issn": "D1",
+            "pages": "593--601",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "A block-sorting lossless data compression algorithm",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Burrows",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wheeler",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "BLAST+: architecture and applications",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Camacho",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Coulouris",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Avagyan",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Ma",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Papadopoulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Bealer",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Madden",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Bioinformatics",
+            "volume": "10",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "De novo haplotype reconstruction in viral quasispecies using paired-end read guided path finding",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sun",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Bioinformatics",
+            "volume": "34",
+            "issn": "17",
+            "pages": "2927--2962",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "A Survey of Virus Recombination Uncovers Canonical Features of Artificial Chimeras Generated During Deep Sequencing Library Preparation",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Peccoud",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lequime",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Moltini-Conclois",
+                    "suffix": ""
+                },
+                {
+                    "first": "Giraud",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Lambrechts",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Gilbert",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2018,
+            "venue": "Genes Genomes Genet",
+            "volume": "3",
+            "issn": "4",
+            "pages": "1129--1167",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Readjoiner: a fast and memory efficient string graph-based sequence assembler",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gonnella",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kurtz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "BMC Bioinformatics",
+            "volume": "13",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "An elegant algorithm for the construction of suffix arrays",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Rajasekaran",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Nicolae",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "J Discret Algorithm",
+            "volume": "27",
+            "issn": "",
+            "pages": "21--28",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "VISTA: computational tools for comparative genomics",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Frazer",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Pachter",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Poliakov",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Rubin",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Dubchak",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "suppl_2",
+            "pages": "273--282",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "TABREF0": {
+            "text": "Read recruitment results by using seed sets constructed with Bowtie2 and BWA",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Assembly results on SARS-CoV aligned and recruited metagenomic data",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Assembly results on SARS-CoV metagenomic data for TAR-VIR and PRICE",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Overlap extension results using different seed set R 0 The shaded regions inthis table and Table 5highlight the case where less recruited reads can produce better assembly results than aligned reads only",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Assembly evaluation results on aligned and recruited reads using the genomes of HBV, HCV, and HPgV as references 'cov.' is the abbreviation for 'coverage'. The default assembly component in TAR-VIR is PEHaplo about 1 h to finish. It generated 2659 contigs, from which 123 contigs can be aligned to the three viruses with the similarity threshold of 90%. The 123 contigs can cover 42.36% of the reference genomes. SPAdes failed to report the results within 24 h.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Assembly results comparison with reference-and extension-based methods",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "Assembly results on recruited reads with a partial CDS sequence for HPgV as reference",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF7": {
+            "text": "Time and memory usage for overlap extension and assembly on viral metagenomic data from human plasam",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF8": {
+            "text": "Then BWT(T) can be constructed using the following equation, where BWT[ i] and SA[ i] are abbreviated representations of BWT(T)[ i] and SA(T)[ i], respectively.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We thank Nan Du for helpful discussions on creating the BWT for overlap detection. We also thank Jiayu Shang for his help on installing and testing the conda package of TAR-VIR.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "This work was partially supported by City University of Hong Kong.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Funding"
+        },
+        {
+            "text": "The source code, the documentation of TAR-VIR and the simulated SARS-Cov metagenomic data are available at https://github.com/chjiao/TAR-VIR. The viral metagenomic data sequenced from human plasma is available at NCBI Sequence Read Archive (SRA) with the accession number SRR2083204 (https://www.ncbi.nlm.nih.gov/sra/SRR2083204).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "YS conceived the idea. YS and JC developed the extension algorithm and experiments. JC implemented the algorithm and conducted all experiments. JH conducted the data analysis for the revision. All authors read and approved the final version of the manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Ethics approval and consent to participate"
+        },
+        {
+            "text": "Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Publisher's Note"
+        }
+    ]
+}

@@ -1,0 +1,991 @@
+{
+    "paper_id": "d33624f8b27d81d663f54d3e167aaf15968ff8a4",
+    "metadata": {
+        "title": "An OpenMP-based tool for finding longest common subsequence in bioinformatics",
+        "authors": [
+            {
+                "first": "Rayhan",
+                "middle": [],
+                "last": "Shikder",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Parimala",
+                "middle": [],
+                "last": "Thulasiraman",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Pourang",
+                "middle": [],
+                "last": "Irani",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Pingzhao",
+                "middle": [],
+                "last": "Hu",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Objective: Finding the longest common subsequence (LCS) among sequences is NP-hard. This is an important problem in bioinformatics for DNA sequence alignment and pattern discovery. In this research, we propose new CPU-based parallel implementations that can provide significant advantages in terms of execution times, monetary cost, and pervasiveness in finding LCS of DNA sequences in an environment where Graphics Processing Units are not available. For general purpose use, we also make the OpenMP-based tool publicly available to end users.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "In this study, we develop three novel parallel versions of the LCS algorithm on: (i) distributed memory machine using message passing interface (MPI); (ii) shared memory machine using OpenMP, and (iii) hybrid platform that utilizes both distributed and shared memory using MPI-OpenMP. The experimental results with both simulated and real DNA sequence data show that the shared memory OpenMP implementation provides at least two-times absolute speedup than the best sequential version of the algorithm and a relative speedup of almost 7. We provide a detailed comparison of the execution times among the implementations on different platforms with different versions of the algorithm. We also show that removing branch conditions negatively affects the performance of the CPU-based parallel algorithm on OpenMP platform.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Finding Longest Common Subsequence (LCS) is a classic problem in the field of computer algorithms and has diversified application domains. A subsequence of a string is another string which can be derived from the original string by deleting none or few characters (contiguous or non-contiguous) from the original string. A longest common subsequence of two given strings is a string which is the longest string that is a subsequence of both the strings. The sequential version of the LCS algorithm using \"equal-unequal\" comparisons takes \u2126(mn) time, where m and n represent the length of the two sequences being compared [1, 2] . It is necessary to mention that the problem of finding the LCS of more than two strings is NP-hard in nature [3, 4] .",
+            "cite_spans": [
+                {
+                    "start": 621,
+                    "end": 624,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 625,
+                    "end": 627,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 739,
+                    "end": 742,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 743,
+                    "end": 745,
+                    "text": "4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "LCS has various applications in multiple fields including DNA sequence alignment in bioinformatics [5] [6] [7] , speech and image recognition [8, 9] , file comparison, optimization of database query etc. [10] . In the field of bioinformatics, pattern discovery helps to discover common patterns among DNA sequences of interest which might suggest that they have biological relation among themselves (e.g., similar biological functions) [11] . In discovering patterns between sequences, LCS plays an important role to find the longest common region between two sequences. Although a praiseworthy amount of efforts have been made in the task of pattern discovery, with the increase of sequence lengths, algorithms seemingly face performance bottlenecks [12] . Furthermore, with the advent of next-generation sequencing technologies, sequence data is increasing rapidly [13] , which demands algorithms with minimum possible execution time. Parallel algorithms can play a vital role in this regard.",
+            "cite_spans": [
+                {
+                    "start": 99,
+                    "end": 102,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 103,
+                    "end": 106,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 107,
+                    "end": 110,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 142,
+                    "end": 145,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 146,
+                    "end": 148,
+                    "text": "9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 204,
+                    "end": 208,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 436,
+                    "end": 440,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 751,
+                    "end": 755,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 867,
+                    "end": 871,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Out of the parallel solutions of the LCS problem, antidiagonal [14] and bit-parallel [15] algorithms are few of the firsts and noteworthy attempts. Recently, with the rise of Graphics Processing Unit (GPU)-based accelerators, several Compute Unified Device Architecture (CUDA)-based GPU targeted solutions to the LCS problem have been proposed. Yang et al. [16] are one of the firsts to propose an improved row-wise independent parallel version of the LCS algorithm by changing the data dependency used by a dynamic programming approach and using unique memory-access properties of GPUs. More recently, Li et al. [17] have proposed a parallel formulation of the anti-diagonal approach to the LCS algorithm using a GPU-based model. Although these GPU-based models offer faster execution times, GPU devices are still quite expensive in nature, hence only few computers are equipped with GPUs. In such cases, to achieve performance improvement, CPU-based parallel LCS algorithms (e.g. message passing interface (MPI) and open multi-processing (OpenMP)) are still greatly demanded. However, to the best of our knowledge, there is no such publicly available CPU-based tool for the end users. We addressed this gap by developing a new OpenMP-based tool for the end users by improving the row-wise independent version [16] of the LCS algorithm. Moreover, we also developed two other CPU-based parallel implementations (MPI, hybrid MPI-OpenMP) of the algorithm and provided a detailed benchmarking of 3. A comparison of the newly developed OpenMPbased LCS algorithm with and without branch conditions. ",
+            "cite_spans": [
+                {
+                    "start": 63,
+                    "end": 67,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 85,
+                    "end": 89,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 357,
+                    "end": 361,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 613,
+                    "end": 617,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1311,
+                    "end": 1315,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "[i \u2212 1, j \u2212 1] , R[i, j \u2212 1] and R[i \u2212 1, j].",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Preliminaries"
+        },
+        {
+            "text": "Yang et al. [16] has devised a row-wise independent parallel algorithm by removing dependency among the cells of the same row. The modified equation is as follows:",
+            "cite_spans": [
+                {
+                    "start": 12,
+                    "end": 16,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Row-wise independent algorithm (Version 1)"
+        },
+        {
+            "text": "Here, k denotes the number of steps required to find either a match, such as [16] has divided their algorithm into two steps. First, they calculated the values of j \u2212 k for every i and stored these values in another table named P. The equation to calculate the value of P is given below.",
+            "cite_spans": [
+                {
+                    "start": 77,
+                    "end": 81,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Row-wise independent algorithm (Version 1)"
+        },
+        {
+            "text": "Here, C is the string comprised of the unique characters of string A and string B . After that the value of score table R were calculated using the following updated equation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Row-wise independent algorithm (Version 1)"
+        },
+        {
+            "text": "(1)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Row-wise independent algorithm (Version 1)"
+        },
+        {
+            "text": "all these implementations on simulated and real DNA sequence data, which was absent for this version of the LCS algorithm. The main contributions of this study are listed below.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Row-wise independent algorithm (Version 1)"
+        },
+        {
+            "text": "finding length of LCS of DNA sequences for the end users. 2. A detailed benchmarking of the newly developed CPU-based parallel algorithms using different performance metrics on both simulated and real DNA sequence data, where we found that our OpenMPbased algorithm provides at-least 2 times absolute speedup (compared to the best sequential version) and 7 times relative speedup (compared to using only 1 thread).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A new OpenMP-based publicly available tool for"
+        },
+        {
+            "text": "Here, c denotes the index of character A[i \u2212 1] in string C.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A new OpenMP-based publicly available tool for"
+        },
+        {
+            "text": "As branching can hamper the performance of parallel algorithms, Yang et al. [16] further modified the calculation of P matrix using the following equation.",
+            "cite_spans": [
+                {
+                    "start": 76,
+                    "end": 80,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Row-wise Independent Algorithm (Version 2)"
+        },
+        {
+            "text": "Then Eq. (4) can be rewritten as follows with one branching condition reduced.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Row-wise Independent Algorithm (Version 2)"
+        },
+        {
+            "text": "From the two versions of row-wise independent algorithms, we can see that the calculation of values of table P only depends on the same row. In contrast, the calculation of the values of score table R depends on the previous row only.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Row-wise Independent Algorithm (Version 2)"
+        },
+        {
+            "text": "For the calculation of the P table, each row is independent and can be calculated in a parallel way. Therefore, in our MPI implementation, we scattered the P table to all the processes in the beginning. After calculating the corresponding chunk values, process number zero gathers the partial results from all the other processes. For the calculation of score table R, elements in each row can be scattered among the processes and gathered afterwards. This scatter and gather operations need to be done for every row. Hence, the communication and synchronization overheads are expected to be higher for the MPI implementation approach.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methodology"
+        },
+        {
+            "text": "A shared memory implementation can largely mitigate the communication and synchronization overheads of distributed memory implementations which inspired us to develop the shared memory (OpenMP) implementation. In case of the OpenMP implementation, we used work-sharing construct #pragma omp parallel for (an OpenMP directive for sharing iterations of a loop among the available threads) to compute the elements of a single row of the score table R in parallel. We tried different",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methodology"
+        },
+        {
+            "text": "scheduling strategies (static, dynamic, and guided) for sharing works among the threads. The calculation of the P table was also shared among threads. This time, the outer loop was parallelized using #pragma omp parallel for construct, as every row is independent of each other.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methodology"
+        },
+        {
+            "text": "In the hybrid MPI-OpenMP approach, we selected the optimum number of processes and threads from the experiments of MPI and OpenMP approach. After that we scattered every row among processes and inside a single process we further shared the chunk of rows among threads using #pragma omp parallel for. To account for longer DNA sequences, we optimized the space complexity of all the three implementations where we kept only the current and the previous row of the score table.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methodology"
+        },
+        {
+            "text": "We used two different data sets for our experiments. First one is a simulated DNA sequence data, collected from University of California Riverside's (UCR) random DNA sequence generator [18] . The lengths of the different pairs of sequences are between 128 base pairs to 32,768 base pairs. The second data set consists of 8 virus genome sequence pairs and two entire chromosome genome sequence pairs of two eukaryotes, collected from the website of National Center for Biotechnology Information (NCBI) [19] . The selected sequence lengths vary from 359 base pairs to 32,276 base pairs for the viruses, and from 15,05,371 base pairs to 1,61,99,981 base pairs for the eukaryotes. Table 1 represents the selected virus and eukaryote pairs and their sequence lengths.",
+            "cite_spans": [
+                {
+                    "start": 185,
+                    "end": 189,
+                    "text": "[18]",
+                    "ref_id": null
+                },
+                {
+                    "start": 501,
+                    "end": 505,
+                    "text": "[19]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 677,
+                    "end": 684,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Data sets and specifications of the computer"
+        },
+        {
+            "text": "All the experiments were run on University of Manitoba's on-campus cluster computing system (Mercury machine). The cluster consists of four fully connected computing nodes with 2-gigabit ethernet lines between every pair of nodes. Each node consists of two 14-core Intel Xeon E5-2680 v4 2.40 GHz CPUs with 128 GB of RAM. Having a total of 28 cores inside, with the help of hyper-threading, each node is capable of running twice as many hardware threads (56 threads) at a time. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data sets and specifications of the computer"
+        },
+        {
+            "text": "For the MPI approach, we tuned for the number of processes and found that using 4 process gives better relative speedup. For the OpenMP approach, we tuned for the number of threads and the scheduling strategy (static, dynamic, and guided). We found that using 16 threads and a static scheduling of work sharing among the threads provided 7 times relative speedup (see Fig. 1a, b) . Finally, for the hybrid MPI-OpenMP approach, we used 4 processes (or nodes) and 16 threads. For comparison purpose, we experimented with a varying number of sequence lengths. Figure 2a , illustrates the execution times for different implementations where we can see that our OpenMP implementation outperforms all the other approaches and is almost 2 times faster than the best sequential version. However, the MPI approach provides poor results due to the increased amount of communication and synchronization overhead caused by m scatter and gather operations (blocking in nature). The hybrid MPI-OpenMP approach performs the worst. As in the hybrid approach, the number of scatter and gather operations is the same as the MPI approach, and it also adds synchronization overheads of the OpenMP, and therefore this implementation provides the worst result. This observation indicates that distributed memory implementation is discouraged for the LCS algorithm. In order to validate our results, we also experimented with the real-DNA sequence data (see Table 1 ). From Fig. 2b , we can see that even for the real data the OpenMP implementation is having at-least 2 times speedup from the best sequential version. For longer DNA sequences (SP 9, SP 10 in Fig. 2b) , the OpenMP speedups are even higher, whereas the MPI and the hybrid implementations took more than a week to complete.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 368,
+                    "end": 379,
+                    "text": "Fig. 1a, b)",
+                    "ref_id": null
+                },
+                {
+                    "start": 557,
+                    "end": 566,
+                    "text": "Figure 2a",
+                    "ref_id": null
+                },
+                {
+                    "start": 1435,
+                    "end": 1442,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 1451,
+                    "end": 1458,
+                    "text": "Fig. 2b",
+                    "ref_id": null
+                },
+                {
+                    "start": 1636,
+                    "end": 1644,
+                    "text": "Fig. 2b)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Comparison among different approaches"
+        },
+        {
+            "text": "In the above experiments, we used version 2 (without branching) of the row-wise independent algorithm. In order to compare the execution times of the two versions (version 1 and version 2), we also developed the version 1. Figure 2c illustrates the execution times for the two versions with varying sequence sizes and 1 thread only where we can see that version 1 performs relatively better than version 2 of the algorithm. Although version 2 has removed branching conditions, it has added more computations which might be the reason for its relatively bad execution times. Furthermore, CPU architectures are much better at branch predictions than GPUs. Therefore, the second version of the row-wise independent parallel algorithm performed well on GPUs [16] but not on CPUs.",
+            "cite_spans": [
+                {
+                    "start": 754,
+                    "end": 758,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 223,
+                    "end": 232,
+                    "text": "Figure 2c",
+                    "ref_id": null
+                }
+            ],
+            "section": "Comparison between the two versions of the algorithm in OpenMP approach"
+        },
+        {
+            "text": "Our study investigated parallelization of the row-wise independent version of the LCS algorithm only, as it provided ease in parallelization using the MPI, and OpenMP frameworks. As we found that the version of the rowwise independent algorithm with branching performs better than the other version, we will investigate this version in more detail in the future. We will also investigate other versions of the algorithm with the goal of finding better parallelization strategies.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Limitations"
+        },
+        {
+            "text": "Project name:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "LCS row parallel (CPU) Project home page: https ://githu b.com/Rayha nShik der/lcs_paral lel Operating systems:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "Platform independent Programming language: C Other requirements: gcc 4.8.5 or later, OpenMPI version 1.10.7 or later, OpenMP version 3.1 or later License:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        },
+        {
+            "text": "MIT License Any restrictions to use by non-academics: None.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability and requirements"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Bounds on the complexity of the longest common subsequence problem",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Ullman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Aho",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Hirschberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 1976,
+            "venue": "J ACM",
+            "volume": "23",
+            "issn": "",
+            "pages": "1--12",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "The string-to-string correction problem",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Wagner",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Fischer",
+                    "suffix": ""
+                }
+            ],
+            "year": 1974,
+            "venue": "J ACM",
+            "volume": "21",
+            "issn": "",
+            "pages": "168--73",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "The complexity of some problems on subsequences and supersequences",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Maier",
+                    "suffix": ""
+                }
+            ],
+            "year": 1978,
+            "venue": "J ACM",
+            "volume": "25",
+            "issn": "",
+            "pages": "322--358",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Computers and intractability: A guide to the theory of np-completeness (series of books in the mathematical sciences), ed. Comput Intractability",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Garey",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Johnson",
+                    "suffix": ""
+                }
+            ],
+            "year": 1979,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Fast longest common subsequences for bioinformatics dynamic programming",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ossman",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Hussein",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Population (Paris)",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Improved tools for biological sequence comparison",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Pearson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lipman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1988,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "85",
+            "issn": "",
+            "pages": "2444--2452",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Basic local alignment search tool",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Altschul",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Gish",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lipman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "J Mol Biol",
+            "volume": "215",
+            "issn": "",
+            "pages": "403--413",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Time-warped longest common subsequence algorithm for music retrieval",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Guo",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Siegelmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Image representation, indexing and retrieval based on spatial relationships and properties of objects",
+            "authors": [
+                {
+                    "first": "Egm",
+                    "middle": [],
+                    "last": "Petrakis",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "An overview of sequence comparison: time warps, string edits, and macromolecules",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Kruskal",
+                    "suffix": ""
+                }
+            ],
+            "year": 1983,
+            "venue": "SIAM Rev",
+            "volume": "25",
+            "issn": "2",
+            "pages": "201--238",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Analysis of the relationships among longest common subsequences, shortest common supersequences and patterns and its application on pattern discovery in biological sequences",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Ning",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Ng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Leong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Int J Data Min Bioinform",
+            "volume": "5",
+            "issn": "",
+            "pages": "611--636",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Limitations and potentials of current motif discovery algorithms",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hu",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kihara",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "4899--913",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Big data: astronomical or genomical?",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Stephens",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Faghri",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Campbell",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Zhai",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Efron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Biol",
+            "volume": "13",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Parallel algorithms for the longest common subsequence problem",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Babu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Saxena",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "120--125",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "A fast and practical bit-vector algorithm for the longest common subsequence problem",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Crochemore",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Iliopoulos",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Pinzon",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Reid",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Inf Process Lett",
+            "volume": "80",
+            "issn": "",
+            "pages": "279--85",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "An efficient parallel algorithm for longest common subsequence problem on gpus",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Shang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Proceedings of the world congress on engineering",
+            "volume": "",
+            "issn": "",
+            "pages": "499--504",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Parallel Longest Common Sequence Algorithm on Multicore Systems Using OpenACC, OpenMP and OpenMPI",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Goyal",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kimm",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "2017 IEEE 11th international symposium on embedded multicore/many-core systems-on-chip (MCSoC",
+            "volume": "",
+            "issn": "",
+            "pages": "158--65",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "TABREF0": {
+            "text": "Here, R is a score table consisting of the lengths of the longest common subsequences of all the possible prefixes of the two strings. The length of longest common subsequence of A and B can be found in the cell R[m, n] of table R . From Eq. 1, we can see that the value of a cell R[i, j] in the scoring table R depends on R",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Information of real DNA sequence data sets collected from NCBI [19]bp stands for the number base pairs",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We would like to thank all the members of the Hu Lab for their valuable suggestions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "The source code, used data set, and documentation is available at https :// githu b.com/Rayha nShik der/lcs_paral lel.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "This work was supported in part by Natural Sciences and Engineering Research Council of Canada and the University of Manitoba, which provided with the research assistantship for Rayhan Shikder to perform the study.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Funding"
+        },
+        {
+            "text": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Publisher's Note"
+        },
+        {
+            "text": "Authors' contributions RS formulated the problem, developed the implementations and drafted the manuscript. PT and PH conceived the study design. PH directed the data collection and analysis procedure. PT, PH and PI interpreted the results and significantly revised the manuscript. All authors read and approved the final manuscript. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        }
+    ]
+}

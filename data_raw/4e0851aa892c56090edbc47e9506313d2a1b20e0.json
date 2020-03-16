@@ -1,0 +1,2877 @@
+{
+    "paper_id": "4e0851aa892c56090edbc47e9506313d2a1b20e0",
+    "metadata": {
+        "title": "Incorporating indel information into phylogeny estimation for rapidly emerging pathogens",
+        "authors": [
+            {
+                "first": "Benjamin",
+                "middle": [
+                    "D"
+                ],
+                "last": "Redelings",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "North Carolina State University",
+                    "location": {
+                        "postCode": "27606",
+                        "settlement": "Raleigh",
+                        "region": "NC",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Marc",
+                "middle": [
+                    "A"
+                ],
+                "last": "Suchard",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Phylogenies of rapidly evolving pathogens can be difficult to resolve because of the small number of substitutions that accumulate in the short times since divergence. To improve resolution of such phylogenies we propose using insertion and deletion (indel) information in addition to substitution information. We accomplish this through joint estimation of alignment and phylogeny in a Bayesian framework, drawing inference using Markov chain Monte Carlo. Joint estimation of alignment and phylogeny sidesteps biases that stem from conditioning on a single alignment by taking into account the ensemble of near-optimal alignments.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "We introduce a novel Markov chain transition kernel that improves computational efficiency by proposing non-local topology rearrangements and by block sampling alignment and topology parameters. In addition, we extend our previous indel model to increase biological realism by placing indels preferentially on longer branches. We demonstrate the ability of indel information to increase phylogenetic resolution in examples drawn from within-host viral sequence samples. We also demonstrate the importance of taking alignment uncertainty into account when using such information. Finally, we show that codon-based substitution models can significantly affect alignment quality and phylogenetic inference by unrealistically forcing indels to begin and end between codons.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "These results indicate that indel information can improve phylogenetic resolution of recently diverged pathogens and that alignment uncertainty should be considered in such analyses.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Reconstructing viral phylogenies is important for determining the parent stock of newly emerging strains [1] , as well as for understanding how viruses evolve over time, both within a single host and at the population level [2] . Viral phylogenies are commonly inferred from aligned molecular sequence data, using the information available in substitutions shared by descent [3] [4] [5] [6] . Short time-scales dominate in the development of rapidly emerging disease strains, such that the number of observed substitutions between sequences can be too low to yield well-resolved phylogenies. Thus, to increase phylogenetic resolution for such disease strains we seek to make use of a wider class of phylogenetic information.",
+            "cite_spans": [
+                {
+                    "start": 105,
+                    "end": 108,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 224,
+                    "end": 227,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 375,
+                    "end": 378,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 379,
+                    "end": 382,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 383,
+                    "end": 386,
+                    "text": "[5]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 387,
+                    "end": 390,
+                    "text": "[6]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Insertions and deletions (indels) are a promising category of molecular sequence information that is largely ignored in phylogenetic reconstruction. Researchers commonly remove gaps from molecular sequences alignments by coding them as missing data or by throwing out columns that contain gaps [3] [4] [5] [6] . Indels may be useful to resolve deep branches in the Tree of Life that are difficult to resolve using information in shared substitutions [7, 8] . At the other extreme, on which we focus here, indels can help to resolve phylogenies in situations where the number of nucleotide substitutions is inadequate. For example, indels in non-coding chloroplast DNA have been helpful in resolving the branching order of recent plant radiations [9, 10] . The rate of indel events in these regions approaches or surpasses the rate of substitution, making indels too important to ignore [10] . Several species of viruses are also known to accumulate indels, sometimes at a high rate. Cheyner et al. [11] note that indel rates are higher than substitution rates in hyper-variable regions of Simian Immunodeficiency Virus (SIV) and Human Immunodeficiency Virus (HIV). Other viruses also experience indels on short time-scales. Hepatitis B virus (HBV) accumulates deletions in the core/pre-core region during the course of infection [12] , while Equine Infectious Anemia Virus accumulates insertions [13] . Three deletion variants of Severe Acute Respiratory Syndrome (SARS) appeared during the beginning of the SARS outbreak in China [14] . Influenza B viruses accumulate indels over several decades [15] . We note that these viruses are all RNA viruses, with the exception of HBV. Although HBV is a DNA virus, it reverse transcribes its DNA genome from an RNA intermediate. Redelings and Suchard (2005) describe a statistical method of incorporating indel information into phylogeny estimation. This method uses a joint reconstruction framework that simultaneously infers the alignment, tree, and insertion/deletion rates. Estimation proceeds through Markov chain Monte Carlo (MCMC) within a Bayesian framework and naturally accounts for uncertainty in alignments, phylogenies, and other parameters through posterior probabilities. Unlike sensitivity analysis [16, 17] , this approach takes into account uncertainty resulting from the myriad of near-optimal alignments. This approach involves averaging over unobserved quantities such as the alignment and interal node states, which can lead to improved estimates [18] . This is different from other approaches which iteratively optimize a heuristically chosen cost function until no improvement is seen [19, 20] . Joint estimation of alignment and phylogeny sidesteps bias that results from conditioning on a single alignment estimate [21, 18] , bias which may be exaggerated when indel information is inappropriately used. This method is based on a probabilistic model of sequence evolution that contains insertion and deletion events as well as substitution events. Heuristic \"costs\" for opening and extending gaps are replaced by the insertion/ deletion rate and the mean indel length respectively, which are biologically interpretable parameters and can be estimated from the data without circularity [22, 23] . Gaps are not treated as a fifth character state, since this overweights the evidence of shared indels by treating an indel of multiple residues as multiple shared indels [3] . Instead, the indel process is separate and independent of the substitution process, and allows indels of several residues simultaneously. In addition, because alignments represent positional homology, the indel process does not allow a newly inserted character to be aligned to a previously deleted character.",
+            "cite_spans": [
+                {
+                    "start": 294,
+                    "end": 297,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 298,
+                    "end": 301,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 302,
+                    "end": 305,
+                    "text": "[5]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 306,
+                    "end": 309,
+                    "text": "[6]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 450,
+                    "end": 453,
+                    "text": "[7,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 454,
+                    "end": 456,
+                    "text": "8]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 746,
+                    "end": 749,
+                    "text": "[9,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 750,
+                    "end": 753,
+                    "text": "10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 886,
+                    "end": 890,
+                    "text": "[10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 998,
+                    "end": 1002,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1329,
+                    "end": 1333,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 1396,
+                    "end": 1400,
+                    "text": "[13]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1531,
+                    "end": 1535,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1597,
+                    "end": 1601,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 1772,
+                    "end": 1800,
+                    "text": "Redelings and Suchard (2005)",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 2258,
+                    "end": 2262,
+                    "text": "[16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 2263,
+                    "end": 2266,
+                    "text": "17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 2512,
+                    "end": 2516,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 2652,
+                    "end": 2656,
+                    "text": "[19,",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 2657,
+                    "end": 2660,
+                    "text": "20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 2784,
+                    "end": 2788,
+                    "text": "[21,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 2789,
+                    "end": 2792,
+                    "text": "18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 3254,
+                    "end": 3258,
+                    "text": "[22,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 3259,
+                    "end": 3262,
+                    "text": "23]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 3435,
+                    "end": 3438,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We introduce a new indel model to remedy a shortcoming of the Redelings and Suchard (RS05) model. Unlike the TKF1 [22] and TKF2 [23] indel models that are not reversible on pairwise alignments, the reversible RS05 model does not make use of branch length information in the indel process and therefore does not place indels preferentially on longer branches. In order to increase biological realism, we describe an extended indel model that is able to incorporate branch length information. In doing so we overcome a substantial theoretical difficulty in using reversible indel models during phylogenetic reconstruction.",
+            "cite_spans": [
+                {
+                    "start": 114,
+                    "end": 118,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 128,
+                    "end": 132,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We further enhance the estimation method of Redelings and Suchard [24] by introducing a novel MCMC transition kernel to improve mixing among topologies. This transition kernel is based on the subtree-prune-andregraft (SPR) operator but is modified to partially sample the alignment along with the tree. Block sampling improves mixing efficiency because topologies and alignments are highly inter-correlated.",
+            "cite_spans": [
+                {
+                    "start": 66,
+                    "end": 70,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We introduce codon models [25] into joint estimation. Codon models are often used in both Bayesian and likelihood-based phylogeny estimation because they naturally allow different rates at the third codon position, but we are not aware of any work using codon models in joint estimation. We note that codon models implicitly alter the indel process as well as the substitution process by forcing indels to begin and end between codons. This constraint may not be biologically realistic and would result in misaligned nucleotides when indels are not in phase with the reading frame. Such misalignment can artificially inflate the number of inferred substitutions. When the total number of substitutions is small, this may significantly alter the model fit or introduce bias. We compare nucleotide and codon indel models to see if these effects are significant.",
+            "cite_spans": [
+                {
+                    "start": 26,
+                    "end": 30,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We analyze data sets from SIV and HIV. The SIV data set consists of a short section of the envelope (env) gene from 9 within-host strains. To see if indel information improves phylogenetic resolution we compare the number of bi-partitions that are supported under the joint model and the traditional sequential approach, in which topology reconstruction assumes a previously determined alignment. We also assess the importance of alignment ambiguity by assessing the sensitivity of phylogeny estimation to fixed alignments under both the traditional and joint models. The HIV data set consists of about 600 nucleotides from the env gene from 27 within-host strains. We compare the number of bi-partitions supported under the sequential and joint models to assess the importance of indel information. We also compare nucleotide and codon models to see if the assumption of unbreakable codons significantly decreases model fit or influences phylogeny estimates.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In summary, we seek to improve the power to infer clades in rapidly emerging taxa by making use of indel information in a statistically rigorous manner. We also seek to determine whether indels can actually resolve extremely short branches with few substitutions. To accomplish these goals, we introduce an improved statistical model of the insertion-deletion process to improve the accuracy of the inference, and describe a novel MCMC transition kernel to improve the speed of the inference. Once our statistical framework is in place, we then demonstrate that indel information can help to detect previously undetected bi-partitions in two real data examples from RNA viruses. While analyzing these data, we note that alignment ambiguity may significantly affect phylogeny inference. We note that codon-based alignments can unrealistically shift indels to avoid breaking codons, and we develop the necessary statistical machinery to demonstrate that this can substantially affect phylogeny estimates.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We introduce a time-dependent reversible indel process to the probabilistic framework for joint estimation of alignment and phylogeny of Redelings and Suchard [24] . Time-dependence enables us to place indels preferentially on longer branches of the tree, producing a more realistic description of the evolutionary process. Further, we also introduce a novel MCMC transition kernel to increase topology mixing so that we can estimate phylogenies and alignments containing increasingly more taxa.",
+            "cite_spans": [
+                {
+                    "start": 159,
+                    "end": 163,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Models and Algorithms"
+        },
+        {
+            "text": "We review the salient features of the RS05 model here and propose the necessary extensions for a time-dependant indel process. Our model starts with data Y, where Y is a collection of unaligned molecular sequences Y i for i = 1, ..., n taxa. Each molecular sequence Y i is a collection of letters of length |Y i |. We characterize the stochastic model that describes how the sequences in Y diverged from a common ancestor in terms of a number of unknown but estimable parameters. These parameters include a multiple alignment A that specifies the positional homology between the sequences Y, an evolutionary tree (\u03c4, T) where \u03c4 is an unrooted bifurcating tree topology and T = (t 1 , ..., t 2N -3 ) is a vector of branch lengths along the edges in \u03c4, and vectors \u0398 and \u039b are parameters that characterize the letter substitution and indel processes respectively. Alignment A includes Felsenstein wildcard sequences of random lengths at the internal nodes of \u03c4. Thus, A also depicts the complete indel history among the sequences in Y. We scale branch lengths in terms of expected number of substitutions per site.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Stochastic Model"
+        },
+        {
+            "text": "In contrast to traditional methods of phylogeny estimation that arbitrarily fix the alignment, we treat the alignment A as a random variable, leading to the probability expression",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Stochastic Model"
+        },
+        {
+            "text": "The substitution likelihood P(Y|A, \u03c4, T, \u0398) and the priors P(\u03c4, T) and P(\u0398) occur in traditional Bayesian models that fix the alignment. However, the alignment prior P(A|\u03c4, T, \u039b) and the prior on indel process parameters P(\u039b) are novel in the joint model, allowing for estimation and a natural way to handle uncertainty in A.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Stochastic Model"
+        },
+        {
+            "text": "To model the substitution process that specifies P(Y|A, \u03c4, T, \u0398), we assume that substitutions in each column of A occur independently and follow a continuous-time Markov chain (CTMC) process [26] . Under this process, letters at the root of the tree arise according to some distribution \u03c0. Evolution then occurs independently along each branch of \u03c4 with rate matrix Q. We restrict ourselves to reversible Markov chains and use \u03c0 as the equilibrium distribution of Q. This makes the position of the root unidentifiable and so we use unrooted trees throughout this paper.",
+            "cite_spans": [
+                {
+                    "start": 192,
+                    "end": 196,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Substitution Model"
+        },
+        {
+            "text": "CTMC models are in common usage for letters from nucleotide-, codon-, and amino acid-based alphabets. In contrast to nucleotide-based CTMC models, codon-based models group the three nucleotides in a codon into a single letter. Given the small number of substitutions that occur during the emergence of rapidly evolving pathogens, codon-based models are preferred over amino-acid based models because they do not discard synonymous substitutions. Codon-based models can also improve model efficiency over nucleotide-based models because the codon-based models can include non-independent nucleotide frequencies and rule out missense mutations [25] . Codon-based models may also improve the accuracy of estimation by allowing the third-codon position to evolve at a higher rate. However, when the number of observed substitutions is low it may not be possible to estimate the non-synonymous to synonymous rate ratio \u03c9, requiring researchers to fix \u03c9 to a previously estimated value.",
+            "cite_spans": [
+                {
+                    "start": 642,
+                    "end": 646,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Substitution Model"
+        },
+        {
+            "text": "Importantly, we note that codon-based models also affect the indel process by forbidding frameshift mutations and also indels that begin or end within a codon. While the former constraint is realistic for biologically active viruses, the latter constraint may force incorrect alignments at the nucleotide level, causing up to two misaligned residues per indel. This may result in a significant bias when the total number of substitutions is small.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Substitution Model"
+        },
+        {
+            "text": "Redelings and Suchard [24] make the simplifying assumption that the alignment prior P(A|\u03c4,T,L) = P(A|\u03c4, L) (2) is independent of branch lengths. While this assumption implies that indels are equally likely to occur on each branch regardless of length, it trivially enforces that sequence length distributions \u03c6 on all nodes in \u03c4 remain the same. This is a necessary condition for constructing a reversible evolutionary Hidden Markov model (HMM) from pair-HMMs along the branches of \u03c4. Reversibility substantially decreases implementation complexity. The assumption further allows us to avoid fragment based pair-HMMs that tend to separate indels by the average indel length, which is not necessarily biologically realistic.",
+            "cite_spans": [
+                {
+                    "start": 22,
+                    "end": 26,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 107,
+                    "end": 110,
+                    "text": "(2)",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "Here we develop an alignment prior P(A|\u03c4, T, \u039b) that explicitly depends on branch lengths but retains equivalent sequence length distributions on all nodes of the tree. We begin construction of the extended model by briefly summarizing how the original indel model is constructed from a pairwise alignment distribution \u03bd. We modify this construction to build the new indel model from a parameterized distribution \u03bd t on pairwise alignments that corresponds to a divergence time t. We then describe a new pair-HMM which serves to generate \u03bd t . Finally we describe how to calculate posterior probabilities under this model.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "To describe our original multiple alignment model, we begin by noting that, given a topology \u03c4, the multiple alignment A can be decomposed into a set of pairwise alignments A (b) along each branch b of the topology. This decomposition is possible because of the inclusion of Felsenstein wildcard sequences at the internal nodes of \u03c4. Imposing an arbitrary distribution \u03bd on each pairwise alignment A (b) independently yields a joint distribution over A. However, pairwise alignments on neighboring branches are not strictly independent because they both specify the length of the random sequence at the node they share. To handle this dependence, we first choose an arbitrary internal node in \u03c4 as the root; this imposes an orientation on each branch. We then label the sequence in each branch alignment A (b) that is closest to the root as the ancestral sequence and the other sequence as the descendant sequence. We sample the sequence length at the root from a distribution and draw the pairwise alignment A (b) for each branch b from \u03bd conditional on the length of the ancestral sequence, proceeding down the tree from the root to the leaves.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "We note that the pairwise alignment distribution \u03bd induces a sequence length distribution on each sequence in the pair it emits. To proceed, we require that the pairwise alignment distribution \u03bd be symmetric under interchange of the two sequences in the pair. This implies that there is no preferred direction of evolution between the two sequences. It also implies that the sequence length distribution for the ancestral and descendant sequences are equal; we call this common distribution \u03c6. If we set the root length distribution = \u03c6, then we can write the multiple alignment prior as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "where I represents the set of internal nodes in \u03c4 [24] . Note that in this expression the arbitrary root is not identifiable.",
+            "cite_spans": [
+                {
+                    "start": 50,
+                    "end": 54,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "Unfortunately the parameters that characterize our original pairwise alignment distribution \u03bd can not vary from branch to branch without inducing unequal length distributions. We therefore propose a new pairwise alignment prior that maintains a fixed sequence length distribution \u03c6 even when the indel probability varies from branch to branch. To accomplish this aim, we assume that each sequence consists of a series of unbreakable fragments, as in the TKF2 model. The fragment lengths are geometrically distributed with continuation probability \u03b5 and minimum length 1. The number of fragments is uniformly distributed over the non-negative integers. Following an ancestral fragment at one end of a branch, a geometric number of new fragments are inserted in the descendent 3 with continuation probability \u03b4(t). Each ancestral fragment survives in the descendent with probability \u03b4'(t) = \u03b4(t)/(1 -\u03b4(t)). Following our previous model and the TKF models, insertions and deletions are equally likely.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "This model can be expressed as a symmetrical pair-HMM (Figure 1 ), implying that alignments can be considered non-directed, since the probability does not change when ancestor and descendant sequences are interchanged. This contrasts with the TKF models that induce irreversible distributions on pairwise alignments. A major advantage of this symmetry is that it is clear how to construct alignment models on an unrooted tree and leads to greater simplicity in model implementation and, arguably, decreased computation time. The model described here diverges from our previous model in that match fragments no longer contain only a single letter, but instead follow the same length distribution as gap fragments. This is represented graphically in the pair-HMM by the addition of a loop with non-zero weight \u03b5 from the match state (+/+) to itself.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 54,
+                    "end": 63,
+                    "text": "(Figure 1",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Indel Models"
+        },
+        {
+            "text": "To facilitate dependence of pairwise alignment distribution \u03bd t on t, we seek a natural relationship between \u03b4(t) and t. We define \u03bb as the indel rate per residue scaled in",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "Pair-HMM representation of the fragment-based indel model becomes the probability of a fragment being inserted or deleted. We wish to re-parameterize the fragment model in terms of a per-residue indel rate; the probability of an indel occurring between two residues is (1 -\u03b5)\u03b4'(t). However, if we attempt to set then the probability \u03b4'(t) can become greater than 1. We therefore move the factor of (1 -\u03b5) into the time scale, such that",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "We note that Equation (4) agrees with Equation (5) to first order in \u03bbt b and serves to connect fragment indel rates to per-residue indel rates. The product \u03bbt b is in general << 1, so matching on higher order terms is unnecessary.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "The distribution \u03bd t naturally gives rise to two models. In the first model, denoted \"fragments\", we set \u03bd (b) = \u03bd \u03bb for all b, making the probability f an indel independent of branch length again. In the second model, denoted as \"fragments+T\", we set making the probability of an indel roughly proportional to branch length t b .",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "We now show that the sequence length distribution induced by \u03bd t is independent of t. The pairwise alignment distribution is a uniform distribution on the number of fragments, with each fragment being a match (+/+), insertion (-/+) or deletion (+/-) with probabilities 1 -2\u03b4(t), \u03b4(t) and \u03b4(t), respectively, and with exit measure (1 -\u03b4(t)).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "This results in the following probability generating function for the length of either sequence in the pair-HMM:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "Therefore, the length distribution is independent of \u03b4(t), and is uniform except for an anomaly at length 0. This allows us to specify a different value of \u03b4(t) in the pair-HMM on each branch of the tree without affecting \u03c6.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "Defining L 1 and L 2 as the emitted sequence lengths from the pair-HMM, we note that P(L 1 = l 1 ) has finite measure and that the distribution P(L 2 = l 2 |L 1 = l 1 ) on L 2 is therefore proper. This implies that the posterior distribution of the joint model is proper because the distribution conditions on the observed leaf sequence lengths.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Indel Models"
+        },
+        {
+            "text": "We introduce a novel MCMC transition kernel that improves mixing between topologies and alignments. The new transition kernel uses the SPR operator ( Figure 2 ) to propose new trees, but is extended to be alignment-aware.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 150,
+                    "end": 158,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Sampling"
+        },
+        {
+            "text": "Our previous approach used only nearest-neighbor-interchange (NNI) operators to propose new trees [24] . This resulted in long convergence times and inefficient mixing when there were many taxa. The SPR operator improves on this situation by proposing non-local topology rearrangements that would require several NNI moves, and thus avoids several intermediates [27] .",
+            "cite_spans": [
+                {
+                    "start": 98,
+                    "end": 102,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 362,
+                    "end": 366,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Sampling"
+        },
+        {
+            "text": "A along with the topology \u03c4. In our framework, it is necessary to alter A when \u03c4 is altered because A specifies the homology of internal sequences and this homology may be inconsistent with the proposed topology. This happens when some column of A contains a letter that would be deleted and reinserted given the new topology. After an SPR tree proposal, we note that the alignment of the subset of sequences corresponding to taxa in the pruned subtree ( Figure 2 , blue) must remain consistent because their phylogeny remains unchanged. Likewise, the alignment of the other sequences ( Figure 2 , green) must remain consistent because the phylogeny of that subset remains unchanged. However the alignment of the complete set of sequences may not be consistent.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 455,
+                    "end": 463,
+                    "text": "Figure 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 587,
+                    "end": 595,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "The extended SPR transition kernel updates the alignment"
+        },
+        {
+            "text": "Our solution to this problem involves collapsed Gibbs sampling [28] with \u03c4' as long as C is large enough to contain alignments consistent with both \u03c4 and \u03c4'. Then we sample a single point from the chosen collapsed point in proportion to its posterior probability. To satisfy detailed balance, the set C must be constructed so that it contains at least the current alignment A; full conditions under which this procedure satisfies detailed balance are described in the Appendix.",
+            "cite_spans": [
+                {
+                    "start": 63,
+                    "end": 67,
+                    "text": "[28]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [],
+            "section": "The extended SPR transition kernel updates the alignment"
+        },
+        {
+            "text": "We now seek a set C that is large enough to contain alignments consistent with \u03c4' and yet small enough for integra-",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The extended SPR transition kernel updates the alignment"
+        },
+        {
+            "text": "tion and sampling to be computationally feasible. Unfortunately, integration over the set of all alignments is not practical, even if we constrain the alignment of leaf sequences to be constant. Therefore, we fix parts of the alignment and collapse only the remaining portions. Allowing only the three branch alignments adjacent to node O ( Figure 2 ) to vary will certainly allow an align-ment consistent with \u03c4'. This is therefore a loose constraint, which we call C 3 (A, \u03c4, O). It requires an O(L 3 ) dynamic programming algorithm for integration and resampling. To decrease the order of the dynamic programming algorithm to O(L 1 ), we consider imposing the additional constraint, which we call C 1 (A, \u03c4, O), that the alignments between the three nodes connected to O The subtree-prune-and-regraft operator Figure 2 The subtree-prune-and-regraft operator. (a) First a subtree (blue) and its associated node O are detached from the rest of the tree (green). (b) The subtree is then regrafted along into a different branch through its node O. In both (a) and (b), three branches connect to node O. The phylogeny relating sequences at the pruned nodes (blue) and the phylogeny relating sequences at the remaining nodes (green) do not change. Therefore alignments within each of these sequence subsets can remain unchanged from (a) to (b). and may not include any alignments consistent with \u03c4'. As an alternative, we propose to fix the alignment between sequences in the pruned subtree and the alignment between sequences in the remainder, but allow the alignment between the two groups of sequences to vary. This constraint, which we call",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 341,
+                    "end": 349,
+                    "text": "Figure 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 813,
+                    "end": 821,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "The extended SPR transition kernel updates the alignment"
+        },
+        {
+            "text": "algorithm that is significantly more computationally efficient than an O(L 3 ) algorithm. Note that we have demonstrated above that the alignment within the two subgroups of sequences remains consistent under an SPR proposal. Thus, the constraint set C 2 (A, \u03c4, OP) contains an alignment that is consistent with \u03c4' as well as \u03c4, making C 2 (A, \u03c4, OP) a useful constraint set for collapsed sampling.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "The extended SPR transition kernel updates the alignment"
+        },
+        {
+            "text": "Triplet models coalesce three adjacent nucleotide letters into a single triplet letter. The size of the triplet alphabet is therefore approximately the cube of the size of the singlet alphabet. The larger alphabet size allows a more complex substitution model such as the codon model of Goldman and Yang [ [25] , M0]. Triplet substitution models can prohibit stop codons, can make use of codon frequencies instead of nucleotide frequencies and can differentiate between synonymous and non-synonymous substitutions. Triplet alphabets affect the alignment model as well as the substitution model by forcing indels lengths to be multiples of 3 singlet letters and by forcing indels to start and end between triplets. While the former is biologically realistic, the latter may not be.",
+            "cite_spans": [
+                {
+                    "start": 306,
+                    "end": 310,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Triplet Models"
+        },
+        {
+            "text": "We describe a method of comparing triplet with singlet models to assess how forcing indels to begin and end between codons affects model fit. To accomplish this, we first remove the substitution benefits of the M0 model listed above to focus solely on the effects of the triplet alignment process. We construct a triplet substitution model that generates the same likelihood as a singlet substitution model given the same alignment. Traditionally, both models are reversible and have a rate matrix Q = {Q xy } that is constructed from the equilibrium letter frequencies \u03c0 and a symmetric exchangeability matrix S = {S xy } in the following way:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Triplet Models"
+        },
+        {
+            "text": "Fraction f can vary from 0 to 1 but traditionally f is fixed to 1. The fraction specifies the relative importance of unequal conservation (f = 0) and unequal replacement (f = 1) in creating the equilibrium frequency distribution [29] .",
+            "cite_spans": [
+                {
+                    "start": 229,
+                    "end": 233,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Triplet Models"
+        },
+        {
+            "text": "Given a singlet nucleotide model with exchangeability matrix S (s) , we build a triplet model with exchangeability matrix S (t) in the following fashion. Each allowable substitution from triplet \u03b1 to triplet \u03b2 involves only one nucleotide substitution from nucleotide i to nucleotide j. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Triplet Models"
+        },
+        {
+            "text": "We note that for branch lengths to agree between the singlet and triplet models, Q (t) must be scaled so that instead of the usual 1, because Q (t) measures changes of each of the three sites in the triplet. We use HKY as the singlet model in our comparison because the HKY \u00d7 3 model is identical to the M0 codon model with \u03c9 = 1, stop codons included, and independent nucleotide frequencies.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Triplet Models"
+        },
+        {
+            "text": "We analyze two data examples to demonstrate the advantages of joint Bayesian estimation. While both data sets come from related genes, they differ in their sequence lengths, number of taxa, and sequence characteristics. We select these datasets for their relative sparseness of phylogenetic information, typical of rapidly evolving pathogens. Thus, although the joint model makes full use of both indels and substitutions shared by descent, we do not expect to recover fully resolved trees. Rather, we note substantial improvement over traditional, sequential methods.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Examples"
+        },
+        {
+            "text": "We first examine a data set drawn from SIV, a non-human primate lentivirus. Lentiviruses contain a single-stranded RNA genome that reverse transcribes into DNA by upon infection. The DNA then inserts into the host genome before expression. Reverse transcriptase is extremely errorprone, giving lentiviruses high mutation rates. The data set consists of 9 partial env sequences sampled from within a single macaque initially infected by injection with strain SIVmac251 [31] . Cheynier et al (2001) have previously presented an alignment of these sequences as a typical example of phylogenetically informative indels in SIV [11] .",
+            "cite_spans": [
+                {
+                    "start": 468,
+                    "end": 472,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 622,
+                    "end": 626,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Example 1: SIV"
+        },
+        {
+            "text": "The env gene encodes glycoprotein gp160, which is split after translation to form the smaller glycoproteins gp120 and gp41. Because gp120 and gp41 are displayed on the surface of mature virions, exposed to the host immune system, env tends to mutate more quickly than other SIV genes through positive selection. From the data set, we remove a phylogenetically uninformative duplication in a single sequence because our model assumes insertions of random sequence but not duplications. All sequences then range in length from 57 to 69 nucleotides with an alignment length of 69 nucleotides independent of the method used to compute the fixed alignment. The data set contains 10 variable sites and 6 informative sites under the Clustal W alignment, 12 variable and 7 informative sites under the Muscle alignment, and 11 variable and 6 informative sites under the MAP estimate from the joint model (Table 1 , -Indel contribution).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 895,
+                    "end": 903,
+                    "text": "(Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Example 1: SIV"
+        },
+        {
+            "text": "For a prior on ln \u03ba, we assume a Double-Exponential distribution with median ln 2 and standard deviation . On ln \u03bb, we assume a Double-Exponential distribution with median -5 and standard deviation . For \u03b5 we assume an Exponential distribution with mean 5 on the expected indel length. We assume a Uniform distribution over the topology \u03c4. On the branch lengths we assume an Exponential distribution with mean \u03bc, and on \u03bc we assume an Exponential distribution with mean 0.04. Continuous parameter estimates under the joint model are as follows:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Example 1: SIV"
+        },
+        {
+            "text": "\u03ba has median 2.4 with a 95% Bayesian credible interval of (1.64,5.32). The median of ln \u03bb is -3.4 and its 95% BCI is (-4.99, -1.85). The median of ln \u03b5 is -0.71 with a 95% BCI of (-1.12, -0.428). The mean branch length \u03bc, has posterior median 0.0178 with a 95% BCI of (0.00854,0.0368).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Example 1: SIV"
+        },
+        {
+            "text": "To assess the usefulness of indel information and the importance of alignment ambiguity in phylogenetic inference, we compare the posterior topology distributions for the traditional sequential model, the joint model restricted to a fixed alignment, and the full joint model. We note that the joint model increases the number of resolved internal branches by 3, 2, and 2 at posterior probability (PP) > 0.9, > 0.95, and > 0.99, respectively, over the traditional model using the Clustal W alignment. The joint model supports 4, 3, and 3 branches at these levels of posterior probability and we depict the tree with branches supported at PP > 0.99 in Figure 3 . This increase in resolution is sensitive to the alignment estimation method. For example, the resolution increase changes to 0, 0, and 2 under the Muscle alignment, and 1, 2, 2 under the joint MAP alignment. Thus, even accounting for alignment uncertainty, we achieve an increase in the phylogenetic resolution. At high posterior probabilities indels become relatively more important because they are rarer than substitutions.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 650,
+                    "end": 658,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Example 1: SIV"
+        },
+        {
+            "text": "We note that alignment ambiguity is significant in this data set. First, estimates under the traditional or restricted models are sensitive to the alignment method used (Table 1). Second, fixing the alignment under the joint model yields an increase in the number of supported branches if the alignment is fixed to the Clustal W estimate or the joint MAP estimate, but a decrease if the Muscle estimate is used. Furthermore, the increased support when the Clustal W alignment is used includes a branch that conflicts with the joint MAP model, and the conflicting branch is present in the guide tree. Thus ignoring alignment ambiguity can lead to exaggerated support for branches and bias towards the guide tree, especially when indel information is used. Figure 4 displays a \"gold\" plot [24] to summarize the posterior alignment distribution of A under the full joint model. We observe a high level of alignment uncertainty. This is borne out by the observation of only 4 unique indels under the full joint model, while the Clustal W alignment contains 5 indels. This difference is reflected in the lower estimate of \u03bb under the full joint model and in the restricted models not using the Clustal W alignment (Table 1) . S1 S10 S11 S15 S5 S9 ref S16 S20 0.02 (a) -indels S1 S10 S11 ref S16 S20 S15 S5 S9 0.02 (b) + indels Estimates of continuous parameters \u03ba, ln \u03bb, and ln \u03b5 are presented as a posterior median followed by a 95% Bayesian credible interval.",
+            "cite_spans": [
+                {
+                    "start": 787,
+                    "end": 791,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 755,
+                    "end": 763,
+                    "text": "Figure 4",
+                    "ref_id": null
+                },
+                {
+                    "start": 1209,
+                    "end": 1218,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Example 1: SIV"
+        },
+        {
+            "text": "Our second data set consists of comparatively longer sequences from HIV-1, a lentivirus closely related to SIV. We consider a collection of 27 partial env gene sequences sampled serially at three time points from patient 1 reported by Shankarappa et al [4] . ",
+            "cite_spans": [
+                {
+                    "start": 253,
+                    "end": 256,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Example 2: HIV-1"
+        },
+        {
+            "text": "We first analyze these data using the M0 codon model [25] to assess the importance of selection in this region (Table 2) . We use the same prior distributions on \u03bb, \u03b5, \u03ba, \u03c4, and T as in Example 1. We additionally place a Double-Exponential distribution on ln \u03c9 with median 0 and standard deviation 0.1. In addition to the standard M0 model in which f is fixed to 1, we consider the case in which f is a random variable with a Uniform prior distribution. The posterior distribution of \u03c9 has median 0.996 and a 95% BCI of (0.834,1.20). This changes little when f is free. The estimated interval is quite close to the prior 95% BCI of (0.84,1.16) so we conclude that these data possess little information about \u03c9. Allowing \u03c9 to vary does not yield much benefit, and we henceforth consider only \u03c9 = 1.",
+            "cite_spans": [
+                {
+                    "start": 53,
+                    "end": 57,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 111,
+                    "end": 120,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Sequence Characteristics"
+        },
+        {
+            "text": "We also note that fixing f = instead of the traditional value of 1 produces a decrease in marginal likelihood of 2 log units for the HKY model and a substantial increase of 1 2 SIV Alignment uncertainty plot Figure 4 SIV Alignment uncertainty plot. We annotate the joint maximum a posteriori alignment estimate to indicate the approximate probability that each letter aligns to the root taxon in its column [24] . The 8 gaps in the alignment are a result of only 4 indel events under the joint model, whereas the Clustal W alignment requires at least 5 indel events. Colors other than red indicates that letters or gaps may shift to adjacent positions. The high frequency of the CAA triplet is partially responsible for the level of alignment uncertainty.",
+            "cite_spans": [
+                {
+                    "start": 407,
+                    "end": 411,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 208,
+                    "end": 216,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Sequence Characteristics"
+        },
+        {
+            "text": "uncertain certain",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence Characteristics"
+        },
+        {
+            "text": "AAATCATCAACAACAACAACAACAGCATCAACAACACC------AACATCAACAAAGTCAATAAACATG S10 AAACCATCAACAACAACAACAACAGCATCAACAACACC------AACATCAACAAAGTCAATAAACATG S11 AAATCATCAACAATAACAACAACAGCACCAACAACACCAAATACAACATCAACAAAGTCAATAAACATG S15 AAATCATCAACAACAACAACAACAG---------CACCAAATACAACATCAACAGAGTCAATAAACATG S16 AAATCATCAACAACAAC---AACAGCACCAACACCAACAAACACAACATCAACAAAGTCAATAAACATG S20 AAATCATCAACAACAAC---AACAGCACCAACACCAACAAACACAACATCAACAAAGACAATAAACATG S5",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence Characteristics"
+        },
+        {
+            "text": "AAATCATCAACAACAACAACAACAA---------CACCAAGTACAACATCAACAAAGTCAATAAACATG S9",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence Characteristics"
+        },
+        {
+            "text": "AAATCATCAACAACAACAA---CAC---------CACCAAGTACAACATCAACAAAGTCAATAAACATG We therefore assume f = 0.5 for the remainder of our analyses.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence Characteristics"
+        },
+        {
+            "text": "Under the HKY model we find that \u03ba has a posterior median of 7.2 with a 95% BCI of (4.6,11.7). The posterior median of ln \u03bb is -3.3 with a 95% BCI of (-4.1, -2.7) and ln \u03b5 has a median of -1.0 and a 95% BCI of (-1.3, -0.78). This estimate of \u03b5 corresponds to a mean indel length of 1.58 nucleotides. The posterior median of \u03bc, is 0.0036 with a 95% BCI of (0.00257,0.00508).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequence Characteristics"
+        },
+        {
+            "text": "To examine the model appropriateness of forcing indels to begin and end between codons, we compared the marginal likelihoods and posterior tree lengths for the HKY singlet and HKY \u00d7 3 triplet models. Under both models, we fixed f = for equivalence and set independent nucleotide frequencies to their empirical estimates. The log marginal likelihood is -1555.7 \u00b1 0.3 for the singlet model and -1579.8 \u00b1 0.3 for the triplet model (Table 2) . To examine the substantial decrease of 24.1 log units between models, we calculate the posterior distribution of parsimony tree lengths under both models. The posterior median tree length is 104 substitutions with a 95% BCI of (103,106) for the singlet model and increases to 109 substitutions with a 95% BCI of (108,110) for the triplet model. To verify that this increase results from forcing indels out of phase, we first calculate the posterior distribution of the number of indels under the singlet model. The posterior mean number of indels is 11.0 and the BCI is (11, 11) . The posterior mean number of indels beginning 0, 1, or 2 nucleotides from the beginning of a codon is 2.6, 5.8, and 2.6 respectively. The 95% BCI for the number of indels beginning inside a codon is (6, 10) . Inspecting the alignment estimate from the MAP point using a \"gold\" plot demonstrates alignment uncertainty (data not shown). In the MAP alignment we observe 11 indel events. Only 5 of the indels are consistently present with unambiguous phase, and none of these indels can be placed between codons. Interestingly, one indel of 3 nucleotides occurs independently in clades (16, 17) , 19 , and 22 according to the MAP estimate ( Figure 5 ). We note that augmented alignments such as those used in our model distinguish between indels shared by state and indel shared by descent through the inclusion of Felsenstein wildcard sequences at internal nodes of \u03c4.",
+            "cite_spans": [
+                {
+                    "start": 1010,
+                    "end": 1014,
+                    "text": "(11,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1015,
+                    "end": 1018,
+                    "text": "11)",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1220,
+                    "end": 1223,
+                    "text": "(6,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1224,
+                    "end": 1227,
+                    "text": "10)",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1603,
+                    "end": 1607,
+                    "text": "(16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1608,
+                    "end": 1611,
+                    "text": "17)",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1614,
+                    "end": 1616,
+                    "text": "19",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 428,
+                    "end": 437,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 1658,
+                    "end": 1666,
+                    "text": "Figure 5",
+                    "ref_id": null
+                }
+            ],
+            "section": "Singlet versus Triplet models"
+        },
+        {
+            "text": "Use of the triplet model instead of the singlet model has a discernible effect on phylogeny estimation. The posterior odds in favor of the clade (10, 12, 18) decrease by a factor of 8.0 from 24.6 to 3.1 ( Table 2) . We note that in one column of the singlet MAP alignment estimate, only variants 10, 12 and 18 have an A residue, while other taxa have either a G residue or a gap (Figure 5a) . However, the triplet model shifts these gaps out of the column to avoid breaking a codon. Taxa that contain a gap in this column under the singlet alignment contain A residues according to the triplet MAP alignment, decreasing the support for (10, 12, 18) clade ( Figure 5b) . Thus, comparing marginal likelihoods for model selection between the singlet and triplet models may not provide the whole picture.",
+            "cite_spans": [
+                {
+                    "start": 145,
+                    "end": 149,
+                    "text": "(10,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 150,
+                    "end": 153,
+                    "text": "12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 154,
+                    "end": 157,
+                    "text": "18)",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 636,
+                    "end": 640,
+                    "text": "(10,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 641,
+                    "end": 644,
+                    "text": "12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 645,
+                    "end": 648,
+                    "text": "18)",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 205,
+                    "end": 213,
+                    "text": "Table 2)",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 379,
+                    "end": 390,
+                    "text": "(Figure 5a)",
+                    "ref_id": null
+                },
+                {
+                    "start": 657,
+                    "end": 667,
+                    "text": "Figure 5b)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Singlet versus Triplet models"
+        },
+        {
+            "text": "Triplet models have discernible effects on estimates of the indel parameters \u03bb and \u03b5, but little effect on the substitution parameters \u03bc and \u03ba. for ln \u03b5 that is significantly smaller than the HKY estimate of -1.0. However, accounting for the fact that one triplet contains three nucleotides, the HKY \u00d7 3 model predicts a mean indel length of 1.1 triplets and 3.2 nucleotides, but the HKY model predicts a mean indel length of 1.6 nucleotides. This may be because a geometric distribution on the number of nucleotides in a gap does not fit the data as well as a geometric distribution on the number of triplets in a gap. This is especially true in data sets such as the present one in which the number of triplets tends to be small. It may also be because the indel model used is fragment-based. Finally, we note that estimates of 7.5 for \u03ba in the HKY \u00d7 3 model are quite similar to estimates of about 7.2 under the HKY model.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Singlet versus Triplet models"
+        },
+        {
+            "text": "To assess how much indel information improves the res- While the number of branches supported at PP > 0.9 is equal, not all supported branches are the same. The number of branches supported only under the joint model is 2, 2, and 2. The joint model supports the clades (16, 17) and (21, 24 ) over the traditional model at all three levels of PP. The traditional model supports the clade (19, 21, 24, 25) at a PP of 0.980 compared to 0.887 with indel information. The traditional model also supports the clade (10, 12, 15, 16, 18, 19, 21, 24, 25) at PP > 0.9 that has support < 0.5 when indel information is included. This results because the large clade conflicts with the clade (16, 17) that is supported by two shared indels. Thus, the number of branches supported in only one of the two models at each level of PP is 4, 3, and 2. Since the joint model balances substitution and indel information as well as taking alignment ambiguity into account we assume that these differences represent an improvement in the accuracy of estimation. However, because the true tree is not observed, we cannot be certain which, if any, of the predictions is correct. The partitions supported under the two models at PP > 0.99 are depicted in Figure 6 . In summary, indel information conflicts with one branch in the substitution-only tree and down-weights the evidence for another branch. The conflicting branch is ruled out by the support of 2 shared indels for the clade (16, 17) , although one of these is homoplastic.",
+            "cite_spans": [
+                {
+                    "start": 269,
+                    "end": 273,
+                    "text": "(16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 274,
+                    "end": 277,
+                    "text": "17)",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 282,
+                    "end": 286,
+                    "text": "(21,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 287,
+                    "end": 289,
+                    "text": "24",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 387,
+                    "end": 391,
+                    "text": "(19,",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 392,
+                    "end": 395,
+                    "text": "21,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 396,
+                    "end": 399,
+                    "text": "24,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 400,
+                    "end": 403,
+                    "text": "25)",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 509,
+                    "end": 513,
+                    "text": "(10,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 514,
+                    "end": 517,
+                    "text": "12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 518,
+                    "end": 521,
+                    "text": "15,",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 522,
+                    "end": 525,
+                    "text": "16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 526,
+                    "end": 529,
+                    "text": "18,",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 530,
+                    "end": 533,
+                    "text": "19,",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 534,
+                    "end": 537,
+                    "text": "21,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 538,
+                    "end": 541,
+                    "text": "24,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 542,
+                    "end": 545,
+                    "text": "25)",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 679,
+                    "end": 683,
+                    "text": "(16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 684,
+                    "end": 687,
+                    "text": "17)",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1460,
+                    "end": 1464,
+                    "text": "(16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1465,
+                    "end": 1468,
+                    "text": "17)",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1229,
+                    "end": 1237,
+                    "text": "Figure 6",
+                    "ref_id": "FIGREF11"
+                }
+            ],
+            "section": "Increased support due to indel information"
+        },
+        {
+            "text": "We demonstrate that the novel MCMC transition kernel introduced in the sub-section Sampling improves the computational efficiency of topology estimation when using indel information. The transition kernel improves the Triplet alignments may shift indels and cause misaligned residues Figure 5 Triplet alignments may shift indels and cause misaligned residues. Triplet alignments may shift indels and cause misaligned residues. (a) Maximum a posteriori (MAP) alignment estimate under the singlet HKY model. (b) MAP alignment estimate under the triplet HKY \u00d7 3 model. In the triplet alignment, two G residues (blue) and four A residues (red) are forced into a different column to avoid breaking the alignment-wide reading frame. The displaced A residues join A residues from strains 10, 12, and 18 (green) which were previously the only A residues in that column. Under both models, the MAP alignment estimates display 8 gaps. The alignment of internal sequences (not shown) indicates that these gaps arose from 5 indel events on branches partitioning clades (20, 23) , (21, 24) , (16, 17) , (19) , and (22) . Thus, the gaps in sequences 19 and 22 arose independently of the gap in (16,17) even though they have the same length and position. Prefixes on sequence names indicate elapsed time in weeks between the initial infection and when the sequences were obtained. convergence properties of the Markov chain substantially, so that fewer initial samples must be discarded as \"burnin\". We compare the behavior of the estimation procedure when the new transition kernel is disabled (NNI-only) or enabled (NNI+SPR) by running 15 instances of each chain starting from a randomly chosen tree and alignment. We use the data-set from Example 2 that consists of 27 HIV sequences, with a maximum length 612 nucleotides.",
+            "cite_spans": [
+                {
+                    "start": 1057,
+                    "end": 1061,
+                    "text": "(20,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1062,
+                    "end": 1065,
+                    "text": "23)",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 1068,
+                    "end": 1072,
+                    "text": "(21,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1073,
+                    "end": 1076,
+                    "text": "24)",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 1079,
+                    "end": 1083,
+                    "text": "(16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1084,
+                    "end": 1087,
+                    "text": "17)",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1090,
+                    "end": 1094,
+                    "text": "(19)",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1101,
+                    "end": 1105,
+                    "text": "(22)",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 284,
+                    "end": 292,
+                    "text": "Figure 5",
+                    "ref_id": null
+                }
+            ],
+            "section": "MCMC Improvements"
+        },
+        {
+            "text": "To assess convergence for each Markov chain, we count the number of iterations required for the sampled tree topology to approach its equilibrium distribution of tree topologies. To accomplish this task, we need to define a distance from a single tree topology to a distibution of tree topologies. We start with the Robinson-Foulds distance (RF) between two tree topologies that we denote as d RF (\u03c4 1 , \u03c4 2 ). This distance does not depend on branch lengths. We then define the distance d(\u03c4 1 , \u03be) from a topology \u03c4 1 to a distribution of topologies \u03be as the average RF distance between \u03c4 1 and a tree \u03c4 2 ~ \u03be:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MCMC Improvements"
+        },
+        {
+            "text": "The expectation of d(\u03c4 1 , \u03be) does not converge to 0 as the Markov chain approaches stationarity; rather the expectation approaches the average distance between two trees sampled from the equilibrium topology distribution. With this in mind, we consider a chain to have converged when the distance from the chain's current topology to the equilibrium distribution reaches the lower 25th percentile of distances from trees at stationarity to the equilibrium distribution. We approximate the equilibrium topology distribution with 200 topologies sampled at widely spaced intervals from a long-running MCMC analysis. We find that this distribution is not sensitive to the starting point of the Markov chain, and does not change when the new transition kernel is enabled.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MCMC Improvements"
+        },
+        {
+            "text": "Without the new transition kernel based on SPR, the median time to convergence is 2112 iterations with an average of 1976.9. However, when the new transition kernel is enabled, the median time decreases to 66 iterations, Triplet alignments may shift indels and cause misaligned residues To visualize the convergence properties of the two approaches, we project the tree samples from two typical chains into the plane using metric multidimensional scaling based on their RF distances (Figure 7 ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 483,
+                    "end": 492,
+                    "text": "(Figure 7",
+                    "ref_id": null
+                }
+            ],
+            "section": "MCMC Improvements"
+        },
+        {
+            "text": "Some researchers question the ability of indel information to improve phylogenetic resolution of recently diverged taxa. Golenberg et al. analyze non-coding spacer regions between chloroplast genes in a parsimony framework and claim that indels shared by state recur more often than substitutions shared by state [32] , leading to a concern that indels are not reliable characters for phylogenetic analysis. However, Simmons and Ochoterana find indels to be reliable markers with low levels of homoplasy [33] . This contrast is partially explained by noting that the original Golenberg study incorrectly codes overlapping gaps of different lengths as homologous, leading to false homoplasy. Improved methods of coding indels when gaps overlap can lead to more accurate and more informative indel characters [33, 34] . In addition, researchers note that chloroplast intergenic spacers contain indel \"hotspots\" and that sequence duplications or changes in the number of tandem repeats occur at a significantly higher rate than non-repeat indels [32, 10] . This high rate can lead to identical but non-homologous insertions in different taxa, and so repeat indels experience higher homoplasy than non-repeat indels [9] . Repeat indels should therefore be down-weighted, but unfortunately an appropriate weighting scheme has not yet been developed [35] . We also note that current alignment algorithms do not recognize duplications or indel hotspots, so that automatic alignments must be adjusted manually. Despite these difficulties with repeat indels, researchers have examined intergenic spacers in various plant species using improved indel coding and find that indel information is consistent with substitution information and largely reinforces it, improving phylogenetic resolution and support [9, 10] . In some analyses, indels are useful only in distinguishing larger groups [36] . Despite the utility of indels in phylogeny estimation, most researchers note difficulties in indel coding that result from alignment ambiguity [35] . This can be true even when the number of substitutions is too small to yield well-resolved phylogenies. While alignment ambiguity causes general problems with gap placement, some specific problems are worthy of mention. For example, aligning insertions of questionable homology may create spurious evidence for common ancestry [35] . Also, when the number of tandem sequence repeats decreases, it is unclear which repeat has been deleted. Resolving these ambiguities to yield a single alignment can increase the support for some trees while decreasing the support for others, leading to bias, and so regions whose homology is uncertain should be thrown out [35] .",
+            "cite_spans": [
+                {
+                    "start": 313,
+                    "end": 317,
+                    "text": "[32]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 504,
+                    "end": 508,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 807,
+                    "end": 811,
+                    "text": "[33,",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 812,
+                    "end": 815,
+                    "text": "34]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 1043,
+                    "end": 1047,
+                    "text": "[32,",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 1048,
+                    "end": 1051,
+                    "text": "10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1212,
+                    "end": 1215,
+                    "text": "[9]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 1344,
+                    "end": 1348,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 1797,
+                    "end": 1800,
+                    "text": "[9,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 1801,
+                    "end": 1804,
+                    "text": "10]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1880,
+                    "end": 1884,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 2030,
+                    "end": 2034,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 2364,
+                    "end": 2368,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 2694,
+                    "end": 2698,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The joint estimation approach we advocate sidesteps many of the issues through the assignment of uncertainty on alignments, indel existence and placement. Although the indel model described here improves on common multiple alignment algorithms by allowing indels to be shared by descent, it has some limitations. First, the model assumes that the indel rate is spatially homogeneous. However, biological sequences contain indel \"hotspots\" where indels are more likely to occur as well as invariant regions where indels are prohibited. Incorrectly accounting for rates at which indels occur in different regions can lead to over-weighting of the indel evidence. Clustal W attempts to place indels in hydrophilic regions of amino acid sequences, but does not have a mechanism for locating hotspots in non-coding sequences or hotspots resulting from weak selection or positive selection. Second, the indel model makes the common assumption that residues in a single sequence are never homologous. Duplications violate this assumption and are treated as insertions of random sequence by the indel process. Third, changes in the number of tandem repeats of a short sequence often occur at a higher rate than other indels via slipped-strand mispairing (SSM). However, no commonly used alignment program accounts for within-sequence homology or SSM. An improved stochastic process model that accounts for these properties of biological sequences is highly desirable in order to accurately weight shared indel evidence and to produce both more accurate alignments and phylogenies.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We extend the joint Bayesian estimation framework of Redelings and Suchard [24] for recently diverged SIV and HIV sequences to incorporate indel information into phylogeny estimates.",
+            "cite_spans": [
+                {
+                    "start": 75,
+                    "end": 79,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "In both examples, the use of indel information increases the number of supported bi-partitions even though the branch lengths are small, especially at high posterior probabilities. While many indels in these data sets occur in a single taxon or on a branch supported by many substitutions, some indels occur on branches with few or no substitutions. The relative weight of indels and substitutions shared by descent is specified by the relative rate \u03bb estimated from the data. This offers an improvement over existing methods that force the relative weight to be set a priori.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "Alignment uncertainty is significant in the SIV data set. This uncertainty is illustrated by the fact that the topology distribution under the traditional model varies significantly depending on the choice of alignment ( Table 1) . The joint estimation framework does not suffer from this sensitivity to alignment choice and allows alignment uncertainty to be estimated ( Figure 4 ). We note that Alignment-aware SPR transition kernel decreases burn-in time Figure 7 Alignment-aware SPR transition kernel decreases burn-in time. We consider the 27-sequence data set of HIV sequences described in the Results section as Example 2. Points represent 200 topologies sampled from a Markov chains with the alignment-aware SPR transition kernel disabled (red; NNI-only) or enabled (blue; NNI+SPR) or from the equilibrium distribution (green). While the convergence time for Markov chains varies widely, this example illustrates the median convergence time. The NNI-only chain takes 2112 iterations to converge versus only 66 iterations for the NNI+SPR chain. Because the convergence times are so different, the figure depicts every 10th tree for the first 2000 iterations, whereas for the NNI+SPR chain the figure depicts every 2nd tree for the first 400 iterations. Points represent trees projected onto the plane using multidimensional scaling based on the Robinson-Foulds distance. This distance depends only on the topology, not the branch lengths.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 221,
+                    "end": 229,
+                    "text": "Table 1)",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 372,
+                    "end": 380,
+                    "text": "Figure 4",
+                    "ref_id": null
+                },
+                {
+                    "start": 458,
+                    "end": 466,
+                    "text": "Figure 7",
+                    "ref_id": null
+                }
+            ],
+            "section": "Conclusion"
+        },
+        {
+            "text": "Start including indel information in analyses exaggerates the bias that results from fixing a single alignment choice. The high level of alignment uncertainty in the SIV data set is partially explained by a large number of occurrences of the triplet CAA. We note that in the HIV data set alignment uncertainty does not significantly effect the topology posterior.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "NNI only (2000pts) NNI+SPR (400pts) equilibrium"
+        },
+        {
+            "text": "Models such as M0 assume that codons are unbreakable, but the HIV data set shows that this can be unrealistic. Forcing indels to codon boundaries results in a decrease in model fit of 24.1 log units because of an increase in the number of inferred substitutions. Thus choosing a codon model over a singlet model involves a tradeoff between a substantially improved substitution model and a possibility of incorrect homology in the alignment. Because the effects of the latter can be significant when the total number of substitutions is small, we welcome the development of an improved substitution model that does not force this tradeoff. Such a substitution model would be able to calculate the likelihood of a singlet alignment while making use of codon frequencies and differentiating between synonymous and non-synonymous changes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "NNI only (2000pts) NNI+SPR (400pts) equilibrium"
+        },
+        {
+            "text": "We begin by considering a probability distribution \u03c0(x) on points x \u2208 \u03a9 and a function f(x) that associates a subset of \u03a9 to each point x \u2208 \u03a9. We call f(x) a collapsing function if for any x and y in \u03a9 we have x \u2208 f(x) and f(x) and f(y) are either identical or disjoint. If f is a collapsing function, then it partitions \u03a9 into a set of non-overlapping subsets, which we refer to as collapsed points. We denote the set of collapsed points as f(\u03a9), and note that the probability \u03c0*(f(x)) of each collapsed point f(x) can be naturally defined as the integral of the probabilities \u03c0(y) of points y \u2208 f(x). Because the collapsed points are disjoint sets, these probabilities sum to 1 and yield a probability distribution on collapsed points.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "We then consider a transition kernel P on \u03a9 that is defined in terms of a transition kernel P* on f(\u03a9). Starting from the current point x, this transition kernel consists of collapsing x to f(x), moving to some other collapsed point a, and then selecting a point y from a in proportion to its probability \u03c0(y). We note that y \u2208 a implies a = f(y) and",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "write the probability expression for this transition kernel as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "The condition for P to satisfy detailed balance is By cancelling common terms.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "\u03c0* (f(x)) \u00d7 P*(f(x), f(y)) = \u03c0* (f(y)) \u00d7 P*(f(y), f(x)). (13) Thus, the requirement for P to satisfy detailed balance on \u03a9 is simply that P* satisfies detailed balance on f(\u03a9).",
+            "cite_spans": [
+                {
+                    "start": 57,
+                    "end": 61,
+                    "text": "(13)",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "We now demonstrate that the function f that maps (A, \u03c4, T, \u0398, \u039b) to is a collapsing function.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "The directed branch PO partitions the nodes of \u03c4 into two subsets excluding node O ( Figure 2 ). Set C 2 contains all alignments that are consistent with A on each of the two subsets. Alignment A certainly fulfills this criterion, and therefore A \u2208 C 2 (A, \u03c4, PO), implying that x \u2208 f(x) for any",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 85,
+                    "end": 93,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "x. In addition, C 2 (A', \u03c4, PO) = C 2 (A, \u03c4, PO) for any A' in C 2 (A, \u03c4, PO) and so f(y) = f(x) for any y \u2208 f(x), implying that f(x) and f(y) are either identical or non-overlapping. Therefore f(x) is a collapsing function. The transition kernel consisting of SPR proposals for points collapsed using C 2 (A, \u03c4, PO) therefore satisfies detailed balance when we use the MH rule for acceptance or rejection and MH satisfies detailed balance on the collapsed points.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detailed Balance for Collapsed-Point Transition Kernels"
+        },
+        {
+            "text": "Our method for sampling alignments samples from a distribution \u03b7 that approximates the correct distribution \u03c0 but does not match exactly [24] . We therefore define an MH transition kernel that uses collapsed sampling of alignments as a proposal distribution \u03c1. After selecting a new topology and alignment that goes along with it, we reject this new point j and move back to the original alignment and topology i with a small probability 1 -\u03b1 ij . The MH acceptance ratio can be calculated as follows:",
+            "cite_spans": [
+                {
+                    "start": 137,
+                    "end": 141,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Collapsed Sampling as an MH Proposal Distribution"
+        },
+        {
+            "text": "The \u03c1 ij satisfy detailed balance with respect to another probability \u03b7 i = \u03c0 i f i . Thus, ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Collapsed Sampling as an MH Proposal Distribution"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Origin of HIV-1 in the chimpanzee Pan troglodytes troglodytes",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Bailes",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Robertson",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Rodenburg",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Michael",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Cummins",
+                    "suffix": ""
+                },
+                {
+                    "first": "Arthur",
+                    "middle": [],
+                    "last": "Lo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Peeters",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Shaw",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Sharp",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hahn",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Nature",
+            "volume": "397",
+            "issn": "",
+            "pages": "436--441",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "The causes and consequences of HIV evolution",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Posada",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Crandall",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Holmes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nature Reviews Genetics",
+            "volume": "5",
+            "issn": "",
+            "pages": "52--61",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Integrating ambiguously aligned regions of DNA sequences in phylogenetic analyses without violating positional homology",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Lutzoni",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Wagner",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Reeb",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zoller",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Systematic Biology",
+            "volume": "49",
+            "issn": "",
+            "pages": "628--651",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Consistent Viral Evolutionary Changes Associated with the Progression of Human Immunodeficiency Virus Type 1",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Shankarappa",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Margolick",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Gange",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Rodrigo",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Upchurch",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Farzadegan H",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Gupta",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Rinaldo",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Learn",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Mullins",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Phylogenetic Analysis of Polyomavirus Simian Virus 40 from Monkeys and Humans Reveals Genetic Variation",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Forsman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lednicky",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Fox",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Willson",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "White",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Halvorson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "Aml",
+                    "middle": [],
+                    "last": "Jr",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Butel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Virol",
+            "volume": "78",
+            "issn": "17",
+            "pages": "9306--9316",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Timing and Reconstruction of the Most Recent Common Ancestor of the Subtype C Clade of Human Immunodeficiency Virus Type",
+            "authors": [
+                {
+                    "first": "Saa",
+                    "middle": [],
+                    "last": "Travers",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Clawley",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Glynn",
+                    "suffix": ""
+                },
+                {
+                    "first": "Pem",
+                    "middle": [],
+                    "last": "Fine",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Crampin",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Sibande",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Mulawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jomgp",
+                    "middle": [],
+                    "last": "Mccormack",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Virol",
+            "volume": "78",
+            "issn": "19",
+            "pages": "10501--10506",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Evidence that eukaryotes and eocyte prokaryotes are immediate relatives",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Rivera",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lake",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Science",
+            "volume": "257",
+            "issn": "",
+            "pages": "74--76",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Rare genomic change as a tool for phylogenetics",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rokas",
+                    "suffix": ""
+                },
+                {
+                    "first": "Pwh",
+                    "middle": [],
+                    "last": "Holland",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Trends in Ecology & Evolution",
+            "volume": "15",
+            "issn": "11",
+            "pages": "454--459",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "The evolution of the atp\u03b2-rbcL Intergenic Spacer in the Epacrids (Ericales) and Its Systematic and Evolutionary Implications",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Crayn",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Quinn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Mol Phy Evol",
+            "volume": "16",
+            "issn": "2",
+            "pages": "238--252",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Molecular Evolution of Insertions and Deletions in the Chloroplast Genome of Silene",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Ingvarsson",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ribstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Taylor",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Mol Biol Evol",
+            "volume": "20",
+            "issn": "11",
+            "pages": "1737--1740",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Insertion/ deletion frequencies match those of point mutations in the hypervariable regions of the simian immunodeficiency virus surface envelope gene",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Cheynier",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Kils-H\u00fctten",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Meyehaus",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wain-Hobson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Journal of General Virology",
+            "volume": "82",
+            "issn": "",
+            "pages": "1613--1619",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Long-Term Follow-up Study of Core Gene Deletion Mutants in Children With Chronic Hepatitis B Virus Infection",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Ni",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Hsu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Hepatology",
+            "volume": "32",
+            "issn": "",
+            "pages": "124--128",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "In Vivo Dynamics of Equine Infectious Anemia Viruses Emerging during Febrile Episodes: Insertions/Duplications at the Principal Neutralizing Domain",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Zheng",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Sentsui",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Nakaya",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kono",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Ikuta",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Journal of Virology",
+            "volume": "71",
+            "issn": "7",
+            "pages": "5031--5039",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Epidemiology Consortium: Molecular Evolution of the SARS Coronavirus During the Course of the SARS Epidemic in China",
+            "authors": [
+                {
+                    "first": "Sars",
+                    "middle": [],
+                    "last": "Chinese",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Molecular",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Science",
+            "volume": "303",
+            "issn": "",
+            "pages": "1666--1669",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Reassortment and Insertion-Deletion are Strategies for the Evolution of Influenza B Viruses in Nature",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mccullers",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Webster",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Journal of Virology",
+            "volume": "73",
+            "issn": "9",
+            "pages": "7343--7348",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Alignment-ambiguous nucleotide sites and the exclusion of systematic data. Molecular Phylogenetics and Evolution",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gatesy",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Desalle",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Wheeler",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "",
+            "volume": "2",
+            "issn": "",
+            "pages": "152--157",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Elision: a method for accommodating multiple molecular sequence alignments with alignment-ambiguous sites",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wheeler",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gatesy",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Desalle",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Molecular Phylogenetics and Evolution",
+            "volume": "4",
+            "issn": "",
+            "pages": "1--9",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Freeing phylogenies from artifacts of alignment",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Thorne",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kishino",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Molecular Biology and Evolution",
+            "volume": "9",
+            "issn": "",
+            "pages": "1148--1162",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Frequency of Insertion-Deletion, Transversion, and Transition in the Evolution of 5S Ribosomal RNA",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Sankoff",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cedergren",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Lapalme",
+                    "suffix": ""
+                }
+            ],
+            "year": 1976,
+            "venue": "J Mol Evol",
+            "volume": "7",
+            "issn": "",
+            "pages": "133--149",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Iterative pass optimization of sequence data",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wheeler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Cladistics",
+            "volume": "19",
+            "issn": "3",
+            "pages": "254--260",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "The order of sequence alignment can bias the selection of tree topology",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Lake",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "Molecular Biology and Evolution",
+            "volume": "8",
+            "issn": "",
+            "pages": "378--385",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "An evolutionary model for maximum likelihood alignment of DNA sequences",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Thorne",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kishino",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Felsenstein",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "Journal of Molecular Evolution",
+            "volume": "33",
+            "issn": "",
+            "pages": "114--124",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Inching towards reality: an improved likelihood model of sequence evolution",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Thorne",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kishino",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Felsenstein",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Journal of Molecular Evolution",
+            "volume": "34",
+            "issn": "",
+            "pages": "3--16",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Joint Bayesian Estimation of Alignment and Phylogeny",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Redelings",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Suchard",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Systematic Biology",
+            "volume": "54",
+            "issn": "3",
+            "pages": "401--418",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "A codon-based model of nucleotide substitution for protein-coding DNA sequences",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Goldman",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Molecular Biology and Evolution",
+            "volume": "11",
+            "issn": "",
+            "pages": "725--736",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Mathematical and Statistical Methods for Genetic Analysis",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Lange",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Subtree Transfer Operations and their Induced Metrics on Evolutionary Trees",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Allen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Steel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Annals of Combinatorics",
+            "volume": "5",
+            "issn": "",
+            "pages": "1--15",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Monte Carlo Strategies in Scientific Computing",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "A Novel Use of Equilibrium Frequencies in Models of Sequence Evolution",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Goldman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Whelan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Molecular Biology and Evolution",
+            "volume": "19",
+            "issn": "11",
+            "pages": "1821--1831",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Dating of the human-ape splitting by a molecular clock of mitochondrial DNA",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hasegawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kishino",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Yano",
+                    "suffix": ""
+                }
+            ],
+            "year": 1985,
+            "venue": "Journal of Molecular Evolution",
+            "volume": "12",
+            "issn": "",
+            "pages": "160--174",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Wain-Hobson S: Antigenic Stimulation by BGC vaccine as an in vivo driving force for SIV replication and dissemination",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Cheynier",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Gratton",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hallorn",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Stahmer",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Letvin",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Nature Medicine",
+            "volume": "4",
+            "issn": "4",
+            "pages": "421--427",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Evolution of a Noncoding Region of the Chloroplast Genome",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Golenberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Clegg",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Durbin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Doebly",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Ma",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Molecular Phylogenetics and Evolution",
+            "volume": "2",
+            "issn": "",
+            "pages": "52--64",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Gaps as characters in sequencebased phylogenetic analyses",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Simmons",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ochoterena",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Systematic Biology",
+            "volume": "49",
+            "issn": "",
+            "pages": "369--381",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Incorporating information from length-mutational events into phylogenetic analysis",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "M\u00fcller",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Molecular Phylogenetics and Evolution",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "The evolution of the non-coding Chloroplast DNA and its application in Plant Systematics",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Kelchner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Ann Missouri Bot Card",
+            "volume": "87",
+            "issn": "",
+            "pages": "482--498",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Indel patterns of the plastid DNA trnL-trnF region within the genus Poa (Poaceae)",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Stoneberg-Holt",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Horov\u00e1",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bure",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Plant Res",
+            "volume": "117",
+            "issn": "",
+            "pages": "393--407",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "CLUSTAL W: improving the sensitivity of progressive multiple sequence alignment through sequence weighting, position specific gap penalties and weight matrix choice",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Thompson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Higgins",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Gibson",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Nucleic Acids Research",
+            "volume": "22",
+            "issn": "22",
+            "pages": "4673--4680",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "MUSCLE: multiple sequence alignment with high accuracy and high throughput",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Edgar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Research",
+            "volume": "32",
+            "issn": "5",
+            "pages": "1792--1797",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF1": {
+            "text": "Pair-HMM representation of the fragment-based indel model. After the start state (S), the Markov chain transitions to the central silent state. From here it may terminate by transitioning to the end state (E), or it may enter a match (+/+), insert (-/+) or delete (+/-) fragment. Each fragment has probability \u03b4(t) of being an insert or delete fragment. Fragment lengths are geometric with continuation probability \u03b5. After the end of a fragment, the Markov chain returns to the central silent state where it may begin a new fragment. The silent state that indicates fragment boundaries can be removed, resulting in transitions only between non-silent states. The model is a fragment based model because the direct transition probability from (+/+) to (+/+) without going through the silent state is \u03b5 and not 0. The pair-HMM represents an improper distribution because the probabilities of outgoing edges of the central silent state do not sum to 1. terms of substitution time and refer to the pairwise alignment distribution on branch b as . The parameter \u03b5 remains independent of time. In our previous model, we measure the occurrence probability of indels on a per-residue basis. In the fragment-based model, \u03b4'(t)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "of A as follows. We define the collapsed point (*, \u03c4, T, \u0398, \u039b) C as the set of points {(A, \u03c4, T, \u0398, \u039b) : A \u2208 C} for some set C. The posterior probability of a collapsed point is then naturally defined as the posterior probability of the set. When proposing a new tree (\u03c4', T') via SPR from the current point (A, \u03c4, T, \u0398, \u039b), we first use a Metropolis-Hasting (MH) transition kernel to choose between the collapsed points (*, \u03c4, T, \u0398, \u039b) C and (*, \u03c4', T', \u0398, \u039b) C . This avoids the problem of A being inconsistent",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": ". However, this constraint is too tight because it forces all sequences in the subtree(Figure 2, hatched) to keep the same alignment with the remaining sequences,",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "do not match because the rate of change from k \u2192 l in the triplet model depends on the frequencies of the other nucleotides in the triplet. Since this is not true in the singlet model, the likelihoods under each model cannot match unless all the nucleotide frequencies are equal. However, removing the constraint that f = 1, it becomes possible for the two models to coalesce because the rate of change can be independent of the frequencies of i and j. Setting f = , the frequencies of neighboring nucleotides no longer affect the rate of change from k \u2192 l,",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Indel information improves resolution of the SIV phylogeny. (a) At posterior probability > 0.99 the traditional sequential model supports only one branch, (b) When indel information is included, the number of supported branches rises to 3. The two green branches are supported only when indel information is used.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "presented for the traditional sequential model (-Indel), the joint model with a fixed alignment (+ Indel), and the full joint model. The choice of a fixed alignment estimate is indicated in column \u00c2 if applicable. The number of variable and informative sites is indicated under \"#sites\" and varies depending on the choice of alignment. The number of supported internal branches out of a possible 6 is reported at three levels of posterior probability (PP). The designation \"+1\" indicates that 1 of the supported branches conflicts with a branch supported under the joint model.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "For example, under the HKY \u00d7 3 model the posterior median of \u03bb is e -2.3 , about 3 times higher than the posterior median of e -3.3 under the HKY model. We note that under the HKY \u00d7 3 model \u03bb is the indel rate per triplet, whereas under the singlet model \u03bb is the indel rate per nucleotide. This factor of 3 difference is to be expected since the number of indels does not change between the two models, but the number of triplets is 3 times smaller than the number of nucleotides. The HKY \u00d7 3 model also results in a posterior median estimate of -2.6",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "olution of the HIV phylogeny, we generate posterior samples under both the traditional, sequential model and under the full joint model. The traditional model supports 8, 7 and 4 internal branches at PP levels > 0.90, > 0.95, and > 0.99, respectively regardless of the chosen fixed alignment. The MAP topology is also insensitive to the chosen alignment. Under the full joint supported internal branches increases to 8, 8, and 6 branches at the same levels of PP, producing an increase of 0, 1, and 2 branches.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF10": {
+            "text": "ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-02 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-03 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-04 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-07 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 24-13 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 34-22 ATAGTACTTGGGATAATAGTACTTTGAATA---TTACTGAAGGGT 34-26 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-01 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-09 ATAGTACTTGGGATAATAGTACTATGAATAATGTTACTGAAGGGT 34-20 ATAGTACTTGGG---------CTTTGAATAATGTTACTGAAGGGT 34-23 ATAGTACTTGGG---------CTTTGAATAATGTTACTGAAGGGT 24-11 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-05 ATAGTACTTGGGATAATAGTACTCTGAATAATGTTACTGAAGGGT 14-08 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-06 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 24-14 ATAGTACTTGGGATAATAGTACTTTAAATAATGTTACTGAAGGGT 24-16 ATAGTACTTGGGATAATAGTACTTTGAATA---TTACTGAAGGGT 24-17 ATAGTACTTGGGATAATAGTACTTTGAATA---TTACTGAAGGGT 24-15 ATAGTATTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 24-10 ATAGTACTTGGGATAATAGTACTTTGAATAATATTACTGAAGGGT 24-12 ATAGTACTTGGGATAATAGTACTTTGAATAATATTACTGAAGGGT 24-18 ATAGTACTTGGGATAATAGTACTTTGAATAATATTACTGAAGGGT 34-19 ATAGTACTTGGGATAATAGTACTTTGAATA---TTACTGAAGGGT 34-25 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 34-21 ATAGTACTTGGGATA------CTTTGAATAATGTTACTGAAGGGT 34-24 ATGGTACTTGGGATA------CTTTGAATAATGTTACTGAAGGGT (a) Singlet alignment 14-00 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-02 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-03 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-04 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-07 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 24-13 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 34-22 ATAGTACTTGGGATAATAGTACTTTGAAT---ATTACTGAAGGGT 34-26 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-01 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-09 ATAGTACTTGGGATAATAGTACTATGAATAATGTTACTGAAGGGT 34-20 ATAGTACTTGG---------GCTTTGAATAATGTTACTGAAGGGT 34-23 ATAGTACTTGG---------GCTTTGAATAATGTTACTGAAGGGT 24-11 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-05 ATAGTACTTGGGATAATAGTACTCTGAATAATGTTACTGAAGGGT 14-08 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 14-06 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 24-14 ATAGTACTTGGGATAATAGTACTTTAAATAATGTTACTGAAGGGT 24-16 ATAGTACTTGGGATAATAGTACTTTGAAT---ATTACTGAAGGGT 24-17 ATAGTACTTGGGATAATAGTACTTTGAAT---ATTACTGAAGGGT 24-15 ATAGTATTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 24-10 ATAGTACTTGGGATAATAGTACTTTGAATAATATTACTGAAGGGT 24-12 ATAGTACTTGGGATAATAGTACTTTGAATAATATTACTGAAGGGT 24-18 ATAGTACTTGGGATAATAGTACTTTGAATAATATTACTGAAGGGT 34-19 ATAGTACTTGGGATAATAGTACTTTGAAT---ATTACTGAAGGGT 34-25 ATAGTACTTGGGATAATAGTACTTTGAATAATGTTACTGAAGGGT 34-21 ATAGTACTTGGGAT------ACTTTGAATAATGTTACTGAAGGGT 34-24 ATGGTACTTGGGAT------ACTTTGAATAATGTTACTGAAGGGT (b) Triplet alignment",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "Triplet alignments may shift indels and cause misaligned residues. (a) At posterior probability > 0.99 the traditional sequential model supports 4 internal branches. (b) When indel information is included, the number of supported branches increases to 6. Branches colored green are supported only when indel information is incorporated. Each blue cross denotes an indel event occurring on a particular branch. Prefixes on sequence names indicate elapsed time in weeks between the initial infection and when the sequences were obtained.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "all other entries. If the singlet model is, for example, the model ofHasegawa et al. [[30], HKY], we term the resulting triplet model as HKY \u00d7 3. We also set the triplet fre-",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Phylogenetic resolution of various models in SIV.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Comparison of alignment and substitution models.We compare the HKY singlet model, the HKY \u00d7 3 triplet model, and the M0 codon model, that forbids stop codons. For the first two models we fix independent nucleotide frequencies but for the M0 model we allow codon frequencies to vary. Continuous parameter estimates are presented as a posterior median followed by a 95% Bayesian credible interval if free, and a single value if fixed. The HKY model has a higher marginal probability than the HKY \u00d7 3 triplet model, indicating that not all indels start and end between codons. Removing stop codons and allowing codon frequencies to vary freely increases the marginal likelihood of the M0 model substantially. Despite these increases in marginal likelihood, the M0 model does not support the clade (10,12,18) as well as the singlet model.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We would like to thank Vladimir Minin for many helpful discussions. B.D.R. is supported by NSF training grant DGE9987641 and NIH training grant GM008185. M.A.S. is supported in part by NIH grant GM068955, the UCLA AIDS Institute and the James B. Pendleton Charitable Trust.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Therefore the acceptance ratio is:Distribution f i is proportional to the product of the length distributions on the internal nodes and changes very slowly in i. Therefore is usually quite close to one and there are few rejections.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "To assess alignment ambiguity we compare the posterior topology distribution for the full joint model to the distribution generated under models restricted to a fixed alignment. As these distributions may be sensitive to the specific alignment chosen, we use three different choices. These alignments are the estimates obtained from Clustal W [37] , Muscle [38] , and BAli-Phy [24] . In the latter case, we fix the alignment to its Maximum A Posteriori (MAP) point determined jointly. We use the default parameters for Clustal W and Muscle. Parameters and models used by BAli-Phy are described in the Results section.",
+            "cite_spans": [
+                {
+                    "start": 343,
+                    "end": 347,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 357,
+                    "end": 361,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 377,
+                    "end": 381,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Assessing Alignment Ambiguity"
+        },
+        {
+            "text": "The inference method described in this paper and implemented in the BAli-Phy software [24] requires significant computation time in order to handle alignment uncertainty and incorporate indel information. This means that it is often impractical to analyze data sets with greater than 12 taxa or sequence lengths longer than about 750 letters (nucleotide, amino acid, or codon). Analyzing data sets of this size often takes about a week on current hardware. However, we wish to emphasize two points. First, the long computation time is not required to make a simple estimate, but to obtain measures of confidence that are accurate enough to publish. For simple estimates or unpublished results, significantly larger data sets can be analyzed. Second, the amount of time required to analyze a data set depends not just on the size of the data set, but on various characteristics such as the level of uncertainty. For example, the second example in this paper contains 27 taxa of maximum length 612 and took about 3 weeks to analyze.",
+            "cite_spans": [
+                {
+                    "start": 86,
+                    "end": 90,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Computation Time and Problem Size"
+        },
+        {
+            "text": "MS formulated the problem and provided project management. BR designed the algorithms and models. BR performed the actual programming and computations. MS and BR analyzed the data. MS and BR wrote the paper. All authors read and approved the final manuscript. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

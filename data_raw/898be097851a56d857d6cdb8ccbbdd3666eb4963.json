@@ -1,0 +1,3260 @@
+{
+    "paper_id": "898be097851a56d857d6cdb8ccbbdd3666eb4963",
+    "metadata": {
+        "title": "Supplement S2: Methods: the vsfold5 algorithm",
+        "authors": []
+    },
+    "abstract": [
+        {
+            "text": "Here we present the basic concepts behind the vsfold5 approach. In Section S2.1, we briefly review what algorithms have been (or are being) used to address the pseudoknot problem (for reference).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Section S2.2 explains how the maps define the secondary structure and pseudoknot structure. In Section S2.3, the time, memory and structural complexity are described. Finally, Section S2.4 provides a general explanation of the concepts that are used to estimate the free energy when pseudoknots are considered.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Vsfold uses a dynamic programming algorithm (DPA) to find the minimum free energy (mFE) using the cross linking entropy (CLE) model [1] . For solving pseudoknot (PK) problems, a method of handles, exit tags and maps has been developed. In addition, many tools are built around these handles and mapping methods. These tools permit a methodology that considers the context of the structure. In total, these techniques permit back editing of structural data and free energy (FE) data.",
+            "cite_spans": [
+                {
+                    "start": 132,
+                    "end": 135,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "The details of the entropy and FE contributions to PK formation are expected to advance well beyond the rather simple models developed here. The current discussion on the model is meant to show that this modeling approach can be used to determine any form of structural information that exists to at least the level of resolution that are built into the model itself.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Folding also has a long history, particularly the genetic algorithm [6]. More recently, Cao et al.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "have developed a realistic lattice model of the RNA sequence backbone [7] . Likewise, KineFold is an elaborate local folding model that handles sequential 5' to 3' folding [8, 9] . Notable in these latter two methods is that realistic considerations about the three dimensional (3D) structure of a pseudoknot and polymer dynamics are seriously considered in the models. However, convergence for all these folding algorithms is typically slow and except for Cao et al. (which is 6 N ), not necessarily guaranteed. Other techniques consist of alignment of sequence or structure. One of the earlier systematic approaches employed maximum weight matching (MWM) for sequence alignment including pseudoknots [10]. More recently, dynamic MWM [11] has also been proposed. These can run rather fast, but suffer some loss of accuracy. A hybrid method of loop matching with thermodynamics and sequence alignment known as iterative loop matching (ILM) is a significant extension of the original MWM approach [12]. PSTAG is a structure alignment technique using pair stochastic tree adjoining grammars [13]; an approach that has its origins in studies in language processing [14]. A language processing strategy is potentially powerful [14,15]; however, they are rather costly in time complexity ( 5 N ) and memory ( 4 N ) [13]. A simplified approach that applies only the parsing part of this procedure was also developed with some success [16]. Of these alignment strategies, ILM claims the smallest time complexity ( 4 N ) and memory ( 3 N ). Recently, a hybrid method has been developed that employs other methods to gain a consensus for H-type pseudoknots [17]. The last two groups involve exact thermodynamic models that follow in the tradition of the secondary structure calculations. Of these, the first group finds only the mFE with no suboptimal structures. The most precise model, PKNOTS, that guarantees the minimum free energy is computationally costly in time ( 6 N ) and memory ( 4 N ) [18]. Recently, a simplified approach has been developed that sacrifices some detail by applying canonical rules but only requires a time of 4 N and memory 2 N [19]. Knowledge of the structural features of typical pseudoknots is used in this approach to help in the search and reduce the search space [19]. The final strategy follows in the traditions of partition functions for secondary structure [20] and therefore provides the possibility of suboptimal structure prediction [21].This approach sacrifices some detail and has a costly time complexity ( 6 N ).",
+            "cite_spans": [
+                {
+                    "start": 70,
+                    "end": 73,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 172,
+                    "end": 175,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 176,
+                    "end": 178,
+                    "text": "9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Of these approaches, in general, thermodynamics has been the poorest performer both in prediction [22] and generally at finding the correct mFE of any structure [19] .",
+            "cite_spans": [
+                {
+                    "start": 98,
+                    "end": 102,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 161,
+                    "end": 165,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Vsfold4 is a thermodynamic method that finds the minimum free energy [1], uses the sequential 5' to 3' folding direction of a biological context, and uses the cross-linking entropy model (a theoretical model [1]) to find the structure. It has scored close to 80% success on secondary structure predictions of a complete genome of tRNA sequences, which approaches the typical success of sequence alignment approaches. However, vsfold4 can only calculate secondary structure, which restricts its utility. The current version, vsfold5, has made the important leap to predicting pseudoknots, and, at the same time, does not add significantly to the overall time complexity of the calculation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Techniques for solving pseudoknots fall into roughly six widely overlapping categories.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.1. Existing pseudoknot algorithms: a brief history"
+        },
+        {
+            "text": "Loop matching strategies by and large are the oldest and currently are still utilized with other techniques. Early methods employed free energy to weight the loops [2, 3] and Monte Carlo techniques [2] to find the best pseudoknot. A recent developed approach (PLMM_DPSS) employs free energy weight of loop fragments and special features of pseudoknots to discriminate likely structures and reports computation times (known as time complexity) of order and 2 log CN N 2 N in memory, where N is the number of nucleotides in the sequence and is a constant [4] .",
+            "cite_spans": [
+                {
+                    "start": 164,
+                    "end": 167,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 168,
+                    "end": 170,
+                    "text": "3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 198,
+                    "end": 201,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 553,
+                    "end": 556,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.1. Existing pseudoknot algorithms: a brief history"
+        },
+        {
+            "text": "Similarly, HotKnots is a heuristic approach that builds up candidate structures by adding fragments of secondary structure one at a time (from secondary structure calculations) and allows multiple partially formed structures [5] .",
+            "cite_spans": [
+                {
+                    "start": 225,
+                    "end": 228,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.1. Existing pseudoknot algorithms: a brief history"
+        },
+        {
+            "text": "Vsfold5 uses pointers to map the secondary structure, and handles and a lookup table of exit tags to link different segments of secondary structure together to form different parts of the pseudoknot.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "There are other formal mapping methods [23] , but for the problems that are addressed here, the approach explained in this work appears to be more applicable.",
+            "cite_spans": [
+                {
+                    "start": 39,
+                    "end": 43,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "Here we define the indices and i j represent residues (base i and base j ) in the RNA sequence with and the indexing runs successively from the 5' end to the 3' end of the sequence. A base pair (bp) that is formed between base and base i j < i j is indicated by the ordered In this approach, the pointer maps the next major position of the secondary structure and any previous position that is present in the structure. The pointer consists of the current position , a tag classifying the type of secondary structure located at , a forward link (labeled \"forward\" in For example, Fig. S7a shows a stem with a pointer located at a base pair . The tag at is 'S', the forward pointer (green arrow labeled \"forward\") aims at the head of the stem and the reverse pointer (brown arrow labeled \"reverse\") aims at the tail of the stem . When the pointer is located at in the stem (same Figure) , it points to the next secondary structure and back to the tail of itself at . In Figure S7 , the next secondary structure is a hairpin (tag 'H') and the pointer points forward to itself at . Figure S7b shows a triangle diagram representation of the secondary structure and the respective coordinates for a stem terminated by a loop (known as a \"stem-loop\"). In Figure S8a , is located at the head of stem , indicated also by the green oval.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 580,
+                    "end": 588,
+                    "text": "Fig. S7a",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 878,
+                    "end": 885,
+                    "text": "Figure)",
+                    "ref_id": null
+                },
+                {
+                    "start": 969,
+                    "end": 978,
+                    "text": "Figure S7",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1079,
+                    "end": 1089,
+                    "text": "Figure S7b",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1249,
+                    "end": 1259,
+                    "text": "Figure S8a",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "The secondary structure is an internal loop (tag 'I') and the forward pointer aims at the tail of the next stem located at ; this is also shown in Fig. S8b as a triangle diagram. Like the hairpin loop, the reverse pointer indicates the tail at . (The subscript index is used for notation purposes here. The pointers at each position are sufficient to fully index all necessary information.) In Figure S9a , the pointer is at a multibranch loop (tag 'M') at (green oval). Here, a single pointer is insufficient to indicate the branching of the stem and an array of pointers is applied at to map out the branches at and :",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 147,
+                    "end": 155,
+                    "text": "Fig. S8b",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 394,
+                    "end": 404,
+                    "text": "Figure S9a",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": ", ( t t q p forward 1 and forward 2 respectively. The reverse pointer aims at whose tag is 'S'.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "The pointers are also shown in Fig. S9b with a labels \"(f1)\" and \"(f2)\" indicating the forward pointers (green arrows), and \"(r)\" indicating the reverse pointer (brown arrow). 00 ) , ( t t q p (p t ,q t ) 00 (p h ,q h ) 00 (p t ,q t ) 11 (p h ,q h ) 11 (p t ,q t ) 12 (p h ,q h ) 12 (p t ,q t ) 00 (p t ,q t ) 00 (p t ,q t ) 11 (p h ,q h ) 11 (p t ,q t ) 12 (p h ,q h ) 12 and forward \"f1\" and \"f2\" pointers (green arrows) and a reverse pointer \"r\" (brown arrow). This information is regularly updated with each construction of the map or section of the map.",
+            "cite_spans": [
+                {
+                    "start": 176,
+                    "end": 178,
+                    "text": "00",
+                    "ref_id": null
+                },
+                {
+                    "start": 235,
+                    "end": 237,
+                    "text": "11",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 250,
+                    "end": 252,
+                    "text": "11",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 265,
+                    "end": 267,
+                    "text": "12",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 280,
+                    "end": 282,
+                    "text": "12",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 325,
+                    "end": 327,
+                    "text": "11",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 340,
+                    "end": 342,
+                    "text": "11",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 355,
+                    "end": 357,
+                    "text": "12",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 31,
+                    "end": 39,
+                    "text": "Fig. S9b",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "A summary of the secondary structure pointers is shown in Tab. S1. For RNA secondary structure, this information is sufficient to map a complete structure and assess the relationship of a",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "given secondary structure at to other secondary structure in other regions of the map. The ) , ( j i modeling provides more immediate structure information than traditional methods. Currently, most of the secondary structural considerations in vsfold5 are limited to the local region in the vicinity of where the main focus is on the persistence length and stem formation. However, with pseudoknots (next section), global search methods were required because the configuration information about other parts of the structure aid in deciding the stability of any potential structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "Modules are easily added to expand this functionality further. Table S1 . List of pointers used in the secondary structure maps:",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 63,
+                    "end": 71,
+                    "text": "Table S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "(ss_name) a tag indicating the secondary structure, (ss_link) the forward link, ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2. Vsfold5 Mapping methods"
+        },
+        {
+            "text": "The pseudoknot (PK) adds considerable complexity to the simple pointer type mapping used in secondary structure calculations. To address this, handles are used to map out the pseudoknot superstructure, while the intervening secondary structure is handled in the same way as before. With the exception of true knots, if some folding pathway can be described by decomposing the structure into a set of sub-structural modules, all typical types of pseudoknot structures can be described by this approach.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.2. Pseudoknot handles"
+        },
+        {
+            "text": "First we distinguish between two types of pseudoknots: core PKs and extended PKs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.2. Pseudoknot handles"
+        },
+        {
+            "text": "A core PK consists of a domain (or a group of domains) of secondary structure that are joined by a linkage strand. Its primitive structure resembles an H-type PK [7] or in other terminology, an ABAB PK [24] . This is expressed by the outlined structure (Fig. S10a , the outline colored blue, orange and red and extending from the labels and ). The gray structures indicate additional R i R j secondary structure that could embellish this core PK and are mapped onto the core PK structure by the handles. A triangle diagram of the same structure is shown in Fig. S10b .",
+            "cite_spans": [
+                {
+                    "start": 162,
+                    "end": 165,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 202,
+                    "end": 206,
+                    "text": "[24]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 253,
+                    "end": 263,
+                    "text": "(Fig. S10a",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 557,
+                    "end": 566,
+                    "text": "Fig. S10b",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "S2.2.2.1. Core pseudoknots (cPK):"
+        },
+        {
+            "text": "Junction region",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.2.1. Core pseudoknots (cPK):"
+        },
+        {
+            "text": "Root stem region Figure S10 : Example of a core pseudoknot: (a) the pseudoknot structure and labels, (b) the corresponding structure on the triangle diagram. The gray stems extending from the main structure indicate some of the multitude of possible embellishments that could be added to the basic structure.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 17,
+                    "end": 27,
+                    "text": "Figure S10",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Linkage stem"
+        },
+        {
+            "text": "The core PK handle contains an input index ( ) and output index ( ) forming a complete independent module. To , other secondary structure (ss) pointers or PK handles can be mapped onto this handle. This permits PKs that are embedded (or nested) into other ss and PKs. The root domain can consist of a complex domain of secondary structure, a simple stem, or another pseudoknot. The junction region and the neck of the root stem can also associate complex ss, PKs, or a simple loop. Hence, considerable complexity can be systematically mapped onto the PK.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Linkage stem"
+        },
+        {
+            "text": "In short, the handles map out global configuration in a similar way as the pointers map out local secondary structure, but they handle considerably more complex and detailed information than do the simpler ss pointers. Table S2 shows a description of the handles used for cPKs, where the handles used by cPKs are indicated in the upper section of the Table. j i b a j j j d2 d2",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 219,
+                    "end": 227,
+                    "text": "Table S2",
+                    "ref_id": null
+                },
+                {
+                    "start": 351,
+                    "end": 357,
+                    "text": "Table.",
+                    "ref_id": null
+                }
+            ],
+            "section": "Linkage stem"
+        },
+        {
+            "text": "Root stem region 1",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Linkage stem"
+        },
+        {
+            "text": "Root stem region 2",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Linkage stem"
+        },
+        {
+            "text": "Linkage Stem neck region 2 neck region 1 Supplement Figure S11 : Example of an extended pseudoknot: (a) the pseudoknot structure and labels, (b) the corresponding structure on the triangle diagram. As in ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 52,
+                    "end": 62,
+                    "text": "Figure S11",
+                    "ref_id": null
+                }
+            ],
+            "section": "Linkage stem"
+        },
+        {
+            "text": "Some types of PKs cannot be mapped using the cPK architecture. These types of structures have the characteristic that they join two independently stable domains of structure (often secondary structure) together by a small linkage stem (Fig. S11a) . These are called extended pseudoknots (ePK) because they extend over at least two independently stable domains of complex RNA structure. The essential structure of an ePK is shown in Fig. S11a along with the corresponding half triangle diagram (Fig. S11b) . The primitive form of an extended PK resembles the ABACBC type structures [24] . The pointers used for an ePK are summarized in Tab. S2. Table   S1 . The tag 'K' indicates a core pseudoknot, 'R' an extended pseudoknot, and 'J' a junction (effectively identical to a hairpin loop 'H'). Core PKs ignore terms in the last part of the Table. MBLs are specified by the handles Jbranch (for junction), p1branch (root domain 1 at ijp1) and p2branch (root domain 2 at ijp2).",
+            "cite_spans": [
+                {
+                    "start": 581,
+                    "end": 585,
+                    "text": "[24]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 235,
+                    "end": 246,
+                    "text": "(Fig. S11a)",
+                    "ref_id": null
+                },
+                {
+                    "start": 432,
+                    "end": 441,
+                    "text": "Fig. S11a",
+                    "ref_id": null
+                },
+                {
+                    "start": 493,
+                    "end": 504,
+                    "text": "(Fig. S11b)",
+                    "ref_id": null
+                },
+                {
+                    "start": 644,
+                    "end": 654,
+                    "text": "Table   S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 838,
+                    "end": 844,
+                    "text": "Table.",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.2.2.2. Extended pseudoknots (ePK):"
+        },
+        {
+            "text": "The Free energy for the junction (dGJ) is evaluated at the closing point of the loop ( , ) l l p q and the correction to the free energy due to the presence of a pseudoknot is stored in dGwt (i.e., pql) as a weight. The set is certainly complete and even to some extent redundant in some cases.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.2.2. Extended pseudoknots (ePK):"
+        },
+        {
+            "text": "Similar to the cPK, the ePK has an input ( ) and output ( ). However, instead of one root domain, there are two: domain 1 (blue background region) and 2 (purple background region). The linkage stem joins these two independent domains at the respective neck regions: (neck region 1) and (neck region 2). Special pointers in the handles map any structure in the loop (ss or PK). Similarly, the junction region also contains special handles to map out any complex structure contained in . Like the root domain of the cPK, the root domains of the ePK can consist of complex ss or even PKs. Hence, very complex structure can be mapped if some hierarchical folding pattern for a sequential 5' to 3' folding can be discerned.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.2.2. Extended pseudoknots (ePK):"
+        },
+        {
+            "text": "More will be discussed in Section S2.3.2 on the diversity of PK structures that can be obtained.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.2.2. Extended pseudoknots (ePK):"
+        },
+        {
+            "text": "We only comment here that unlike other formal description schemes [23] , the core and extended PK notation depends strongly on the way in which the RNA folds and the stability of the domains of RNA structure. The tag structure and mapping procedures depend on the order of the folding in this model. Therefore, these tags are not necessarily unique. However, they help describe the most likely pathway to the native state; something that is not offered by typical mapping methods. RNA is currently thought to fold according to the hierarchical folding hypothesis [25] .",
+            "cite_spans": [
+                {
+                    "start": 66,
+                    "end": 70,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 563,
+                    "end": 567,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.2.2.2. Extended pseudoknots (ePK):"
+        },
+        {
+            "text": "By employing a folding strategy to this problem, the linkage stem indicates something of the most likely order in which the PK structure formed. For typical ABAB PKs (simple cPKs), which stem is defined as the linkage stem is not particularly unique or significant. However, true linkage stems should be restricted to stems that are less than a full rotation (360 o ) of a contiguous A-RNA double helix (about 10 base pairs [26] ) because all PK models exclude true knots. Proteins that have true knots have been observed [27] . Knots are quite possible and indeed should be common -as anyone who has ever untangled a \"carefully wound\" electrical cord can realize. Therefore, the length of a linkage stem on cPKs should be less than 10 contiguous bps; nevertheless, stems of this length appear to be extremely rare. There should be no other distinction than the most probable order of folding that is read into this information.",
+            "cite_spans": [
+                {
+                    "start": 424,
+                    "end": 428,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 522,
+                    "end": 526,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.2.3. Linkage stems"
+        },
+        {
+            "text": "The linkage stem of an ePK reflects the initial domain structure that appeared before the linkage stem of the PK joined the independent RNA domains. Therefore, in ePKs, there is more significance behind what forms the basis of the linkage stem. Nevertheless, these definitions are often more qualitative and, thermodynamically, there is nothing unique about them.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.3. Linkage stems"
+        },
+        {
+            "text": "There is one final issue with mapping. What happens if we build a PK and later add on another PK and have to edit the original PK slightly? This is a plausible situation. One way is to update the internal object. However, given that the level of editing is not extreme, it is better to keep the original object unchanged because that represents the best structure over the region of the original PK. At present, the extent of editing appears to satisfy this condition. Hence, we have not constructed rules to handle drastic editing of the originally derived structure if it is embedded in a pseudoknot. Note that if the domain being edited is not a pseudoknot, then quite drastic editing is certainly allowed in vsfold5 even if pseudoknots are present within that same domain.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.4. Look up tables of exit tags"
+        },
+        {
+            "text": "Therefore, instead of editing the original object, vsfold5 uses a lookup table of exit tags to decide if a region of structure should be evaluated. Any reconfiguring that would occur in a biological context would involve melting of material and reconfiguring the surroundings that were originally present in the original PK structure. This means we need to fix the original structure at the new neck region. This we can do by checking a short list of exit tags that indicate where some editing has occurred, these tell the methods to jump to the next task built up at the higher level.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.2.4. Look up tables of exit tags"
+        },
+        {
+            "text": "Here we describe the computational demands (time complexity) and memory requirements of vsfold5. In addition, we describe the structural complexity that is accessible to vsfold5.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3. Time, memory and structural complexity"
+        },
+        {
+            "text": "Before discussing the time complexity, we must emphasize that there are numerous known inefficiencies built into the secondary structure methods of the current program because the focus has been on the science; not the algorithm. We expect more efficient code is likely to speed up the calculations significantly and reveal the true cost of the pseudoknot calculations. A benchmark test of the current program is shown in Table S3 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 422,
+                    "end": 430,
+                    "text": "Table S3",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.3.1. Time and memory complexity of vsfold5"
+        },
+        {
+            "text": "A major part of the time complexity in vsfold4 and 5 is devoted to finding a good combination of stems in the stem building methods. A full search should add a cost of [28] .",
+            "cite_spans": [
+                {
+                    "start": 168,
+                    "end": 172,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.3.1.1. Stems:"
+        },
+        {
+            "text": "The stem search further includes recursive methods that scan different pathways to find the best effective stem length with the minimum free energy. Recursive scanning can extend up to 6 levels (default) and more can be requested, but six levels are generally sufficient for most problems. The search is done recursively until either a cutoff is reached or the stem clearly terminates. Because such recursive optimizations are done every time (even though past successful solutions are already known), it is currently a major design inefficiency. An ameliorating factor is that this search is limited to a finite number of recursive hops. Theoretically, reusing these solutions reduces the time complexity to as small as [28] . However, because this program remains under extensive constant development, these optimizations are currently not used. Without any optimization, the time complexity appears to be for this calculation. forward, reverse, free energy and tag Table S1 ).",
+            "cite_spans": [
+                {
+                    "start": 721,
+                    "end": 725,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 968,
+                    "end": 976,
+                    "text": "Table S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.3.1.1. Stems:"
+        },
+        {
+            "text": "As with the case of the stem building modules, the MBL modules certainly add a time complexity of [29] . The more complete analysis of the MBL's environment also adds considerable overhead.",
+            "cite_spans": [
+                {
+                    "start": 98,
+                    "end": 102,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.3.1.2. MBLs:"
+        },
+        {
+            "text": "Memory requirements also are increased with this approach due to the MBL branch pointers in general, and also the contents of the pseudoknot handles. However, the pointer size is of , and the maximum number of branches is an inverse function of the Kuhn length (a longer Kuhn length requires less allocation of memory for a sequence of length N because more structure is put 2 ( ) O N into building long stems and less is devoted to loops and branching). Therefore, the memory",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "( O N )"
+        },
+        {
+            "text": "p is the number of pointers (same as a stem) and",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "( O N )"
+        },
+        {
+            "text": "is the maximum number of branches (a number that is inversely dependent on the Kuhn length).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "( O N )"
+        },
+        {
+            "text": "The default value is 15 branches and therefore m 30 m N \u2264 (for large N). Future development of an object that permits internal allocation of memory is expected to reduce this global demand for branch memory significantly.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "( O N )"
+        },
+        {
+            "text": "Given that optimizations are done on the stem search methods that reduce the time complexity to the theoretical minimum of , the addition of PK capability will result in a time complexity ranging between and . This is comparable to some other recent methods [19] . A simple search for H-type PKs would normally be expected to cost in time complexity.",
+            "cite_spans": [
+                {
+                    "start": 258,
+                    "end": 262,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.3.1.3. PKs:"
+        },
+        {
+            "text": "With this approach, the full structural complexity that normally requires is not sacrificed;",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.1.3. PKs:"
+        },
+        {
+            "text": "however, there are limitations introduced due to the choice of the folding pathway.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.1.3. PKs:"
+        },
+        {
+            "text": "In the modeling, we assume that if a biologically active functional RNA requires a PK in the structure, the existing folded structure should leave \"hints\" that encourages the formation of the linkage stem. Though it is possible this assumption is sometimes inaccurate for particular examples,",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.1.3. PKs:"
+        },
+        {
+            "text": "such counter examples appear to be few based on the current survey. Therefore, all free strand regions are checked in the search; however, only strands that already have at least 5 nts free are tested for potential PKs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.1.3. PKs:"
+        },
+        {
+            "text": "There are several reasons why this approach can permit full complexity without adding more than an order 1 increase in time complexity.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.1.3. PKs:"
+        },
+        {
+            "text": "Mapping is able to reduce this to a fractional exponential increase. To show that mapping will reduce the time, we show the following thought experiment. In ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.1.3. PKs:"
+        },
+        {
+            "text": "With the two basic structures (cPKs and ePKs), recursive PKs can be built [30] . In Figure S13 , we",
+            "cite_spans": [
+                {
+                    "start": 74,
+                    "end": 78,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 84,
+                    "end": 94,
+                    "text": "Figure S13",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "show an example of a recursive ePK that works successively along a single pattern. In Figure S13a In Figure S13c , the dot indicates an individual domain (also labeled above as in Fig. S13b ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 86,
+                    "end": 97,
+                    "text": "Figure S13a",
+                    "ref_id": null
+                },
+                {
+                    "start": 101,
+                    "end": 112,
+                    "text": "Figure S13c",
+                    "ref_id": null
+                },
+                {
+                    "start": 180,
+                    "end": 189,
+                    "text": "Fig. S13b",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "These are surrounded by a box that is labeled R n d R k that indicates the successive assignment tags for the ePK domains. The box enclosing the dots indicates the objects inside. Therefore, the label R 1 R contains d 1 and d 2 , the label RR 2 contains the objects R 1 progression.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "The arrangement of the boxes need not be in such a trivial order as shown in this example.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "However, once a PK is decided from some folding pathway, this wrapping shields the internal contents inside (though this aspect could be modified too). Any recursive pattern of construction of this kind requires unwrapping the box before the contents inside can be explored. Hence, it is not essential that it follows exactly the plan of this example, but, currently, some patterns could be missed if the priority of construction is disordered relative to the sequential folding direction.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "This process is done procedurally with recursive construction methods, but resembles that of wrapping the objects inside.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "Although Fig. S13 is an example done with ePKs, it is also possible for such a pattern to form with cPKs. This again is reflecting something of a view of how RNA structure is formed. The pattern generated would be identical, but the process by which it came about is not. With the ePK, a pair of blue stems would form first and these would then fuse together. With a cPK, linkage would be added successively to the structure. Generally, in this model, a stand-alone linkage stem requires independent stability of whatever internal structure is inside. On the other hand, an extended PK depends on the stability of its independent domains (for example, d 1 and d 2 ) and their mutual coupling together to form a small linkage stem. Far more complex mixtures of structure are likely to be built up with an ePK.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 9,
+                    "end": 17,
+                    "text": "Fig. S13",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "As a second set of examples, we consider how a pseudoknot with the pattern ABCBDADC ( Fig. S14a ) and the pattern ABCDCDAB (Fig. S14b) would form [24] , where, for readability, we have added a bar over certain letters to indicate the complimentary strand of the corresponding letter:",
+            "cite_spans": [
+                {
+                    "start": 146,
+                    "end": 150,
+                    "text": "[24]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 86,
+                    "end": 95,
+                    "text": "Fig. S14a",
+                    "ref_id": "FIGREF15"
+                },
+                {
+                    "start": 123,
+                    "end": 134,
+                    "text": "(Fig. S14b)",
+                    "ref_id": "FIGREF15"
+                }
+            ],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "e.g., and A A . The folding pathway is shown in Fig. S14 . Figure S14a shows a recursive PK formed by adding more stem onto an existing PK. Figure S14b shows a cPK embedded inside another cPK. Hence, many types of complex PKs can be found with this strategy.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 48,
+                    "end": 56,
+                    "text": "Fig. S14",
+                    "ref_id": "FIGREF15"
+                },
+                {
+                    "start": 59,
+                    "end": 70,
+                    "text": "Figure S14a",
+                    "ref_id": "FIGREF15"
+                },
+                {
+                    "start": 140,
+                    "end": 151,
+                    "text": "Figure S14b",
+                    "ref_id": "FIGREF15"
+                }
+            ],
+            "section": "S2.3.2.1. Recursive pseudoknots"
+        },
+        {
+            "text": "With some limitations specified here, vsfold5 can map any structure that can be expressed by some reasonable sequential (5' to 3') folding scenario using these simple cPK and ePK motifs. The concepts behind vsfold5 permit a capacity to find all different types of pseudoknots with minor restrictions that we lay out here. (Fig. S13) , connecting the ends, as in Fig. S15d , is currently not done. Nevertheless, this example can be done, if one really wishes and in this respect, vsfold5",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 322,
+                    "end": 332,
+                    "text": "(Fig. S13)",
+                    "ref_id": null
+                },
+                {
+                    "start": 362,
+                    "end": 371,
+                    "text": "Fig. S15d",
+                    "ref_id": "FIGREF16"
+                }
+            ],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "can do better than even the best available approach currently. With this general proviso, all the structures indicated in the historic developments in this field are doable in this approach; given some consistent folding pathway is describable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "The program can solve structures such as those shown in Fig. S15 . Structures (c) and (d) were considered in Ref. [30] and structure (e) is discussed in Ref. [24] . Labels on the Rivas and Eddy",
+            "cite_spans": [
+                {
+                    "start": 114,
+                    "end": 118,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 158,
+                    "end": 162,
+                    "text": "[24]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 56,
+                    "end": 64,
+                    "text": "Fig. S15",
+                    "ref_id": "FIGREF16"
+                }
+            ],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "Feynman diagrams [18] in Fig. S15 indicate the stem sequence and its compliment (e.g., A and A ).",
+            "cite_spans": [
+                {
+                    "start": 17,
+                    "end": 21,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 25,
+                    "end": 33,
+                    "text": "Fig. S15",
+                    "ref_id": "FIGREF16"
+                }
+            ],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "The structures in Figs. S15a-c can all be evaluated with vsfold5 in its current form.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "Exceptions, as pointed out in item 4, are such structures as Fig. S15d (first pointed out in Ref. [30] ) and S15e (pointed out in Ref. [24] ).",
+            "cite_spans": [
+                {
+                    "start": 98,
+                    "end": 102,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 135,
+                    "end": 139,
+                    "text": "[24]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 61,
+                    "end": 70,
+                    "text": "Fig. S15d",
+                    "ref_id": "FIGREF16"
+                }
+            ],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "For Figure S15d [30], only the loop around (d 1 and d n ) is not possible in the current vsfold5 architecture. Presently, vsfold5 does not look inside of its own pseudoknots for more pseudoknots. It is assumed that pseudoknots build up modularly inside of one another, if they build up at all in this way, and we need not concern ourselves with modules deep inside the superstructure until we need to unwrap them. Moreover, the types of structures likely to satisfy even this are small because of steric hindrance of jamming two stems in a loop and folding such a structure. This would only be more problematical for joining d 1 and d n (Fig. S13 ) together. Perhaps with sufficient length, a circle could be made that would satisfy all the physical requirements. To handle this prediction problem, we would need to add exit tags for domains in the lookup table and apply them in the same way as the neck-exit-tags. Currently, aside from the aspect of theoretical curiosity, such matters, though in principle doable, have not been opened in the current architecture of the program. For Figure S15e , for the pattern ABCADBECDE [24] , currently vsfold5 can chose either B or C, but not both from the general pathway of folding domain 1 and 2 first. Estimating from the general tendency of the free energy rules, stem C is probably more likely. In short, we don't currently ask PKs to examine themselves. Nevertheless, there is an alternative pathway shown in Fig.   S16 that can succeed with this structure. Hence, the order is a crucial factor in this model. Even this can be remedied with little additional cost in time complexity, were this deemed critical in prediction problems.",
+            "cite_spans": [
+                {
+                    "start": 1127,
+                    "end": 1131,
+                    "text": "[24]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 4,
+                    "end": 15,
+                    "text": "Figure S15d",
+                    "ref_id": "FIGREF16"
+                },
+                {
+                    "start": 637,
+                    "end": 646,
+                    "text": "(Fig. S13",
+                    "ref_id": null
+                },
+                {
+                    "start": 1086,
+                    "end": 1097,
+                    "text": "Figure S15e",
+                    "ref_id": "FIGREF16"
+                },
+                {
+                    "start": 1458,
+                    "end": 1468,
+                    "text": "Fig.   S16",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "Hence, there is in fact no sacrifice in computational possibility at all and, indeed, vsfold5 may have even more capability than any existing approach. However, there are some additional restrictions on what is admissible due to the current state of extreme uncertainties and perhaps some (largely correctable) idiosyncratic assumptions made in the design and current development of the program. Figure S16 . An alternative pathway that leads to the exact structure listed in Fig. S15e. ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 396,
+                    "end": 406,
+                    "text": "Figure S16",
+                    "ref_id": null
+                },
+                {
+                    "start": 476,
+                    "end": 486,
+                    "text": "Fig. S15e.",
+                    "ref_id": "FIGREF16"
+                }
+            ],
+            "section": "S2.3.2.2. Limits on structural complexity:"
+        },
+        {
+            "text": "Here we explain the general concepts behind the evaluation methods of pseudoknots. Most of the secondary structure methods are done as before and can be found in the literature [1] .",
+            "cite_spans": [
+                {
+                    "start": 177,
+                    "end": 180,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4. Free energy evaluation of pseudoknot structures"
+        },
+        {
+            "text": "The free energy is path independent in the CLE model. Therefore, the choice of linkage stem has only the indication of the most likely pathway for the structure to fold and carries no other significant information beyond this.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4. Free energy evaluation of pseudoknot structures"
+        },
+        {
+            "text": "There are a multitude of structural issues associated with pseudoknots that can often be ignored when the problem only involves secondary structure. The reason appears to be due largely to the fact that the space between different secondary structures is sufficiently large that sub-domains are not as likely to interfere with each other. Not so for the pseudoknot. Though RNA bases all exhibit a similar size and chemical identity, packing issues are important particularly due to electrostatic effects. Hence, PKs begin to show some of the same difficulties encountered in protein structure problems where both packing and residue characteristics in some context can make or break the structure prediction [31] once the PK problem is introduced.",
+            "cite_spans": [
+                {
+                    "start": 708,
+                    "end": 712,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4. Free energy evaluation of pseudoknot structures"
+        },
+        {
+            "text": "Currently, the methods presented here are largely based on qualitative estimates and are subject to considerable revision in the future.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4. Free energy evaluation of pseudoknot structures"
+        },
+        {
+            "text": "In all cases tried so far, the linkage stems tend to have less than 10 contiguous bps in a single stem; a situation where a knot would form [26, 32] . It is often the case that the important linkage stems only contain 4 to 6 bps (close to the 180 o twist) and, often, when they do exceed 5 bps, they have an internal loop that breaks the continuity at 5 bps. This renders the issue about the twist largely moot. Generally, RNA appears to use internal loops (I-loops) to help compensate for the twist, basically defeating most attempts to use these relations in some general way. A cutoff of 9 contiguous bps on the linkage stem is easily added.",
+            "cite_spans": [
+                {
+                    "start": 140,
+                    "end": 144,
+                    "text": "[26,",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 145,
+                    "end": 148,
+                    "text": "32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.1. Helical twist of RNA"
+        },
+        {
+            "text": "If the loop accepting a linkage is far too small, then there is very little flexibility in the loop to accommodate sufficient twist between the loop and the linkage stem. We refer to this here as local contact strain. This is expressed graphically in Fig. S17a and in 3D in Fig. S17b . Several problems emerge, particularly when considering Fig. S17b . First the free strand (orange) connecting the linkage stem (red) is rather short to accommodate the large rigid structure that is being forced on the space. Worse is that the root stem (blue) is filled up with the linkage stem. Neither can the root domain make up the difference because it is already bending under the strain of a tight loop. Second, the loop regions on both halves are short, so there is no flexible free play between the forming strands. Over 5 bps, the twist in the stem is roughly 180 o , and when this must be coupled with such a short loop, there is no room to accommodate either part well. Finally, nucleic acids have negatively charged phosphates that must be compensated by divalent cations in tight configurations, yet there is hardly any surface area where such divalent cations can rest long enough to have much impact on the stability. Figure S17 . An example of the concept of \"local contact strain\":",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 251,
+                    "end": 260,
+                    "text": "Fig. S17a",
+                    "ref_id": null
+                },
+                {
+                    "start": 274,
+                    "end": 283,
+                    "text": "Fig. S17b",
+                    "ref_id": null
+                },
+                {
+                    "start": 341,
+                    "end": 350,
+                    "text": "Fig. S17b",
+                    "ref_id": null
+                },
+                {
+                    "start": 1219,
+                    "end": 1229,
+                    "text": "Figure S17",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "shown diagrammatically in (a) and 3 dimensionally in (b) with the structure on the left representing the condition prior to adding a PK, and on the right, representing the condition after adding a PK. The orange strand indicates the junction region, red the linkage and blue the root domain (purple indicates the region being joined).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "Over the range of 5 bps, the double strand helix of A-RNA rotates approximately 180 o . This renders the distortions and lack of free play even more severe in (b) than would be suggested by the diagrammatic example in (a).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "When too much of the stem is occupied by the linkage, the part occupied by the stem restricts the free motion of the loop, changing the flexibility and distorting the structure of the loop.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "Therefore, the costs of formation should increase when too much of the loop is occupied by the linkage stem. This contact strain tends to select root domains with a larger free strand contact region for PK formation compared to tight loops. When the free strand within the root domain is less than 2 nt, the structure is strongly discouraged unless melting some of the existing stem can achieve a visible improvement. The persistence length, or more precisely when referring to a Gaussian polymer chain, the \"Kuhn length\" ( \u03be ), is also important to consider here because the stiff structure should only increase resistance to tight structures such as this. length is a measure of the stiffness; hence, the Kuhn length will tend to stiffen the strands.) There are known loops that have only 1 nt free, and to this, the above cost will be added. Experimentally, at least some of the PKs that have such a short strand also require Mg 2+ to form. Therefore, this does not seem an unreasonable cost to add to very short loops.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "Very short PK structures ( nt), as found with some frame shift related pseudoknots [33, 34] , require special attention to address. In line with the observations of Huang et al. [4] , at least some discrimination can be worked out from the specific features of the PK. We do not analyze to the same detail as Huang et al. However, stem lengths are evaluated similarly with at least one stem requiring equal free strand length or the above cost is applied. Sequence composition and coaxial stacking may also be a factor in the stability of these structures but is currently not considered.",
+            "cite_spans": [
+                {
+                    "start": 83,
+                    "end": 87,
+                    "text": "[33,",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 88,
+                    "end": 91,
+                    "text": "34]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 178,
+                    "end": 181,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "For cPKs, formation costs come from both the contact strain (local in character) and standard stem stability issues that govern all secondary structure stem formation rules. There is no natural distinction between linkage stems and the root domain, so all the basic rules of secondary structure must be applied in the same way to all stems.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "For ePKs, coaxial stacking and parallel stem interactions can help stabilize the linkage stem, hence, standard stem stability issues are relaxed slightly for ePKs. A minimum size for an ePK is also applied because two independent domains need sufficient contact region to warrant formation of a linkage between them. When the loop is short, considerable distortion is needed to accommodate the linkage stem. Again, a heavy cost for building a stem on small a loop region is added when min F l p s n l \u2265 \u2212 occurs in Eqn (S1). Moreover, when 25 R R j i \u2212 \u2264 nt, the two independent domains are so small that formation of such a structure is essentially impossible to satisfy even were the Kuhn length equal to 3 nt (a ridiculously short length for most structured RNA).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.2. Local contact strain in very short loops:"
+        },
+        {
+            "text": "An important feature is pleating and reorientation of the superstructure. For example, the group I intron of Tetrahymena thermophila has a stem that is folded over at the J5/4 junction position of the structure [35, 36] . Hence, this effect should be considered when an internal loop is sufficiently large;",
+            "cite_spans": [
+                {
+                    "start": 211,
+                    "end": 215,
+                    "text": "[35,",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 216,
+                    "end": 219,
+                    "text": "36]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.3. Pleating as a factor in reducing strain on a pseudoknot:"
+        },
+        {
+            "text": "at least for more than 3 nt \u00d7 3 nt (3\u00d73).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.3. Pleating as a factor in reducing strain on a pseudoknot:"
+        },
+        {
+            "text": "When pleating occurs, the stem can no longer resemble anything close to a straight stick-like object, but is folded back on itself. If, for example, we have a single pleat (as in the where is the index of a stem corresponding to (when there is only one stem and means there are pleats).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.3. Pleating as a factor in reducing strain on a pseudoknot:"
+        },
+        {
+            "text": "Currently, there is no information available on the FE of pleating and consequently the parallel stem-alignment interactions between the P4 and P5 stems are unknown (though probably attractive). Therefore, the current algorithm does not ascribe any gain or loss from this effect; rather it simply evaluates a plausible effective length for the stem and adds a small entropic cost of for each pleat, where we currently assume the cost is electrostatic effects in the junction. We currently assess stems with internal loops greater than 3\u00d73 as \"plausible\". Only the plausible effective length is considered and if even this cannot be satisfied, then surely the PK structure cannot form. An example of pleating is shown diagrammatically in the main text (Fig. 4d) . B 1.5k T",
+            "cite_spans": [
+                {
+                    "start": 763,
+                    "end": 764,
+                    "text": "B",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 751,
+                    "end": 760,
+                    "text": "(Fig. 4d)",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.4.3. Pleating as a factor in reducing strain on a pseudoknot:"
+        },
+        {
+            "text": "In addition to contact strain, both cPKs and ePKs must be able to combine in an energetically favorable way with each other. In developing the concepts here, we have adapted the concept of flexible loops and rigid rods first attempted successfully in Isambert et al. (Refs. [9] and [26] ). The importance of considering the structure of the PK in a more 3D perspective is worth emphasizing, and in this respect, the elaborate architectures worked out in the approach of Ref. [9] are an important direction to take in considering PKs. The advantage of this approach is that the method of rejection is based on a slightly more objective approach of thermodynamics rather than a somewhat subjective approach of predefined elimination of certain structure types. ",
+            "cite_spans": [
+                {
+                    "start": 274,
+                    "end": 277,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 282,
+                    "end": 286,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 475,
+                    "end": 478,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.4. Mutually disproportionate lengths"
+        },
+        {
+            "text": "We begin with a simple example and gradually develop the concept from this kernel. Figure S18a shows a schematic of a simple H-type cPK. Because the schematic is not shown in 3D, it suggests that J s must stretch out a length p l to be able to form the linkage stem at J l . In fact, there is a helical twist (Section S2.4.1) that can ameliorate this and there are differences between the minor grove and the major grove (Section S2.4.2 and Ref. [4] ). Ideally, these factors should be considered.",
+            "cite_spans": [
+                {
+                    "start": 446,
+                    "end": 449,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 83,
+                    "end": 94,
+                    "text": "Figure S18a",
+                    "ref_id": null
+                }
+            ],
+            "section": "Disproportionate lengths for cPKs:"
+        },
+        {
+            "text": "However, beyond these trivial examples, a general way to envision a 3D structure of arbitrary complexity becomes rather unwieldy without any experimental information to support it. Currently, because of this paucity of experimental information, vsfold5 handles the problem in the rather simple-minded way diagrammed out in Fig. S18a for all cPK structures. This ensures that there is no overt bias introduced by the foreknowledge of a precise structure for small cPKs and utter ignorance for large cPKs.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 323,
+                    "end": 332,
+                    "text": "Fig. S18a",
+                    "ref_id": null
+                }
+            ],
+            "section": "Disproportionate lengths for cPKs:"
+        },
+        {
+            "text": "As a result, the stretching of J s by an amount p l (Fig. S18a) is assumed in these calculations, where p l is the effective length of the root domain (Section S2.4.3). Similarly, J s is also evaluated in terms of its effective length such that secondary structure, which shortens the actual stem length in the junction region, is taken properly into account. We considered including corrections for the twist [26, 32] but found it was unnecessary at this level of maturity -though obviously important in principle to keep in mind. Though we sacrifice some accuracy, the structures are treated uniformly this way. When more experimental data is available, a far more precise module can be constructed.",
+            "cite_spans": [
+                {
+                    "start": 410,
+                    "end": 414,
+                    "text": "[26,",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 415,
+                    "end": 418,
+                    "text": "32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 52,
+                    "end": 63,
+                    "text": "(Fig. S18a)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Disproportionate lengths for cPKs:"
+        },
+        {
+            "text": "Using the general form of the CLE model, we estimate the initial length of the coil in the free strand i r J s region (Fig. S18a) ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 118,
+                    "end": 129,
+                    "text": "(Fig. S18a)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Disproportionate lengths for cPKs:"
+        },
+        {
+            "text": "where J s describes the number of nt in the junction sequence, is the distance between the nucleotide residues in the chain (units of length) and The thermodynamics is blind to the definitions of linkage and root stems because the folding is path independent. To insure that there is no bias in evaluating the free energy, Eqn (S5) is computed by exchanging labels ( p l with J l and J s with p s ) in Fig. S18a and doing the analysis in the same way. The resulting free energy values are then added. This way, whichever way the structure folded, the final result is independent. It also reflects the property of equal and opposite reaction and response.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 402,
+                    "end": 411,
+                    "text": "Fig. S18a",
+                    "ref_id": null
+                }
+            ],
+            "section": "Disproportionate lengths for cPKs:"
+        },
+        {
+            "text": "We herein emphasize that this approach is quite preliminary and is likely to be revised substantially in the future when more precise 3D information can be worked directly into the code.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Disproportionate lengths for cPKs:"
+        },
+        {
+            "text": "The concept is similar to Ref. [26] . The difference is that the full equation for the entropy change is used rather than just the stretching part (the right hand side of Eqn (S5)) and this equation ",
+            "cite_spans": [
+                {
+                    "start": 31,
+                    "end": 35,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Disproportionate lengths for cPKs:"
+        },
+        {
+            "text": "For the ePK, we can apply a similar approach (in Fig. S18b ). However, unlike the cPK where Currently, the weight for \u03c2 in Eqn (S4) is set to 0 for cPKs and 0.5 for ePKs. The reason for the difference is that the free strand on the cPK has more ways to accommodate the length differences by flexible rearrangements than the equivalent problem with the ePKs, particularly when large domains are involved. In both cases, strong deviations are strongly discouraged when the stems are drastically different in length and cannot be compensated reasonably using pleating.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 49,
+                    "end": 58,
+                    "text": "Fig. S18b",
+                    "ref_id": null
+                }
+            ],
+            "section": "Disproportionate lengths for ePKs:"
+        },
+        {
+            "text": "So far, we have only considered the case where the relationship between the effective stem length of the root domain and the adjoining linkage stem could be placed in direct relation to each other.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.5. Orientation (insufficient compensating free strand) strain:"
+        },
+        {
+            "text": "However, the relative positioning of the linkage stem on the root domain (or domains) is also (i p1 ,j p1 ) ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.5. Orientation (insufficient compensating free strand) strain:"
+        },
+        {
+            "text": "Extended PKs require additional considerations because the structure involves two domains of effective stems. In Figure S20 , the relation between the two stem-loops is such that their lengths ( and ) are equal and their relative phase ( 1 l 2 l \u03b1 ) is zero. The first example (Fig. S20a) is the standard for that this structure is typically drawn in: 1 0 \u03b8 = and 2 \u03b8 \u03c0 = rads. The second example (Fig.   S20b ) has the angles in the loops rotated by an angle \u03c0 rad: 1 \u03b8 \u03c0 = and 2 0 \u03b8 = rads. There is more symmetry and therefore more degeneracy in the structural orientations of the domains in an ePK. Figure S21 shows what happens when we move away from this very simple example. What appears to matter more is the difference in the orientation of the angles or the phase of the angle. When secondary structure or other pseudoknot units are added to these simple schematics shown in Fig. S18 , the length of the free strand available for cutting slack in the length is reduced.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 113,
+                    "end": 123,
+                    "text": "Figure S20",
+                    "ref_id": null
+                },
+                {
+                    "start": 277,
+                    "end": 288,
+                    "text": "(Fig. S20a)",
+                    "ref_id": null
+                },
+                {
+                    "start": 397,
+                    "end": 409,
+                    "text": "(Fig.   S20b",
+                    "ref_id": null
+                },
+                {
+                    "start": 603,
+                    "end": 613,
+                    "text": "Figure S21",
+                    "ref_id": "FIGREF27"
+                },
+                {
+                    "start": 885,
+                    "end": 893,
+                    "text": "Fig. S18",
+                    "ref_id": null
+                }
+            ],
+            "section": "Disproportionate lengths for ePKs:"
+        },
+        {
+            "text": "Currently, the algorithm's heuristics assume that there is no change in these subdomains after formation. Therefore, these structures are assumed frozen in form when the length of free strand is evaluated. However, even were we to open up some of the sub-domains located in the junction and root domain regions, the algorithm can evaluate the resulting structure according to a systematic rule that is completely reversible.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Disproportionate lengths for ePKs:"
+        },
+        {
+            "text": "In general, examination of the detailed processes going on within sequential folding and the search information we examined, there is little to be gained by ripping up already formed structure to hook on an emaciated linkage stem. It is more likely that evolution has already committed a lot of the effort needed to prepare a sequence for the best folding pathway. There is the possibility that between the \"before\" and the \"after\" should be significant. Finally, if a linkage stem is really supposed to extend a domain, evolution is likely to select for configurations that make that linkage stem interface easy to find.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Disproportionate lengths for ePKs:"
+        },
+        {
+            "text": "Hence, random sequences and folding in non-biological contexts where the vector direction of the sequential folding is ignored may result in very different predictions than the current algorithm's heuristics handle, but evolution (with 3.5 billion years behind it) has surely selected sequences that avoid many of these major pitfalls.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Disproportionate lengths for ePKs:"
+        },
+        {
+            "text": "A final important category involves the arrangement of stems within the super structure: coaxial stacking, parallel stem alignments, and neighboring linkage stems (Figs. S22 and S23).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "S2.4.6.1. Coaxial stacking:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "An example of coaxial stacking is shown in Fig. S22a . Currently, vsfold5 cannot compute any gains from coaxial stacking, only a small reduction in entropy loss for some simple cases. Moreover, the coaxial stacking is only computed when it is a proximal stem within the secondary structure or proximal to a linkage stem. Future plans are to add modules using the global mapping strategy to evaluate complex architectures of coaxial stacking.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 43,
+                    "end": 52,
+                    "text": "Fig. S22a",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "S2.4.6.2. Parallel alignment of stems:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "An example of parallel alignment of stems is shown in Fig. S22b . The RNA tends to have some level of mutual attraction. Hence, there should be considerable stabilization when stems can be arranged in parallel [37] . In addition to coaxial stacking, pseudoknots appear to require far more consideration of parallel stem alignment. Pleating is another example of simple parallel stem alignment where stabilization is likely to result from the mutual self attraction of the RNA. Currently, there is scant information on these type of interactions. As a result, these contributions are currently ignored.",
+            "cite_spans": [
+                {
+                    "start": 210,
+                    "end": 214,
+                    "text": "[37]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 54,
+                    "end": 63,
+                    "text": "Fig. S22b",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "However, future plans are to develop modules to address stem arrangements.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "coaxial stacking parallel alignment a b",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "Supplement Figure S22 . Examples of coaxial stacking and parallel alignment between two stems. Coaxial means that both stems are along the same axis.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 11,
+                    "end": 21,
+                    "text": "Figure S22",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "Parallel alignment means that the stems are positioned in parallel.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.6. Coaxial stacking, parallel stem alignments and steric repulsive effects:"
+        },
+        {
+            "text": "The last group of interactions that are currently considered is the situation of tandem linkage stems (Fig. S23) . In a pseudoknot calculation, it can often happen that some large domain has a linkage stem that can, in principle, associate with another domain where a linkage stem neighbors it.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 102,
+                    "end": 112,
+                    "text": "(Fig. S23)",
+                    "ref_id": "FIGREF29"
+                }
+            ],
+            "section": "S2.4.6.3. tandem pseudoknot stems:"
+        },
+        {
+            "text": "However, RNA has physical dimensions (Fig. S23c) . Currently, we exclude these linkages if they result from independent domains if the existing linkage ( Fig. S23c: PK1 ) and the new linkage ( Fig.   S23c : PK2) in the developing ePK border at a distance less than 4 nt away. There is the possibility that there could be coaxial stacking between such domains, but currently, there is no evidence, and such matters require more data to make a definitive decision about how to model the effect properly.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 37,
+                    "end": 48,
+                    "text": "(Fig. S23c)",
+                    "ref_id": "FIGREF29"
+                },
+                {
+                    "start": 154,
+                    "end": 168,
+                    "text": "Fig. S23c: PK1",
+                    "ref_id": "FIGREF29"
+                },
+                {
+                    "start": 193,
+                    "end": 204,
+                    "text": "Fig.   S23c",
+                    "ref_id": "FIGREF29"
+                }
+            ],
+            "section": "S2.4.6.3. tandem pseudoknot stems:"
+        },
+        {
+            "text": "Other types of tandem linkages such as those shown in Figs. S23a and b are allowed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.6.3. tandem pseudoknot stems:"
+        },
+        {
+            "text": "In the case of Fig. S23a , the linkages are actually located on independent domains and may even have some coaxial stacking occurring between them. Examples of this situation are found with the tobacco mosaic virus where there are three tandem PKs (see Fig. 1e of the main text). In such a case, there is no true distinction between a linkage stem and the root domain. Hence, it would not be correct to exclude such structures.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 15,
+                    "end": 24,
+                    "text": "Fig. S23a",
+                    "ref_id": "FIGREF29"
+                },
+                {
+                    "start": 253,
+                    "end": 260,
+                    "text": "Fig. 1e",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.4.6.3. tandem pseudoknot stems:"
+        },
+        {
+            "text": "In the case of Fig. S23b , the linkages are on the same root domain and are immediately tandem to one another. Again, there is no true physical distinction, as the linkage stems and the root stem can be easily exchanged.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 15,
+                    "end": 24,
+                    "text": "Fig. S23b",
+                    "ref_id": "FIGREF29"
+                }
+            ],
+            "section": "S2.4.6.3. tandem pseudoknot stems:"
+        },
+        {
+            "text": "We expect that it is necessary to develop more sophisticated considerations, but currently, these general categories appear to be sufficient to discriminate between valid structures and invalid ones (at least for the structures so far tested). It would be desirable to develop some coaxial stacking models for special cases such as that shown in Fig. S23a . More experimental data is needed to understand these structures well before the model can be improved significantly. ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 346,
+                    "end": 355,
+                    "text": "Fig. S23a",
+                    "ref_id": "FIGREF29"
+                }
+            ],
+            "section": "S2.4.6.3. tandem pseudoknot stems:"
+        },
+        {
+            "text": "In the search for PKs, the heuristics first looks for contacts that are significant in magnitude to warrant further testing. If a potential contact is found where 2 kcal/mol dG < \u2212 , a stem melting module will try to melt part of the structure in the root domain to see if better contact can be achieved. Occasionally, this delivers a true edit. However, because the free energy of stems are of similar order of magnitude, most of the time, it appears that no gain is achieved.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.7. General folding methodology"
+        },
+        {
+            "text": "At the same time these local stem-melting methods are testing the minor rearrangements around the neck of the root domain and the linkage stem, the heuristics also continually build up a structure starting at the 5' end and moving progressively toward the 3' end searching for the best structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.7. General folding methodology"
+        },
+        {
+            "text": "While the main structure is building up, a \"leading edge\" of sequence ranging from 7 nt to 20 nt ahead of the currently built up structure (also called the dwell region) is tested on this existing structure for possible pseudoknots. This we refer to as a \"hot lead\" because the process resembles melting the leading edge strand onto the existing structure. When the folding catches up with this already tested structure, the free energy built by the secondary structure construction methods at the same region is then compared with the free energy generated by the pseudoknot test. If the pseudoknot turns out to be more stable than the structure generated by the secondary structure construction methods, then the PK is selected. This latter effect is generally far more drastic and appears to be the most effective.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.7. General folding methodology"
+        },
+        {
+            "text": "A 3D structure will also be affected by entanglement issues [8, 9] . However, vsfold5 only considers the thermodynamically most-probably folding pathway in the calculation. Entangled structures represent alternative and less favorable structures. Hence, the entanglement issues are completely circumvented. Therefore, although a genuine issue, we need not monitor these or assign any cost function for them; nor should we, unless we intentionally wish to build them. Moreover, whatever cost could be derived would have to take into account base triples and probably other tertiary structure interactions. Since there is virtually no context dependent thermodynamic data for base triples, it is difficult to make more than a qualitative estimate of the stability of such structures at the present time.",
+            "cite_spans": [
+                {
+                    "start": 60,
+                    "end": 63,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 64,
+                    "end": 66,
+                    "text": "9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.7. General folding methodology"
+        },
+        {
+            "text": "Thermodynamics and statistical mechanics are important in every physical process studied in science and engineering. Yet thermodynamics remains one of the poorest approaches to structure prediction of RNA and proteins; particularly when sequences become very long. Here, we explain some points where we observe that the predictions appear to improve within the current model. Whether these improvements are sufficient to overcome these broader issues remains to be seen.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "First, as structures grow larger, the 3D features of the structure and their interactions with other parts of the structure become very important. Stems can form coaxial stacking. Stems can also condense into complex parallel interaction arrangements. These are common features of the RNase P (Ref. [38] ) and the group I intron (Ref. [35] ) that were tested in this work. The folding of these structures into modules of tightly packed, interacting structures requires context dependent experimental parameters that are currently rare or non-existent.",
+            "cite_spans": [
+                {
+                    "start": 299,
+                    "end": 303,
+                    "text": "[38]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 335,
+                    "end": 339,
+                    "text": "[35]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "The current 3D evaluation methods in vsfold5 are of the most trivial and simple-minded of models. These models appear to be sufficient for simple pseudoknots; however, they lack enough generality to handle the far more complex structural interactions that can develop in large compactly folded RNA sequences: particularly molecules like RNase P [38] . Certainly, we should expect that the mapping information of vsfold5 can be exploited to consider these compact 3D structural interactions; particularly if this is combined with experimental data that directly measures the thermodynamics of these interactions. Presently, even for the few 3D structural motifs that vsfold5 detects in a calculation, these contributions are ignored because we don't know what objective parameters to assign to them.",
+            "cite_spans": [
+                {
+                    "start": 345,
+                    "end": 349,
+                    "text": "[38]",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "Notably, the authors in Refs. [7] and [9] have also tried to look at 3D structural issues in their models; some of it quite detailed. Considerable experimental information is needed to significantly improve and test our model as well as these other models.",
+            "cite_spans": [
+                {
+                    "start": 30,
+                    "end": 33,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 38,
+                    "end": 41,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "Second, though it was computationally expedient to use a single Kuhn length for vsfold5, the flexibility of a real RNA structure (an inverse function of the Kuhn length) is likely to vary; particularly in most long functional RNA sequences. Furthermore, the flexibility can be context dependent and different stages of the life cycle of an active RNA can lead to changes in structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "For example, this is known to occur in the life cycle of HIV-1 [39] . Likewise, nascent RNA is surely different from well annealed RNA [40] . More experimental data is needed to understand the environmental conditions that influence the Kuhn length. No clear information is currently available.",
+            "cite_spans": [
+                {
+                    "start": 63,
+                    "end": 67,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 135,
+                    "end": 139,
+                    "text": "[40]",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "Predictions would certainly be helped if the Kuhn length was adjustable to appropriate context dependent values. Even a simple adjustment at the level of a domain would help (see Refs. [41] [42] [43] for these definitions). For example, we found that we could obtain the correct structure between P9 and P9.2 in Fig. 2c (main text) by simply cutting the sequence at P6 and using a smaller Kuhn length to fit the sequence from P6 to P9.2 (Ref. [1] ). Therefore, varying the Kuhn length is an approach that shows measurable promise. This would certainly help biologists if all that is required is to cut up the domains and look at the closer details.",
+            "cite_spans": [
+                {
+                    "start": 185,
+                    "end": 189,
+                    "text": "[41]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 190,
+                    "end": 194,
+                    "text": "[42]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 195,
+                    "end": 199,
+                    "text": "[43]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 443,
+                    "end": 446,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 312,
+                    "end": 319,
+                    "text": "Fig. 2c",
+                    "ref_id": null
+                }
+            ],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "We are currently developing an automated method for selecting the Kuhn length (\u03be ). However, more information is needed about the relationship between the experimental conditions and the Kuhn length. Further study of real RNA should be expected to require some critical thinking on the part of the user.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "Third, proteins are often involved with larger structures. There is not a lot we can do about that until we have a model to understand protein-RNA interactions. Vsfold4 and 5 have aimed at understanding what the RNA does in the absence of these proteins. Therefore, prediction failure with Vsfold4 and 5 may indeed be informative because it can help us understand the contribution from protein interactions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "Finally, we cannot emphasize enough the importance of including partition function information and suboptimal structure into these calculations. In this work, we have shown that directional folding (5' to 3') may be significant in RNA folding problems. Refolding experiments reflect different experimental conditions to the natural course of folding. Nevertheless, trapped",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "intermediates are observed (and should be expected) regardless of the direction of folding. They are, at best, only amplified in refolding experiments. A partition function calculation tells us the distribution of states. We have shown that the distribution of similar structures is sorted far better using the same strategy used by vsfold4 and 5 (see Refs. [41, 42] ). That study included rRNA (1534 nt). From these studies, we saw not only that we could obtain a better selection of the right structure from the solution set; we saw that all similar structures tended to group together with that structure.",
+            "cite_spans": [
+                {
+                    "start": 358,
+                    "end": 362,
+                    "text": "[41,",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 363,
+                    "end": 366,
+                    "text": "42]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "This also means that other dominant suboptimal structures can also be detected because they tend to appear in groups. This is what we should expect of a distribution of structures in a partition function and what we indeed observed. No other approach has ever demonstrated this capability. Therefore, to study the states of a riboswitch, this approach offers some advantage in suboptimal structure detection.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        },
+        {
+            "text": "The major advantage that vsfold5 offers is that the calculation is stable. By this we mean that when the domain size exceeds a certain limit (a function of the Kuhn length), there is no further change in the predicted structure [41, 42] . This does not mean that vsfold5 picks the correct structures in that domain; rather, beyond a certain length, it does not corrupt whatever structure was predicted. In general, this means that a user who selects a poor (5' to 3') sequence fragment to study and a poor Kuhn length can still obtain some useful information from vsfold5; though the utility of the calculation is often greatly diminished. This stability is a feature that no other approach can claim. Therefore, we have managed to address part of the major issue raised in Ref. [22] . Because we have achieved stability, we can now begin to address the other major problems.",
+            "cite_spans": [
+                {
+                    "start": 228,
+                    "end": 232,
+                    "text": "[41,",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 233,
+                    "end": 236,
+                    "text": "42]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 779,
+                    "end": 783,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "S2.4.8. Future directions in structure prediction using vsfold"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "A method for finding optimal RNA secondary structures using a new entropy model (vsfold). Nucleotides, Nucleosides, and Nucl Acids",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Dawson",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Fujiwara",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Futamura",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yamamoto",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Kawai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "25",
+            "issn": "",
+            "pages": "171--189",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Detecting pseudoknots and other local base-pairing structures in RNA sequences",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Martinez",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "Methods in Enzymology",
+            "volume": "183",
+            "issn": "",
+            "pages": "306--318",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "A procedure for RNA pseudoknot prediction",
+            "authors": [
+                {
+                    "first": "J-H",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S-Y",
+                    "middle": [],
+                    "last": "Le",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Maizel",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Comp Appl In Biol Sci",
+            "volume": "8",
+            "issn": "",
+            "pages": "243--248",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "High sensitivity RNA pseudoknot prediction",
+            "authors": [
+                {
+                    "first": "X-L",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ali",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Nucl Acids Res",
+            "volume": "35",
+            "issn": "",
+            "pages": "656--663",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "HotKnots: heuristic prediction of RNA secondary structures including pseudoknots",
+            "authors": [
+                {
+                    "first": "J-H",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rastegara",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hoos",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "RNA",
+            "volume": "11",
+            "issn": "",
+            "pages": "1494--1504",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "An APL-programmed genetic algorithm for the prediction of RNA secondary structure",
+            "authors": [
+                {
+                    "first": "Fhd",
+                    "middle": [],
+                    "last": "Van Batenburg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Gultyaev",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cwa",
+                    "middle": [],
+                    "last": "Pleij",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "J Theo Biol",
+            "volume": "174",
+            "issn": "",
+            "pages": "269--280",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Predicting RNA pseudoknot folding thermodynamics",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cao",
+                    "suffix": ""
+                },
+                {
+                    "first": "S-J",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nucl Acids Res",
+            "volume": "34",
+            "issn": "",
+            "pages": "2634--2652",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Prediction and statistics of pseudoknots in RNA structures using exactly clustered stochastic simulations",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Xayaphoummine",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bucher",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Thalmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Isambert",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "100",
+            "issn": "",
+            "pages": "15310--15314",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Kinefold web server for RNA/DNA folding path and structure prediction including pseudoknots and knots",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Xayaphoummine",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bucher",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Isambert",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucl Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "605--610",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "An RNA folding method capable of identifying pseudoknots and base triples",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tabaska",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Cary",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Gabow",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Stormo",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Bioinformatics",
+            "volume": "14",
+            "issn": "",
+            "pages": "691--699",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "An RNA folding algorithm including pseudoknots based on dynamic weighted matching",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J-L",
+                    "middle": [],
+                    "last": "Shao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y-F",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Comp Biol and Chem",
+            "volume": "30",
+            "issn": "",
+            "pages": "72--76",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "An iterated loop matching approach to the prediction of RNA secondary structures with pseudoknots",
+            "authors": [
+                {
+                    "first": "J-H",
+                    "middle": [],
+                    "last": "Raun",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Stormo",
+                    "suffix": ""
+                },
+                {
+                    "first": "W-X",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Bioinformatics",
+            "volume": "20",
+            "issn": "",
+            "pages": "58--66",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Pair stochastic tree adjoining grammars for aligning and predicting pseudoknot RNA structures",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Matsui",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sakakibara",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "",
+            "pages": "2611--2617",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Tree adjoining grammars for RNA structure prediction",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Uemura",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Hasegawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kobayashi",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Yokomori",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Theor Comp Sci",
+            "volume": "210",
+            "issn": "",
+            "pages": "277--303",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "The language of RNA: a formal grammar that includes pseudoknots",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rivas",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Bioinformatics",
+            "volume": "16",
+            "issn": "",
+            "pages": "334--340",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "DP algorithms for RNA secondary structure prediction with pseudoknots",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Akutsu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Discrete Appl Math",
+            "volume": "104",
+            "issn": "",
+            "pages": "45--62",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "A heuristic approach for detecting RNA H-type pseudoknots",
+            "authors": [
+                {
+                    "first": "C-H",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C-L",
+                    "middle": [],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H-T",
+                    "middle": [],
+                    "last": "Chiu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "",
+            "pages": "3501--3508",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A dynamic programming algorithm for RNA structure prediction including pseudoknots",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rivas",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "285",
+            "issn": "",
+            "pages": "2053--2068",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Design, implementation and evaluation of a practical pseudoknot folding algorithm based on thermodynamics",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Reeder",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Giegerich",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Bioinformatics",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "The equilibrium partition function and base pair probabilities for RNA secondary structure",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mccaskill",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "Biopolymers",
+            "volume": "29",
+            "issn": "",
+            "pages": "1105--1119",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "An algorithm for computing nucleic acid base-pairing probabilities including pseudoknots",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dirks",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pierce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Comput Chem",
+            "volume": "25",
+            "issn": "",
+            "pages": "1295--1304",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Evaluation of the suitability of free-energy minimization using nearest-neighbor energy parameters for RNA secondary structure prediction",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Doshi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cannone",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Cobaugh",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Gutell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Bioinformatics",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Modular RNA architecture revealed by computational analysis of existing pseudoknots and ribosomal RNAs",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Pasquali",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Gan",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Schlick",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucl Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "1384--1398",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "How RNA folds",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Tinoco",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bustamante",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "293",
+            "issn": "",
+            "pages": "271--81",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Modeling RNA folding paths with pseudoknots: application to hepatitis delta virus ribozyme",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Isambert",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Siggia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "97",
+            "issn": "",
+            "pages": "6515--6520",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Intricate knots in proteins: function and evolution",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Virnau",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mirny",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kardar",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "PLoS Comp Biol",
+            "volume": "2",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Calculating nucleic acid secondary structure",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Curr Opin Struct Biol",
+            "volume": "10",
+            "issn": "",
+            "pages": "303--310",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Optimal computer folding of large RNA sequences using thermodynamics and auxiliary information",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Stiegler",
+                    "suffix": ""
+                }
+            ],
+            "year": 1981,
+            "venue": "Nuc Acids Res",
+            "volume": "9",
+            "issn": "",
+            "pages": "133--148",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "RNA pseudoknot prediction and energy-based models",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Lyngso",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Pedersen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "J Comp Biol",
+            "volume": "7",
+            "issn": "",
+            "pages": "409--427",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Protein folding: the endgame",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Levitt",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gerstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Subbiah",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tsai",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Annu Rev Biochem",
+            "volume": "66",
+            "issn": "",
+            "pages": "549--79",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Asymmetry in RNA pseudoknots: observation and theory",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Aalberts",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Hodos",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nuc Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "2210--2214",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "NMR structure of a classical pseudoknot: interplay of single-and double-stranded RNA",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Kolk",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Van Der Graaf",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Wijmenga",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Pleij",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Heus",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Science",
+            "volume": "280",
+            "issn": "",
+            "pages": "434--438",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "A central pseudoknotted three-way junction imposes tRNA-like mimicry and the orientation of three 5' upstream pseudoknots in the 3' terminus of tobacco mosaic virus RNA",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Felden",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Florentz",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Giege",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Westhof",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "RNA",
+            "volume": "2",
+            "issn": "",
+            "pages": "201--212",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "A magnesium ion core at the heart of a ribozyme domain",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Cate",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hanna",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doudna",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Nat Struct Biol",
+            "volume": "4",
+            "issn": "",
+            "pages": "553--561",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Structure and assembly of group I introns",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Woodson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Curr Opin Struct Biol",
+            "volume": "15",
+            "issn": "",
+            "pages": "324--330",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "The interaction networks of structured RNAs",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lescoute",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Westhof",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nucl Acids Res",
+            "volume": "34",
+            "issn": "",
+            "pages": "6587--6604",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Crystal structure of the RNA component of bacterial ribonuclease P",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Torres-Larios",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Swinger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Krasilnikov",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Pan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mondragon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nature",
+            "volume": "437",
+            "issn": "",
+            "pages": "584--587",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "The leader of the HIV-1 RNA genome forms a compactly folded tertiary structure",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Berkhout",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Van Wamel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "RNA",
+            "volume": "6",
+            "issn": "",
+            "pages": "282--295",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "First snapshots of the HIV-1 RNA structure in infected cells and in virions",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Paillart",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Dettenhofer",
+                    "suffix": ""
+                },
+                {
+                    "first": "X-F",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Ehresmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Ehresmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Marquet",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Biol Chem",
+            "volume": "279",
+            "issn": "",
+            "pages": "48397--48403",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "A physical origin for functional domain structure in nucleic acids as evidenced by cross-linking entropy: part I",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Dawson",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Suzuki",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yamamoto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "J Theo Biol",
+            "volume": "213",
+            "issn": "",
+            "pages": "359--86",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "A physical origin for functional domain structure in nucleic acids as evidenced by cross-linking entropy: part II",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Dawson",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Suzuki",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yamamoto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "J Theo Biol",
+            "volume": "213",
+            "issn": "",
+            "pages": "387--412",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Modeling the long range entropy of biopolymers: A focus on protein structure prediction and folding",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Dawson",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Kawai",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yamamoto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Characteristics of a pointer located in a stem, or when at a hairpin loop. A basic stem consists of a tail located at and a head located at . For the pointer index at , a forward pointer (green arrow) points to and a reverse pointer (brown arrow) points in the opposite direction at . (a) A basic stem and hairpin attached to the stem at . (b) The triangle diagram representing this hairpin loop with the pointer index and the forward (green arrow) and reverse",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "and a reverse link (labeled \"reverse\" in Fig. S7a). The essential secondary structure tags consist of the following: 'S' (part of a stem), 'I' (internal loop or a bulge), 'H' (hairpin loop), and 'M'(multibranch loop). Stems are further divided into main stems (tag 'S') and short stem fragments ('C', usually 2 base pairs). The reason for this minor distinction is that these short fragments rarely outside the context of a neighboring stem of longer length.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Characteristics of a pointer located at an internal loop. Here, the pointer is located at . The forward pointer (green arrow) points to and a reverse pointer (brown arrow) points in the opposite direction at the tail of the current stem . (a) A basic internal loop attached to a stem at . (b) The triangle diagram representing this internal loop with the pointer index and the forward (green arrow) and reverse pointers (brown arrow).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Characteristics of a pointer located at an multibranch loop. Here, the pointer is located at . The forward pointers (green arrows) points to (forward 1) and (forward 2) and a reverse pointer (brown arrow) points in the opposite direction at the tail of the current stem . (a) A basic multibranch loop attached to a stem at . (b) The triangle diagram representing this multibranch loop with the pointer index",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "ff_link) the reverse link and, (ss_iMBL) the array of pointers linking the pointer to the branches of the MBL. (Example Figures): The corresponding Figures used for these examples. The tags represent the following secondary structure: 'H' hairpin loop, 'I' internal loop, 'M' multibranch loop (MBL), 'S' stem and 'C' connect stem.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "the gray regions represent examples of the multitude of possible embellishing structures.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "only needed for extended pseudoknots)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "S2. List of the structure of the handles used in pseudoknot mapping: handle names, pointer contents (pk_link), tag contents (pk_name) and free energy values (fPK). The tags 'S', 'H', 'I' and 'M' were defined in",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "p is the number of pointers (7:",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF10": {
+            "text": "Fig. S12(1-8), stem loop structures are shown in increasingly complex patterns. The dominant surface where PK binding can happen is usually in the hairpins. (Vsfold5 does look everywhere for free strands, nevertheless, for the reason stated above it is often pointless.) Let s represent the average stem length and represent the average loop length. Then with the given proviso, Figs. S12(1-8) should have the following total lengths: , ,",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "In addition, the approach simply scans the free strand region on established domains or melts a hot lead onto them and re-computes the structure. These calculations are only carried out periodically; currently, the default is at the end of every third cycle of the secondary structure computation and internally within a MBL. Although linear, when combined with the above reductions, the time complexity is further reduced. Therefore, the PK-search option can result in There are significant memory demands for PK handles (Tab. S3); however, this is not a large because only a few handles are actually made in any computation.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF12": {
+            "text": "Examples of some possible hypothetical RNA structures with average stem lengths (s: brown) and loop free strand lengths (l: cyan): (1) single stem, (2) two stems plus a loop, (3) three stems, (4) four stems, (5) five stems, (6) six stems, (7) seven stems, and (8) eight stems. The magenta regions represent minor loops and free strand regions.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF13": {
+            "text": ". An example of a recursive extended pseudoknot. (a) the Rivas and Eddy style Feynman diagram [18] of a recursive structure of extended pseudoknots. (b) The corresponding secondary structure with pseudoknots. (c) The object representation of this pattern in which the assignment of an ePK takes the form of a Russian doll.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF14": {
+            "text": ", the Rivas and Eddy Feynman diagram[18] of a recursive ePK and below this inFig. S13b, the corresponding structure is shown in succession. Below this, inFig. S13c, a simple example of the folding construction is shown in which each domain (d 1 , d 2 , etc.) is made and a linkage made to the previous member in a regular progressive pattern.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF15": {
+            "text": "Examples of some ways to map complex pseudoknots as a series of cPK motifs derived from a suggested folding pathway. (a) An example of a recursive cPK with the pattern ABCBDADC . (b) An example of a group of embedded cPKs with the pattern ABCDCDAB . The arrow suggests a dominant folding pathway that the structures could form in a sequential folding (5' to 3')",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF16": {
+            "text": "Finally, the PK structure does require that hierarchical folding occurs with RNA. Since the base pairing free energies (FE) are of similar order of magnitude for AU, GC, and GU pairing, this is probably true. However, we cannot say for certain at this point that a pathologically variable free energy surface of extreme difference in FE is universally solvable by any method other than an exhaustive search, particularly if the configurations are also arbitrarily unrestricted. Nevertheless, if such a surface can be found, all the current strategies would suffer the same defeat.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF17": {
+            "text": "Rivas and Eddy type Feynman diagrams of RNA structure and the corresponding structure represented in secondary structure style. (a) A core pseudoknot. (b) An extended pseudoknot. (c) a consecutive set of core pseudoknots embedded in a piece of secondary structure. (d) A recursive pseudoknot that folds back on itself.(e) A complex interplay of an extended PK and a core PK. Vsfold5 cannot currently examine its own pseudoknots. Therefore, in example (d), the loop around cannot be computed, and, in example (e), either stem B or stem C can be obtained, but not both.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF19": {
+            "text": "Tetrahymena thermophila example at the junction J5/4), then the effective length becomes the length of the P4 stem minus the length of the P5 and P5abc stems or . In principle,",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF20": {
+            "text": "q l ) Supplement Figure S18. A schematic of the strands that comprise the basic pseudoknots. (a) A core pseudoknot. The brown indicates the region shared by the root stem loop and the linkage stem loop. Blue indicates p l (the root stem), green&brown p s , orange J s and red J l (the linkage). (b) An extended pseudoknot. The brown indicates the region shared by the root stem loops and the linkage stem loop. Blue indicates (root stem 1)(or 2 s ), orange J s and red J l (the linkage).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF21": {
+            "text": "b \u03be is the Kuhn length (units nt). Because the stem is a rigid rod, it tends to be relatively straight, and therefore, the final length after folding ( the effective length of the stem (possibly shorter than the apparent stem due to the pleating effect; Section S2.4.3), the factor of 0.5 estimates the relative contour length of the stem if the entropic free energy contribution from stretching J s is too large.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF22": {
+            "text": "is applied both ways: exchanging root and linkage stems. In addition, the weight parameter does not assume a Gaussian model ( 1 \u03b3 = ) and adjusts to match \u03b3 to the value used in all (see Ref.[1]) because there is no information about level of correlation between the stems in the structure. This latter point too can be easily remedied to handle a variable \u03b4 and Flory parameters.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF23": {
+            "text": ") in accounting for the FE. The difference in the length of the parameter in Eqn (S5) Eqn (S5) as before.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF24": {
+            "text": "An example of the concept of orientation strain for a core PK. Here, different angles \u03b8 are expressed using a graphical representation, a simple angle diagram and finally a stick diagram of the estimated lengths. (a) For 0 \u03b8 = rads, the angle and length scale is the smallest. length scale is has increased by half of the linkage stem ( J l ). angle is the largest and equal to the sum of the lengths J l and (the root stem). S19 shows three angle relationships for the linkage stem of a core PK. When the linkage stem is angled at \u03c0/2 rads on the loop, some additional length approaching 1/2 the linkage stem (",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF25": {
+            "text": ". A model for the phase angle for the ePK where and are equal but have opposite phase angles. (a, left) An example of the . (a, right) A simplified representation of this diagram. (b, left) The same example with the phase rotated by \u03c0 radians: rads. (b, right) A simplified representation of this diagram. The colors correspond to those shown in Figs. S18 and S19: (cyan) domain 1, (purple) domain 2, (orange) junction region and (red) linkage stem.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF26": {
+            "text": "S20a is the same in terms of angles with Fig. S21a. However, the phase angle on Fig. S21b is certainly \u03c0/2 rad and Fig. S21c \u03c0 rad. More free strand is needed to accommodate this increased length in the stem. The relationship for and suggests the following p1 ,j p1 )",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF27": {
+            "text": "Examples of orientation strain in various ePKconfigurations. Here, the orientation strain follows the same pattern as the cPKs but is more pronounced because of the added length of the second root domain. On the left hand side, a graphical representation of the different angles1 \u03b8 and 2 \u03b8 . n the middle is a stick representation of the distances. On the right hand side is the same cartoon with a stick and angle representation. of this cost is carried out for both domains to account for the different orientations, thus there is no differentiation between different structural configurations and the results are always independent of the order of combination. The formation only depends on whether the thermodynamics find a favorable free energy for the given structure.These effects are partly ameliorated by using effective stem lengths for and . In general, when the complex domains interact, their relationships are essential because the larger part of the structure is compact and cannot drastically change shape.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF28": {
+            "text": "intermediate protective structure may have been selected by evolution. However, even when we do see some indications of a stable intermediate stem in the location of a linkage point, there is still some surface where a \"hot-lead\" at the 3' end can fuse onto the root domain structure. The gain",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF29": {
+            "text": "Examples of different types of tandem linkage stems. (a) The linkage stems are right next to each other, but on independent domains. (b) The tandem linkages that are along the same axis and form a single pseudoknot, but are wrapped by the folding order. (c) The tandem linkages are formed by joining two independent domains and forming a extended PK. Examples (a) and (b) are allowed, (c) is not.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "reverse to the nearest secondary structure that connects it, or to itself if there is no secondary",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Any information within the boundaries can be discerned from these mapping pointers. Likewise, when we want to discover information about other parts of the structure { or",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "the reverse pointers help find this information about the rest of the domain and, when combined with the forward maps, can discern information about every part of the existing structure.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "for small bulges and internal loops in the linkage caused by non-WC pairing and mismatches.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "number of stems in the structure. Of course, there are worst possible cases that could increase the content of , but we think these examples are quite reasonable. This very roughly corresponds to Furthermore, the mapping manages all forms of PKs with this growth because it scans for the linkage stem and then can quickly determine what type of structures are being linked. Hence, the solutions are not limited to H-type pseudoknots either.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "SupplementTable S3. A comparison of the computational time required for S2.3.2. Structural complexity of pseudoknots of vsfold5 To this point, only the general mapping methods have been described. Here we consider some examples of how these simple motifs can be used to build some of the complex structures important to state of the art approaches.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": []
+}

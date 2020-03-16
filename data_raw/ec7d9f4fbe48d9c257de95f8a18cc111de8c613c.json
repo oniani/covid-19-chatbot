@@ -1,0 +1,3727 @@
+{
+    "paper_id": "ec7d9f4fbe48d9c257de95f8a18cc111de8c613c",
+    "metadata": {
+        "title": "General Prediction of Peptide-MHC Binding Modes Using Incremental Docking: A Proof of Concept",
+        "authors": [
+            {
+                "first": "Dinler",
+                "middle": [
+                    "A"
+                ],
+                "last": "Antunes",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Rice University",
+                    "location": {
+                        "postCode": "77005",
+                        "settlement": "Houston",
+                        "region": "TX",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Didier",
+                "middle": [],
+                "last": "Devaurs",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Rice University",
+                    "location": {
+                        "postCode": "77005",
+                        "settlement": "Houston",
+                        "region": "TX",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Mark",
+                "middle": [],
+                "last": "Moll",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Rice University",
+                    "location": {
+                        "postCode": "77005",
+                        "settlement": "Houston",
+                        "region": "TX",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Gregory",
+                "middle": [],
+                "last": "Liz\u00e9e",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "The University of Texas MD Anderson Cancer Center",
+                    "location": {
+                        "postCode": "77054",
+                        "settlement": "Houston",
+                        "region": "TX",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Lydia",
+                "middle": [
+                    "E"
+                ],
+                "last": "Kavraki",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Rice University",
+                    "location": {
+                        "postCode": "77005",
+                        "settlement": "Houston",
+                        "region": "TX",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "The class I major histocompatibility complex (MHC) is capable of binding peptides derived from intracellular proteins and displaying them at the cell surface. The recognition of these peptide-MHC (pMHC) complexes by T-cells is the cornerstone of cellular immunity, enabling the elimination of infected or tumoral cells. T-cell-based immunotherapies against cancer, which leverage this mechanism, can greatly benefit from structural analyses of pMHC complexes. Several attempts have been made to use molecular docking for such analyses, but pMHC structure remains too challenging for even state-of-the-art docking tools. To overcome these limitations, we describe the use of an incremental meta-docking approach for structural prediction of pMHC complexes. Previous methods applied in this context used specific constraints to reduce the complexity of this prediction problem, at the expense of generality. Our strategy makes no assumption and can potentially be used to predict binding modes for any pMHC complex. Our method has been tested in a re-docking experiment, reproducing the binding modes of 25 pMHC complexes whose crystal structures are available. This study is a proof of concept that incremental docking strategies can lead to general geometry prediction of pMHC complexes, with potential applications for immunotherapy against cancer or infectious diseases.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Given the importance of pMHC structural information in driving the cellular immune response, and the limitations of experimental methods for structural analyses of proteins, the structural prediction of pMHC complexes has been a desired goal in bioinformatics for over a decade [12] [13] [14] [15] [16] [17] . Computational methods such as molecular docking are the most promising tools for this task, given their efficiency and broad use for virtual screening of drug-like ligands [18] [19] [20] . Molecular docking allows for the computational prediction of the three-dimensional structure of protein-ligand complexes (i.e., their binding mode) 21 . Since ligands are flexible molecules that adopt alternative conformations (i.e., different \"shapes\"), docking tools must consider a ligand's rotatable bonds (i.e., its internal degrees of freedom, or DoFs), in addition to its position and orientation.",
+            "cite_spans": [
+                {
+                    "start": 278,
+                    "end": 282,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 283,
+                    "end": 287,
+                    "text": "[13]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 288,
+                    "end": 292,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 293,
+                    "end": 297,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 298,
+                    "end": 302,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 303,
+                    "end": 307,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 482,
+                    "end": 486,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 487,
+                    "end": 491,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 492,
+                    "end": 496,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "The high-dimensionality of the docking problem prevents an exhaustive exploration of all the DoFs of a ligand at once. Therefore, docking methods implement various heuristics to efficiently explore the ligand's conformational space and quickly find a low-energy docked conformation of the ligand. For that, binding mode prediction is guided by approximated binding energy calculations (through what is called a scoring function) 21 . Ideally, a docking tool should also be general, in the sense that the accuracy of the predictions should not be impacted by the type of protein receptor or the class of ligands. However, docking methods are known to be much less reliable when applied to larger ligands (e.g., ligands with more than 10 internal DoFs) 22, 23 . For instance, peptides are known to be very flexible ligands 24 ; binding mode prediction of even small peptides, composed of up to 5 amino acids (which means around 24 internal DoFs), can be particularly challenging for available docking methods 25, 26 . This limitation makes the structural prediction of pMHC complexes an impossible task for most docking tools, since a typical MHC-binder is a peptide composed of 8 to 11 amino acids (which translates to more than 30 internal DoFs).",
+            "cite_spans": [
+                {
+                    "start": 751,
+                    "end": 754,
+                    "text": "22,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1007,
+                    "end": 1010,
+                    "text": "25,",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "It is worth noting that molecular docking can be used with two distinct objectives: (i) structure-based binding affinity estimation, or (ii) geometry prediction (also referred to as geometry optimization) 14, 27 . For instance, recent publications use molecular docking or other structural analyses as part of broader strategies to identify and select MHC-binders (which is known as epitope prediction) 28, 29 or to estimate MHC binding affinity [30] [31] [32] . Although they also involve some level of structural prediction, these applications are focused on affinity estimations or approximated ranking of peptides, and are not primarily concerned with providing an accurate 3D model of the pMHC complex. Having a tool for accurate geometry prediction of pMHC complexes would improve the and the exposed surface of the bound peptide (pink). (D) Combined surface of the pMHC complex, depicting the electrostatic potential distribution over the surface (red, negative regions; blue, positive regions); it is referred to as the \"TCR-interacting surface\" of the pMHC complex. For reference, the MHC amino acid residue number 65 (arginine, R65) is labeled in all views. results of structure-based binding affinity predictions, and would enable a number of biomedically-relevant analyses that are not currently available (e.g., pMHC complex stability assessment, structure-based cross-reactivity prediction, etc).",
+            "cite_spans": [
+                {
+                    "start": 205,
+                    "end": 208,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 403,
+                    "end": 406,
+                    "text": "28,",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 446,
+                    "end": 450,
+                    "text": "[30]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 451,
+                    "end": 455,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 456,
+                    "end": 460,
+                    "text": "[32]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "As reviewed in previous publications 14, 17 , early attempts at predicting the geometry of pMHC structures usually divided the problem into smaller tasks, as a way to circumvent the limitations of docking tools. For instance, some methods focus on docking the two terminal residues of the peptide, resolving the central portion later 13, 14 . Others first approximate the backbone conformation, and then predict the side chains of the peptide 12, [33] [34] [35] . To make these divisions and approximations, these methods require ad-hoc constraints and are usually tailored towards specific MHC allotypes. There also exist methods relying on steps of molecular dynamics (MD) 36, 37 . MD can be useful to explore near native conformations of side-chains, but its higher computational cost makes it a less attractive solution for efficient exploration of the entire peptide conformational space 38 . An attempt at a more efficient and yet general solution made use of grid potentials and a biased-probability Monte Carlo method 14 , implemented in the Internal Coordinate Mechanics (ICM) docking tool 39 . This method uses an MHC-specific scoring function trained on available crystal structures via statistical learning. Despite promising results on a small number of known pMHC complexes, the choice of a more specific scoring function and the assumptions on the location of the peptide's terminal amino acid residues raise questions about the generality of the method towards less prevalent MHC allotypes.",
+            "cite_spans": [
+                {
+                    "start": 37,
+                    "end": 40,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 334,
+                    "end": 337,
+                    "text": "13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 443,
+                    "end": 446,
+                    "text": "12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 447,
+                    "end": 451,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 452,
+                    "end": 456,
+                    "text": "[34]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 457,
+                    "end": 461,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 675,
+                    "end": 678,
+                    "text": "36,",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "The combination of ICM docking and biased Monte Carlo optimization was also later implemented in pDOCK 16 , and validated on a larger dataset 16 . However, this validation focused on describing the average error of the peptide backbone only, without a broader discussion on the accuracy of side chain predictions. The latest published tool for pMHC structural prediction is DockTope 17 , which uses a protocol based on molecular docking and energy minimization 35 . DockTope was validated on a large dataset of pMHC structures and was the first docking-based method for pMHC prediction to be made available as a webserver. However, it currently provides predictions for only 4 MHC allotypes because it approximates the backbone conformation using allotype-specific patterns from available crystal structures.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "An approach similar to that of DockTope was described using the Rosetta FlexPepDock refinement protocol 40 . The authors used available crystal structures of pMHCs as template for peptide backbone conformations, manually positioning the side chains of anchor residues in the expected locations within the binding site. This is justified by the fact that some peptide amino acid residues are known to stabilize the binding by interacting with deeper pockets in the MHC cleft 41 . Then, they conducted a backbone optimization step, followed by side chain prediction. Interestingly, good results were obtained for 5 selected allotypes, even when the template was from a different allotype. However, all reported examples involved complexes that had similar backbone conformations. In addition, the use of backbone templates and assumptions on the position of anchor residues represent important limitations of this method, since they might differ across different groups of MHC allotypes 35, 42 . Even for a given MHC allotype, the peptide backbone changes significantly depending on its length. There is also evidence of peptides presenting alternative anchors 42, 43 or unusual binding modes 44 . The FlexPepDock refinement protocol was only applied to 9-mer peptides and a limited number of MHC allotypes. Therefore, it is not yet clear how general this method can be, with respect to these limitations.",
+            "cite_spans": [
+                {
+                    "start": 985,
+                    "end": 988,
+                    "text": "35,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 1159,
+                    "end": 1162,
+                    "text": "42,",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "Note that most of the aforementioned methods aimed specifically at pMHC predictions. Increasing computational power and growing biomedical interest in peptide ligands and peptide-based inhibitors 45, 46 have fueled the development of new tools for protein-peptide docking in general 47, 48 . Some of these tools have been applied to pMHC complexes 49, 50 , or validated on datasets including pMHC complexes [51] [52] [53] . However, available results are insufficient to make claims on the accuracy and generality of these methods for pMHC structural prediction. For instance, many of these tools were tested using PeptiDB 54 , a dataset of protein-peptide complexes, which, although diverse, includes only one class I MHC-restricted complex. Finally, there are promising tools for de novo prediction of protein-peptide complexes 47 , such as Rosetta FlexPepDock ab-initio 55 , and HADDOCK peptide docking 56 , which could be applied to pMHC modeling. However, no evaluation of these tools on pMHC complexes has yet been published.",
+            "cite_spans": [
+                {
+                    "start": 196,
+                    "end": 199,
+                    "text": "45,",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 283,
+                    "end": 286,
+                    "text": "47,",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 348,
+                    "end": 351,
+                    "text": "49,",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 407,
+                    "end": 411,
+                    "text": "[51]",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 412,
+                    "end": 416,
+                    "text": "[52]",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 417,
+                    "end": 421,
+                    "text": "[53]",
+                    "ref_id": "BIBREF54"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "To sum up, to the best of our knowledge, there is yet no general tool for the reliable geometry prediction of pMHC complexes, considering different peptide lengths and MHC allotypes. With the aim of developing a general tool for de novo pMHC geometry prediction, in this paper we describe a proof of concept study using an incremental meta-docking approach referred to as DINC (Docking INCrementally) 23 . DINC was previously developed by our group to predict the binding modes of peptidomimetic inhibitors 57 , based on a divide and conquer approach. In contrast to the methods described above, DINC makes no assumption on the location of particular amino acid residues or the shape of the peptide backbone. To evaluate DINC's applicability and generality in the context of prevalent human MHC allotypes, we performed a re-docking experiment on a diverse dataset of 25 pMHC complexes with available crystal structures. DINC was able to reproduce the binding modes of these complexes with an average error of 1.92 \u00c5. Our results also show the ability of this incremental method to reproduce non-standard binding modes. Finally, we discuss the benefits of having a general tool for pMHC geometry prediction in the growing field of cancer immunotherapy.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "Dataset selection. A total of 25 crystal structures of pMHC complexes restricted to human MHC allotypes were selected from the Protein Data Bank (PDB), as listed in the Supplementary Table S1. In humans, MHC receptors are also referred to as Human Leukocyte Antigens (HLAs) 1 . When defining our dataset we prioritized (i) the diversity of peptide sequence and length, (ii) the high prevalence of the HLA allotype in the human population and (iii) the high resolution of the crystal structure. In addition, to analyze an example of T-cell cross-reactivity 10 , we included the recently-determined complexes MAGEA3/HLA-A*01:01 (PDB code 5BRZ) and Titin/ HLA-A*01:01 (5BSO). The HLA-B allotypes HLA-B*57:01 and HLA-B*57:03 were also included in our dataset, given their great interest for biomedical purposes (e.g., their role in natural immunity against HIV and HCV) 58, 59 and their different binding modes (as compared to the more prevalent HLA-A*02:01). Finally, an HLA-C complex was included to highlight the generality of the method across the three types of class I HLA.",
+            "cite_spans": [
+                {
+                    "start": 866,
+                    "end": 869,
+                    "text": "58,",
+                    "ref_id": "BIBREF59"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "Re-docking experiment. This dataset was used for a re-docking experiment, in which we tried to reproduce the binding modes observed in the crystal structures. As a first pre-processing step, all crystal structures were visually inspected and revised as needed 20 . For instance, water molecules were removed since they are not accounted for in our docking method. Also, in cases of duplicated side chains (i.e., conformational heterogeneity), the subset with lower occupancy was removed. Finally, in cases of multiple molecules per asymmetric unit only the first subset was kept (e.g., chains A, B and C). Revised structures were then submitted to a three steps energy minimization with GROMACS v4.6.5 60 , using the steepest-descent and conjugate gradient methods. The GROMOS96 (53a6) force field was used with the SPC water model; a cutoff value of 1.2 nm was used for both van der Waals and Coulomb interactions, with Fast Particle-Mesh Ewald electrostatics (PME). After this procedure, water molecules were removed from the output files and the coordinates of the minimized complexes were saved into PDB format files. These minimized crystal structures will be hereafter referred to as \"reference structures\": they are the structures we aim to reproduce in this re-docking experiment. For that, the ligand and receptor in each complex are saved into independent PDB format files, and a docking software is used to reconstruct the original complex. The relevance of re-docking experiments lies in that the conformation and position of an input ligand are systematically randomized by the docking software.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "In a re-docking experiment the accuracy of the results is evaluated by assessing the goodness-of-fit between the predicted complexes and the reference structure, usually in terms of Root Mean Square Deviation (RMSD). When computing the RMSD for all atoms of a peptide, between a predicted complex and its reference structure, the two pMHC complexes are first aligned based on the MHC structure. Therefore, the all-atom RMSD captures not only differences in conformation between the two binding modes, but also differences in position of the peptide inside the MHC cleft. While the all-atom RMSD captures changes in both the main chain and the side chains of the peptide, the C\u03b1 RMSD (i.e., RMSD for alpha carbons only) captures only changes in the main chain. Another goodness-of-fit measure is the Least Root Mean Square Deviation (LRMSD), computed after aligning the two peptide structures (as opposed to aligning the two MHC structures), either for all atoms or alpha carbons only. The LRMSD is a more precise evaluation of differences between two conformations of a peptide, irrespective of its position in the MHC cleft. DINC algorithm. DINC is a parallelized meta-docking method for incremental docking of large ligands, described in detail in previous publications 23, 61 . Briefly, instead of docking the entire peptide at once, DINC starts by docking only a small fragment of the peptide (Fig. 2) . The best conformation for this \"initial fragment\" is selected using a scoring function, and expanded through the addition of another subset of atoms from the original peptide. This new expanded fragment is then docked, and this process is incrementally repeated until the entire peptide is reconstructed and docked. Note that the word \"fragment\" is used here with a different meaning than that of fragment-based drug discovery (FBDD). FBDD uses libraries of fragments, which are very small molecules with no more than two functional groups 62 , to create new drugs or drug-like ligands. DINC was inspired by these methods, but does not use any library of small molecules, and does not dock independent fragments that are later connected. In the context of DINC, the fragments are overlapping sections of the input ligand, docked sequentially to grow the ligand incrementally 61 .",
+            "cite_spans": [
+                {
+                    "start": 1272,
+                    "end": 1275,
+                    "text": "23,",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1397,
+                    "end": 1405,
+                    "text": "(Fig. 2)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "DINC currently uses the standard docking software AutoDock 4 20,63 ; a free online version of DINC is available as a webserver (http://dinc.kavrakilab.org/) 61 . While DINC manages the fragment selection and expansion, as well as the parallelization of the search, AutoDock 4 performs the sampling and scoring of individual fragments. More specifically, AutoDock 4 uses a Lamarckian genetic algorithm 63 . Genetic algorithms are a type of evolutionary technique that is commonly used for the stochastic sampling of ligand conformations in molecular docking 64 . For scoring, AutoDock 4 uses a semi-empirical free energy force field, including terms for dispersion/repulsion, hydrogen bonding, electrostatics and desolvation 20, 63 . In this paper we used a custom version of DINC, to explore different parameters (e.g., number of DoFs at each round) and heuristics (e.g., fragment expansion method).",
+            "cite_spans": [
+                {
+                    "start": 724,
+                    "end": 727,
+                    "text": "20,",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "Experimental setup. DINC is a customizable approach, allowing for the use of different combinations of parameters and heuristics. In this context, one set of parameters chosen for a particular job (i.e., one execution of DINC) is referred to as a DINC protocol. From previous experience, we define a default protocol for DINC (Fig. 3) . This protocol represents a reasonable selection of parameter values for a standard job, but it is not expected to provide the best results in all situations. Therefore, in our re-docking experiment, four alternative protocols were defined, exploring other combinations of parameter values. The specific parameter values in these five protocols (including the default protocol) are presented in Supplementary Table S2 . It is important to highlight that we do not exhaustively evaluate all possible protocols. For example, DINC protocols also comprise the specific parameters of the underlying docking software, in this case AutoDock 4 (Fig. 3) . In our experiment, The five protocols are used in the following way: First, a total of 20 DINC jobs is executed for each of the 25 complexes in the dataset (Supplementary Table S1 ), using the default protocol (Fig. 3) . The output conformation with the lowest binding energy for each complex is compared to the corresponding reference structure. If the all-atom RMSD between them is lower than 2 \u00c5, this is considered a good reproduction of this complex. If not, a new batch of 20 DINC jobs is executed using the next alternative protocol. This process is repeated until a good reproduction is obtained, or the five protocols have been used (which corresponds to 100 jobs).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 326,
+                    "end": 334,
+                    "text": "(Fig. 3)",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 731,
+                    "end": 753,
+                    "text": "Supplementary Table S2",
+                    "ref_id": null
+                },
+                {
+                    "start": 972,
+                    "end": 980,
+                    "text": "(Fig. 3)",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1139,
+                    "end": 1162,
+                    "text": "(Supplementary Table S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1193,
+                    "end": 1201,
+                    "text": "(Fig. 3)",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "Finally, it is important to remember that the docking search is not biased by the reference structure. Additionally, each new DINC job is completely independent from all previous jobs. All 20 jobs of a given batch are executed in parallel. Our cluster contains 80 dual processor HP SL230s computing nodes, each one equipped with two Intel E5-2650v2 Ivy Bridge EP processors (for a total of 16 cores per node). The typical running time for a DINC job on our cluster is 30 minutes (for a CPU time of about 8 hours).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "images of the peptides were obtained with the UCSF Chimera 65 and UCSF ChimeraX packages. These packages are developed by the Resource for Biocomputing, Visualization, and Informatics at the University of California, San Francisco (supported by NIGMS P41-GM103311). Molecular surfaces of pMHC complexes were computed with GRASP2 66 , which was also used to obtain top view images of these complexes. Electrostatic potentials were computed with Delphi for a range of \u22125 kT/e (red) to +5 kT/e (blue), using the GRASP2 interface. Data availability. The datasets generated and analyzed during the current study are available from the corresponding author on reasonable request.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Visualization. Cartoon representations of the MHCs, cross-section views of the binding clefts, and side view"
+        },
+        {
+            "text": "Re-docking of a diverse dataset of pMHC complexes. We performed a re-docking experiment with a diverse dataset of pMHC complexes (Supplementary Table S1 ). Our dataset includes 10 of the most prevalent human MHC allotypes, bound to peptides with different lengths (8 to 10 amino acids) and a varying number of DoFs (29 to 41). The goodness-of-fit between predicted binding modes and the corresponding reference structures (i.e., the minimized crystal structures) is estimated in terms of RMSD. A \"near native\" reproduction of an experimentally-observed binding mode usually corresponds to an all-atom RMSD lower than 2.0-2.5 \u00c5 17,47 . The results of our re-docking experiment show good reproductions of the 25 pMHC complexes (Fig. 4) , with an average all-atom RMSD of only 1.92 \u00c5 (\u00b10.41 \u00c5). The all-atom RMSD is less than 2.2 \u00c5 in 68% of the cases, and less than 2.5 \u00c5 in 98%; the highest all-atom RMSD is 2.61 \u00c5. Note that most previous work in the field was reported using backbone (or C\u03b1) RMSD only 13, 14, 16, 36, 50 . This means capturing the overall \"shape\" of reproduced peptides, but not necessarily the precise position of their side-chains. On the other hand, related work reporting all-atom RMSD was usually performed in less diverse datasets (e.g., only selected MHC allotypes or peptide lengths) 17, 34, 37, 40 . We report both C\u03b1 RMSD and all-atom RMSD for our re-docking experiment, which was conducted on a structurally diverse dataset of pMHC complexes (Supplementary Table S1 ).",
+            "cite_spans": [
+                {
+                    "start": 1003,
+                    "end": 1006,
+                    "text": "13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1007,
+                    "end": 1010,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1011,
+                    "end": 1014,
+                    "text": "16,",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1015,
+                    "end": 1018,
+                    "text": "36,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 1310,
+                    "end": 1313,
+                    "text": "17,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1314,
+                    "end": 1317,
+                    "text": "34,",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 1318,
+                    "end": 1321,
+                    "text": "37,",
+                    "ref_id": "BIBREF37"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 129,
+                    "end": 152,
+                    "text": "(Supplementary Table S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 725,
+                    "end": 733,
+                    "text": "(Fig. 4)",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1486,
+                    "end": 1494,
+                    "text": "Table S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "As seen from Fig. 4 , we do not observe any correlation between the all-atom RMSD and the number of DoFs (R = 0.39). For instance, the result for complex 4NT6 (9-mer, 31 DoFs) is worse than for complex 3VXS (10-mer, 38 DoFs). When considering all the variables listed in Supplementary Table S1, the strongest correlation (R = 0.5) is observed between peptide length and C\u03b1 LRMSD. By computing the C\u03b1 LRMSD we capture the accuracy of the backbone prediction. This is very meaningful information because a small error in the backbone has a bigger impact on the binding mode than a similar error in a side chain.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 13,
+                    "end": 19,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "DINC makes no initial assumption on the backbone conformation, and has no constraint related to templates or expert-knowledge on the expected conformation (Fig. 2) . In spite of that, our average C\u03b1 LRMSD is only 0.99 \u00c5 (\u00b10.36 \u00c5). As further discussed in the next section, a good reproduction of the backbone is obtained even when considering peptides with different lengths, or \"non-standard\" binding modes. Besides, similar levels of accuracy are obtained for very different MHC allotypes, highlighting the potential of DINC as a general method for pMHC structural prediction.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 155,
+                    "end": 163,
+                    "text": "(Fig. 2)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "Accurate prediction of diverse binding modes. The allotype HLA-A*02:01 is one of the most extensively studied HLA variants 17, 41 . It is the second most prevalent allotype in humans 67, 68 and arguably the HLA variant for which the most detailed and comprehensive data is available: more than 42,000 binding assays deposited in the Immune Epitope Database 69 . As reported in previous studies, HLA-A*02:01 binds mostly 9-mers, but also larger peptides. It was also reported that the HLA-A*02:01 binding cleft is fairly constrained, with little conformational variation across available crystal structures. It also presents a clear pattern of preferred anchor residues 41 at both peptide termini: usually positions 2 (p2) and 9 (p9) of the 9-mer ligands (Fig. 5) . Comparing available crystal structures, a shared conformational pattern was observed for the backbone of 9-mer peptides bound to HLA-A*02:01 35 . For example, this typical backbone pattern is observed in the crystal structure 3MRG, involving a virus-derived peptide (Fig. 5A) . Some cancer-related peptides, however, are known to present unusual binding modes 17 . For instance, in the modified melanoma-associated antigen MART1-A27L the amino-terminal anchor to the HLA-A*02:01 binding cleft is p1 instead of p2. This alternative anchoring pattern creates a sideways deviation of the backbone in the middle of the peptide 17 , resulting in an unusual binding mode (Fig. 5B, 2GTW ). In addition, larger peptides are known to present bulging conformations of the backbone, to accommodate a longer chain using the same anchoring pockets (Fig. 5A, 1I4F) . DINC was able to reproduce each one of these 3 alternative backbone conformations, with sub-angstrom accuracy (Fig. 6) .",
+            "cite_spans": [
+                {
+                    "start": 123,
+                    "end": 126,
+                    "text": "17,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 183,
+                    "end": 186,
+                    "text": "67,",
+                    "ref_id": "BIBREF68"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 754,
+                    "end": 762,
+                    "text": "(Fig. 5)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1031,
+                    "end": 1040,
+                    "text": "(Fig. 5A)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1430,
+                    "end": 1444,
+                    "text": "(Fig. 5B, 2GTW",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1600,
+                    "end": 1615,
+                    "text": "(Fig. 5A, 1I4F)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1728,
+                    "end": 1736,
+                    "text": "(Fig. 6)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "The most prevalent HLA allotype is HLA-A*24:02 67, 68 , which is known to bind 8-mers, 9-mers and 10-mers. As expected, the conformation of 8-mers is more linear, with almost no bulged region between the two peptide termini (Fig. 5C, 4F7T) . Currently, there are only two crystal structures of 9-mers bound to HLA-A*24:02, and they present different binding modes (Fig. 5C) . According to the researchers who described these structures, the virus-derived peptide resolved in 3I6L shows an unusual binding mode, with a much more exposed p4 as compared to a regular self-derived peptide (2BCK). Further analysis of other crystal structures shows that the backbone conformation seen in 3I6L is very similar to that of 10-mer peptides bound to the same HLA (data not shown). In our re-docking experiment, DINC was able to reproduce all these binding modes (Fig. 6) , as well as other 10-mers bound to HLA-A*24:02 (Supplementary Table S1 ). In the case of 3I6L, the authors claim that the observed binding mode is stabilized by an internal hydrogen bond established by p3, whose side chain is pointing towards the center of the binding cleft. The binding mode predicted by DINC for this complex does not feature this specific hydrogen bond (as determined by UCSF Chimera), but a similar orientation of p3 is observed (Fig. 6F) .",
+            "cite_spans": [
+                {
+                    "start": 47,
+                    "end": 50,
+                    "text": "67,",
+                    "ref_id": "BIBREF68"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 224,
+                    "end": 239,
+                    "text": "(Fig. 5C, 4F7T)",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 364,
+                    "end": 373,
+                    "text": "(Fig. 5C)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 852,
+                    "end": 860,
+                    "text": "(Fig. 6)",
+                    "ref_id": null
+                },
+                {
+                    "start": 909,
+                    "end": 932,
+                    "text": "(Supplementary Table S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1312,
+                    "end": 1321,
+                    "text": "(Fig. 6F)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "The peptide's binding mode is greatly influenced by the shape and properties of the HLA cleft; a given peptide might bind differently to different HLA allotypes (e.g., using different anchor residues or having different side chains exposed for TCR interaction) 35, 70 . These structural differences are key for recognition by T-cells, and contribute to the diversity of cellular responses observed among individuals with different subsets of HLAs 1 . Although our dataset includes peptides bound to four different HLA-A allotypes, five HLA-B allotypes and one HLA-C allotype (Supplementary  Table S1 ), we can reproduce the conformational differences imposed by these different binding clefts (Fig. 6) .",
+            "cite_spans": [
+                {
+                    "start": 261,
+                    "end": 264,
+                    "text": "35,",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 575,
+                    "end": 599,
+                    "text": "(Supplementary  Table S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 693,
+                    "end": 701,
+                    "text": "(Fig. 6)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "The results in this paper show that it is possible to develop a general pMHC geometry prediction method. In addition to the good reproduction of peptides' backbone, the average all-atoms LRMSD of 1.73 \u00c5 (\u00b10.33 \u00c5) demonstrates high accuracy reproduction of peptides' side chains (Supplementary Table S1 ). Therefore, not only the buried side chains (i.e., those facing the MHC cleft) were correctly predicted, but the overall geometry of the ligand was closely reproduced (including side-chains of the bulging portion of the peptide, which are more exposed for TCR interaction). Obtaining a good approximation of the pMHC complex geometry is essential for the use of predicted models as input for other structure-based analyses.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 278,
+                    "end": 301,
+                    "text": "(Supplementary Table S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "Significance for T-cell-based immunotherapy. Thanks to the rapid technical developments of the last decade and our growing understanding of the mechanisms involved in cellular immunity, T-cell-based immunotherapy has emerged as one of the most promising approaches for cancer treatment 7,71,72 . Significant anti-tumor activity has been reported in a number of clinical trials, involving different cancer types 73 . Two melanoma-associated antigens, MAGEA3 and MART1, stand out among the leading tumor-derived peptides targeted by these immunotherapies (Supplementary Table S1 ). Figure 6 . Reproduction of very different binding modes. In blue, side view of nine different peptides bound to five different human MHC allotypes, as observed in the corresponding reference structures (identified by their respective PDB codes). In pink, side view of the best binding modes obtained by DINC when performing a redocking experiment with each complex. The MHC structure is not depicted, but the HLA allotype is indicated for each complex. Note that alternative peptide residues can be involved as primary anchors (p1/p2, p8/p9/p10) or secondary anchors (p3, p5, p6, p7), depending on the peptide length or MHC allotype. LRMSD (C\u03b1), Least Root Mean Square Deviation for the alpha carbons of the peptide; RMSD (all), Root Mean Square Deviation for all atoms of the peptide. Additional information can be found in Supplementary Table S1 The peptide-antigens derived from MAGEA3 and MART1 can be expressed by multiple tumor types, but are not expressed by most normal tissues, therefore allowing for the development of antigen-specific T-cell-based therapeutics [74] [75] [76] . Unfortunately, unexpected off-target toxicities against healthy tissues have been reported [74] [75] [76] , raising serious safety concerns. For instance, lethal cardiac toxicity was observed in two patients undergoing treatment with T-cells specific to the MAGEA3 antigen 74, 75 . Later investigation showed that the therapeutic T-cells used in these patients were also recognizing an unrelated Titin-derived peptide, displayed by HLA-A*01:01 molecules in healthy cardiac cells 74, 75 .",
+            "cite_spans": [
+                {
+                    "start": 1652,
+                    "end": 1656,
+                    "text": "[74]",
+                    "ref_id": "BIBREF75"
+                },
+                {
+                    "start": 1657,
+                    "end": 1661,
+                    "text": "[75]",
+                    "ref_id": "BIBREF76"
+                },
+                {
+                    "start": 1662,
+                    "end": 1666,
+                    "text": "[76]",
+                    "ref_id": "BIBREF77"
+                },
+                {
+                    "start": 1760,
+                    "end": 1764,
+                    "text": "[74]",
+                    "ref_id": "BIBREF75"
+                },
+                {
+                    "start": 1765,
+                    "end": 1769,
+                    "text": "[75]",
+                    "ref_id": "BIBREF76"
+                },
+                {
+                    "start": 1770,
+                    "end": 1774,
+                    "text": "[76]",
+                    "ref_id": "BIBREF77"
+                },
+                {
+                    "start": 1942,
+                    "end": 1945,
+                    "text": "74,",
+                    "ref_id": "BIBREF75"
+                },
+                {
+                    "start": 2148,
+                    "end": 2151,
+                    "text": "74,",
+                    "ref_id": "BIBREF75"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 553,
+                    "end": 576,
+                    "text": "(Supplementary Table S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 580,
+                    "end": 588,
+                    "text": "Figure 6",
+                    "ref_id": null
+                },
+                {
+                    "start": 1405,
+                    "end": 1427,
+                    "text": "Supplementary Table S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "Although we usually refer to the peptides as being the targets recognized by the cytotoxic T-cells, TCRs actually recognize the combined surface of the peptide and MHC receptor, also referred to as the \"TCR-interacting surface\" of the pMHC complex (Fig. 1) . Each TCR is thought to be specific for a given pMHC complex, but structural similarity between unrelated complexes can be responsible for off-target activation of T-cells 8, 77 ; also known as T-cell cross-reactivity 6 . Using x-ray crystallography, Raman and colleagues 10 have confirmed the structural similarity between the pMHC complexes involved in the MAGEA3-Titin cross-reactivity (Fig. 7A,B) . Both of these pMHC complexes were included in our dataset (5BRZ and 5BS0). DINC was able to correctly predict the geometry of both peptides, bound to HLA-A*01:01, and reproduce the structural similarity of the resulting TCR-interacting surfaces (Fig. 7D,E) . The clinically relevant example described above highlights the significance of pMHC structural prediction in the context of T-cell-based immunotherapy. In this case, the two peptides have a sequence identity of 55%, which is already challenging for sequence-based cross-reactivity prediction. However, T-cell cross-reactivity can be triggered even by peptides with no sequence identity and low biochemical similarity 78 , and might be driven by specific structural similarities in hot-spots over the TCR-interacting surface 79 . In this context, structure-based methods for cross-reactivity prediction have been proposed, either clustering pMHCs of interest based on structural similarity 78, 80 , or integrating structural information and protein expression levels into sequence-based proteomic searches 81, 82 . This field will spawn significant developments in the coming years, particularly considering the importance of cross-reactivity prediction for T-cell-based immunotherapy 11 . Moreover, considering the costs and practical limitations of experimental methods for protein structural analysis, fast and reliable computational methods for geometry prediction of pMHC complexes should play an important role in this process. ",
+            "cite_spans": [
+                {
+                    "start": 430,
+                    "end": 432,
+                    "text": "8,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 1609,
+                    "end": 1612,
+                    "text": "78,",
+                    "ref_id": "BIBREF79"
+                },
+                {
+                    "start": 1725,
+                    "end": 1728,
+                    "text": "81,",
+                    "ref_id": "BIBREF82"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 248,
+                    "end": 256,
+                    "text": "(Fig. 1)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 647,
+                    "end": 658,
+                    "text": "(Fig. 7A,B)",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 906,
+                    "end": 917,
+                    "text": "(Fig. 7D,E)",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "The high-dimensionality of the search space is a challenge inherent to molecular docking. Algorithmic solutions to address this challenge are usually non-deterministic, introducing variability, which affects reproducibility. For instance, a single run of AutoDock 4 starts with a random conformation of the ligand, which is then randomly modified by the Lamarckian genetic algorithm to create new conformations 20, 63 . Therefore, the chances of obtaining different results in independent runs of AutoDock 4 increase with ligand size. A similar variability is observed across independent DINC jobs. However, this is not a problem here, as our goal was only to determine if DINC could predict different binding modes of pMHC complexes within a reasonable time. By providing a proof of concept that this goal is indeed attainable, we can now open new avenues for developing even better algorithms inspired by the meta-docking incremental approach. In fact, since only a few protocols were used in the context of this study, there is great potential for further improvement. As future work, we will perform a thorough evaluation of the parameters and heuristics in DINC in order to improve its efficiency and achieve fast, accurate and reproducible geometry prediction of pMHC complexes.",
+            "cite_spans": [
+                {
+                    "start": 411,
+                    "end": 414,
+                    "text": "20,",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Current challenges and future work"
+        },
+        {
+            "text": "The general structural prediction of pMHC complexes requires addressing a combination of challenges, including peptide-docking, receptor flexibility and accurate scoring. Here, we focused on the peptide-docking problem, and showed how a simple incremental approach allows predicting binding modes of peptides with different lengths and bound to different MHCs. For that, we limited our analysis to a re-docking experiment involving a diverse dataset of human pMHCs. Receptor flexibility is another important challenge 27 and should be taken into consideration when predicting pMHC complexes 83 . In fact, MHC flexibility can affect peptide loading, and peptide binding can induce local changes in the MHC receptor 84, 85 . However, the folding of MHC receptors is highly-conserved. Therefore, a docking protocol accounting for receptor flexibility could be combined with homology modeling to predict the binding modes of peptides to MHC allotypes for which no structural information is available 14, 16 . However, the high-dimensionality of the resulting search space requires even better algorithms, which may involve dimensionality reduction approaches 86 .",
+            "cite_spans": [
+                {
+                    "start": 714,
+                    "end": 717,
+                    "text": "84,",
+                    "ref_id": "BIBREF85"
+                },
+                {
+                    "start": 996,
+                    "end": 999,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Current challenges and future work"
+        },
+        {
+            "text": "Recent reviews indicate that other docking software can outperform AutoDock 4 in scoring predicted binding modes 26 . In fact, scoring is one of the bottlenecks when trying to achieve greater accuracy in docking-based methods 26 . In terms of sampling, our method could certainly provide results with sub-angstrom accuracy, but this would require a scoring function capable of discriminating between conformations with sub-angstrom differences. Therefore, our method could benefit from using consensus scoring 87 , peptide-specific scoring 88 or HLA-specific scoring 89 . Being a meta-docking application, DINC can integrate alternative sampling strategies or scoring methods. We plan to further investigate these issues in a future study, performing cross-docking and benchmarking on a much larger pMHC dataset.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Current challenges and future work"
+        },
+        {
+            "text": "Finally, a version of DINC with improved scoring could also provide a more general tool for epitope prediction and virtual screening of MHC binders. Gold standard tools for these tasks usually rely on machine learning methods trained on available datasets of previously tested peptide sequences 90 , which are limited or inexistent for less prevalent MHC allotypes 91, 92 . DINC do not require ad-hoc knowledge on the typical binders for a given MHC allotype, or its preferred primary anchors. Therefore, once the aforementioned challenges are addressed, DINC could potentially complement sequence-based methods in epitope prediction projects, by providing structure-based ranking of peptide-ligands for any MHC of interest.",
+            "cite_spans": [
+                {
+                    "start": 365,
+                    "end": 368,
+                    "text": "91,",
+                    "ref_id": "BIBREF93"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Current challenges and future work"
+        },
+        {
+            "text": "In this paper, we demonstrate that an incremental meta-docking approach can predict the binding modes of large peptide ligands bound to MHC receptors. Standard docking software can provide general solutions (i.e., solutions that are not restricted to a particular protein receptor), but cannot handle large ligands. On the other hand, methods focused on pMHC structural prediction lack generality because they often use expert-knowledge or frequent patterns as constraints. We argue that the use of incremental docking offers a new strategy to overcome these limitations. Our work shows that incremental docking allows handling different MHC allotypes, predicting unusual binding modes, and obtaining accurate structural prediction for peptides with up to 41 rotatable bonds. In addition, being a meta-docking approach, our method avoids the need for new docking software. We postulate that a similar incremental process could be implemented using different docking software, achieving similar or even better results. As a proof of concept, our study represents a landmark in the advancement of methods for geometry prediction of pMHC complexes. Future developments of these methods are expected to have a positive impact in many fields related to human health, including vaccine development and tissue transplantation. In particular, fast and accurate prediction of patient-specific pMHC complexes will be key for the development of safe and effective T-cell-based immunotherapies against cancer.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "The human Major Histocompatibility Complex as a paradigm in genomics research",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Vandiedonck",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Knight",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Brief. Funct. Genomic Proteomic",
+            "volume": "8",
+            "issn": "",
+            "pages": "379--394",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bfgp/elp010"
+                ]
+            }
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Towards a systems understanding of MHC class I and MHC class II antigen presentation",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Neefjes",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Jongsma",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Paul",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Bakke",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nat. Rev. Immunol",
+            "volume": "11",
+            "issn": "",
+            "pages": "823--836",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nri3084"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Heterologous immunity between viruses",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Welsh",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Che",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Brehm",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Selin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Immunol. Rev",
+            "volume": "235",
+            "issn": "",
+            "pages": "244--266",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.0105-2896.2010.00897.x"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "HLA class I alleles are associated with peptide-binding repertoires of different size, affinity, and immunogenicity",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Paul",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J. Immunol",
+            "volume": "191",
+            "issn": "",
+            "pages": "5831--5839",
+            "other_ids": {
+                "DOI": [
+                    "10.4049/jimmunol.1302101"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "The IPD and IMGT/HLAdatabase: allele variant databases",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Robinson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nucleic Acids Res",
+            "volume": "43",
+            "issn": "",
+            "pages": "423--431",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gku1161"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Cross-reactivity of TCR repertoire: Current concepts, challenges, and implication for allotransplantation",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Degauque",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Brouard",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Soulillou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "",
+            "volume": "89",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3389/fimmu.2016.00089"
+                ]
+            }
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Harnessing the power of the immune system to target cancer",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Liz\u00e9e",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Annu. Rev. Med",
+            "volume": "64",
+            "issn": "",
+            "pages": "71--90",
+            "other_ids": {
+                "DOI": [
+                    "10.1146/annurev-med-112311-083918"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Deconstructing the peptide-MHC specificity of T cell recognition",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Birnbaum",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Cell",
+            "volume": "157",
+            "issn": "",
+            "pages": "1073--1087",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.cell.2014.03.047"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "TCR affinity for p/MHC formed by tumor antigens that are self-proteins: impact on efficacy and toxicity",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Stone",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Harris",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Kranz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Curr. Opin. Immunol",
+            "volume": "33",
+            "issn": "",
+            "pages": "16--22",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.coi.2015.01.003"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Direct molecular mimicry enables off-target cardiovascular toxicity by an enhanced affinity TCR designed for cancer immunotherapy",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Raman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Sci. Rep",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/srep18851"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Interpreting T-Cell cross-reactivity through structure: Implications for TCR-based cancer immunotherapy",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Antunes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3389/fimmu.2017.01210"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Free energy mapping of class I MHC molecules and structural determination of bound peptides",
+            "authors": [
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Sezerman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Vajda",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Delisi",
+                    "suffix": ""
+                }
+            ],
+            "year": 1996,
+            "venue": "Protein Sci",
+            "volume": "5",
+            "issn": "",
+            "pages": "1272--1281",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/pro.5560050706"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Modeling the structure of bound peptide ligands to major histocompatibility complex",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Tong",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Tan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ranganathan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Protein Sci",
+            "volume": "13",
+            "issn": "",
+            "pages": "2523--2532",
+            "other_ids": {
+                "DOI": [
+                    "10.1110/ps.04631204"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Ab initio prediction of peptide-MHC binding geometry for diverse class I MHC allotypes",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Bordner",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Abagyan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Proteins",
+            "volume": "63",
+            "issn": "",
+            "pages": "512--526",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/prot.20831"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Toward the atomistic simulation of T cell epitopes automated construction of MHC: peptide structures for free energy calculations",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Todman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J. Mol. Graph. Model",
+            "volume": "26",
+            "issn": "",
+            "pages": "957--961",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jmgm.2007.07.005"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "pDOCK: a new technique for rapid and accurate docking of peptide ligands to Major Histocompatibility Complexes",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Khan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ranganathan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Immunome Res",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1745-7580-6-S1-S2"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "DockTope: a Web-based tool for automated pMHC-I modelling",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Rigo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Sci. Rep",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/srep18413"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Protein-ligand docking in the new millennium-a retrospective of 10 years in the field",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Sousa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Curr. Med. Chem",
+            "volume": "20",
+            "issn": "",
+            "pages": "2296--2314",
+            "other_ids": {
+                "DOI": [
+                    "10.2174/0929867311320180002"
+                ]
+            }
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Computational methods in drug discovery",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Sliwoski",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kothiwale",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Meiler",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Lowe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Pharmacol. Rev",
+            "volume": "66",
+            "issn": "",
+            "pages": "334--395",
+            "other_ids": {
+                "DOI": [
+                    "10.1124/pr.112.007336"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Computational protein-ligand docking and virtual drug screening with the AutoDock suite",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Forli",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Nat. Protoc",
+            "volume": "11",
+            "issn": "",
+            "pages": "905--919",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nprot.2016.051"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Receptor-ligand molecular docking",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Guedes",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "De Magalh\u00e3es",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Dardenne",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Biophys. Rev",
+            "volume": "6",
+            "issn": "",
+            "pages": "75--87",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/s12551-013-0130-2"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Virtual screening for HIV protease inhibitors: a comparison of AutoDock 4 and Vina",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Ayeni",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Breuer",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Torbett",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS ONE",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0011955"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "DINC: a new AutoDock-based protocol for docking large ligands",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dhanik",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mcmurray",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kavraki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "S11",
+            "volume": "13",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1472-6807-13-S1-S11"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Characterizing energy landscapes of peptides using a combination of stochastic algorithms",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Devaurs",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "IEEE Trans. Nanobioscience",
+            "volume": "14",
+            "issn": "",
+            "pages": "545--552",
+            "other_ids": {
+                "DOI": [
+                    "10.1109/TNB.2015.2424597"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Docking small peptides remains a great challenge: an assessment using AutoDock Vina",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Rentzsch",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Renard",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Brief. Bioinformatics",
+            "volume": "16",
+            "issn": "",
+            "pages": "1045--1056",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bib/bbv008"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Comprehensive evaluation of ten docking programs on a diverse set of protein-ligand complexes: the prediction accuracy of sampling power and scoring power",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Phys. Chem. Chem. Phys",
+            "volume": "18",
+            "issn": "",
+            "pages": "12964--12975",
+            "other_ids": {
+                "DOI": [
+                    "10.1039/c6cp01555g"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Understanding the challenges of protein flexibility in drug design",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Antunes",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Devaurs",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kavraki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Expert Opin. Drug. Discov",
+            "volume": "10",
+            "issn": "",
+            "pages": "1301--1313",
+            "other_ids": {
+                "DOI": [
+                    "10.1517/17460441.2015.1094458"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Combination of In Silico methods in the search for potential CD4(+) and CD8(+) T cell epitopes in the proteome of Leishmania braziliensis",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "D E F"
+                    ],
+                    "last": "Silva",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Front. Immunol",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3389/fimmu.2016.00327"
+                ]
+            }
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Silico designing breast cancer peptide vaccine for binding to MHC class I and II: A molecular docking study",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Mahdavi",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Moreau",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Comput. Biol. Chem",
+            "volume": "65",
+            "issn": "",
+            "pages": "110--116",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.compbiolchem.2016.10.007"
+                ]
+            }
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "HLaffy: estimating peptide affinities for Class-1 HLA molecules by learning position-specific pair potentials",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mukherjee",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bhattacharyya",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Chandra",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Bioinformatics",
+            "volume": "32",
+            "issn": "",
+            "pages": "2297--2305",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btw156"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Prediction of peptide binding to a major histocompatibility complex class I molecule based on docking simulation",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Ishikawa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "J. Comput. Aided Mol. Des",
+            "volume": "30",
+            "issn": "",
+            "pages": "875--887",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/s10822-016-9967-3"
+                ]
+            }
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "ATLAS: A database linking binding affinities with structures for wild-type and mutant TCR-pMHC complexes",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Borrman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Proteins",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/prot.25260"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Knowledge-based structure prediction of MHC class I bound peptides: a study of 23 complexes",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Schueler-Furman",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Elber",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Margalit",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Fold. Des",
+            "volume": "3",
+            "issn": "",
+            "pages": "70--74",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S1359-0278(98)00070-4"
+                ]
+            }
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Structural prediction of peptides binding to MHC class I molecules",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Bui",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Schiewe",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Von Grafenstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Haworth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Proteins",
+            "volume": "63",
+            "issn": "",
+            "pages": "43--52",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/prot.20870"
+                ]
+            }
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Structural allele-specific patterns adopted by epitopes in the MHC-I cleft and reconstruction of MHC:peptide complexes to cross-reactivity assessment",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Antunes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS ONE",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0010353"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "DynaPred: a structure and sequence based method for the prediction of MHC class I binding peptide sequences and conformations",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Antes",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Siu",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Lengauer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Bioinformatics",
+            "volume": "22",
+            "issn": "",
+            "pages": "16--24",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btl216"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Structural prediction of peptides bound to MHC class I",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Fagerberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Cerottini",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Michielin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "J. Mol. Biol",
+            "volume": "356",
+            "issn": "",
+            "pages": "521--546",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jmb.2005.11.059"
+                ]
+            }
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Exploring peptide/MHC detachment processes using hierarchical natural move Monte Carlo",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Knapp",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Demharter",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Deane",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Minary",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Bioinformatics",
+            "volume": "32",
+            "issn": "",
+            "pages": "181--186",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btv502"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "ICM-A new method for protein modeling and design: applications to docking and structure prediction from the distorted native conformation",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Abagyan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Totrov",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kuznetsov",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "J. Comput. Chem",
+            "volume": "15",
+            "issn": "",
+            "pages": "488--506",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/jcc.540150503"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Subangstrom accuracy in pHLA-I modeling by Rosetta FlexPepDock refinement protocol",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "J. Chem. Inf. Model",
+            "volume": "54",
+            "issn": "",
+            "pages": "2233--2242",
+            "other_ids": {
+                "DOI": [
+                    "10.1021/ci500393h"
+                ]
+            }
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "HLA class I supertypes: a revised and updated classification",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sidney",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Peters",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Frahm",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Brander",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sette",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "BMC Immunol",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2172-9-1"
+                ]
+            }
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Expression levels of MHC class I molecules are inversely correlated with promiscuity of peptide binding. Elife 4, e05345",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Chappell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.7554/eLife.05345"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Unsupervised HLA peptidome deconvolution improves ligand prediction accuracy and predicts cooperative effects in peptide-HLA interactions",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bassani-Sternberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Gfeller",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "J. Immunol",
+            "volume": "197",
+            "issn": "",
+            "pages": "2492--2499",
+            "other_ids": {
+                "DOI": [
+                    "10.4049/jimmunol.1600808"
+                ]
+            }
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Novel immunodominant peptide presentation strategy: a featured HLA-A*2402-restricted cytotoxic T-lymphocyte epitope stabilized by intrachain hydrogen bonds from severe acute respiratory syndrome coronavirus nucleocapsid protein",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J. Virol",
+            "volume": "84",
+            "issn": "",
+            "pages": "11849--11857",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/JVI.01464-10"
+                ]
+            }
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "The future of peptide-based drugs",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Craik",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Fairlie",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Liras",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Price",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Chem. Biol. Drug. Des",
+            "volume": "81",
+            "issn": "",
+            "pages": "136--147",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/cbdd.12055"
+                ]
+            }
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Recent development of peptide drugs and advance on theory and methodology of peptide inhibitor design",
+            "authors": [
+                {
+                    "first": "Q",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Du",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Xie",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Huang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Med. Chem",
+            "volume": "11",
+            "issn": "",
+            "pages": "235--247",
+            "other_ids": {
+                "DOI": [
+                    "10.2174/1573406411666141229163355"
+                ]
+            }
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Peptide docking and structure-based characterization of peptide binding: from knowledge to know-how",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "London",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Raveh",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Schueler-Furman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Curr. Opin. Struct. Biol",
+            "volume": "23",
+            "issn": "",
+            "pages": "894--902",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.sbi.2013.07.006"
+                ]
+            }
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Recent advances in computational models for the study of protein-peptide interactions",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kilburg",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Gallicchio",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Adv. Protein Chem. Struct. Biol",
+            "volume": "105",
+            "issn": "",
+            "pages": "27--57",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/bs.apcsb.2016.06.002"
+                ]
+            }
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Structural mining: self-consistent design on flexible protein-peptide docking and transferable binding affinity potential",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Dominy",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Shakhnovich",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J. Am. Chem. Soc",
+            "volume": "126",
+            "issn": "",
+            "pages": "8515--8528",
+            "other_ids": {
+                "DOI": [
+                    "10.1021/ja032018q"
+                ]
+            }
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "PepCrawler: a fast RRT-based algorithm for high-resolution refinement and binding affinity estimation of peptide inhibitors",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Donsky",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wolfson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Bioinformatics",
+            "volume": "27",
+            "issn": "",
+            "pages": "2836--2842",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btr498"
+                ]
+            }
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "GalaxyPepDock: a protein-peptide docking tool based on interaction similarity and energy optimization",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Heo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Seok",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nucleic Acids Res",
+            "volume": "43",
+            "issn": "",
+            "pages": "431--435",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkv495"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Fully blind docking at the atomic level for protein-peptide complex structure prediction",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Yan",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Structure",
+            "volume": "24",
+            "issn": "",
+            "pages": "1842--1853",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.str.2016.07.021"
+                ]
+            }
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "The pepATTRACT web server for blind, large-scale peptideprotein docking",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "De Vries",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Rey",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "E M"
+                    ],
+                    "last": "Schindler",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zacharias",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Tuffery",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Nucleic Acids Res",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkx335"
+                ]
+            }
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "The structural basis of peptide-protein binding strategies",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "London",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Movshovitz-Attias",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Schueler-Furman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Structure",
+            "volume": "18",
+            "issn": "",
+            "pages": "188--199",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.str.2009.11.012"
+                ]
+            }
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "Rosetta FlexPepDock ab-initio: simultaneous folding, docking and refinement of peptides onto their receptors",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Raveh",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "London",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Zimmerman",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Schueler-Furman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PLoS ONE",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0018934"
+                ]
+            }
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "A unified conformational selection and induced fit approach to protein-peptide docking",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Trellet",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Melquiond",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bonvin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS ONE",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0058769"
+                ]
+            }
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "Binding modes of peptidomimetics designed to inhibit STAT3",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dhanik",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mcmurray",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kavraki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS ONE",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0051603"
+                ]
+            }
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "The major genetic determinants of HIV-1 control affect HLA class I peptide presentation",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Pereyra",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Science",
+            "volume": "330",
+            "issn": "",
+            "pages": "1551--1557",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1195271"
+                ]
+            }
+        },
+        "BIBREF60": {
+            "ref_id": "b60",
+            "title": "Spontaneous control of HCV is associated with expression of HLA-B 57 and preservation of targeted epitopes",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Gastroenterology",
+            "volume": "140",
+            "issn": "",
+            "pages": "686--696",
+            "other_ids": {
+                "DOI": [
+                    "10.1053/j.gastro.2010.09.042"
+                ]
+            }
+        },
+        "BIBREF61": {
+            "ref_id": "b61",
+            "title": "GROMACS 4.5: a high-throughput and highly parallel open source molecular simulation toolkit",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Pronk",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Bioinformatics",
+            "volume": "29",
+            "issn": "",
+            "pages": "845--854",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btt055"
+                ]
+            }
+        },
+        "BIBREF62": {
+            "ref_id": "b62",
+            "title": "DINC 2.0: A New Protein-Peptide Docking Webserver Using an Incremental Approach",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Antunes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Cancer Res",
+            "volume": "77",
+            "issn": "",
+            "pages": "55--57",
+            "other_ids": {
+                "DOI": [
+                    "10.1158/0008-5472.CAN-17-0511"
+                ]
+            }
+        },
+        "BIBREF63": {
+            "ref_id": "b63",
+            "title": "Twenty years on: the impact of fragments on drug discovery",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Erlanson",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Fesik",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Hubbard",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Jahnke",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Jhoti",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Nat. Rev. Drug. Discov",
+            "volume": "15",
+            "issn": "",
+            "pages": "605--619",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nrd.2016.109"
+                ]
+            }
+        },
+        "BIBREF64": {
+            "ref_id": "b64",
+            "title": "AutoDock4 and AutoDockTools4: automated docking with selective receptor flexibility",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Morris",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J. Comput. Chem",
+            "volume": "30",
+            "issn": "",
+            "pages": "2785--2791",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/jcc.21256"
+                ]
+            }
+        },
+        "BIBREF65": {
+            "ref_id": "b65",
+            "title": "Automated docking for novel drug discovery",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bello",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Martinez-Archundia",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Correa-Basurto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Expert Opin Drug Discov",
+            "volume": "8",
+            "issn": "",
+            "pages": "821--834",
+            "other_ids": {
+                "DOI": [
+                    "10.1517/17460441.2013.794780"
+                ]
+            }
+        },
+        "BIBREF66": {
+            "ref_id": "b66",
+            "title": "UCSF Chimera-a visualization system for exploratory research and analysis",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Pettersen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J. Comput. Chem",
+            "volume": "25",
+            "issn": "",
+            "pages": "1605--1612",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/jcc.20084"
+                ]
+            }
+        },
+        "BIBREF67": {
+            "ref_id": "b67",
+            "title": "GRASP2: visualization, surface properties, and electrostatics of macromolecular structures and sequences",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Petrey",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Honig",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Meth. Enzymol",
+            "volume": "374",
+            "issn": "",
+            "pages": "492--509",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S0076-6879(03)74021-X"
+                ]
+            }
+        },
+        "BIBREF68": {
+            "ref_id": "b68",
+            "title": "Allele frequency net 2015 update: new features for HLA epitopes, KIR and disease and HLA adverse drug reaction associations",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Gonzalez-Galarza",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nucleic Acids Res",
+            "volume": "43",
+            "issn": "",
+            "pages": "784--788",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gku1166"
+                ]
+            }
+        },
+        "BIBREF69": {
+            "ref_id": "b69",
+            "title": "Balancing selection and heterogeneity across the classical human leukocyte antigen loci: a meta-analytic review of 497 population studies",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Solberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Hum. Immunol",
+            "volume": "69",
+            "issn": "",
+            "pages": "443--464",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.humimm.2008.05.001"
+                ]
+            }
+        },
+        "BIBREF70": {
+            "ref_id": "b70",
+            "title": "The immune epitope database (IEDB) 3.0",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Vita",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nucleic Acids Res",
+            "volume": "43",
+            "issn": "",
+            "pages": "405--412",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gku938"
+                ]
+            }
+        },
+        "BIBREF71": {
+            "ref_id": "b71",
+            "title": "Nonstandard peptide binding revealed by crystal structures of HLA-B*5101 complexed with HIV immunodominant epitopes",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Maenaka",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "J. Immunol",
+            "volume": "165",
+            "issn": "",
+            "pages": "3260--3267",
+            "other_ids": {
+                "DOI": [
+                    "10.4049/jimmunol.165.6.3260"
+                ]
+            }
+        },
+        "BIBREF72": {
+            "ref_id": "b72",
+            "title": "Adoptive T cell immunotherapy for cancer",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Perica",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Varela",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Oelke",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Schneck",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Rambam Maimonides Med. J",
+            "volume": "6",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.5041/RMMJ.10179"
+                ]
+            }
+        },
+        "BIBREF73": {
+            "ref_id": "b73",
+            "title": "Adoptive cellular therapy: a race to the finish line",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "June",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Riddell",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Schumacher",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Sci. Transl. Med",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/scitranslmed.aaa3643"
+                ]
+            }
+        },
+        "BIBREF74": {
+            "ref_id": "b74",
+            "title": "A pilot trial using lymphocytes genetically engineered with an NY-ESO-1-reactive T-cell receptor: long-term follow-up and correlates with response",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Robbins",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Clin. Cancer Res",
+            "volume": "21",
+            "issn": "",
+            "pages": "1019--1027",
+            "other_ids": {
+                "DOI": [
+                    "10.1158/1078-0432.CCR-14-2708"
+                ]
+            }
+        },
+        "BIBREF75": {
+            "ref_id": "b75",
+            "title": "Identification of a Titin-derived HLA-A1-presented peptide as a cross-reactive target for engineered MAGE A3-directed Tcells",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Cameron",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Sci. Transl. Med",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/scitranslmed.3006034"
+                ]
+            }
+        },
+        "BIBREF76": {
+            "ref_id": "b76",
+            "title": "Cardiovascular toxicity and titin cross-reactivity of affinity-enhanced T cells in myeloma and melanoma",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Linette",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Blood",
+            "volume": "122",
+            "issn": "",
+            "pages": "863--871",
+            "other_ids": {
+                "DOI": [
+                    "10.1182/blood-2013-03-490565"
+                ]
+            }
+        },
+        "BIBREF77": {
+            "ref_id": "b77",
+            "title": "Case report of a fatal serious adverse event upon administration of T cells transduced with a MART-1-specific T-cell receptor",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Van Den Berg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Mol. Ther",
+            "volume": "23",
+            "issn": "",
+            "pages": "1541--1550",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/mt.2015.60"
+                ]
+            }
+        },
+        "BIBREF78": {
+            "ref_id": "b78",
+            "title": "Structural In Silico analysis of cross-genotype-reactivity among naturally occurring HCV NS3-1073-variants in the context of HLA-A*02:01 allele",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Antunes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Mol. Immunol",
+            "volume": "48",
+            "issn": "",
+            "pages": "1461--1467",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.molimm.2011.03.019"
+                ]
+            }
+        },
+        "BIBREF79": {
+            "ref_id": "b79",
+            "title": "Frequency, private specificity, and cross-reactivity of preexisting hepatitis C virus (HCV)-specific CD8+ T cells in HCV-seronegative individuals: implications for vaccine responses",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "J. Virol",
+            "volume": "89",
+            "issn": "",
+            "pages": "8304--8317",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/JVI.00539-15"
+                ]
+            }
+        },
+        "BIBREF80": {
+            "ref_id": "b80",
+            "title": "Structural interplay between germline interactions and adaptive recognition determines the bandwidth of TCRpeptide-MHC cross-reactivity",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Adams",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Nat. Immunol",
+            "volume": "17",
+            "issn": "",
+            "pages": "87--94",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/ni.3310"
+                ]
+            }
+        },
+        "BIBREF81": {
+            "ref_id": "b81",
+            "title": "Improved structural method for T-cell cross-reactivity prediction",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Mendes",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Antunes",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Rigo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Sinigaglia",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Vieira",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Mol. Immunol",
+            "volume": "67",
+            "issn": "",
+            "pages": "303--310",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.molimm.2015.06.017"
+                ]
+            }
+        },
+        "BIBREF82": {
+            "ref_id": "b82",
+            "title": "In-silico discovery of cancer-specific peptide-HLA complexes for targeted therapy",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dhanik",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "BMC Bioinformatics",
+            "volume": "17",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/s12859-016-1150-2"
+                ]
+            }
+        },
+        "BIBREF83": {
+            "ref_id": "b83",
+            "title": "Assessment of cancer and virus antigens for cross-reactivity in human tissues",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Jaravine",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Raffegerst",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Schendel",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Frishman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Bioinformatics",
+            "volume": "33",
+            "issn": "",
+            "pages": "104--111",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btw567"
+                ]
+            }
+        },
+        "BIBREF84": {
+            "ref_id": "b84",
+            "title": "Peptide modulation of class I major histocompatibility complex protein molecular flexibility and the implications for immune recognition",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Hawse",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J. Biol. Chem",
+            "volume": "288",
+            "issn": "",
+            "pages": "24372--24381",
+            "other_ids": {
+                "DOI": [
+                    "10.1074/jbc.M113.490664"
+                ]
+            }
+        },
+        "BIBREF85": {
+            "ref_id": "b85",
+            "title": "Structural and functional mosaic nature of MHC class I molecules in their peptide-free form",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Kurimoto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Mol. Immunol",
+            "volume": "55",
+            "issn": "",
+            "pages": "393--399",
+            "other_ids": {}
+        },
+        "BIBREF86": {
+            "ref_id": "b86",
+            "title": "Exploration of the conformational dynamics of major histocompatibility complex molecules",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Yanaka",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sugase",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "Front. Immunol",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3389/fimmu.2017.00632"
+                ]
+            }
+        },
+        "BIBREF88": {
+            "ref_id": "b88",
+            "title": "Defining low-dimensional projections to guide protein conformational sampling",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Novinskaya",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Devaurs",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Moll",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kavraki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "J. Comput. Biol",
+            "volume": "24",
+            "issn": "",
+            "pages": "79--89",
+            "other_ids": {
+                "DOI": [
+                    "10.1089/cmb.2016.0144"
+                ]
+            }
+        },
+        "BIBREF89": {
+            "ref_id": "b89",
+            "title": "Consensus virtual screening approaches to predict protein ligands",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kukol",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Eur. J. Med. Chem",
+            "volume": "46",
+            "issn": "",
+            "pages": "4661--4664",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.ejmech.2011.05.026"
+                ]
+            }
+        },
+        "BIBREF90": {
+            "ref_id": "b90",
+            "title": "The FoldX web server: an online force field",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Schymkowitz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "382--388",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gki387"
+                ]
+            }
+        },
+        "BIBREF91": {
+            "ref_id": "b91",
+            "title": "Towards universal structure-based prediction of class II MHC epitopes for diverse allotypes",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Bordner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS ONE",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0014383"
+                ]
+            }
+        },
+        "BIBREF92": {
+            "ref_id": "b92",
+            "title": "Prediction of epitopes using neural network based methods",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lundegaard",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Lund",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Nielsen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J. Immunol. Methods",
+            "volume": "374",
+            "issn": "",
+            "pages": "26--34",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jim.2010.10.011"
+                ]
+            }
+        },
+        "BIBREF93": {
+            "ref_id": "b93",
+            "title": "Improving the prediction of HLA class I-binding peptides using a supertype-based method",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "J. Immunol. Methods",
+            "volume": "405",
+            "issn": "",
+            "pages": "109--120",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jim.2014.01.015"
+                ]
+            }
+        },
+        "BIBREF94": {
+            "ref_id": "b94",
+            "title": "Deep convolutional neural networks for pan-specific peptide-MHC class I binding prediction",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Han",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "BMC Bioinformatics",
+            "volume": "18",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/s12859-017-1997-x"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Structure of a pMHC complex. (A) Front view of the crystal structure 1I4F depicting a cartoon representation of the MHC (HLA-A*02:01), and a sticks representation of the bound peptide (derived from MAGEA4, in pink). The heavy chain of the MHC receptor (alpha), which contains the binding cleft, is depicted in yellow. The supporting light chain (\u03b22-microglobulin) is depicted in brown. (B) Zoomed side view of a crosssection of the pMHC complex, highlighting the full length of the peptide in the MHC binding cleft. (C) Top view of the complex showing the surface of the MHC (yellow)",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Incremental docking of a peptide. Depiction of some of the docking rounds performed by DINC when re-docking an 8-mer peptide bound to HLA-A*24:02 (PDB code 4F7T). DINC starts by selecting a small fragment of the peptide (top left), with only 6 DoFs (depicted in green), and using it as input for the first round of docking to the MHC binding cleft (cross-section view depicted in gray). The best binding modes are selected across multiple parallel docking runs, and the corresponding peptide fragments are expanded by adding a small number of atoms (depicted in red, top center). These expanded fragments are used as input for the second round of docking (top center), in which a new set of 6 flexible DoFs is considered flexible. These flexible DoFs involve some of the \"new\" atoms (in red) and some of the atoms that were already present in the previous fragment (in blue). This process continues until the entire ligand has been reconstructed and docked (bottom right). For this particular 8-mer peptide (composed of 136 atoms), DINC has to perform 9 docking rounds; only the first three (top row) and the last three (bottom row) are depicted.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Default protocol for a DINC job. As highlighted in this decision tree, the default DINC protocol selects the root atom using a heuristic maximizing the potential for hydrogen bonds in the initial fragment (max. hbond), by counting the number of available donors and acceptors; expands the fragment at each round using the same heuristic; selects potential rotatable bonds for sampling based on a sliding window approach and activates only 6 DoFs at each round (seeFig. 2); selects the top 10 conformations for expansion (ranked by binding energies); and uses default values for AutoDock 4 parameters (indicated within parenthesis). Alternative protocols can be defined for a DINC job, by making different choices in this decision tree.Scientific REPORTs | (2018) 8:4327 | DOI:10.1038/s41598-018-22173-4 default values were used for AutoDock 4 parameters (e.g., ga_run = 50, pop_size = 150, num_evals = 250000, num_gen = 27000, elitism = 1, mutation_rate = 0.02, crossover_rate = 0.8, etc).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Re-docking of 25 peptides bound to prevalent human MHC allotypes. Each bar indicates the all-atom Root Mean Square Deviation (RMSD) between the reference structure and the best binding mode predicted by DINC (see Methods). Results are sorted by increasing peptide length, then number of DOFs, then RMSD. The peptide length and number of DoFs are listed between parenthesis and between brackets, respectively. Complexes are identified by their PDB codes. Scientific REPORTs | (2018) 8:4327 | DOI:10.1038/s41598-018-22173-4",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Alternative peptide backbone patterns. Schematic backbone representations (chain trace) of 6 different peptides, experimentally observed bound to either HLA-A*02:01 (A, B) or HLA-A*24:02 (C). (A) Side views of a typical HLA-A*02:01-restricted virus-derived 9-mer peptide (PDB code 3MRG, depicted in orange), a tumor-derived 9-mer peptide with an alternative binding mode (2GTW, in purple), and a tumor-derived 10mer peptide (1I4F, in green). (B) Top views of the same HLA-A*02:01-restricted peptides. (C) Side views of a typical HLA-A*24:02-restricted virus-derived 9-mer peptide (2BCK, orange), a shorter 8-mer peptide (4F7T, purple), and a virus-derived 9-mer with an alternative binding mode (3I6L, green). Scientific REPORTs | (2018) 8:4327 | DOI:10.1038/s41598-018-22173-4",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "TCR-interacting surface of cross-reactive pMHC complexes. Cross-reactivity was reported between the melanoma-associated antigen MAGEA3 (EVDPIGHLY) and a Titin-derived self peptide (ESDPIVAQY). Crystal structures (depicted in the top row and referenced by their PDB code) show the structural similarity of these peptides when bound to HLA-A*01:01 (A,B). As a comparison, a virus-derived peptide bound to the same MHC presents differences in both topography and charge distribution (C, most significant differences indicated by a green circle). The DINC models (depicted in the bottom row) reproduce the structural similarities of the two cross-reactive complexes (D,E); and the model for the virus-derived peptide reproduces its differences (F green circle). IAV, Influenza A Virus.Scientific REPORTs | (2018) 8:4327 | DOI:10.1038/s41598-018-22173-4",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": ".",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Supplementary information accompanies this paper at https://doi.org/10.1038/s41598-018-22173-4.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional Information"
+        },
+        {
+            "text": "Publisher's note: Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.Open Access This article is licensed under a Creative Commons Attribution 4.0 International License, which permits use, sharing, adaptation, distribution and reproduction in any medium or format, as long as you give appropriate credit to the original author(s) and the source, provide a link to the Creative Commons license, and indicate if changes were made. The images or other third party material in this article are included in the article's Creative Commons license, unless indicated otherwise in a credit line to the material. If material is not included in the article's Creative Commons license and your intended use is not permitted by statutory regulation or exceeds the permitted use, you will need to obtain permission directly from the copyright holder. To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing Interests: The authors declare no competing interests."
+        }
+    ]
+}

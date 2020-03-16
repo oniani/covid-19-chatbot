@@ -1,0 +1,3344 @@
+{
+    "paper_id": "7fedb6619c6cdd969d50307211e7a77aeb9a8893",
+    "metadata": {
+        "title": "viGEN: An Open Source Pipeline for the Detection and Quantification of Viral RNA in Human Tumors",
+        "authors": [
+            {
+                "first": "Diana",
+                "middle": [
+                    "Elizabeth"
+                ],
+                "last": "Marco",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jo\u00e3o",
+                "middle": [],
+                "last": "Marcelo",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Pereira",
+                "middle": [],
+                "last": "Alves",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Universidade",
+                "middle": [],
+                "last": "De",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "S\u00e3o",
+                "middle": [],
+                "last": "Paulo",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Brazil",
+                "middle": [],
+                "last": "Hetron",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Mweemba",
+                "middle": [],
+                "last": "Munang&apos;",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Krithika",
+                "middle": [],
+                "last": "Bhuvaneshwar",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Yuriy",
+                "middle": [],
+                "last": "Gusev",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Lei",
+                "middle": [],
+                "last": "Song",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Subha",
+                "middle": [],
+                "last": "Madhavan",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "An estimated 17% of cancers worldwide are associated with infectious causes. The extent and biological significance of viral presence/infection in actual tumor samples is generally unknown but could be measured using human transcriptome (RNA-seq) data from tumor samples. We present an open source bioinformatics pipeline viGEN, which allows for not only the detection and quantification of viral RNA, but also variants in the viral transcripts. The pipeline includes 4 major modules: The first module aligns and filter out human RNA sequences; the second module maps and count (remaining un-aligned) reads against reference genomes of all known and sequenced human viruses; the third module quantifies read counts at the individual viral-gene level thus allowing for downstream differential expression analysis of viral genes between case and controls groups. The fourth module calls variants in these viruses. To the best of our knowledge, there are no publicly available pipelines or packages that would provide this type of complete analysis in one open source package. In this paper, we applied the viGEN pipeline to two case studies. We first demonstrate the working of our pipeline on a large public dataset, the TCGA cervical cancer cohort. In the second case study, we performed an in-depth analysis on a small focused study of TCGA liver cancer patients. In the latter cohort, we performed viral-gene quantification, viral-variant extraction and survival analysis. This allowed us to find differentially expressed viral-transcripts and viral-variants between the groups of patients, and connect them to clinical outcome. From our analyses, we show that we were able to successfully detect the human papilloma virus among the TCGA cervical cancer patients. We compared the viGEN pipeline with two metagenomics tools and demonstrate similar sensitivity/specificity. We were also able to quantify viral-transcripts and extract viral-variants using the liver cancer dataset. The results presented corresponded with published literature in terms of rate of detection, and impact of several known variants of HBV genome. This pipeline is generalizable, and can be used to provide novel biological insights into microbial infections in complex diseases and tumorigeneses. Our viral pipeline could be used in conjunction with additional type of immuno-oncology analysis based on RNA-seq data of host RNA for cancer immunology applications. The source code, with example data and tutorial is available at: https:// github.com/ICBI/viGEN/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "An estimated 17% of cancers worldwide are associated with infectious causes. These infectious agents include viruses, bacteria, parasites and other microbes. Examples of viruses include human papilloma viruses (HPVs) in cervical cancer, epstein-Barr virus (EBV) in nasopharyngeal cancer, hepatitis B and C in liver cancer (HBV and HCV), human herpes virus 8 in Kaposi sarcoma (KS); human T-lymphotrophic virus-1 (HTLV-1) in adult T cell lymphocytic leukemia (ATL) and non-Hodgkin lymphoma; merkel cell polyomavirus (MCV) in Merkel cell carcinoma (ACS, 2007) . Bacteria such as Helicobacter pylori have been implicated in stomach cancer. Parasites have also been associated with cancer, examples are Opisthorchis viverrini and Clonorchis sinensis in bile duct cancer and Schistosoma haematobium in bladder cancer (ACS, 2007) . Detection and characterization of these infectious agents in tumor samples can give us better insights into disease mechanisms and their treatment (Hausen, 2000) .",
+            "cite_spans": [
+                {
+                    "start": 546,
+                    "end": 557,
+                    "text": "(ACS, 2007)",
+                    "ref_id": null
+                },
+                {
+                    "start": 812,
+                    "end": 823,
+                    "text": "(ACS, 2007)",
+                    "ref_id": null
+                },
+                {
+                    "start": 973,
+                    "end": 987,
+                    "text": "(Hausen, 2000)",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "Vaccines have been developed to help protect against infection from the many cancers. But these vaccines can only be used to help prevent infection and cannot treat existing infections (ACS, 2007) . There are several screening methods widely used to detect viral infections, especially for blood borne viruses including HBV, HCV, HIV and HTLV. These include the enzyme linked immunosorbent assay (ELISA or EIA) (Yoshihara, 1995) , chemluminescent immunoassay (ChLIA), Indirect fluorescent antibody (IFA), Western blot (WB), Polymerase Chain Reaction (PCR), and Rapid immunoassays 1 . ELISA and WB test detects and measures antibodies in serum taken from the patient's blood, and are typically prescribed after certain symptoms are observed in the patient.",
+            "cite_spans": [
+                {
+                    "start": 185,
+                    "end": 196,
+                    "text": "(ACS, 2007)",
+                    "ref_id": null
+                },
+                {
+                    "start": 411,
+                    "end": 428,
+                    "text": "(Yoshihara, 1995)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "There are several challenges in detection of viruses in tumors including loss of viral information in progressed tumors and limited or latent replication resulting in low transcription of tumors (Schelhorn et al., 2013) . The extent and biological significance of viral presence/infection in actual tumor samples is generally unknown but could be measured using human transcriptome data from tumor samples.",
+            "cite_spans": [
+                {
+                    "start": 195,
+                    "end": 219,
+                    "text": "(Schelhorn et al., 2013)",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "The popularity of next-generation sequencing (NGS) technology has exploded in the last decade. NGS technologies are able to perform rapid sequencing, and in a massively parallel fashion (Datta et al., 2015) . In recent years, applications of NGS technologies in clinical diagnostics have been on the rise 1 FDA Complete List of Donor Screening Assays for Infectious Agents and HIV Diagnostic Assays (Accessed March 05, 2016) . Available online at: https:// www.fda.gov/biologicsbloodvaccines/bloodbloodproducts/approvedproducts/ licensedproductsblas/blooddonorscreening/infectiousdisease/ucm080466.htm Abbreviations: HBV, Hepatitis B virus; HCV, Hepatitis C Virus; HERV K113, Human Endogenous Retrovirus K113; TCGA, The Cancer Genome Atlas; HCC, Hepatocellular carcinoma; NAFLD, nonalcoholic fatty liver disease; Hep B, Hepatitis B; Hep C, Hepatitis C; HepB + HepC, coinfected with both Hepatitis B and C virus; HBsAg, Hepatitis B surface antigen; HBeAg, Hepatitis B type e antigen; NGS, next-generation sequencing; RNA-seq, whole transcriptome sequencing; BAM, Binary version of Sequence alignment/map format; CDS, coding sequence; Cox PH, Cox Proportional Hazard; HBx, viral gene X; STS, Sequence-tagged sites; NCBI, National Center for Biotechnology Information; GFF, general-feature-format. (Barzon et al., 2011; Byron et al., 2016) . Amongst the various NGS technologies, whole-transcriptome sequencing, also called RNA-seq, has been very popular with methods and tools being actively developed. Exploring the genome using RNA-seq gives a different insight than looking at the DNA since the RNA-seq would have captured actively transcribed regions. Every aspect of data output from this technology is now being used for research, including detection of viruses and bacteria (Khoury et al., 2013; Salyakina and Tsinoremas, 2013; Wang et al., 2016) . They are also independent of prior sequence information, and require less starting material compared to conventional cloning based methods, making them powerful and exciting new technologies in virology (Datta et al., 2015) . These high throughput technologies give us direct evidence of infection in the tissue as compared to ELISA-based assays, which only proves presence of infection somewhere in the human body. RNA-seq technology has hence enabled the exploration and detection of viral infections in human tumor samples. This technology also enables detection of variants in viral genome, which have been connected to clinical outcome (Moyes et al., 2005; Downey et al., 2015) .",
+            "cite_spans": [
+                {
+                    "start": 186,
+                    "end": 206,
+                    "text": "(Datta et al., 2015)",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 399,
+                    "end": 424,
+                    "text": "(Accessed March 05, 2016)",
+                    "ref_id": null
+                },
+                {
+                    "start": 1133,
+                    "end": 1165,
+                    "text": "Cox PH, Cox Proportional Hazard;",
+                    "ref_id": null
+                },
+                {
+                    "start": 1295,
+                    "end": 1316,
+                    "text": "(Barzon et al., 2011;",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 1317,
+                    "end": 1336,
+                    "text": "Byron et al., 2016)",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 1779,
+                    "end": 1800,
+                    "text": "(Khoury et al., 2013;",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 1801,
+                    "end": 1832,
+                    "text": "Salyakina and Tsinoremas, 2013;",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 1833,
+                    "end": 1851,
+                    "text": "Wang et al., 2016)",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 2057,
+                    "end": 2077,
+                    "text": "(Datta et al., 2015)",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 2495,
+                    "end": 2515,
+                    "text": "(Moyes et al., 2005;",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 2516,
+                    "end": 2536,
+                    "text": "Downey et al., 2015)",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "In recent years, US regulators approved a viral based cancer therapy (Ledford, 2015) , proving that the study of viruses in the human transcriptome has biomedical interest, and is paving the way for promising research and new opportunities.",
+            "cite_spans": [
+                {
+                    "start": 69,
+                    "end": 84,
+                    "text": "(Ledford, 2015)",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "In this paper, we present our pipeline viGEN to not only detect and quantify read counts at the individual viral-gene level, but also detect viral variants from human RNA-seq data. The characterization of viral variants helps enable better epidemiological analysis. The input file to our pipeline is a fastq (Wikipedia, 2009) file, so our viGEN pipeline can be extended to work with genomic data from any NGS technology. Our pipeline can also be used to detect and explore not only viruses, but other microbes as well, as long as the sequence information is available in NCBI 2 .",
+            "cite_spans": [
+                {
+                    "start": 308,
+                    "end": 325,
+                    "text": "(Wikipedia, 2009)",
+                    "ref_id": "BIBREF52"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "We applied our viGEN pipeline to two case studies as a proof of concept -a dataset of 304 cervical cancer patients, and a set of 50 liver cancer patients, both from the TCGA collection. We first applied the pipeline to the transcriptome of cervical cancer patients to see if we are able to detect the human papilloma viruses. We also performed additional in-depth analyses on a small focused study of liver cancer patients. In this cohort, we performed viral-gene quantification, viral-variant extraction and survival analysis.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "From our analyses, we show that we were able to successfully detect the human papilloma virus among the TCGA cervical cancer patients. We compared the viGEN pipeline with two metagenomics tools and demonstrate similar sensitivity/specificity. We were also able to quantify viraltranscripts and extract viral-variants using the liver cancer dataset. This enabled us to perform downstream analysis to give us new insights into disease mechanisms.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "In addition to the two case studies, we have made available an end-to-end tutorial demonstrated on a publicly available We also provided step-by-step instructions on how to run our viGEN pipeline on this sample data, along with the code at https://github.com/ICBI/viGEN/ and demonstrated the detection of HBV transcripts in this sample. This allows other users to apply this pipeline to explore viruses in their data and disease of interest. We are currently implementing the viGEN pipeline in the Seven Bridges Cancer Genomics Cloud 3 . There are a number of existing pipelines that detect viruses from human transcriptome data. Of these, very few pipelines offer quantification at the gene expression level. A comprehensive comparison of these pipelines is provided in Table 1 . Our goal was not to compete with these other tools, but to offer a convenient and complete end-to-end publicly available pipeline to the bioinformatics community. To the best of our knowledge there are no publicly available pipelines or packages that would provide this type of complete analysis in one package. Customized solutions have been reported in the literature however were not made public.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 771,
+                    "end": 778,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "In the future, our plan is to package this pipeline and make it available to users through Bioconductor (Lawrence et al., 2013) , allowing users to perform analysis on either their local computer or the cloud.",
+            "cite_spans": [
+                {
+                    "start": 104,
+                    "end": 127,
+                    "text": "(Lawrence et al., 2013)",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "In this paper, we applied our viGEN pipeline to two case studies as a proof of concept -a dataset of 304 cervical cancer patients, and a set of 50 liver cancer patients, both from the TCGA collection (NCI, 2011) . We first applied the pipeline to the transcriptome of cervical cancer patients to see if we are able to detect the human papilloma viruses. We also performed additional in-depth analyses on a small focused study of liver cancer patients afflicted with Hepatitis B virus. In this cohort, we perform viral-gene quantification, viral-variant extraction and survival analysis. The results from these analyses allowed us to compare experimental and control groups using viral-gene expression data and viral-variant data, and give us insights into their impacts on the tumor, and disease mechanisms.",
+            "cite_spans": [
+                {
+                    "start": 200,
+                    "end": 211,
+                    "text": "(NCI, 2011)",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "MATERIALS AND METHODS"
+        },
+        {
+            "text": "In the following sections, we describe the viGEN pipeline, and the two case studies.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MATERIALS AND METHODS"
+        },
+        {
+            "text": "The viGEN pipeline includes 4 major modules. Figure 1 shows an image of our viGEN pipeline.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 45,
+                    "end": 53,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "The viGEN Pipeline"
+        },
+        {
+            "text": "In Module 1 (labeled as \"filtered human sample input\"), the human RNA sequences were aligned to the human-reference genome using the RSEM (Li and Dewey, 2011) tool. One of the outputs of RSEM includes sequences that did not align to the human genome (hence the name \"filtered human sample input\"). These un-aligned sequences were taken and aligned to the viral reference file using popular alignment tools BWA (Li and Durbin, 2009 ) and Bowtie2 (Langmead and Salzberg, 2012) .",
+            "cite_spans": [
+                {
+                    "start": 138,
+                    "end": 158,
+                    "text": "(Li and Dewey, 2011)",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 410,
+                    "end": 430,
+                    "text": "(Li and Durbin, 2009",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 445,
+                    "end": 474,
+                    "text": "(Langmead and Salzberg, 2012)",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Module 1: Viral Genome Level Analysis (Filtered Human Sample Input)"
+        },
+        {
+            "text": "In Module 2 (labeled as \"unfiltered human sample input\"), the RNA seq sequences were directly aligned to the viral reference using Bowtie2 without any filtering. The reason for using two methods to obtain the viral genomes in human RNA-seq data (Module 1 and Module 2) was to allow us to be as comprehensive as possible in viral detection.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Module 2: Viral Genome Level Analysis (Unfiltered Human Sample Input)"
+        },
+        {
+            "text": "The aligned reads from Module 1 and 2 were in the form of BAM files (Center-for-Statistical-Genetics, 2013), from which read counts were obtained for each viral genome species (referred to as \"genome level counts\") using Samtools idxstats or Picard BAMIndexStats 4 tools. Using the genome level counts, we estimated the number of reads that covered the genome, a form of viral copy number. Viral copy number was defined as in equation below: Viral copy number = Number of mapped reads \u00d7 Read length Genome length",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Module 2: Viral Genome Level Analysis (Unfiltered Human Sample Input)"
+        },
+        {
+            "text": "Only those viral species with copy number more than a threshold are selected for the next module.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Module 2: Viral Genome Level Analysis (Unfiltered Human Sample Input)"
+        },
+        {
+            "text": "The BAM files from Module 1 and 2 (from Bowtie2 and BWA) were input into Module 3 (referred to as \"viral gene expression level analysis\"), which calculated quantitate read counts at the individual viral-gene level. We found existing RNAseq quantification tools to be not sensitive enough for viruses, and hence developed our own algorithm for this module. Our in-house algorithm used region-based information from the general-feature-format (GFF) files 5 of each viral genome, and the reads from the BAM file. It created a summary file, which had a total count of reads within or on the boundary of each region in the GFF file. This is repeated for each sample and for each viral GFF file. At the end, a matrix is obtained where the features (rows) are regions from the GFF file, and the columns are samples. The read count output from Module 3 (viral gene expression module) allowed for downstream differential expression analysis of viral genes between case and controls groups. The source code for our in-house algorithm, written using the R programming language (R Core Team, 2014), has been made public at available at github.com/ICBI/viGEN.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Module 3: Viral Gene Expression Analysis"
+        },
+        {
+            "text": "The BAM files from Module 1 and 2 (from Bowtie2) were also input to Module 4 to detect mutations in the transcripts from these viruses (referred to as \"viral RNA variant calling module\"). The BAM files were first sorted coordinate-wise using Samtools ; PCR duplicates were removed using tool Picard 4 , then the chromosomes in the BAM file were ordered in the same way as the reference file using Picard. The Viral reference file was created from combining all known and sequenced human viruses obtained from NCBI 2 . Because viral variants are known to be low frequency, we have selected a variant calling tool Varscan2 (Koboldt et al., 2012) , which allows detection of low-frequency variants (Spencer et al., 2014) . Low quality and low depth variants were flagged, but not filtered out, in case these low values were due to low viral load. Once the variants were obtained, they were merged to form a multi-sample VCF file. Only variants that had a variant in two or more samples were retained. PLINK was used to perform case-control association test (Fishers Exact Test) to compare groups.",
+            "cite_spans": [
+                {
+                    "start": 621,
+                    "end": 643,
+                    "text": "(Koboldt et al., 2012)",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 695,
+                    "end": 717,
+                    "text": "(Spencer et al., 2014)",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Module 4: Viral RNA Variant Calling Module"
+        },
+        {
+            "text": "The viGEN pipeline is easy to implement because our pipeline incorporates existing best practices and tools available. For",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tutorial in Github"
+        },
+        {
+            "text": "Module 3, we developed our own algorithm for viral-gene quantification. The major motivation for this paper was to build on existing viral detection tools, and to build a quantification tool in order to quantify, explore and analyse the genes detected in viruses. The source code for the in-house algorithm, along with a tutorial on how to execute the code on sample data has been made public at https://github.com/ICBI/viGEN/. Since access to TCGA raw data is controlled access, we could not use this dataset to create a publicly available tutorial. So we used a publicly available RNA-seq dataset to demonstrate our pipeline with an end-to-end workflow. We chose one sample (SRR1946637) from publicly available HBV liver cancer RNA-seq dataset from NCBI SRA (http://www. ncbi.nlm.nih.gov/bioproject/PRJNA279878). This dataset is also available through EBI SRA (http://www.ebi.ac.uk/ena/data/view/ SRR1946637). The dataset consisted of 50 HBV Liver cancer patients, and 5 adjacent normal liver tissues. We downloaded the raw reads for one sample, and applied our viGEN pipeline to it and were able to successfully detect HBV transcripts in this sample. A step-by-step workflow that includes -description of tools, code, intermediate and final analysis results are provided in Github: https://github.com/ICBI/viGEN/. This tutorial has also been provided as Additional File 1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tutorial in Github"
+        },
+        {
+            "text": "We were interested in exploring all viruses existing in humans. So we first obtained reference genomes of all known and sequenced human viruses obtained from NCBI 2 (745 viruses) and merged them into one file (referred to as the \"viral reference file\") in fasta file format (Wikipedia, 2004) . This file has been shared in our Github page.",
+            "cite_spans": [
+                {
+                    "start": 274,
+                    "end": 291,
+                    "text": "(Wikipedia, 2004)",
+                    "ref_id": "BIBREF51"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Custom Reference Index"
+        },
+        {
+            "text": "Cervical cancer is caused by the Human Papilloma Virus (HPV). This dataset consisted of 304 cervical cancer patients in the TCGA data collection. These samples were primary tumors from either Cervical Squamous Cell Carcinoma or Endocervical Adenocarcinoma where RNA-seq data was available.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Cervical Cancer Dataset"
+        },
+        {
+            "text": "We applied our viGEN pipeline on these samples using the Seven Bridges platform (https://cgc.sbgenomics.com). Among the 304 cervical cancer patients, 22 patients had virus detection confirmed by PCR or other lab methods and made available through the clinical data. So we used this information from the 22 patients to estimate the sensitivity and specificity of our viGEN pipeline.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Cervical Cancer Dataset"
+        },
+        {
+            "text": "This dataset consisted of 50 liver cancer patients in the TCGA data collection. 25 of these patients were afflicted with Hepatitis B virus (labeled \"HepB\"), while the rest of the 25 patients had a co-infection of both Hepatitis B and C viruses (labeled \"HepB+C\"). Information about viral presence was obtained from \"Viral Hepatitis Serology\" attribute from the clinical information.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Liver Cancer Dataset"
+        },
+        {
+            "text": "We first applied the viGEN pipeline on the 50 samples, using the Globus Genomics platform (Bhuvaneshwar et al., 2015) . Once the viral genomes were detected, we then chose only the high abundance viral species for the gene quantification step and viral variant detection steps (Module 3 and 4 respectively).",
+            "cite_spans": [
+                {
+                    "start": 90,
+                    "end": 117,
+                    "text": "(Bhuvaneshwar et al., 2015)",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Liver Cancer Dataset"
+        },
+        {
+            "text": "We then performed a focused analysis on this dataset. We used the viral-gene expression read counts, to examine the differences between \"Dead\" and \"Alive\" samples. The Dead/Alive status of the samples was obtained from the clinical data and refers to patients in the cohort that died or not from cancer. We performed this analysis on the 25 patients in the HepB only group to prevent any confounding with the HepB+HepC group. Out of 25 HepB patients, 16 were alive (baseline group), and 9 dead (comparison group) as per the clinical data. The analysis was performed using a Bioconductor software package called EdgeR (Robinson et al., 2010) in the R programming language (http://www.R-project. org).",
+            "cite_spans": [
+                {
+                    "start": 617,
+                    "end": 640,
+                    "text": "(Robinson et al., 2010)",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Liver Cancer Dataset"
+        },
+        {
+            "text": "Cox proportional hazards (Cox PH) regression model (Cox and Oakes, 2000) was then applied to look at the association of viral-gene expression data with overall survival. Thie Cox model was applied on all 50 samples in the cohort (i.e., 25 Hep B and 25 HepB+HepC) samples to maximize power.",
+            "cite_spans": [
+                {
+                    "start": 51,
+                    "end": 72,
+                    "text": "(Cox and Oakes, 2000)",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Liver Cancer Dataset"
+        },
+        {
+            "text": "We also compared the dead and alive samples at the viral RNA variant level in the HepB group using a tool called PLINK to see if it can add valuable information to the tumor landscape in humans.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Liver Cancer Dataset"
+        },
+        {
+            "text": "We used our viGEN pipeline to detect viruses in the RNA of human cervical tissue and obtained viral copy number for each species. We used a threshold copy number of 10 as a \"positive\" viral detection for both HPV-16, HPV-18 and HPV-26 viruses. Based on this criterion, HPV-16 was detected in 53% of the samples, HPV-18 in 13% of the samples and HPV-26 in 0.3 % of the samples (Figure 2 ). The threshold copy number limit that defines a \"positive\" detection is one of the parameters of the software which could be set by the user depending on the specifics of the experiment.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 376,
+                    "end": 385,
+                    "text": "(Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Detection of HPV in Cervical Cancer Patients"
+        },
+        {
+            "text": "We obtained the clinical data for this TCGA cervical cancer cohort from the cBio portal (Cerami et al., 2012) . Among the 304 patients, 22 patients had virus detection confirmed by PCR FIGURE 2 | The HPV viruses detected in cervical cancer patients using the viGEN pipeline.",
+            "cite_spans": [
+                {
+                    "start": 88,
+                    "end": 109,
+                    "text": "(Cerami et al., 2012)",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Detection of HPV in Cervical Cancer Patients"
+        },
+        {
+            "text": "Frontiers in Microbiology | www.frontiersin.org or other lab methods and made available through the clinical data. Out of the 22 patients, 12 patients had the HPV-16 virus, 4 patients had HPV-18, and the rest had other HPV viruses. So we used this information from the clinical data to estimate the sensitivity and specificity of our viGEN pipeline. We got a sensitivity of 83% and specificity of 60% for HPV-16 detection ( Table 2A) ; and a sensitivity of 75% and specificity of 94% for HPV-18 detection (Table 2B ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 424,
+                    "end": 433,
+                    "text": "Table 2A)",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 505,
+                    "end": 514,
+                    "text": "(Table 2B",
+                    "ref_id": null
+                }
+            ],
+            "section": "Detection of HPV in Cervical Cancer Patients"
+        },
+        {
+            "text": "We applied our viGEN pipeline (modules 1 and 2) on the RNAseq data from the TCGA liver cancer tumors, and obtained genomelevel read counts for each viral species. We used a threshold copy number of 10 to define a positive detection of the Hepatitis B virus.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detection of Hepatitis B Virus at the Genome Level"
+        },
+        {
+            "text": "Once the viral genomes were detected, we short-listed the high abundance viral species for the viral-gene quantification step and viral-variant detection steps (Module 3 and 4 respectively). High abundance was defined as those virus species that were detected in at-least 5 samples. In addition to Hepatitis B and C viruses, several other viruses came up in this short list including Human endogenous retrovirus K113 (HERV K113) and others. A complete list is provided in Table 3 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 472,
+                    "end": 479,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Detection of Hepatitis B Virus at the Genome Level"
+        },
+        {
+            "text": "To get a more detailed overview of the viral landscape, we applied Module 3 of the viGEN pipeline to the liver cancer dataset. This allowed us to quantify viral-gene expression regions in the RNA of liver tumor tissues. We then used those results to examine the differences between dead and alive samples.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "It is known that these patients were afflicted with the Hepatitis B virus and hence many of the differentially expressed regions were from this viral genome. But as we know, other viruses also coexist in humans. This was confirmed by the presence of differentially expressed viral-regions from other viruses.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "The differentially expressed regions that were significant among the results are shown in Tables 4A,B. Table 4A lists only the differentially expressed regions from Hepatitis B virus and Table 4B shows the differentially expressed regions from other viruses.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 90,
+                    "end": 111,
+                    "text": "Tables 4A,B. Table 4A",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 187,
+                    "end": 195,
+                    "text": "Table 4B",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "From the differential expression analyses, the two most informative results were (1) a region of the Hepatitis B genome that produced the HBeAg and HBcAg proteins were overexpressed in the dead patients and (2) another region of the Hepatitis B genome that produced HBsAg protein was overexpressed in the alive patients.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "In detail, we saw several important findings as described below:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "(a) Region NC_003977.1_CDS_1814_2452 of the Hepatitis B genome was 2.18 times overexpressed (log fold change = +1.128) in dead patients. This region contains Gene C that produces pre-code protein external core Module 4) , were the same. We collated the significant common results (p-value \u2264 0.05) in Tables 6A,B . Among these results, we saw several missense and frameshift variants in Gene X of the Hepatitis B genome (nucleotide 1479), Gene P (2573, 2651, 2813) , and a region that overlaps Gene P and PreS1 (nucleotides 2990, 2997, 3105, 3156) . All these variants were found mutated more in the cases than controls. Other significant common results included variants in Gene C (nucleotide 1979, 2396) and variants in PreS2 region (nucleotide positions 115, 126 and 148) ( Table 6A ).",
+            "cite_spans": [
+                {
+                    "start": 445,
+                    "end": 451,
+                    "text": "(2573,",
+                    "ref_id": null
+                },
+                {
+                    "start": 452,
+                    "end": 457,
+                    "text": "2651,",
+                    "ref_id": null
+                },
+                {
+                    "start": 458,
+                    "end": 463,
+                    "text": "2813)",
+                    "ref_id": null
+                },
+                {
+                    "start": 510,
+                    "end": 546,
+                    "text": "(nucleotides 2990, 2997, 3105, 3156)",
+                    "ref_id": null
+                },
+                {
+                    "start": 681,
+                    "end": 704,
+                    "text": "(nucleotide 1979, 2396)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 210,
+                    "end": 219,
+                    "text": "Module 4)",
+                    "ref_id": null
+                },
+                {
+                    "start": 300,
+                    "end": 311,
+                    "text": "Tables 6A,B",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 776,
+                    "end": 784,
+                    "text": "Table 6A",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "In addition, there were two missense variants that were common among the top results, but not significant (p-value = 0.06). They were variants in the X gene of the Hepatitis B genome (nucleotides 1762 and 1764) ( Table 6A) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 213,
+                    "end": 222,
+                    "text": "Table 6A)",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "Among the significant common results to both, were a few variants of the Human endogenous retrovirus K113 complete genome (HERV K113). These include nucleotide positions 7476, 7426, and 8086. These map to frameshift and missense mutations in the putative envelope protein of this virus (Q779_gp1, also called \"env\") ( Table 6B) . (c) The overall model is significant with p-value < 0.05 from the Log rank test (also called Score test). The table is sorted based on Annotation. Annotation includes gene name, protein name, etc., separated by commas, multiple annotations separated by semi-colon. Table 6A shows variants in the Hepatitis B virus only while Table 6B shows variants in other species. (Shows only common results between two possible analysis steps).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 318,
+                    "end": 327,
+                    "text": "Table 6B)",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 595,
+                    "end": 603,
+                    "text": "Table 6A",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 655,
+                    "end": 663,
+                    "text": "Table 6B",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "Frontiers in Microbiology | www.frontiersin.org",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Using Viral Gene Expression Data"
+        },
+        {
+            "text": "The Seven Bridges team used two metagenomic tools,Centrifuge (Kim et al., 2016) and Kraken (Wood and Salzberg, 2014) , to detect HPV viruses on the same cohort of TCGA patients (Bridges, 2017; Malhotra et al., 2017) , and shared the results with us. They used an abundance of 0.02 as a positive viral detection (Bridges, 2017; Malhotra et al., 2017) . We compared viGEN with Kraken and Centrifuge in terms of the percentage of samples where the species was detected ( Table 7) . We can see that the results are in the same range for all three tools.",
+            "cite_spans": [
+                {
+                    "start": 61,
+                    "end": 79,
+                    "text": "(Kim et al., 2016)",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 84,
+                    "end": 116,
+                    "text": "Kraken (Wood and Salzberg, 2014)",
+                    "ref_id": null
+                },
+                {
+                    "start": 177,
+                    "end": 192,
+                    "text": "(Bridges, 2017;",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 193,
+                    "end": 215,
+                    "text": "Malhotra et al., 2017)",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 311,
+                    "end": 326,
+                    "text": "(Bridges, 2017;",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 327,
+                    "end": 349,
+                    "text": "Malhotra et al., 2017)",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 468,
+                    "end": 476,
+                    "text": "Table 7)",
+                    "ref_id": "TABREF6"
+                }
+            ],
+            "section": "Detection of HPV in Cervical Cancer Patients"
+        },
+        {
+            "text": "We also estimated the sensitivity and specificity of these tools using the same 22 patients and compared with that of the viGEN pipeline. The Centrifuge tool had a sensitivity of 83% and specificity of 60% for HPV-16 detection; and a sensitivity of 75% and specificity of 94% for HPV-18 detection. The Kraken tool had a sensitivity of 83% and specificity of 20% for HPV-16 detection; and a sensitivity of 75% and specificity of 17% for HPV-18 detection (detailed in Additional File 2). It shows that our viGEN pipeline was able to match the sensitivity and specificity of Centrifuge tool and surpassed that of Kraken (detailed in Additional Files 2, 3).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Detection of HPV in Cervical Cancer Patients"
+        },
+        {
+            "text": "We used our viGEN pipeline to get genome-level read counts obtained from viruses detected in the RNA of human liver tissue. In our results, HBV was detected in 20% of the samples. This is similar to earlier analyses of TCGA liver cancer cohort study (Khoury et al., 2013; Tang et al., 2013; The Cancer Genome Atlas Research Network, 2017) , which detected the HBV virus in 23 and 32% (with typically low counts range) of cases respectively.",
+            "cite_spans": [
+                {
+                    "start": 250,
+                    "end": 271,
+                    "text": "(Khoury et al., 2013;",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 272,
+                    "end": 290,
+                    "text": "Tang et al., 2013;",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 291,
+                    "end": 338,
+                    "text": "The Cancer Genome Atlas Research Network, 2017)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Additional Analysis on Liver Cancer Patients"
+        },
+        {
+            "text": "It has also been reported that the viral gene X (HBx) was the most predominately expressed viral gene in liver cancer samples (Tang et al., 2013) which is in concordance with our findings where the peak number of reads were observed for gene X region of the HBV genome.",
+            "cite_spans": [
+                {
+                    "start": 126,
+                    "end": 145,
+                    "text": "(Tang et al., 2013)",
+                    "ref_id": "BIBREF45"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Additional Analysis on Liver Cancer Patients"
+        },
+        {
+            "text": "To get a more detailed overview of the viral landscape, we examined the human RNA-seq data to detect and quantify viral gene expression regions. We then examined the differences between dead and alive samples at the viral-transcript level on the Hepatitis B sub-group (Tables 4A,B) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 268,
+                    "end": 281,
+                    "text": "(Tables 4A,B)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral Gene Expression Data"
+        },
+        {
+            "text": "From the differential expression analyses, the two most informative results were (1) a region of the Hepatitis B genome that produced the HBeAg protein was overexpressed in the dead patients and (2) another region of the Hepatitis B genome that produced HBsAg protein was overexpressed in the alive patients.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral Gene Expression Data"
+        },
+        {
+            "text": "Presence of HBeAg or HBcAg is an indicator of active viral replication; this means the person infected with Hepatitis B -Jensen et al., 1985; Liang, 2009 ). So our results, showing that antigens HBeAg and HBcAg were overexpressed in dead patients compared to alive patients makes sense, indicating that these patients never recovered from acute infection.",
+            "cite_spans": [
+                {
+                    "start": 120,
+                    "end": 141,
+                    "text": "-Jensen et al., 1985;",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 142,
+                    "end": 153,
+                    "text": "Liang, 2009",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral Gene Expression Data"
+        },
+        {
+            "text": "The results also indicate a higher level of HBsAg in the alive patients compared to the dead patients. The highest levels of HBsAg in the virus are known to occur in the \"immunotolerant phase.\" This pattern is seen in patients who are inactive carriers of the virus i.e., they have the wild type DNA, and the virus has been in the host for so long, that the host does not see the virus as a foreign protein in the body, and hence there's no immune reaction against the virus. In this phase, there is known to be minimal liver inflammation and low risk of disease progression (Park, 2004; Tran, 2011; Locarnini and Bowden, 2012) . This could explain why we saw higher level of HBsAg in the alive patients compared to the dead patients.",
+            "cite_spans": [
+                {
+                    "start": 575,
+                    "end": 587,
+                    "text": "(Park, 2004;",
+                    "ref_id": null
+                },
+                {
+                    "start": 588,
+                    "end": 599,
+                    "text": "Tran, 2011;",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 600,
+                    "end": 627,
+                    "text": "Locarnini and Bowden, 2012)",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral Gene Expression Data"
+        },
+        {
+            "text": "Also among the significant results were three regions from the Human endogenous retrovirus K113 (HERV K113) genome (with negative log fold change) that were overexpressed in the alive patients. Two of these regions were Sequence-tagged sites (STS) and the third region was in the gag-pro-pol region that has frameshifts. HERV could protect the host from invasion from related viral agents through either retroviral receptor blockade or immune response to the undesirable agent (Nelson et al., 2003) .",
+            "cite_spans": [
+                {
+                    "start": 477,
+                    "end": 498,
+                    "text": "(Nelson et al., 2003)",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral Gene Expression Data"
+        },
+        {
+            "text": "Overall, we found that our results from viral-gene expression level make biological sense, with much of the results validated through published literature.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral Gene Expression Data"
+        },
+        {
+            "text": "We performed variant calling on the viral data to see if it can add valuable information to the tumor landscape in humans. We then compared the dead and alive samples at the viral-variant level on the 25 patients in the Hepatitis B sub-group.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral-Variant Data"
+        },
+        {
+            "text": "Among the significant results (Tables 6A,B) included variants in Gene C (nucleotide 1979, 2396) and variants in PreS2 region (nucleotide positions 115, 126 and 148). The Gene C region creates the pre-capsid protein, which plays a role in regulating genome replication (Tan et al., 2015) . The mutation in the 2396 position lies in a known CpG island (ranging from 2215 to 2490), whose methylation level is significantly correlated with hepatocarcinogenesis (Jain et al., 2015) . Mutations in PreS2 are associated with persistent HBV infection, and emerge in chronic infections. The PreS1 and PreS2 regions are known to play an essential role in the interaction with immune responses because they contain several epitopes for T or B cells (Cao, 2009) .",
+            "cite_spans": [
+                {
+                    "start": 72,
+                    "end": 95,
+                    "text": "(nucleotide 1979, 2396)",
+                    "ref_id": null
+                },
+                {
+                    "start": 268,
+                    "end": 286,
+                    "text": "(Tan et al., 2015)",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 457,
+                    "end": 476,
+                    "text": "(Jain et al., 2015)",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 738,
+                    "end": 749,
+                    "text": "(Cao, 2009)",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral-Variant Data"
+        },
+        {
+            "text": "Mutations in the 1762/1764 positions of the X gene are known to be associated with greater risk of HCC (Cao, 2009; Wang et al., 2014) , and is independent of serum HBV DNA level (Wang et al., 2014) . This mutation combination is also known to be associated with hepatitis B related acute-on-chronic liver failure (Xiao et al., 2011) . It is predicted that mutations associated with HCC variants are likely generated during HBV-induced pathogenesis. The A1762T/G1764A combined mutations was shown to be a valuable biomarker in the predicting the risk of HCC (Cao, 2009; Wang et al., 2014) ; and are often detected about 10 years before the diagnosis of HCC (Cao, 2009 ).",
+            "cite_spans": [
+                {
+                    "start": 103,
+                    "end": 114,
+                    "text": "(Cao, 2009;",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 115,
+                    "end": 133,
+                    "text": "Wang et al., 2014)",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 178,
+                    "end": 197,
+                    "text": "(Wang et al., 2014)",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 313,
+                    "end": 332,
+                    "text": "(Xiao et al., 2011)",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 557,
+                    "end": 568,
+                    "text": "(Cao, 2009;",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 569,
+                    "end": 587,
+                    "text": "Wang et al., 2014)",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 656,
+                    "end": 666,
+                    "text": "(Cao, 2009",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral-Variant Data"
+        },
+        {
+            "text": "Among the significant common results to both, were a few variants of the Human endogenous retrovirus K113 complete genome (HERV K113). These variants map to frameshift and missense mutations in the putative envelope protein of this virus (Q779_gp1, also called \"env\"). Studies have shown that this envelope protein mediates infections of cells (Robinson and Whelan, 2016) . HERV K113 is a provirus and is capable of producing intact viral particles (Boller et al., 2008) . Studies have shown a strong association between HERV-K antibodies and clinical manifestation of disease and therapeutic response (Moyes et al., 2005; Downey et al., 2015) . It is hypothesized that retroviral gene products can be \"reawakened\" when genetic damage occurs through mutations, frameshifts and chromosome breaks. Even though the direct oncogenic effects of HERVs in cancer are yet to be completely understood, it has shown potential as diagnostic or prognostic biomarkers and for immunotherapeutic purposes including vaccines (Downey et al., 2015) .",
+            "cite_spans": [
+                {
+                    "start": 344,
+                    "end": 371,
+                    "text": "(Robinson and Whelan, 2016)",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 449,
+                    "end": 470,
+                    "text": "(Boller et al., 2008)",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 602,
+                    "end": 622,
+                    "text": "(Moyes et al., 2005;",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 623,
+                    "end": 643,
+                    "text": "Downey et al., 2015)",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 1009,
+                    "end": 1030,
+                    "text": "(Downey et al., 2015)",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral-Variant Data"
+        },
+        {
+            "text": "We compared various viral detection pipeline using the several criteria (Table 1) . Our pipeline provides similar functionality as the tools listed in Table 1 for the detection of viruses from human RNAseq data; but also has an advantage of enabling gene-level expression analysis and quantification, as well as variant analysis of viral genomes in a single open source publicly available package.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 72,
+                    "end": 81,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 151,
+                    "end": 158,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Comparing Dead and Alive Samples in the Liver Cancer Cohort Using Viral-Variant Data"
+        },
+        {
+            "text": "One limitation of our viGEN pipeline is that it is dependent on sequence information from reference genome. This makes it challenging to detect viral strains where reference sequence information is not known. In the future, we plan to explore de novo assembly incorporating more sophisticated methods like Hidden Markov Models (HMM) (Alves et al., 2016) . This would enable us to provide in-depth analysis of strain pathogenicity in the context of clinical outcome.",
+            "cite_spans": [
+                {
+                    "start": 333,
+                    "end": 353,
+                    "text": "(Alves et al., 2016)",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Limitations"
+        },
+        {
+            "text": "In recent years, US regulators approved a viral based cancer therapy (Ledford, 2015) , proving that the study of viruses in the human transcriptome has biomedical interest, and is paving the way for promising research and new opportunities.",
+            "cite_spans": [
+                {
+                    "start": 69,
+                    "end": 84,
+                    "text": "(Ledford, 2015)",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Biological Significance"
+        },
+        {
+            "text": "We show that our viGEN pipeline can thus be used on cancer and non-cancer human NGS data to provide additional insights into the biological significance of viral and other types of infection in complex diseases, and tumorigeneses. Our viral pipeline could be used in conjunction with additional type of immuno-oncology analysis based on RNA-seq data of host RNA for cancer immunology applications. Detection and characterization of these infectious agents in tumor samples can give us better insights into disease mechanisms and their treatment (Hausen, 2000) .",
+            "cite_spans": [
+                {
+                    "start": 545,
+                    "end": 559,
+                    "text": "(Hausen, 2000)",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Biological Significance"
+        },
+        {
+            "text": "With the decreasing costs of NGS analysis, our results show that it is possible to detect viral sequences from whole-transcriptome (RNA-seq) data in humans. Our analysis shows that it is not easy to detect DNA and RNA viruses from tumor tissue, but certainly possible. We were able to not only quantify them at a viral-gene expression level, but also extract variants. Our goal is to facilitate better understanding and gain new insights in the biology of viral presence/infection in actual tumor samples. The results presented in this paper on two case studies are in correspondence with published literature and are a proof of concept of our pipeline.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONCLUSION"
+        },
+        {
+            "text": "This pipeline is generalizable, and can be used to examine viruses present in genomic data from other next generation sequencing (NGS) technologies. It can also be used to detect and explore other types of microbes in humans, as long as the sequence information is available from the National Center for Biotechnology Information (NCBI) resources.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONCLUSION"
+        },
+        {
+            "text": "This pipeline can thus be used on cancer and non-cancer human NGS data to provide additional insights into the biological significance of viral and other types of infection in complex diseases, and tumorigeneses. We are planning to package this pipeline and make it open source to the bioinformatics community through Bioconductor.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONCLUSION"
+        },
+        {
+            "text": "The TCGA liver cancer dataset was used in the analysis and writing of this manuscript. The data can be obtained from https:// cancergenome.nih.gov/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AVAILABILITY OF DATA AND MATERIAL"
+        },
+        {
+            "text": "Since access to TCGA raw data is controlled access, we could not use this dataset to create a publicly available tutorial. So we looked for publicly available RNA-seq dataset to demonstrate our pipeline with an end-to-end workflow.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AVAILABILITY OF DATA AND MATERIAL"
+        },
+        {
+            "text": "We chose one sample (SRR1946637) from publicly available liver cancer RNA-seq dataset from NCBI SRA (http://www. ncbi.nlm.nih.gov/bioproject/PRJNA279878). This dataset is also available through EBI SRA (http://www.ebi.ac.uk/ena/data/view/ SRR1946637). The dataset consists of 50 Liver cancer patients, and 5 adjacent normal liver tissues. We downloaded the raw reads for one sample, and applied our viGEN pipeline to it. A step-by-step workflow that includes -description of tools, code, intermediate and final analysis results are provided in Github: https://github.com/ICBI/viGEN/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AVAILABILITY OF DATA AND MATERIAL"
+        },
+        {
+            "text": "Project name: viGEN Project home page: https://github.com/ICBI/viGEN/ Operating system(s): The R code is platform independent. The shell scripts can run on Unix, Linux, or iOS environment Programming language: R, bash/shell Other requirements: N/A License: N/A Any restrictions to use by non-academics: N/A",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Project details:"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Infections That Can Lead to Cancer",
+            "authors": [],
+            "year": 2007,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "GenSeed-HMM: a tool for progressive assembly using profile HMMs as seeds and its application in alpavirinae viral discovery from metagenomic data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Alves",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "De Oliveira",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Sandberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Moreno-Gallego",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "De Toledo",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "De Moura",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Front. Microbiol",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.3389/fmicb.2016.00269"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Applications of next-generation sequencing technologies to diagnostic virology",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Barzon",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Lavezzo",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Militello",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Toppo",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Pal\u00f9",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Int. J. Mol. Sci",
+            "volume": "12",
+            "issn": "",
+            "pages": "7861--7884",
+            "other_ids": {
+                "DOI": [
+                    "10.3390/ijms12117861"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Rapid identification of non-human sequences in high-throughput sequencing datasets",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bhaduri",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Qu",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ungewickell",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Khavari",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Bioinformatics",
+            "volume": "28",
+            "issn": "",
+            "pages": "1174--1175",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/bts100"
+                ]
+            }
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "A case study for cloud based high throughput analysis of NGS data using the globus genomics system",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Bhuvaneshwar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Sulakhe",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gauba",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rodriguez",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Madduri",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Dave",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Comput. Struct. Biotechnol. J",
+            "volume": "13",
+            "issn": "",
+            "pages": "64--74",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.csbj.2014.11.001"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Human endogenous retrovirus HERV-K113 is capable of producing intact viral particles",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Boller",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sch\u00f6nfeld",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lischer",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Fischer",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Hoffmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Kurth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J. Gen. Virol",
+            "volume": "89",
+            "issn": "2",
+            "pages": "567--572",
+            "other_ids": {
+                "DOI": [
+                    "10.1099/vir.0.83534-0"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Identifying Viral Sequences In TCGA Data Using Kraken And Centrifuge",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bridges",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Translating RNA sequencing into clinical diagnostics: opportunities and challenges",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Byron",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Van Keuren-Jensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Engelthaler",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Carpten",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Craig",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Nat. Rev. Genet",
+            "volume": "17",
+            "issn": "",
+            "pages": "257--271",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nrg.2016.10"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Clinical relevance and public health significance of hepatitis B virus genomic variations",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Cao",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "World J. Gastroenterol",
+            "volume": "15",
+            "issn": "",
+            "pages": "5761--5769",
+            "other_ids": {
+                "DOI": [
+                    "10.3748/wjg.15.5761"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Available online at",
+            "authors": [],
+            "year": 2013,
+            "venue": "BAM 2013",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "The cBio cancer genomics portal: an open platform for exploring multidimensional cancer genomics data",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Cerami",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Dogrusoz",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Gross",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Sumer",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Aksoy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Cancer Discov",
+            "volume": "2",
+            "issn": "",
+            "pages": "401--404",
+            "other_ids": {
+                "DOI": [
+                    "10.1158/2159-8290.CD-12-0095"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Second-generation PLINK: rising to the challenge of larger and richer datasets",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chow",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Tellier",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Vattikuti",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Purcell",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/s13742-015-0047-8"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "VirusSeq: software to identify viruses and their integration sites using next-generation sequencing of human cancer tissue",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Yao",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Thompson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Tannir",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Weinstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Su",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Bioinformatics",
+            "volume": "29",
+            "issn": "",
+            "pages": "266--267",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/bts665"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Analysis of Survival Data",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Cox",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Oakes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Next-generation sequencing in clinical virology: discovery of new viruses",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Datta",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Budhauliya",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Das",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Chatterjee",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Vanlalhmuaka",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Veer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "World J. Virol",
+            "volume": "4",
+            "issn": "",
+            "pages": "265--276",
+            "other_ids": {
+                "DOI": [
+                    "10.5501/wjv.v4.i3.265"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Human endogenous retrovirus K and cancer: innocent bystander or tumorigenic accomplice?",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Downey",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Sullivan",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Wang-Johanning",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ambs",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Giles",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Glynn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Int J. Cancer",
+            "volume": "137",
+            "issn": "",
+            "pages": "1249--1257",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/ijc.29003"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Infections Causing Human Cancer",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Hausen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Comprehensive DNA methylation analysis of hepatitis B virus genome in infected liver tissues",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jain",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Boldbaatar",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Clemens",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Sci. Rep",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/srep10478"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Landscape of DNA virus associations across human malignant cancers: analysis of 3,775 cases using RNA-Seq",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Khoury",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Tannir",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Williams",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Yao",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J. Virol",
+            "volume": "87",
+            "issn": "",
+            "pages": "8916--8926",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/JVI.00340-13"
+                ]
+            }
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Centrifuge: rapid and sensitive classification of metagenomic sequences",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Song",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Breitwieser",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Genome Res",
+            "volume": "26",
+            "issn": "",
+            "pages": "1721--1729",
+            "other_ids": {
+                "DOI": [
+                    "10.1101/gr.210641.116"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "VarScan 2: somatic mutation and copy number alteration discovery in cancer by exome sequencing",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Koboldt",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Larson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Shen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Mclellan",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Lin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Genome Res",
+            "volume": "22",
+            "issn": "",
+            "pages": "568--576",
+            "other_ids": {
+                "DOI": [
+                    "10.1101/gr.129684.111"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "PathSeq: software to identify or discover microbes by deep sequencing of human tissue",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Kostic",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Ojesina",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Pedamallu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Jung",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Verhaak",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Getz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nat. Biotechnol",
+            "volume": "29",
+            "issn": "",
+            "pages": "393--396",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nbt.1868"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Fast gapped-read alignment with Bowtie 2",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Langmead",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nat. Methods",
+            "volume": "9",
+            "issn": "",
+            "pages": "357--359",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nmeth.1923"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Software for computing and annotating genomic ranges",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lawrence",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Huber",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Pag\u00e8s",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Aboyoun",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Carlson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gentleman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS Comput. Biol",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003118"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Cancer-fighting viruses win approval",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ledford",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nature",
+            "volume": "526",
+            "issn": "",
+            "pages": "622--623",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/526622a"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "RSEM: accurate transcript quantification from RNA-Seq data with or without a reference genome",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Dewey",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "BMC Bioinformat",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-12-323"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Fast and accurate short read alignment with Burrows-Wheeler transform",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Durbin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Bioinformatics",
+            "volume": "25",
+            "issn": "",
+            "pages": "1754--1760",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btp324"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "The Sequence Alignment/Map format and SAMtools",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Handsaker",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Wysoker",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Fennell",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ruan",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Homer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Bioinformatics",
+            "volume": "25",
+            "issn": "",
+            "pages": "2078--2079",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btp352"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "ViralFusionSeq: accurately discover viral integration events and reconstruct fusion transcripts at single-base resolution",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Wan",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Co",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "Chan",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Bioinformatics",
+            "volume": "29",
+            "issn": "",
+            "pages": "649--651",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btt011"
+                ]
+            }
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Hepatitis B: the virus and disease",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Liang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Hepatology",
+            "volume": "49",
+            "issn": "5",
+            "pages": "13--21",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/hep.22881"
+                ]
+            }
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Hepatitis B surface antigen quantification: not what it seems on the surface",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Locarnini",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bowden",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Hepatology",
+            "volume": "56",
+            "issn": "",
+            "pages": "411--414",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/hep.25732"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Enabling scalable and rapid metagenomic profiling of the transcriptome with the Seven Bridges Cancer Genomics Cloud",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Malhotra",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Grady",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Lehnert",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Sethi",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Prakasha",
+                    "suffix": ""
+                },
+                {
+                    "first": "Brandi",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2017,
+            "venue": "BioIT World",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "The distribution of the endogenous retroviruses HERV-K113 and HERV-K115 in health and disease",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Moyes",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Martin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sawcer",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Temperton",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Worthington",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Griffiths",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Genomics",
+            "volume": "86",
+            "issn": "",
+            "pages": "337--341",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.ygeno.2005.06.004"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "The Cancer Genome Atlas",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Nci",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Demystified. Human endogenous retroviruses",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Nelson",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Carnegie",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Martin",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Davari Ejtehadi",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Hooley",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Roden",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Mol. Pathol",
+            "volume": "56",
+            "issn": "",
+            "pages": "11--18",
+            "other_ids": {
+                "DOI": [
+                    "10.1136/mp.56.1.11"
+                ]
+            }
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "R: A language and environment for statistical computing",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "R Core Team",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Infectious entry pathway mediated by the human endogenous retrovirus K Envelope Protein",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Robinson",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Whelan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "J. Virol",
+            "volume": "90",
+            "issn": "",
+            "pages": "3640--3649",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/JVI.03136-15"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "edgeR: a Bioconductor package for differential expression analysis of digital gene expression data",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Robinson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Mccarthy",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Smyth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Bioinformatics",
+            "volume": "26",
+            "issn": "",
+            "pages": "139--140",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btp616"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Viral expression associated with gastrointestinal adenocarcinomas in TCGA high-throughput sequencing data",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Salyakina",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Tsinoremas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Hum. Genomics",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1479-7364-7-23"
+                ]
+            }
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Sensitive detection of viral transcripts in human tumor transcriptomes",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Schelhorn",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fischer",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Tolosi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Altm\u00fcller",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "N\u00fcrnberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Pfister",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS Comput. Biol",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003228"
+                ]
+            }
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Performance of common analysis methods for detecting lowfrequency single nucleotide variants in targeted next-generation sequence data",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Spencer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tyagi",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Vallania",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Bredemeyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Pfeifer",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Mitra",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "J. Mol. Diagn",
+            "volume": "16",
+            "issn": "",
+            "pages": "75--88",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jmoldx.2013.09.003"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Immunosuppressive treatment of HBsAg-positive chronic liver disease: significance of HBeAg",
+            "authors": [
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Tage-Jensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Aldershvile",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Schlichting",
+                    "suffix": ""
+                }
+            ],
+            "year": 1985,
+            "venue": "Hepatology",
+            "volume": "5",
+            "issn": "",
+            "pages": "47--49",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/hep.1840050111"
+                ]
+            }
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "The interface between hepatitis B virus capsid proteins affects self-assembly, pregenomic RNA packaging, and reverse transcription",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Tan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Pionek",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Unchwaniwala",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Maguire",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Loeb",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Zlotnick",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "J. Virol",
+            "volume": "89",
+            "issn": "",
+            "pages": "3275--3284",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/JVI.03545-14"
+                ]
+            }
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "The landscape of viral expression and host gene fusion and adaptation in human cancer",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Alaei-Mahabadi",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Samuelsson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lindh",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Larsson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nat. Commun",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/ncomms3513"
+                ]
+            }
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Comprehensive and Integrative Genomic Characterization of Hepatocellular Carcinoma",
+            "authors": [],
+            "year": 2017,
+            "venue": "The Cancer Genome Atlas Research Network",
+            "volume": "169",
+            "issn": "",
+            "pages": "1327--1368",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.cell.2017.05.046"
+                ]
+            }
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Immune tolerant hepatitis B: a clinical dilemma",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Tran",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Gastroenterol. Hepatol. (N Y)",
+            "volume": "7",
+            "issn": "",
+            "pages": "511--516",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Using small RNA deep sequencing data to detect human viruses",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sun",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ruan",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Biomed. Res. Int",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1155/2016/2596782"
+                ]
+            }
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "VirusFinder: software for efficient and accurate detection of viruses and their integration sites in host genomes through next generation sequencing data",
+            "authors": [
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Jia",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS ONE",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0064465"
+                ]
+            }
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Detection of hepatitis B virus A1762T/G1764A mutant by amplification refractory mutation system",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Z"
+                    ],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Braz. J. Infect. Dis",
+            "volume": "18",
+            "issn": "",
+            "pages": "261--265",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.bjid.2013.09.005"
+                ]
+            }
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "FASTA Format",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Wikipedia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Kraken: ultrafast metagenomic sequence classification using exact alignments",
+            "authors": [
+                {
+                    "first": ";",
+                    "middle": [
+                        "D E"
+                    ],
+                    "last": "Wikipedia",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Genome Biol",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/gb-2014-15-3-r46"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Hepatitis B virus genotype B with G1896A and A1762T/G1764A mutations is associated with hepatitis B related acute-on-chronic liver failure",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Xiao",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ma",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J. Med. Virol",
+            "volume": "83",
+            "issn": "",
+            "pages": "1544--1550",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/jmv.22159"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "viGEN pipeline. Each module has a color, shown in the legend.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "654 (se = 0.188 ) Rsquare = 0.12 (max possible = 0.329 ) Likelihood ratio test = 4.74 on 2 df, p = 0.09343 Wald test = 0.75 on 2 df, p = 0.6856 Score (logrank) test = 10.58 on 2 df, p = 0.00503 These results shown used the viral-gene/CDS data obtained from Module 1 (using alignment tool Bowtie2) + Module 3. Coef: coefficient (Beta) of the model; exp(coef): Hazard Ratio; se(coef): Standard Error; Pr(>|z|): P-value (a) The Cox PH model shows that assuming other covariant to be constant, unit increase in expression of this region NC_003977.1_CDS_1814_2452, increases the hazard of event (death) by 70%. (b) On the other hand, that assuming other covariant to be constant, unit increase in expression of this region NC_003977.1_CDS_2848_4050, decreases the hazard of event (death) by 43%.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Comparison of existing pipelines that detect viruses from human transcriptome data.RNA-seq sample from an HBV liver cancer patient from NCBI SRA (http://www.ncbi.nlm.nih.gov/bioproject/PRJNA279878).",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Estimation of sensitivity and specificity for HPV-16 detection in TCGA cervical cancer samples using the viGEN pipeline.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Virus species detected in at-least 5 samples.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Differential expression analysis of transcript level read counts Liver cancer dataset comparing Dead and Alive samples.These results shown used the viral-gene data obtained from Module 1 (using alignment tool Bowtie2) + Module 3. The table shows results with q value < 0.06 and sorted based on LogFC in the descending order.Table 4Ashows transcript level read counts in the Hepatitis B virus whileTable 4Bshows transcript level read counts in other species. The overall model is significant with p-value < 0.05 from the Log rank test (also called Score test).",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Cox proportional hazard survival analysis (across 25 HepB samples and 25 HepB + HepC Samples). coxph(formula = survObject \u223c NC_003977.1_CDS_2848_4050 + NC_003977.1_CDS_1814_2452) Results from the model: n = 37, number of events = 5 (13 observations deleted due to missingness)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Results of case-control association test applied on the results from viral variant calling.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "Comparing the viral detection ability of viGEN with other tools.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "KB and YG designed the pipeline. KB and LS implemented the pipeline. KB and YG wrote the manuscript with editorial comments from SM.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AUTHOR CONTRIBUTIONS"
+        },
+        {
+            "text": "This work was funded by the Lombardi cancer center support grant (P30 CA51008).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "FUNDING"
+        },
+        {
+            "text": "The Supplementary Material for this article can be found online at: https://www.frontiersin.org/articles/10.3389/fmicb.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SUPPLEMENTARY MATERIAL"
+        },
+        {
+            "text": "Additional File 1 | viGEN Github tutorial.Additional File 2 | Detailed results from analysis of TCGA cervical cancer patients.Additional File 3 | Output from Kraken and Centrifuge shared by the Seven Bridges Team.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "2018.01172/full#supplementary-material"
+        },
+        {
+            "text": "The authors declare that the research was conducted in the absence of any commercial or financial relationships that could be construed as a potential conflict of interest.Copyright \u00a9 2018 Bhuvaneshwar, Song, Madhavan and Gusev. This is an openaccess article distributed under the terms of the Creative Commons Attribution License (CC BY). The use, distribution or reproduction in other forums is permitted, provided the original author(s) and the copyright owner are credited and that the original publication in this journal is cited, in accordance with accepted academic practice. No use, distribution or reproduction is permitted which does not comply with these terms.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conflict of Interest Statement:"
+        }
+    ]
+}

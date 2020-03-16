@@ -1,0 +1,2556 @@
+{
+    "paper_id": "be45cd588caaa0d8e5cdcd0cb7a1a59ccfc85d51",
+    "metadata": {
+        "title": "Enhancement of accuracy and efficiency for RNA secondary structure prediction by sequence segmentation and MapReduce",
+        "authors": [
+            {
+                "first": "Boyu",
+                "middle": [],
+                "last": "Zhang",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Daniel",
+                "middle": [
+                    "T"
+                ],
+                "last": "Yehdego",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Kyle",
+                "middle": [
+                    "L"
+                ],
+                "last": "Johnson",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Ming-Ying",
+                "middle": [],
+                "last": "Leung",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Michela",
+                "middle": [],
+                "last": "Taufer",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Ribonucleic acid (RNA) molecules play important roles in many biological processes including gene expression and regulation. Their secondary structures are crucial for the RNA functionality, and the prediction of the secondary structures is widely studied. Our previous research shows that cutting long sequences into shorter chunks, predicting secondary structures of the chunks independently using thermodynamic methods, and reconstructing the entire secondary structure from the predicted chunk structures can yield better accuracy than predicting the secondary structure using the RNA sequence as a whole. The chunking, prediction, and reconstruction processes can use different methods and parameters, some of which produce more accurate predictions than others. In this paper, we study the prediction accuracy and efficiency of three different chunking methods using seven popular secondary structure prediction programs that apply to two datasets of RNA with known secondary structures, which include both pseudoknotted and non-pseudoknotted sequences, as well as a family of viral genome RNAs whose structures have not been predicted before. Our modularized MapReduce framework based on Hadoop allows us to study the problem in a parallel and robust environment.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Results: On average, the maximum accuracy retention values are larger than one for our chunking methods and the seven prediction programs over 50 non-pseudoknotted sequences, meaning that the secondary structure predicted using chunking is more similar to the real structure than the secondary structure predicted by using the whole sequence. We observe similar results for the 23 pseudoknotted sequences, except for the NUPACK program using the centered chunking method. The performance analysis for 14 long RNA sequences from the Nodaviridae virus family outlines how the coarse-grained mapping of chunking and predictions in the MapReduce framework exhibits shorter turnaround times for short RNA sequences. However, as the lengths of the RNA sequences increase, the fine-grained mapping can surpass the coarse-grained mapping in performance.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Conclusions: By using our MapReduce framework together with statistical analysis on the accuracy retention results, we observe how the inversion-based chunking methods can outperform predictions using the whole sequence. Our chunk-based approach also enables us to predict secondary structures for very long RNA sequences, which is not feasible with traditional methods alone. Figure 1 Basic elements in RNA secondary structures. The stem loop (a) and pseudoknot (b). Zhang et al. BMC Structural Biology 2013, 13(Suppl 1):S3",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Ribonucleic acid (RNA) is made up of four types of nucleotide bases: adenine (A), cytosine (C), guanine (G), and uracil (U). A sequence of these bases is strung together to form a single-stranded RNA molecule. RNA plays important roles in many biological processes including gene expression and regulation. RNA molecules vary greatly in size, ranging from nineteen nucleotide bases in microRNAs [1] to long polymers of over 30,000 bases in complete viral genomes [2] . Although an RNA molecule is a linear polymer, it tends to fold back on itself to form a 3-dimensional (3D) functional structure, mostly by pairing complementary bases. Among the four nucleotide bases, C and G form complementary base pairs by hydrogen bonding, as do A and U; in RNA (but not DNA), G can also base pair with U residues. The overall stability of an RNA structure element is determined by the \"minimal free energy\" defined as the amount of energy it would take to completely unpair all of the base pairs that hold it together (e.g., by denaturing it with heat).",
+            "cite_spans": [
+                {
+                    "start": 395,
+                    "end": 398,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 463,
+                    "end": 466,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "RNA molecules"
+        },
+        {
+            "text": "The 3D structure of an RNA molecule is often the key to its function. Because of the instability of RNA molecules, experimental determination of their precise 3D structures is a time-consuming and rather costly process. However, useful information about the molecule can be gained from knowing its secondary structure, i.e., the collection of hydrogen-bonded base pairs in the molecule [3] . RNA secondary elements can be classified into two basic categories: stem-loops and pseudoknots (see Figure 1 ).",
+            "cite_spans": [
+                {
+                    "start": 386,
+                    "end": 389,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 492,
+                    "end": 500,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "RNA molecules"
+        },
+        {
+            "text": "Both kinds of secondary structure elements, which have been implicated in important biological processes like gene expression and gene regulation [4] , must contain at least one inversion, i.e., a string of nucleotides followed closely by its inverse complementary sequence. Figure 2 shows an example of an inversion, with the 6-nucleotide string \"ACCGCA\" followed by its inverse complementary sequence \"UGCGGU\" after a gap of three nucleotides.",
+            "cite_spans": [
+                {
+                    "start": 146,
+                    "end": 149,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 275,
+                    "end": 283,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "RNA molecules"
+        },
+        {
+            "text": "Secondary structures are crucial for the RNA functionality and therefore the prediction of the secondary structures is widely studied. Development of mathematical models and computational prediction algorithms for stem-loop structures began in the early 1980's [5] [6] [7] . Pseudoknots, because of the extra base-pairings involved, must be represented by more complex models and data structures that require large amounts of memory and computing time to obtain the optimal and suboptimal structures with minimal free energies. As a result, development of pseudoknot prediction algorithms began in the 1990's [8, 9] .",
+            "cite_spans": [
+                {
+                    "start": 261,
+                    "end": 264,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 265,
+                    "end": 268,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 269,
+                    "end": 272,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 609,
+                    "end": 612,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 613,
+                    "end": 615,
+                    "text": "9]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "RNA secondary structure predictions"
+        },
+        {
+            "text": "Most existing secondary structure prediction algorithms are based on the minimization of a free energy (MFE) function and the search for the most thermodynamically stable structure for the whole RNA sequence. Searching for a structure with global minimal free energy may be memory and time intensive, especially for long sequences with pseudoknots. To overcome the tremendous demand on computing resources, various alternative algorithms have been proposed that restrict the types of pseudoknots for possible prediction in order to keep computation time and storage size under control. Yet, most programs available to date for pseudoknot structure prediction can only process sequences of limited lengths on the order of several hundred nucleotides. These programs, therefore, cannot be applied directly to larger RNA molecules such as the genomic RNA in viruses, which may be thousands of bases in length. At the same time, minimal energy configurations may not be the most favorable structures for carrying out the biological functions of RNA, which often require the RNA to react and bind with other molecules (e.g., RNA binding proteins). Our current work suggests that local structures formed by pairings among nucleotides in close proximity and based on local minimal free energies rather than the global minimal free energy, may better correlate with the real molecular structure of long RNA sequences. This hypothesis has yet to be supported by more detailed experimental evidence. If proven correct, our approach will open the door to a new generation of programs based on segmenting long RNA sequences into shorter chunks, predicting the secondary structures of each chunk individually, and then assembling the prediction results to give the structure of the original sequence.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "RNA secondary structure predictions"
+        },
+        {
+            "text": "In our previous work, we had proposed to predict secondary structures for long RNA sequences using three steps: (1) cut the long sequence into shorter, fixed-size chunks; (2) predict the secondary structures of the chunks individually by distributing them to different processors on a Condor grid; and (3) assemble the prediction results to give the structure of the original sequence [10] . We used this approach on the genome sequences of the virus family Nodaviridae, leading to the discovery of secondary structures essential for RNA replication of the Nodamura virus [11] . However, the study also identified the necessity of having a more effective segmentation strategy for cutting the sequence so that the predicted results of the chunks can be assembled to generate a reasonably accurate structure for the original molecule. Indeed, the selection of cutting points in the original RNA sequence is a crucial component of the segmenting step. In this paper, we propose to approach the problem by identifying inversion excursions in the RNA sequence and cutting around them. We consider two alternative inversion-based segmentation strategies: the centered and optimized chunking methods. Both methods identify regions in the sequence with high concentrations of inversions and avoid cutting into these regions. In the centered method, the longest spanning inversion clusters are centered in the chunks, while in the optimized method, the number of bases covered by inversions is maximized. Preliminary results have been presented in the authors' work [12, 13] .",
+            "cite_spans": [
+                {
+                    "start": 171,
+                    "end": 174,
+                    "text": "(2)",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 385,
+                    "end": 389,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 572,
+                    "end": 576,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1558,
+                    "end": 1562,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1563,
+                    "end": 1566,
+                    "text": "13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "RNA secondary structure predictions"
+        },
+        {
+            "text": "The prediction of RNA secondary structures for long RNA sequences based on sequence segmentation can be performed in parallel, thus benefiting from parallel computing systems and paradigms. We use the well-known MapReduce framework Hadoop for our parallel predictions. The MapReduce paradigm is a parallel programming model that facilitates the processing of large distributed datasets, and it was originally proposed by Google to index and annotate data on the Internet [14] . In this paradigm, the programmer specifies two functions: map and reduce. The map function takes as input a key k 1 and value v 2 pair, performs the map function, and outputs a list of intermediate key and value pairs which may be different from the input list \u2329k 2 , v 2 \u2329 -i.e., Map \u2329k 1 , v 1 \u232a list \u2329k 2 , v 2 \u232a. The runtime system automatically groups all the values associated with the same key and forms the input to the reduce function. The reduce function takes as input a key and values pair \u2329k 2 , list(v 2 )\u232a, performs the reduce function, and outputs a list of values -i.e., Reduce \u2329k 2 , list(v 2 )\u232a list \u2329v 3 \u232a. Note that the input values to reduce is the list of all the values associated with the same key.",
+            "cite_spans": [
+                {
+                    "start": 471,
+                    "end": 475,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "MapReduce and Hadoop"
+        },
+        {
+            "text": "MapReduce is appealing to scientific problems, including the one addressed in this paper, because of the simplicity of programming, the automatic load balancing and failure recovery, as well as the scalability. It has been widely adapted for many bioinformatics applications. For example, Hong et al. designed an RNA-Seq analysis tool for the estimation of gene expression levels and genomic variant calling [15] , and Langmead et al. designed a nextgeneration sequencing tool based on MapReduce Hadoop [16] . To the best of our knowledge, our work is the first one to adapt MapReduce into secondary structure predictions of long RNA sequences. Preliminary work on the reasoning behind adapting RNA secondary structure predictions to the MapReduce paradigm can be found at [17] .",
+            "cite_spans": [
+                {
+                    "start": 408,
+                    "end": 412,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 503,
+                    "end": 507,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 773,
+                    "end": 777,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "MapReduce and Hadoop"
+        },
+        {
+            "text": "Workflow for parallel chunk-based predictions Rather than predicting the RNA sequence as a whole, we cut each sequence into chunks and predict each chunk independently before merging the predictions into the whole secondary structure. As the cutting process can be performed in different ways, the search for effective ways to cut sequences can require a large search space and generate a large number of independent prediction jobs that can potentially be performed in parallel. The workflow for a parallel chunk-based RNA secondary structure prediction and accuracy assessment consists of the following four steps: (1) chunking: each RNA sequence is cut into multiple chunks (or segments) according to various chunking algorithms and parameters; (2) prediction: the secondary structure for each chunk is predicted independently by using one or more prediction programs; (3) reconstruction: the whole secondary structure of a sequence is reconstructed from predicted structures, one for each chunk; and (4) analysis: reconstructed structures are compared against known structures to assess prediction accuracies. Figure 3 .a shows the prediction workflow. Note that the chunks do not necessarily have the same length: the lengths depend on the chunking method and parameters used. Also note that the chunk's prediction time and memory usage can vary based on the number of nucleotides in the chunk and the prediction program used. In most prediction programs the time and memory used do not grow linearly but exponentially with the number of nucleotides, with the exponential factor depending on the program complexity and its capability to capture complex RNA secondary structures such as pseudoknots.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1114,
+                    "end": 1122,
+                    "text": "Figure 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Method"
+        },
+        {
+            "text": "Given a long RNA sequence, we identify regions with high concentrations of inversions by using an adapted version of the \"Palindrome\" program in the EMBOSS Figure 3 Workflow of chunk-based RNA predictions. Workflow of the chunk-based RNA secondary structure prediction framework (a) and example of searching path (b).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 156,
+                    "end": 164,
+                    "text": "Figure 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "package [18] , which is a free open source software analysis package. Two main reasons for adapting the EMBOSS Palindrome program are as follows: the original program works correctly on DNA but not RNA sequences and does not support G-U pairing that we plan to include in our adaptation. Our adapted program, InversFinder, is written in Java and is available for download at http:// rnavlab.utep.edu. InversFinder requires a text file containing the RNA sequence in FASTA format as input. The minimum stem length L and maximum gap size G of the inversion are parameters specified by the user.",
+            "cite_spans": [
+                {
+                    "start": 8,
+                    "end": 12,
+                    "text": "[18]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "The chunking step relies on a general excursion approach first formulated in [19] , which has already been applied to a variety of sequence analysis problems but not to RNA secondary structure predictions. In many bioinformatics applications, the problem calls for identifying high concentration regions of a certain property in the nucleotide bases of biomolecular sequences. For example, replication origins in viral genomes have been predicted by looking for regions that are unusually rich in the nucleotides A and T in DNA sequences [20] . In this paper, we follow the same approach for RNA sequences, but our focus is whether or not the nucleotide base is found inside an inversion. We refer to the excursions generated by this property as \"inversion excursions.\" The excursion method requires assigning a positive score to each nucleotide if it is a part of an inversion (including the two stems and the gap between them), and a negative score if it does not. We go through the entire nucleotide sequence accumulating the scores to form inversion excursions.",
+            "cite_spans": [
+                {
+                    "start": 77,
+                    "end": 81,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 538,
+                    "end": 542,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "To facilitate the analysis, we use a parsing program to convert an RNA sequence into a binary sequence with the same length. If a nucleotide base is included in an inversion identified by the InversFinder program, it is given a value of \"1\"; if not, it is assigned a value of \"0,\" as illustrated in Figure 4 . Each \"1\" in the binary sequence is given a score of 1, and each \"0\" a negative score of s which is determined as follows: we consider the binary sequence as a realization of a sequence of independent and identically distributed (i.i.d.) random variables, X 1 , X 2 ,..., X n , where n is the length of the RNA sequence (i.e., number of bases). These random variables take values of either 1 or s. Let p = Pr(X i = 1) and q = 1 -p = Pr(X i = s).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 299,
+                    "end": 307,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "The parameter p is naturally estimated by the percentage of bases contained in one or more inversions in the RNA sequence, i.e., the percentage of \"1\"s in the binary sequence. We require that the expected score per base \u03bc= p + q * s to be negative. This requirement prevents the tendency of favoring long segments to be high scoring segments. As done in [20] and other applications, the value of s can be conveniently selected by giving \u03bca value of -0.5 and then determining the value of s according to Equation 1 .",
+            "cite_spans": [
+                {
+                    "start": 354,
+                    "end": 358,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 503,
+                    "end": 513,
+                    "text": "Equation 1",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "The excursion score E i at Position i of the sequence is defined recursively as in Equations 2 and 3.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "An excursion starts at a point i where E i is zero, continues with a number of rising and falling stretches of positive values, and ends at j > i where j is the next position with E j = 0. The score then stays at zero until it becomes positive again when the next excursion begins. Plotting the excursion scores along the nucleotide positions of the RNA sequence offers an effective visualization of how inversion concentrations vary along the sequence. This plot can serve as a guide for choosing the cutting points for the segmentation process. Figure 5 shows an example of an excursion plot. Note that rising stretches in the plot indicate the presence of inversions.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 547,
+                    "end": 555,
+                    "text": "Figure 5",
+                    "ref_id": null
+                }
+            ],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "After generating the excursion plot, we identify the positions, called peaks, where the excursion scores are local maxima. Then, the bottom of each peak, which is the last position with a zero excursion score right before the peak, is located. After that, the length of the peak (the location difference between a peak and its peak bottom) is calculated. Note that since we require chunk lengths to be smaller than a prescribed maximum c, peak lengths greater than c have to be flagged and analyzed separately. Figure 5 also shows examples of peaks, peak bottoms, and peak lengths. Peaks are sorted in decreasing order based on their excursion scores. The sorted peaks are then used to Figure 4 Binary sequence around an inversion. The binary sequence around an inversion. If a nucleotide base is included in an inversion identified by the InversFinder program, it is given a value of \"1\"; if not, it is assigned a value of \"0\". cut sequences in chunks by the centered and optimized chunking methods.",
+            "cite_spans": [
+                {
+                    "start": 686,
+                    "end": 694,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 511,
+                    "end": 519,
+                    "text": "Figure 5",
+                    "ref_id": null
+                }
+            ],
+            "section": "Chunking process based on inversions"
+        },
+        {
+            "text": "The centered method cuts the sequence by identifying inversions and building the chunks around them. The objective is to segment the RNA sequence in such a way as to avoid losing structural information as much as possible by centering the longest spanning inversion clusters in the chunks. After peaks are identified, they are sorted in decreasing order of their excursion values. The peak with the highest excursion value is considered first, then the second highest peak is considered, and so on. The algorithm stops either when all the peaks are exhausted or when all the inversion regions of the sequence (i.e., all \"1\"s in the binary sequence) have been included in the chunks, whichever occurs first. Overlapping chunks are adjusted so that any nucleotide base is captured by only one chunk, with priority given to the peak with a higher excursion score.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Centered chunking method"
+        },
+        {
+            "text": "For each of the selected peaks, the positions of the inversions or peak length positions are centered within the maximum chunk-length of c bases where c is defined by the user. We start at the bottom of this peak and follow the excursion until it returns to 0 the very next time and locate the position of the very last peak before the excursion returns to 0. We take the sequence segment between the peak bottom and the position of the very last peak and place the sequence segment in the center of the chunk as illustrated in Figure 6 . Suppose this centered segment contains x nucleotide bases. If (c -x) is even, then the resulting chunk will have (c -x)/2 bases on each side of the centered segment. If (c -x) is odd, then we will adjust the lengths on each side to the integers below and above (c -x)/2, allowing one side (chosen at random) to have one more nucleotide base than the other.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 528,
+                    "end": 536,
+                    "text": "Figure 6",
+                    "ref_id": null
+                }
+            ],
+            "section": "Centered chunking method"
+        },
+        {
+            "text": "As an example, we applied the aforementioned method to an RNA sequence, that is, the 379-base RNA sequence RF00209_A in the RFAM database [21] . As shown in Figure 7 , the sequence is segmented into six chunks using the centered chunking method. These six segments cover the entire sequence. Labels 1 through 6 in Figure 7 represent the six segments with decreasing order of peak excursion scores. After the peak scores are sorted, the peak with the highest excursion score is considered first. In this example, we use the maximum chunk-length c = 100. The highest peak is found at Position 297 with peak bottom at 257. As there are other inversions after the highest scoring peak, we follow the entire excursion to the end at Position 356. After locating the last peak in this excursion at 343, we center the sequence segment from 257 to 343 to produce the chunk covering the 100 positions from 250 to 349, then the second highest scoring peak at Position 54 is considered and the above procedure is repeated. This time, the peak bottom is at Position 19 and the last peak before the end of this excursion is at Position 70. Centering the segment consisting of Positions 19 -70 in a chunk of 100 would require 24 positions on each side, extending the chunk beyond the beginning of Figure 5 Peaks, peak bottoms, and peak lengths. An excursion plot with peaks, peak bottoms, and peak lengths. Rising stretches in the plot indicate the presence of inversions. Figure 6 Centered chunking method. Centered chunking method where x = peak length. We take the sequence segment between the peak bottom and the position of the very last peak in the excursion, and place the sequence segment in the center of the chunk. the sequence; we therefore adjust the chunk to start at Position 1 instead. Note that during the segmentation process, we might get a chunk that overlaps with previously established chunks. In those cases, we have to reconcile the situation by reducing one of the chunk lengths. For example, after establishing the first two chunks (labels 1 and 2 in Figure 7 ), the next highest peak to be processed is at Position 114, with peak bottom at Position 89. Centering this peak produces a chunk from Positions 52 to 151, overlapping with Chunk 2. We resolve such conflicts by giving priority to the chunk with the higher number of bases within completely contained inversions. With this rule, we give priority to Chunk 2, and reduce Chunk 3 to Positions 101 -151. The process continues for the remaining Chunks 4 -6.",
+            "cite_spans": [
+                {
+                    "start": 138,
+                    "end": 142,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 157,
+                    "end": 165,
+                    "text": "Figure 7",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 314,
+                    "end": 322,
+                    "text": "Figure 7",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 1282,
+                    "end": 1290,
+                    "text": "Figure 5",
+                    "ref_id": null
+                },
+                {
+                    "start": 1458,
+                    "end": 1466,
+                    "text": "Figure 6",
+                    "ref_id": null
+                },
+                {
+                    "start": 2061,
+                    "end": 2069,
+                    "text": "Figure 7",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Centered chunking method"
+        },
+        {
+            "text": "In the optimized method, cutting points are decided by choosing a segment containing the peak in an optimal position that yields the highest inversion scores for the segment. The score is defined as the total number of nucleotide bases contained in the inversions that are entirely within the chunk. For example, consider a peak with peak length spanning the nucleotide bases between i and j and then all the chunks of size c covering this peak, that is, all segments with length c between Positions j -(c -1) and i + (c -1) are considered (see Figure 8 ). The chunk with the maximum inversion score is then selected. Beginning with the highest peak, the above process is repeated until either all the peaks are utilized or all the inversions of the sequence are contained in established chunks, whichever occurs first. When chunks overlap, the cutting points are adjusted in a similar way as described for the centered method. The optimized method ensures that peak length positions are included within a chunk but not necessarily in the center of the chunk.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 545,
+                    "end": 553,
+                    "text": "Figure 8",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Optimized chunking method"
+        },
+        {
+            "text": "As an example, we applied the optimized method to the same RF00209_A RNA sequence file from the RFAM database, as shown in Figure 9 . The optimized method produced only 5 chunks covering all except the first 18 positions of the sequence. It can be seen from Figure 9 that this method avoids cutting into those sequence segments with rising excursion scores preceding the peaks. Also, the chunks produced by the optimized method cover only 96.3% of the sequence, leaving out those parts of the sequence where no inversions are found; therefore, the wasting of computing resources is minimal in the optimized method.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 123,
+                    "end": 131,
+                    "text": "Figure 9",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 258,
+                    "end": 266,
+                    "text": "Figure 9",
+                    "ref_id": "FIGREF2"
+                }
+            ],
+            "section": "Optimized chunking method"
+        },
+        {
+            "text": "The regular chunking method is the simplest method of segmentation and is used as a reference method in this paper. This method cuts the nucleotide sequence regularly into chunks of a specified maximum chunk-length c until the sequence is exhausted.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Regular chunking method"
+        },
+        {
+            "text": "For example, with c = 100, the sequence RF00209_A from the RFAM database with 379 bases will be cut into four chunks made up of nucleotide Positions 1 -100, 101 -200, 201 -300, and 301 -379 ( Figure 10 ). Obviously, rising stretches in an excursion plot, which indicate the presence of inversions and are likely to be part of secondary structures, can often be cut by this method. As a result, it is relatively easy to lose important structural information. Intuitively, one expects that both the centered and optimized methods, which take the inversion locations into account when placing the chunks, perform better in retaining the secondary structure information in the sequences.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 192,
+                    "end": 201,
+                    "text": "Figure 10",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Regular chunking method"
+        },
+        {
+            "text": "After the RNA sequence is cut into chunks, the structure of each chunk is predicted independently using well-known algorithms and their programs. We use the same prediction algorithms to predict the entire sequence without chunking. We employ seven commonly used prediction programs to test the chunking methods. The programs that predict structures only for non-pseudoknotted sequences are UNAFOLD (2008) and RNAfold (1994) . The programs that predict both pseudoknotted and non-pseudoknotted sequences are IPknot (2011), pknotsRG (2007), HotKnots (2005), NUPACK (2004), and PKNOTS(1998). These prediction programs, which typically involve some form of minimization of free energy, maximization of expected accuracy, or dynamic programming models in their algorithms, are all publicly available.",
+            "cite_spans": [
+                {
+                    "start": 410,
+                    "end": 424,
+                    "text": "RNAfold (1994)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Prediction based on well-known algorithms"
+        },
+        {
+            "text": "The results of the chunk predictions are assembled to build a whole secondary structure. Currently, our framework simply concatenates all these predicted secondary structures to give the secondary structure for the whole sequence. This is possible because the cutting does not allow any overlap between two consecutive chunks. More sophisticated reconstruction methods that include partial chunk overlaps can be used with minor changes to our framework. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Reconstruction based on concatenation"
+        },
+        {
+            "text": "Both the whole and the assembled predicted structures are compared to the known structure to obtain their respective prediction accuracies so that we can assess to what degree the chunking method can preserve the prediction accuracy of the program when applied without any segmentation. Figure 11 shows the RF00209_A nucleotide sequence along with the bracket view of its experimentally known secondary structure. In the bracket view representation, bases that are hydrogen bonded with other bases are represented by a \"(\" or a \")\", and a matching pair of \"(\" and \")\" indicates that the bases at those positions are paired to be part of a secondary structure. Unpaired nucleotide bases are represented by a \":\" (colon).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 287,
+                    "end": 296,
+                    "text": "Figure 11",
+                    "ref_id": null
+                }
+            ],
+            "section": "Accuracy analysis based on comparisons with known structures"
+        },
+        {
+            "text": "Various statistical tests are applied to the accuracy analysis for the different chunking methods including t-tests, Pearson correlation analysis, and the non-parametric Friedman tests. We use the statistical functions provided by MATLAB [22] . Metrics of interests include: (1) accuracy chunking (AC), which is the accuracy of the predicted structure assembled from the chunks when compared with the known secondary structure; (2) accuracy whole (AW), which is the accuracy of the predicted structure obtained from the whole sequence when compared with the known secondary structure; and (3) accuracy retention (AR), which is the ratio between AC and AW. While AC and AW reflect accuracies of the particular prediction in use with and without chunking, AR tells us how well a particular chunking method retains the accuracy of the original prediction program.",
+            "cite_spans": [
+                {
+                    "start": 238,
+                    "end": 242,
+                    "text": "[22]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Accuracy analysis based on comparisons with known structures"
+        },
+        {
+            "text": "AC and AW are given by the percentage agreement of the predicted structure with the known real structure calculated as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy analysis based on comparisons with known structures"
+        },
+        {
+            "text": "where a and b represent respectively the number of unpaired bases and the number of base pairs in common between the two structures, and n is the length of the RNA sequence. Large AC and AW values (close to 100%) for a predicted structure mean that it is highly similar to the real structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy analysis based on comparisons with known structures"
+        },
+        {
+            "text": "The accuracy retention (AR) is defined as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy analysis based on comparisons with known structures"
+        },
+        {
+            "text": "AR provides a comparison of the prediction accuracies with chunking versus without chunking. Intuitively, we expect that a good chunking method would cause only a minimal loss of prediction accuracy after cutting the sequence and would have AR values somewhat less than but close to 1. However, we will see in the result section that in many cases the AR values turn out to be greater than 1, meaning that secondary structure predicted using chunking is more similar to the real structure than it is the secondary structure predicted by using the whole sequence. Several standard statistical tests, including t-tests, Pearson correlation analysis, and the non-parametric Friedman tests [23] , are applied to analyze the AR values for the different chunking methods.",
+            "cite_spans": [
+                {
+                    "start": 686,
+                    "end": 690,
+                    "text": "[23]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Accuracy analysis based on comparisons with known structures"
+        },
+        {
+            "text": "Given an RNA sequence, the search for the best set of chunking parameters (i.e., maximum chunk length c, chunking method, minimum stem length L, and maximum gap length G) requires us to traverse or search a multilevel tree (i.e. the chunking tree in Figure 3 .b). In the chunking tree, each path from the root (RNA sequence) to the leaves (RNA chunks) represents a set of parameter values of the chunking method (i.e., c, L, and G). The overall workflow (including the chunking, prediction, reconstruction, and analysis steps) naturally adapts to fit into the MapReduce (MR) paradigm and can be easily implemented with Hadoop for which the chunking and predictions can be solved by multiple mappers while the reconstruction and the analysis are done by a single reducer. In our framework, each MR job is designed to partially traverse the multi-level tree. Multiple MR jobs can be executed in parallel to explore the whole tree. The multiple searching paths combine attributes of both breadth-first search (performed by multiple MR jobs in parallel) and depth-first search (performed by a single MR job). While traversing the tree with multiple MR jobs, we can explore the impact of different chunking methods as well as different c, L and G values for a given sequence. An example of an MR job is shown in the circled part of Figure 3 .b, for which we assume the centered chunking method, with fixed c = 60 bases, and we vary L and G between 3 and 8 and between 0 and 8 respectively. As previously outlined, for a sequence and a combination of parameters, the mappers perform the chunking and predictions. The input to each mapper is a \u2329k 1 , v 1 \u232a value pair, in which k 1 is the ID of the sequence, and v 1 is the chunking parameters' values (including the chunking method). Each mapper cuts the sequence according to the chunking parameters values in the chunking step by identifying a variable number of chunks meeting the parameter requirements. Note that each combination of parameters (each branch of the tree) can result in a variable number of chunks. Each mapper performs the prediction on one or more chunks using a certain prediction program. Here we use five secondary structure prediction programs capable of predicting pseudoknots (IPknot [24] , pknotsRG [25] , HotKnots [3] , NUPACK [26] , and PKNOTS [8] ) and two programs that do not include this capability (i.e., UNAFOLD [27] and RNAfold [28] ). Other programs can be easily used in our framework as a plug-and-play software module. After the prediction, each mapper outputs the list of \u2329k 2 , v 2 \u232a pairs as the intermediate output to reduce. The k 2 is the ID of the whole secondary structure to which the predicted chunk belongs and v 2 is the predicted secondary structure of the chunk. After the Hadoop runtime system groups all the values associated with the same key and passes the \u2329k 2 , list (v 2 )\u232a to the reducer, the reducer reconstructs the whole Figure 11 RF00209_A sequence and secondary structure. RF00209_A sequence and its experimental secondary structure from RFAM database. In the bracket view representation, bases that are hydrogen bonded with other bases are represented by a \"(\" or a \")\" and a matching pair of \"(\" and \")\" indicates that the bases at those positions are paired to be part of a secondary structure. Unpaired nucleotide bases are represented by a \":\" (colon). secondary structure of the sequence using all the v 2 (predicted chunk structures) associated with the same k 2 . If required, the reducer analyzes the results in terms of their accuracy. After the accuracy has been computed, the reducer outputs the final results as a list(v 3 ), in which v 3 is the AR for reconstructed structures.",
+            "cite_spans": [
+                {
+                    "start": 2255,
+                    "end": 2259,
+                    "text": "[24]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 2271,
+                    "end": 2275,
+                    "text": "[25]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 2287,
+                    "end": 2290,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 2300,
+                    "end": 2304,
+                    "text": "[26]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 2318,
+                    "end": 2321,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 2392,
+                    "end": 2396,
+                    "text": "[27]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 2409,
+                    "end": 2413,
+                    "text": "[28]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 250,
+                    "end": 258,
+                    "text": "Figure 3",
+                    "ref_id": null
+                },
+                {
+                    "start": 1327,
+                    "end": 1335,
+                    "text": "Figure 3",
+                    "ref_id": null
+                },
+                {
+                    "start": 2931,
+                    "end": 2940,
+                    "text": "Figure 11",
+                    "ref_id": null
+                }
+            ],
+            "section": "Adapting multiple searching paths to MapReduce"
+        },
+        {
+            "text": "In general, a mapper is the process that runs on a processor which applies the map function to a specific key and value pair. In our framework, each mapper runs the chunking process on an RNA sequence with a given set of parameter values and then predicts one or multiple chunks. The granularity of the mapping can vary based on the number of chunks each mapper is assigned to predict. Our MR framework includes both a coarse-grained mapping and a fine-grained mapping as shown in Figure 12 , in which each box represents a mapper. With the coarsegrained mapping, each mapper explores one branch of the chunking tree: it cuts the sequence into a set of segments based on a combination of L and G values and predicts all the segments it generates locally in order. With the finegrained mapping, multiple mappers explore one branch of the chunking tree: each mapper cuts the same sequence into the same set of segments, but this time it predicts only one chunk that it generates. This means that if, for example, the sequence is cut into five segments, then there will be five mappers exploring the same branch of the chunking tree, replicating the chunking process but predicting only one distinguished segment of the five chunks available. The mappers determine which segment to predict based on a hash function; thus the mappers do not need to synchronize their work or directly agree on what chunk to predict. The hash function uses the ASCII value of the chunk identifier as the key and the identifier of each mapper as the value. The function selects the segments to mappers in a round robin fashion.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 481,
+                    "end": 490,
+                    "text": "Figure 12",
+                    "ref_id": null
+                }
+            ],
+            "section": "Granularity of mappers"
+        },
+        {
+            "text": "For the study of both accuracy and performance, we plug seven RNA secondary structure prediction programs into our framework for both the chunk-based predictions and the predictions of the same sequences without chunking (the whole sequence is taken). Five of the programs, Figure 12 Example of coarse-grained and fine-grained mapping. Each mapper explores one branch of the tree and generates the set of segments as the output of the chunking program. The mapper predicts one or more segments generated based on the number of segments each mapper is assigned. Coarse-grained mappers explore one whole branch of the tree at the time. Fine-grained mappers predict one chunk at a time. IPknot [24] , pknotsRG [25] , HotKnots [3] , NUPACK [26] , PKNOTS [8] can predict both stem-loops and pseudoknots. The remaining two programs, UNAFOLD [27] and RNAfold [28] , can predict stem-loops only. We consider both the centered (C) and optimized (O) chunking methods and compare them against the na\u00efve regular method (R) as a reference. We also consider a wide range of parameter settings with maximum chunk length c from 60 to 150 bases, minimum stem length L from 3 to 8, and maximum gap length G from 0 to 8.",
+            "cite_spans": [
+                {
+                    "start": 691,
+                    "end": 695,
+                    "text": "[24]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 707,
+                    "end": 711,
+                    "text": "[25]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 723,
+                    "end": 726,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 736,
+                    "end": 740,
+                    "text": "[26]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 750,
+                    "end": 753,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 835,
+                    "end": 839,
+                    "text": "[27]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 852,
+                    "end": 856,
+                    "text": "[28]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 274,
+                    "end": 283,
+                    "text": "Figure 12",
+                    "ref_id": null
+                }
+            ],
+            "section": "Datasets and hardware platform"
+        },
+        {
+            "text": "To study the framework accuracy, we use two datasets of sequences which have previously established secondary structures. The first dataset, compiled from the RFAM database, consists of 50 non-pseudoknotted sequences and the lengths of sequences range from 127 to 568 bases. The second dataset, compiled from the RFAM and Pseudobase++ [21, 29] databases, consists of 23 pseudoknotted sequences, and the lengths of the sequences in this dataset range from 77 to 451 bases. Note that there are no large datasets of experimentally determined RNA secondary structures including pseudoknots, and to the best of our knowledge the one used in this paper is one of the few available to the public for free.",
+            "cite_spans": [
+                {
+                    "start": 335,
+                    "end": 339,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 340,
+                    "end": 343,
+                    "text": "29]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Datasets and hardware platform"
+        },
+        {
+            "text": "To study the framework performance, we use a smaller dataset of longer sequences (i.e., 14 RNA sequences from the virus family Nodaviridae) for which the secondary structures are not known. We assume pseudo-knots may be present and use the above-mentioned five prediction programs that are capable of capturing pseudoknots and we report only performance values but not accuracy. Because these RNA sequences are long (each has about 1300 to 3200 bases) and contain possible pseudoknots, none of the available programs can predict the secondary structures for the entire sequences. The use of the MapReduce framework is vital for the exhaustive, efficient exploration of the tree branches.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Datasets and hardware platform"
+        },
+        {
+            "text": "We ran the MapReduce framework on a cluster composed of 8 dual quad-core compute nodes (64 cores), each with two Intel Xeon 2.50 GHz quad-core processors. A front-end node is connected to the compute nodes and is used for compilation and job submissions. A high-speed DDR Infiniband interconnect for application and I/O traffic and a Gigabit Ethernet interconnect for management traffic connects the compute and front-end nodes. Our implementation is based on Hadoop 0.20.2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Datasets and hardware platform"
+        },
+        {
+            "text": "There are three main questions that we want to answer in regard to the effects of our chunk-based approaches on the accuracy of various established secondary structure prediction programs. First, we want to evaluate to what extent chunk-based predictions retain the prediction accuracy. Second, we want to identify whether the capability of a chunking method to retain the prediction accuracy might decline with increasing sequence lengths. Third, we want to assess the extent to which the inversion based chunking methods (C and O) outperform the na\u00efve chunking method (R), and whether there is any difference in accuracy between the C and O chunking methods.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy"
+        },
+        {
+            "text": "To assess how well the predictions based on chunking agree with known RNA structures, we measure the maximum AC (MAC) values of the sequences in the two datasets. Figures 13 and 14 present the box-and-whisker diagram for the two datasets and the three chunking methods -i.e., Figures 13.a,b, and 13 .c show the box-andwhisker diagram for the regular, centered, and optimized methods respectively for the dataset of 50 non-pseudoknotted sequences. Figures 14.a,b, and 14 .c show the box-and-whisker diagram for the regular, centered, and optimized methods respectively for the dataset of 23 pseudoknotted sequences. In the figures, the lower and upper quartiles are at the top and bottom boundaries of the box for the kernels; the median is the band inside the box; the mean is the black square; the whiskers extend to the most extreme data points or outliers; and outliers are plotted individually as \"+\" symbols.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 163,
+                    "end": 180,
+                    "text": "Figures 13 and 14",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 276,
+                    "end": 298,
+                    "text": "Figures 13.a,b, and 13",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 447,
+                    "end": 469,
+                    "text": "Figures 14.a,b, and 14",
+                    "ref_id": "FIGREF6"
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "As described in the Method section, the AC value for a predicted RNA structure is the percentage of agreement between the known structure and the structure obtained by concatenating the predicted structures of the chunks. Likewise, the AW value is the percentage of agreement between the known structure and the predicted structure when the whole sequence is used. These values indicate how closely the predicted structure resembles the real structure. A larger AC value means that the chunk-based predicted structure is more similar to the real structure. For a given dataset, prediction program, and chunking method, our MR framework collects multiple predicted structures associated with different c, L, and G parameters. The MAC value for a sequence is the maximum AC value, which gives the highest accuracy that can be attained for that sequence by the chunking method and the specific prediction program employed. In Figures 13.d and 14 .d, the AW of the sequences in the two datasets are presented respectively. From these figures, it appears that most of the prediction methods have similar accuracy ranges regardless of the chunking method used and whether the prediction was obtained with the whole sequence or with the chunks; however, the PKNOTS program produces somewhat lower accuracies. This lower accuracy is quite expected because PKNOTS is actually the earliest algorithm allowing for pseudoknot prediction. The other prediction programs with pseudoknot prediction capability that have developed afterwards have incorporated improvements over the original PKNOTS.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 923,
+                    "end": 942,
+                    "text": "Figures 13.d and 14",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "From Figures 13 and 14 , the prediction accuracies with chunking (MAC values in (a) -(c)) appear to be higher than those without (AW values in (d)), suggesting that the prediction accuracy, on average, can be enhanced by sequence segmentation. To get a clearer characterization of the effect of sequence segmentation, we carry out statistical tests on the maximum accuracy retention (MAR) obtained for each RNA sequence over the c, L, and G parameters. In the majority of the sequences in our dataset, the MAR turns out to be greater than 1. With a onesample t-test, we test whether the mean MAR is significantly greater than 1 with p-value > 0.05. Tables 1 and 2 display the means, standard deviations, and p-values for the non-pseudoknotted and pseudoknotted sequences respectively.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 5,
+                    "end": 22,
+                    "text": "Figures 13 and 14",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 649,
+                    "end": 663,
+                    "text": "Tables 1 and 2",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "For non-pseudoknotted sequences, the mean MAR is significantly greater than 1 for all three chunking methods, whereas the mean MAR values for the pseudoknotted sequences are greater than 1 for the C and O chunking methods. With the R chunking method, one of the mean MAR values (with NUPACK) falls below 1 to 0.93. Looking at all the p-values, one can conclude that the average prediction accuracy attained with segmentation is not significantly less than that without. With the inversion based C and O chunking methods, we can conclude that the average prediction accuracies attained with segmentation are at least as good as, and often even better than, those without segmentation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy"
+        },
+        {
+            "text": "While the above results show that sequence segmentation will not reduce prediction accuracy on average, we still need to examine whether the MAR values would decline as the whole sequence length grows, because a declining trend would imply that the accuracy retention will deteriorate when the segmentation approaches are applied to longer RNA sequences. To this end, for each dataset, chunking method, and prediction program, we perform the Pearson correlation analysis on the MAR values of the sequences [30] . For each dataset, we report both the correlation coefficient r and corresponding p-value between MAR and sequence length. If the r value is close to -1, it means that MAR and sequence lengths are negatively correlated, implying a decline in accuracy retention of the chunking method. If the associated p-value is less than 0.05, we consider the correlation statistically significant; otherwise the correlation is not significant. Figure 15 is a scatter plot of MAR values versus sequence lengths for one of the prediction programs, IPknot. Similar scatter plots for the other prediction programs have also been examined and no statistically significant negative correlation has been detected in any of these plots. Table 3 presents the correlation coefficients r and their corresponding p-values when the null hypothesis of no correlation is tested against the alternative hypothesis of having a negative correlation. These p-values indicate that no significant negative correlation has been detected for any of the prediction programs and chunking methods. We therefore do not expect any substantial decline in accuracy retention of our chunking methods while sequence length increases.",
+            "cite_spans": [
+                {
+                    "start": 506,
+                    "end": 510,
+                    "text": "[30]",
+                    "ref_id": "BIBREF28"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 943,
+                    "end": 952,
+                    "text": "Figure 15",
+                    "ref_id": null
+                },
+                {
+                    "start": 1228,
+                    "end": 1235,
+                    "text": "Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "Given the three chunking methods considered (i.e., regular, centered, and optimized) we also want to determine which among them is better at retaining the accuracies of the various prediction programs. For this purpose, we examine each sequence in our two datasets and keep track of which chunking method produces the highest MAR. Table 4 gives the total counts of sequences attaining the highest MAR for each of the chunking methods. If more than one chunking method gets the same highest MAR for one sequence, we split the count of this sequence equally among the methods. We can see that the sequence counts in Table 4 for the centered and optimized (C and O) methods are higher than those for the regular method (R).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 331,
+                    "end": 338,
+                    "text": "Table 4",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 614,
+                    "end": 621,
+                    "text": "Table 4",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "To see if there are any differences among the accuracy retention capabilities among the three cutting methods, we perform the Friedman test for each dataset and each prediction program. The Friedman test is a non-parametric statistical test based on rank sums [23] and requires ranking the MAR attained by each chunking method for each prediction program and each sequence in our data sets. The method producing the lowest MAR is given a rank of 1 and the method producing the highest MAR is given a rank of 3. Again, the ranks are averaged for ties. Table 5 shows the p-values of the Friedman tests in the \"R-C-O\" columns. From these very low p-values, we can conclude that there are significant differences among the three methods.",
+            "cite_spans": [
+                {
+                    "start": 260,
+                    "end": 264,
+                    "text": "[23]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 551,
+                    "end": 558,
+                    "text": "Table 5",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "Because the Friedman test does not reveal whether any one method is significantly better than another, we also perform the post-hoc pairwise comparison test on each pair of the three chunking methods in order to confirm that the inversion based centered and optimized chunking methods are indeed superior to the na\u00efve regular method. The p-values, shown in the \"R-C,\" \"R-O,\" and \"C-O\" columns, indicate that both the centered and optimized methods are better than the regular method. Furthermore, there are no significant differences between the centered and optimized chunking methods except when PKNOTS is applied to the pseudoknotted sequences. The results above demonstrate that, for a variety of secondary structure prediction programs, our segmentation approach for handling the long RNA sequences can retain and even enhance the average prediction accuracy. Furthermore, using the inversion based C and O methods to cut the sequence will produce better prediction accuracy than the na\u00efve R method. More questions remain to be answered and are part of our current research.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy"
+        },
+        {
+            "text": "Our current investigations focus on the following two questions. First, we want to study how we should choose the parameters c, L, and G to maximize the accuracy retention. We have been conducting studies to identify how the prediction accuracy correlates with these parameters. Some of the results have been reported in preliminary work of the group [12, 13] . So far we have not found any definitive criteria that work for all sequences in general. Rather, the nucleotide base composition and length of the individual sequence, as well as the sequence length limitations imposed by the particular prediction program, need to be taken into account. Second, the fact that segmentation can in many cases improve the prediction accuracy for an RNA sequence is somewhat counterintuitive. One possible explanation is that secondary structure prediction algorithms are generally based on global minimal free energy, resulting in the most thermodynamically stable isoforms. However, these structures may not be most favorable for biological functions, which often require RNAs to interact with other molecules or unfold during replication. Our results suggest that local structures formed by pairings of bases in close proximity, rather than the global energies, may better correlate with the real structures of large RNA molecules. This hypothesis is being tested in coauthor Johnson's molecular virology lab using the virus family Nodaviridae.",
+            "cite_spans": [
+                {
+                    "start": 351,
+                    "end": 355,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 356,
+                    "end": 359,
+                    "text": "13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Accuracy"
+        },
+        {
+            "text": "The above idea also prompted us to initiate a study on the correlation between accuracy and the free energy of Figure 15 MAR values for IPknot on non-pseudoknotted sequences. Scatter plot of MAR values versus sequence lengths for the IPknot program. Similar scatter plots for the other prediction programs have been examined and no statistically significant negative correlation has been detected in any of these plots.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 111,
+                    "end": 120,
+                    "text": "Figure 15",
+                    "ref_id": null
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "our chunk-based predicted structures. Since there are no straightforward mechanisms within the current prediction programs to compute the free energy of a given structure other than those outputted by the program, we try to obtain the overall free energy of our chunkbased predictions by simply summing the free energies associated with the chunks. Among several examples that we have studied to date, most do not show any statistically significant relationship to support the idea that global structures with lower free energies are more similar to the known structure. One example scatter plot of the prediction accuracy versus free energy of different predicted structures of the sequence RF000_2A using the centered and optimized chunking methods with different L and G parameters with maximum chunk length of 100 is shown in Figure 16 . The correlation coefficient is found to be positive 0.11, which is against the expectation of a negative correlation. We anticipate that this line of investigation will require more coordinated efforts with the developers of the various prediction programs to establish appropriate ways of computing the free energies of any given predicted-or experimentally-determined structure.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 830,
+                    "end": 839,
+                    "text": "Figure 16",
+                    "ref_id": "FIGREF10"
+                }
+            ],
+            "section": "Accuracy"
+        },
+        {
+            "text": "For the performance analysis, we use a smaller dataset of longer sequences from the virus family Nodaviridae [31, 32] and we explore a wider range of parameter values. The virus family Nodaviridae is divided into two genera: alphanodaviruses that primarily infect insects and betanodaviruses that infect only fish. These viruses share a common genome organization, namely a bipartite positive strand RNA genome (i.e., mRNA sense). The longer genome segment RNA1 (ranging in size from 3011 to 3204 nucleotide bases) encodes the RNA-dependent RNA polymerase that catalyzes replication of both genome segments, while the shorter RNA 2 (ranging in size from 1305 to 1433 nucleotide bases) encodes the precursor of the viral capsid protein that encapsidates the RNA genome. The 14 sequences we analyze in this paper are identified as follows: Boolarra virus These sequences are sorted based on their increasing lengths, and this order is preserved in all the figures and tables presented below. There are three important questions that we want to answer when measuring performance. First, we want to quantify the time spent for exploring the several branches of the search trees for these 14 sequences using each of the two chunking methods (centered or optimized) and for the granularity of the mapping (coarse-or fine-grained). Second, we want to identify how the time is spent for each search in terms of map, reduce, and data shuffling among processors. Third, we want to measure the efficiency of the search and Table 3 look for those aspects of the search that can impact performance.",
+            "cite_spans": [
+                {
+                    "start": 109,
+                    "end": 113,
+                    "text": "[31,",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 114,
+                    "end": 117,
+                    "text": "32]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1512,
+                    "end": 1519,
+                    "text": "Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Performance"
+        },
+        {
+            "text": "We measure the total time needed to explore the chunking tree of each sequence using either the centered or optimized methods and with either coarse-grained or fine-grained mapping. The total time includes the time needed for chunking and prediction (map time), reconstruction (reduce time), exchange of predictions among nodes (shuffling time), and any overhead due to load imbalance and synchronizations. Note that the total time does not include the time needed for analysis since the secondary structures of the sequences considered here are not known experimentally; thus an analysis in terms of accuracy is not feasible. We use IPknot for our predictions since it is the most recently implemented program and its accuracy values are very high in the previous section.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance"
+        },
+        {
+            "text": "Each of the four subfigures in Figure 17 shows the total times in seconds for exploring the prediction trees (left y-axes) and the number of map tasks (right y-axes) for the 14 sequences when a maximum chunk length of 60, 150, and 300 bases is used. In each subfigure there are three groups of times, one for each maximum chunk length. Each group lists the 14 sequences sorted based on their length in nucleotide bases. More specifically, Figure 17 .a presents the times and number of map tasks when the coarse-grained MR implementation and the centered method are used; Figure 17 .b presents the times and number of map tasks when the coarse-grained MR implementation and the optimized method are used; Figure 17 .c presents the times and number of map tasks when the fine-grained MR implementation and the centered method are used; and Figure 17 .d presents the times and number of map tasks when the fine-grained MR implementation and the optimized method are used. As already presented above, when using coarse-grained mapping, each mapper performs the chunking for the assigned sequence using a set of parameter values for the max length of stems (L) and gap sizes (G). The mapper then predicts the secondary structures of all its local chunks. This results in the exploration of a whole branch of the tree by the mapper. The total number of branches (and map tasks) is given by the combinations of L and G values (i.e., 54). When using fine-grained mapping, chunking of a sequence based on a set of L and G values is performed across mappers and mappers are assigned resulting chunks in a round-robin fashion. Computationally this is performed by replicating the chunking processes across mappers and by using a hash function to assign different chunks to different mappers. The number of chunks equals the number of map tasks and depends on the number of inversions identified in the chunking process.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 31,
+                    "end": 40,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 439,
+                    "end": 448,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 571,
+                    "end": 580,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 704,
+                    "end": 713,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 838,
+                    "end": 847,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Performance"
+        },
+        {
+            "text": "When comparing centered vs. optimized chunking methods for the coarse-grained mapping, we observe that the two methods result in similar execution times ( Figure 17 .a and Figure 17 .b). Table 6 quantifies the similarity for both subgroups (i.e. RNA2 and RNA1) which is within 3%. This observation is different from the previous work in which the centered method resulted in shorter execution times due to the fact that a different implementation of the chunking methods and a different program were used. When comparing centered vs. optimized chunking methods for the fine-grained mapping, the optimized method results in a slightly lower execution time. As shown in Table 7 , the execution times of fine-grained mapping when using the optimized chunking method for both subgroups (RNA2 and RNA1) is 11% to 18% slower than using the centered method. Table 8 shows the average number of chunks (i.e., map tasks) for both subgroups using centered and optimized methods. We can see that the optimized method results in 10% to 19% less chunks. The optimized method tends to cut sequences into fewer chunks, which leads to fewer map tasks and shorter MapReduce total times. This observation is different from the previous work in which the centered method results in shorter execution times due to the same reason we mentioned above [17] .",
+            "cite_spans": [
+                {
+                    "start": 1329,
+                    "end": 1333,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 155,
+                    "end": 164,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 172,
+                    "end": 181,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 187,
+                    "end": 194,
+                    "text": "Table 6",
+                    "ref_id": "TABREF4"
+                },
+                {
+                    "start": 668,
+                    "end": 675,
+                    "text": "Table 7",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 851,
+                    "end": 858,
+                    "text": "Table 8",
+                    "ref_id": "TABREF6"
+                }
+            ],
+            "section": "Performance"
+        },
+        {
+            "text": "When comparing coarse-grained mapping vs. finegrained mapping, we observe that coarse-grained mapping results in shorter execution time compared to fine-grained mapping, independent of the chunking method used. Also we observe the trend that when the maximum chunk length grows from 60 to 300, the time gain of coarsegrained mapping over fine-grained mapping decreases. The speedup of coarse-grained mapping over fine-grained mapping using the centered chunking method for RNA2 subgroup of sequences decreases from 3.75 to 1.38, and for RNA1 it decreases from 7.86 to 2.37. A similar behavior is observed for the optimized chunking method: speedup of coarse-grained mapping over fine-grained mapping for RNA2 subgroup of sequences decreases from 3.4 to 1.25, and for RNA1 it decreases from 6.82 to 1.93.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance"
+        },
+        {
+            "text": "The same trend of the total times is summarized in the box-and-whisker diagram of minimum, median, mean, and maximum execution time for each subgroup of sequences (RNA2 and RNA1) in Figure 18 . More specifically, in Figure 18 .a, we show the box-and-whisker diagram of the total times for the RNA2 subgroup of sequences (\u223c1300 nucleotides bases) using coarsegrained mapping, both centered and optimized methods, and maximum chunk lengths of 60,150, and 300. In Figure 18 .b, we show a similar box-and-whisker diagram but for the RNA1 subgroup of sequences (\u223c3100 bases). In Figure 18 .c, we show the box-and-whisker diagram of the minimum, mean, and maximum execution time for the RNA2 subgroup of sequences using fine-grained mapping, centered and optimized methods, and max chunk lengths of 60, 150, and 300. In Figure 18 .d, we show a similar box-and-whisker diagram but for the RNA1 subgroup of sequences. We observe that for coarsegrained mapping, when using the centered and optimized methods, the average total times increase with the maximum chunk length at the rate of 2.0 for RNA2 and 2.4 for RNA1. On the contrary for the fine-grained mapping, when using centered and optimized methods, the average total times decrease with the maximum chunk length at the rate of 0.7 for both subgroup of sequences. This suggests that potentially for larger maximum chunk length and sequence lengths the fine-grained mapping can outperform the coarse-grained mapping in terms of performance.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 182,
+                    "end": 191,
+                    "text": "Figure 18",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 216,
+                    "end": 225,
+                    "text": "Figure 18",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 461,
+                    "end": 470,
+                    "text": "Figure 18",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 574,
+                    "end": 583,
+                    "text": "Figure 18",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 814,
+                    "end": 823,
+                    "text": "Figure 18",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Performance"
+        },
+        {
+            "text": "When decoupling the total time in its components, we observe that the time components for the reduce function and shuffling are very marginal compared to the times used for the mapping functions (around 1% of the total time). We also observe that, as we explore a prediction tree, some mappers are performing more work than others, resulting in idle time and low efficiency. The load imbalance among mappers depends on the granularity and chunking methods used. To better understand the causes of load imbalance we cut down the mapping times into compute time (i.e., chunking and predictions) and idle time (i.e., waiting for all the mappers to complete their predictions). Figure 19 shows the percentage of compute and idle times in map function for coarse-grained mapping vs. fine-grained mapping as well as for centered vs. optimized methods. More specifically, Figures 19.a and Average total times for the seven sequences in RNA2 and in RNA1 for coarse-grained mapping using centered and optimized methods. Figure 19 shows how fine-grained mapping reaches better efficiency compared to coarse-grained mapping. In other words, with fine-grained mapping, the mappers spend more time doing real chunking and predictions. We observe in Figure 17 (left y-axes) how fine-grained mapping has a larger number of map tasks and each map task is shorter (it predicts only one chunk) making easier for the Hadoop scheduler to allocate the several tasks efficiently by using a first-in-first-out (FIFO) policy. On the other hand, coarse-grained mapping has a smaller number of map tasks and each map task is longer (all the sequence chunks of a given L and G combination are predicted by a single mapper). In this case, once the scheduler assigns a longer task to a mapper, it has to wait for its completion, even if the other mappers have generated their chunk predictions, before proceeding to the reduce phase. We also observe that as the maximum chunk length increases from 60 to 300 bases, the map efficiency tends to drop. More specifically, the average map efficiency for coarse-grained mapping decreases from 36% to 25% on RNA2 and from 18% to 15% on RNA1 when using centered or optimized chunking methods. The average map efficiency for fine-grained mapping decreases from 91% to 79% on RNA2 and from 97% to 93% on RNA1. This is due to the fact that the centered and optimized chunking methods tend to produce more chunks with shorter chunk lengths when using a maximum chunk length of 60. On the other hand, when using a maximum chunk 300, the same methods tend to produce fewer chunks each with longer lengths.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 674,
+                    "end": 683,
+                    "text": "Figure 19",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1011,
+                    "end": 1020,
+                    "text": "Figure 19",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1236,
+                    "end": 1245,
+                    "text": "Figure 17",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Performance"
+        },
+        {
+            "text": "Diverse chunk lengths within a prediction can also cause inefficiency. To study this phenomenon, we consider the Nodamura virus (NoV) RNA2 sequence which shows the largest drop in efficiency when moving from 60 to 300 max chunk lengths, as shown in Figure 19 . Figures 20 and  21 show the number of chunks and their lengths (i.e., max, min and median) for the different L and G parameter combinations with centered and optimized methods when the maximum chunk length is equal to 60 ( Figure 20) and when the length is equal to 300 ( Figure 21 ). When the Figure 18 Box-and-whisker diagram of total MR times. Box-and-whisker diagram of total MR times for each subgroup of Nodaviridae sequences (RNA2 and RNA1) using centered and optimized methods with maximum chunk length of 60, 150, and 300, i.e., (a) Coarse-grained mapping on RNA2 (short sequences); (b) Coarse-grained mapping on RNA1 (long sequences); and (c) Fine-grained mapping on RNA2 (short sequences); and (d) Fine-grained mapping on RNA1 (long sequences). maximum length grows from 60 to 300, the number of resulting chunks for each combination of L and G parameters decreases. At the same time the length of each set of chunks increases as well as the length variability within the set of chunks for a defined combination of L and G values. Note that for some combinations of L and G, the chunking process does not identify any set of chunks and we do not report any result for these cases. This confirms our observation that as the number of chunks decreases, the chunk lengths increase but not homogeneously within a prediction, causing load imbalance and loss in efficiency. Selecting the shorter maximum length for the sake of efficiency is not always a wise decision: a maximum chunk length of 60 bases may be too short for the type of RNA sequences we are considering. In Figure 20 , the median is very close to the maximum length of 60 for the centered methods, indicating that we are cutting out valuable parts of the inversion and ultimately of the secondary structures we are predicting.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 249,
+                    "end": 258,
+                    "text": "Figure 19",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 261,
+                    "end": 279,
+                    "text": "Figures 20 and  21",
+                    "ref_id": "FIGREF12"
+                },
+                {
+                    "start": 484,
+                    "end": 494,
+                    "text": "Figure 20)",
+                    "ref_id": "FIGREF12"
+                },
+                {
+                    "start": 533,
+                    "end": 542,
+                    "text": "Figure 21",
+                    "ref_id": null
+                },
+                {
+                    "start": 555,
+                    "end": 564,
+                    "text": "Figure 18",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1840,
+                    "end": 1849,
+                    "text": "Figure 20",
+                    "ref_id": "FIGREF12"
+                }
+            ],
+            "section": "Performance"
+        },
+        {
+            "text": "The overall results suggest that the best set of parameter values to achieve higher accuracy, performance, and efficiency depend on multiple aspects including the input sequence and the available resources. Driven by these two aspects, in future work we will integrate an automatic selection of these values into our MR framework.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance"
+        },
+        {
+            "text": "In this paper, we propose a MapReduce-based, modularized framework that allows scientists to systematically and efficiently explore the parametric space associated with chunk-based secondary structure predictions of long RNA sequences. By using our framework we can observe how sequence segmentation strategies, directed by inversion distributions enable us to predict the secondary structures of large RNA molecules. Furthermore, the chunk-based predictions can, on average, attain accuracies even higher than those obtained from predictions using the whole sequence. The observations in this study have led to our hypothesis that local structures formed by pairings of bases in close proximity, rather than the global free energies, may better correlate with the real structures of large RNA molecules. This hypothesis will be tested by further computational and experimental investigations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "implementation and modification of the sequence segmentation strategies, conducted the statistical analyses of their accuracy retention, and helped to draft the manuscript. KLJ provided the nodavirus genome sequence data and their biological significance. MYL supervised the accuracy analyses and summarized the statistical results. MT oversaw the MapReduce implementation and performance analysis, and coordinated the organization and writing of the manuscript. All authors reviewed and participated in finalizing the manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "The small RNA world",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Finnegan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Matzke",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Journal of Cell Science",
+            "volume": "116",
+            "issn": "23",
+            "pages": "4689--4693",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Mechanisms and enzymes involved in SARS coronavirus genome expression",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Thiel",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Ivanov",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Putics",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hertziq",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Schelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bayer",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Weissbrich",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Snijder",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Rabenau",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Doerr",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Gorbalenya",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ziebuhr",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Journal of General Virology",
+            "volume": "84",
+            "issn": "",
+            "pages": "2305--2315",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "HotKnots: Heuristic prediction of RNA secondary structures including pseudoknots",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rastegari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hoos",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "RNA",
+            "volume": "11",
+            "issn": "10",
+            "pages": "1494--1504",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Viral RNA pseudoknots: Versatile motifs in gene expression and replication",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Brierley",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Pennell",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Gilbert",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Nature Reviews Microbiology",
+            "volume": "5",
+            "issn": "8",
+            "pages": "598--610",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Fast algorithm for predicting the secondary structure of single stranded RNA",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Nussinov",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Jacobson",
+                    "suffix": ""
+                }
+            ],
+            "year": 1980,
+            "venue": "Proceedings of the National Academy of Sciences of the United States of America",
+            "volume": "77",
+            "issn": "",
+            "pages": "6309--6313",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Simultaneous solution of the RNA folding, alignment, and protosequence problems",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Sankoff",
+                    "suffix": ""
+                }
+            ],
+            "year": 1985,
+            "venue": "SIAM Journal on Applied Mathematics",
+            "volume": "45",
+            "issn": "5",
+            "pages": "810--825",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Mfold web server for nucleic acid folding and hybridization prediction",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nucleic Acids Research",
+            "volume": "31",
+            "issn": "13",
+            "pages": "3406--3415",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A dynamic programming algorithm for RNA structure prediction including pseudoknots",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rivas",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Journal of Molecular Biology",
+            "volume": "285",
+            "issn": "5",
+            "pages": "2053--2568",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "An algorithm for computing nucleic acid base-pairing probabilities including pseudoknots",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Dirks",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Pierce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Journal of Computational Chemistry",
+            "volume": "25",
+            "issn": "10",
+            "pages": "1295--1304",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "RNAVLab: a virtual laboratory for studying RNA secondary structures based on Grid computing technology",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Taufer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Solorio",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Licon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Mireles",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Araiza",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Johnson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Parallel Computing",
+            "volume": "34",
+            "issn": "11",
+            "pages": "661--680",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "A 3' terminal stem-loop structure in Nodamura virus RNA2 forms an essential cis-acting signal for RNA replication",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Rosskopf",
+                    "suffix": ""
+                },
+                {
+                    "first": "Iii",
+                    "middle": [],
+                    "last": "Jhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Rodarte",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Romero",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Taufer",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Johnson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Virus Research",
+            "volume": "150",
+            "issn": "1-2",
+            "pages": "12--21",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Poster: Secondary structure predictions for long RNA sequences based on inversion excursions",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Yehdego",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Kodimala",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Viswakula",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Vegesna",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Taufer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Proceedings of the ACM Conference on Bioinformatics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Secondary structure predictions for long RNA sequences based on inversion excursions and MapReduce",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Yehdego",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Vkr",
+                    "middle": [],
+                    "last": "Kodimala",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Taufer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Proceedings of 12th IEEE International Workshop on High Performance Computational Biology (HiCOMB)",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Simplified data processing on large clusters",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Dean",
+                    "suffix": ""
+                },
+                {
+                    "first": "S:",
+                    "middle": [],
+                    "last": "Ghemawat",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Mapreduce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proceedings of the 6th conference on Symposium on Opearting Systems Design and Implementation",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "FX: an RNA-Seq analysis tool on the Cloud",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Hong",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rhie",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Ju",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bleazard",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Rhee",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Chong",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Seo",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Bioinformatics",
+            "volume": "2012",
+            "issn": "5",
+            "pages": "721--723",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Cloud-scale RNA-sequencing differential expression analysis with Myrna",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Langmead",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Hansen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Leek",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Genome Biol",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "A modularized MapReduce framework to support RNA secondary structure prediction and analysis workflows",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Yehdego",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Taufer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "2012 IEEE International Conference on",
+            "volume": "",
+            "issn": "",
+            "pages": "86--93",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Statistical composition of high-scoring segments from molecular sequences",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Karlin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dembo",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kawabata",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "Annals of Statistics",
+            "volume": "18",
+            "issn": "2",
+            "pages": "571--581",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "AT excursion: a new approach to predict replication origins in viral genomes by locating AT-rich regions",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Chew",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Choi1",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC Bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "RFAM database",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "The use of ranks to avoid the assumption of normality implicit in the analysis of variance",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Friedman",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Journal of the American Statistical Association",
+            "volume": "32",
+            "issn": "",
+            "pages": "675--701",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "IPknot: Fast and accurate prediction of RNA secondary structures with pseudoknots using integer programming",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kato",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hamada",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Akutsu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Asai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Bioinformatics",
+            "volume": "27",
+            "issn": "13",
+            "pages": "85--93",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "pknotsRG: RNA pseudoknot folding including near-optimal structures and sliding windows",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Reeder",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Steffen",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Giegerich",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Nucleic Acids Res",
+            "volume": "35",
+            "issn": "",
+            "pages": "320--324",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "A partition function algorithm for nucleic acid secondary structure including pseudoknots",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Dirks",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pierce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Journal of Computational Chemistry",
+            "volume": "24",
+            "issn": "13",
+            "pages": "1664--1677",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "UNAFold: Software for nucleic acid folding and hybridization",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Markham",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Methods in Molecular Biology",
+            "volume": "453",
+            "issn": "",
+            "pages": "3--31",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Fast folding and comparison of RNA secondary structures",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Hofacker",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Fontana",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Stadler",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bonhoeffer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tacker",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Schuster",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Monatshefte f\u00fcr Chemie",
+            "volume": "125",
+            "issn": "",
+            "pages": "167--188",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "PseudoBase++: an extension of PseudoBase for easy searching, formatting, and visualization of pseudoknots",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Taufer",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Licon",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Araiza",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Mireles",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Van Batenburg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Gultyaev",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nucleic Acids Res",
+            "volume": "37",
+            "issn": "",
+            "pages": "127--135",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "The sample correlation coefficient r. Statistical Methods. 7 edition",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Snedecor",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Cochran",
+                    "suffix": ""
+                }
+            ],
+            "year": 1980,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "175--178",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Comparisons among the larger genome segments of six Nodaviruses and their encoded RNA replicases",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Dasgupta",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Gratsch",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Ball",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Journal of General Virology",
+            "volume": "82",
+            "issn": "",
+            "pages": "1855--1866",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Family Nodaviridae",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Thiery",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Nakai",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Schneemann",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Bonami",
+                    "suffix": ""
+                },
+                {
+                    "first": "Dv ;",
+                    "middle": [],
+                    "last": "Lightner",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "King",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Lefkowitz",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Adams",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Virus Taxonomy Ninth Report of the International Committee on Taxonomy of Viruses",
+            "volume": "",
+            "issn": "",
+            "pages": "1061--1067",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1472-6807-13-S1-S3"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Enhancement of accuracy and efficiency for RNA secondary structure prediction by sequence segmentation and MapReduce",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "BMC Structural Biology",
+            "volume": "",
+            "issn": "13",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Example of chunking with centered method. Six chunks are obtained using the centered method for the 379-base RNA sequence RF00209_A in the RFAM database.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Optimized chunking method. Chunks by optimized method with peak spanning Positions i-j. All segments with length c between Positions j -(c -1) and i + (c -1) are considered. The chunk with the highest inversion score is selected.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Example of chunking from optimized method. Five chunks are obtained using the optimized method for the 379-base RNA sequence RF00209_A in the RFAM database. The chunks covering all except the first 18 positions of the sequence.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Example of chunking from regular method. With c = 100, the sequence RF00209_A is cut into four chunks positioned at 1 -100, 101 -200, 201 -300, and 301 -379.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "MAC and MAW for chunking methods (R,C,O) for 50 sequences. MAC and MAW values obtained using the prediction programs IPknot, pknotsRG, HotKnots, NUPACK, PKNOTS, RNAfold, and UNAFOLD for the dataset of 50 non-pseudoknotted sequences.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "MAC and MAW for chunking methods (R,C,O) for 23 sequences. MAC and MAW values obtained using the prediction programs IPknot, pknotsRG, HotKnots, NUPACK, and PKNOTS for the dataset of 23 pseudoknotted sequences.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "(BoV) RNA2 (1305 nucleotide bases), Pariacoto virus (PaV) RNA2 (1311), Nodamura virus (NoV) RNA2 (1336), Black beetle virus (BBV) RNA2 (1393), Flock House virus (FHV) RNA2 (1400), Striped jack nervous necrosis virus (SJNNV) RNA2 (1421), Epinephelus tauvina nervous necrosis virus (ETNNV) RNA2 (1433), BoV RNA1 (3096), PaV RNA1 (3011), BBV RNA1 (3099), ETNNV RNA1 (3103), FHV RNA1 (3107), SJNNV RNA1 (3107), NoV RNA1 (3204).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "coefficients (r) between MAR and sequence lengths and corresponding p-values (p) when testing for a negative correlation.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "Count (co) and rank sum (rs) of sequences attaining the highest MAR with each chunking method for the various prediction programs.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF10": {
+            "text": "Accuracy versus free energy for the RFAM sequence RF0002_A. Scatter plot of prediction accuracy versus free energy of different predicted structures of the RFAM sequence RF0002_A using the centered and optimized chunking methods with different L and G parameters with maximum chunk length of 100. Correlation coefficient r = 0.11.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "Total MapReduce times for different methods and mapping. Total time in seconds for coarse-vs. fine-grained mapping and centered vs. optimized methods, i.e., (a) Coarse-grained mapping using centered method; (b) Coarse-grained mapping using optimized method; (c) Fine-grained mapping using centered method; and (d) Fine-grained mapping using optimized method.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF12": {
+            "text": "Profile of Nodamura virus (NoV) RNA2 with maximum chunk length 60. Number of chunks and chunk lengths for the Nodamura virus (NoV) RNA2 with centered and optimized methods and maximum chunk length of 60 bases.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF13": {
+            "text": "Efficiency of map functions for different methods and mapping. Percentages of compute and idle time in map function for coarse-vs. fine-grained mapping and centered vs. optimized methods, i.e., (a) Coarse-grained mapping using centered method; (b) Coarse-grained mapping using optimized method; (c) Fine-grained mapping using centered method; and (d) Fine-grained mapping using optimized method.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "MAR statistics for 50 non-pseudoknotted sequences.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "MAR statistics for 23 pseudoknotted sequences",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Count and rank sum of sequences",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "-values from the Friedman test",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Total times for RNA2 and RNA1 with coarsegrained mapping Mean Total Time (sec) RNA2(\u223c1300 bases) RNA1(\u223c3100 bases)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Total times for RNA2 and RNA1 with fine-grained mapping Average total times for the seven sequences in RNA2 and in RNA1 for finegrained mapping using centered and optimized methods.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "Average number of chunks for RNA2 and RNA1 with fine-grained mapping Average number of chunks (i.e. number of map tasks) for the seven sequences in RNA2 and in RNA1 for fine-grained mapping using centered and optimized methods.19.b show the percentages for compute and idle times for the coarse-grained framework with the centered and optimized methods respectively;Figures 19.c and 19.d show the same percentages but for the fine-grained framework and the two chunking methods.Independent of the maximum chunk length,",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "BZ and DY equally contributed to this work. This work is supported in part by grants DMS 0800272/0800266 and EIA 0080940 from the NSF, RCMI 5G12RR008124-18 and NIMHD 8G12MD007592 from the NIH.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "The publication costs for this article were funded by the corresponding authors. This article has been published as part of BMC Structural Biology Volume 13 Supplement 1, 2013: Selected articles from the Computational Structural Bioinformatics Workshop 2012. The full contents of the supplement are available online at http://www.biomedcentral.com/bmcstructbiol/ supplements/13/S1.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Declarations"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.Authors' contributions BZ adapted and implemented the chunk-based RNA prediction process into MapReduce Hadoop, carried out the accuracy and performance experiments, and participated in drafting the manuscript. DY participated in the design, ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

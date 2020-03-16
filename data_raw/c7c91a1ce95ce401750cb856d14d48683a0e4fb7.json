@@ -1,0 +1,1872 @@
+{
+    "paper_id": "c7c91a1ce95ce401750cb856d14d48683a0e4fb7",
+    "metadata": {
+        "title": "Hierarchical Clustering Using the Arithmetic-Harmonic Cut: Complexity and Experiments",
+        "authors": [
+            {
+                "first": "R",
+                "middle": [],
+                "last": "Rizzi",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "P",
+                "middle": [],
+                "last": "Mahata",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "L",
+                "middle": [],
+                "last": "Mathieson",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "P",
+                "middle": [],
+                "last": "Moscato",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Clustering, particularly hierarchical clustering, is an important method for understanding and analysing data across a wide variety of knowledge domains with notable utility in systems where the data can be classified in an evolutionary context. This paper introduces a new hierarchical clustering problem defined by a novel objective function we call the arithmeticharmonic cut. We show that the problem of finding such a cut is NP-hard and APX -hard but is fixed-parameter tractable, which indicates that although the problem is unlikely to have a polynomial time algorithm (even for approximation), exact parameterized and local search based techniques may produce workable algorithms. To this end, we implement a memetic algorithm for the problem and demonstrate the effectiveness of the arithmetic-harmonic cut on a number of datasets including a cancer type dataset and a corona virus dataset. We show favorable performance compared to currently used hierarchical clustering techniques such as k-MEANS, Graclus and NORMALIZED-CUT. The arithmetic-harmonic cut metric overcoming difficulties other hierarchal methods have in representing both intercluster differences and intracluster similarities.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "The problem of finding structure in a set of unlabeled data (the so-called clustering problem) appears in various domains of research including bioinformatics, machine learning, image processing and video processing. In the area of bioinformatics, clustering has become increasingly important, as finding genetic subtypes of heterogeneous diseases like breast cancer, ovarian cancer and multiple sclerosis, may be made easier by using suitable clustering methods. This work aims to facilitate this line of research by finding good clusterings of various datasets with known partitions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The importance of the clustering problem in various areas has given rise to several greedy algorithms such as k-MEANS, optimization-based methods such as NORMALIZED-CUT and neural-net based methods amongst others.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "In this work, we will use a top-down approach for hierarchical clustering, recursively dividing the elements in the data. In each division step, often a graph partitioning technique is used (a similar approach is used for NORMALIZED-CUT [1] ). However, many graph (bi)partitioning problems can be formulated as NP-hard optimization problems, for which there are no polynomial-time algorithms to find the optimal solution unless P~NP. This is an indication of the difficulty of the clustering problem and the focus of research since the work of Wertheimer [2] . In this work, we propose a new objective function for graph bipartitioning. The motivation for finding a new objective function for graph bipartitioning is that the known bipartitioning methods produce incorrect results for some datasets. For example, two formulations for clustering by graph partitioning are MAX-CUT [3] and NORMALIZED-CUT [1] . MAX-CUT is already known to provide incorrect results for some datasets [1] . We show that NORMALIZED-CUT also produces some incorrect results for some of the datasets examined.",
+            "cite_spans": [
+                {
+                    "start": 237,
+                    "end": 240,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 555,
+                    "end": 558,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 879,
+                    "end": 882,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 902,
+                    "end": 905,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 980,
+                    "end": 983,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "To achieve a better clustering than agglomerative hierarchical clustering and existing graph partitioning formulations, our proposed objective function seeks to minimize the intra-cluster distances and at the same time it seeks to maximize the inter-cluster distances. Our objective function performs well in clustering diverse types of datasets.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "More precisely, we pose the hierarchical clustering problem as a finite number of instances of a graph partitioning problem, called ARITHMETIC-HARMONIC CUT (AH-CUT). In the AH-CUT problem, we start with a distance matrix for a set of objects and compute a weighted graph in which vertices represent objects and edges are weighted by the distance between the corresponding vertices. Our objective function tries to obtain a partition where the weight of the partition is directly proportional to the sum of the weights on the edges between the two partite sets and the sum of the reciprocals of the weights on the edges inside the partite sets. When considered as an optimisation problem, the goal is to maximise the weight of the partition. The recursive application of AH-CUT can then be used to generate a tree-based classification of the data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "As noted many graph bipartioniting problems are NP-hard at least, so a theoretical examination of any proposed clustering problem is necessary to determine whether it constitutes a practical approach to clustering. We give such a classification of AH-CUT and show that although it is NP-hard and hard to approximate, it is fixed-parameter tractable, and therefore still a practical method for clustering.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The k-Means Algorithm. The k-MEANS algorithm is one of a group of algorithms called partitioning methods; Given n objects in a d-dimensional metric space, we wish to find a partition of the objects into k groups, or clusters, such that the objects in a cluster are more similar to each other than to objects in different clusters. The value of k may or may not be specified and a clustering criterion, typically the squared-error criterion, must be adopted. The k-MEANS algorithm initializes k clusters by arbitrarily selecting one object to represent each cluster. Each of the remaining objects are assigned to a cluster and the clustering criterion is used to calculate the cluster mean. These means are used as the new cluster points and each object is reassigned to the cluster that it is most similar to. This continues until there is no longer a change when the clusters are recalculated. However, it is well-known that depending on the initial centres of the clusters, clustering results can change significantly. We use Gene Cluster 3:0 [4] for comparing our method with k-MEANS.",
+            "cite_spans": [
+                {
+                    "start": 1045,
+                    "end": 1048,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "Max Cut, Ratio Cut and Average Cut. Graph bipartitioning algorithms are also used for clustering [5] . Given a graph G~(V ,E) and perhaps a weighting function v : E?S(R, a graph bipartitioning problem asks for a partition S ] S'~V such that some function on the (weights of the) edges between S and S' satisfies the given bound, or in the case of an optimisation problem, is optimised. One of the most common formulations is essentially an NP-hard combinatorial problem, called WEIGHTED MAX-CUT, which is a simple weighted extension of the MAX-CUT problem. If we denote the edges between S and S' as E SS' then the function f m (S,S') to be optimised in the case of WEIGHTED MAX-CUT is:",
+            "cite_spans": [
+                {
+                    "start": 97,
+                    "end": 100,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "Although good algorithms exist for WEIGHTED MAX-CUT, Shi and Malik [1] and Wu and Leahy [5] show that (Weighted) MAX-CUT 's objective function favours cutting small sets of isolated nodes in the graph. Furthermore, during bipartitioning, sometimes it may also cut small groups and put two parts of the same small group into different partite sets.",
+            "cite_spans": [
+                {
+                    "start": 67,
+                    "end": 70,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 88,
+                    "end": 91,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "RATIO-CUT uses the objective function:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "minfDSD,DS'Dg :",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "In this case v is taken as a similarity metric. RATIO-CUT (and its kway extension) has also been employed for image segmentation [6] and circuit partitioning for hierarchical VLSI design [7] . AVERAGE-CUT employs the following objective funtion:",
+            "cite_spans": [
+                {
+                    "start": 129,
+                    "end": 132,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 187,
+                    "end": 190,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "If v is a similarity metric, the the problem becomes a minimisation problem, v expresses distance the goal is maximisation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "It turns out that even using the average cut, one cannot simultaneously minimise the inter-cluster similarity while maximizing the similarity within the groups.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "Normalized-Cut. In the context of image segmentation, Shi and Malik [1] introduce NORMALIZED-CUT. They use a similarity metric for v, and thus NORMALIZED-CUT is typically expressed as a minimisation problem with the following objective function:",
+            "cite_spans": [
+                {
+                    "start": 68,
+                    "end": 71,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "It is well-known that by negating weights the MAX-CUT problem is equivalent to the corresponding MIN-CUT problem where one is supposed to minimise the sum of the weights (given by some similarity measure) between the two partitions (S,S) of a set of vertices V in a graph G~(V ,E). It is straightforward to see that the same argument holds in case of NORMALIZED-CUT as well, which allows the negation of a distance matrix to be used a similarity matrix, facilitating comparisons for datasets for which only distance matrices are available. However, Shi and Malik [1] start with a Euclidian distance matrix D and then compute e {D as their similarity matrix. We use both approaches and demonstrate that the performance of this algorithm varies depending on the dataset and the two similarity measures.",
+            "cite_spans": [
+                {
+                    "start": 563,
+                    "end": 566,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "Furthermore, Shi an Malik's [1] implementation relaxes the NORMALIZED-CUT problem into a generalised eigen-value problem by allowing the vertices v to take real-values, instead of taking values from just the set f0,1g where v~0 denotes that v[S and v~1 denotes that v[S'. Then, for bipartitioning, the second smallest eigenvector of the generalized eigen system is the realvalued solution to NORMALIZED-CUT. Finally, they search for the splitting point as follows: first choose l equidistance splitting points, compute NORMALIZED-CUT's objective value for each of these splits, then choose the one for which NORMALIZED-CUT's objective value is the smallest. In fact, the implementation also allows k-way NORMALIZED-CUT, Yu and Shi [8] examine this further. It considers the first k eigen vectors and yields k partite sets from a discretisation step following it.",
+            "cite_spans": [
+                {
+                    "start": 28,
+                    "end": 31,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 731,
+                    "end": 734,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "Notice that MAX-CUT and RATIO-CUT do not cluster by intracluster similarity and this results in a poor clustering results for image segmentation in comparison to NORMALIZED-CUT [1] . Therefore, among these three algorithms, we consider only NORMALIZED-CUT for comparison with our algorithm.",
+            "cite_spans": [
+                {
+                    "start": 177,
+                    "end": 180,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "Graclus. Graclus [9] implements a multilevel algorithm that directly optimizes various weighted graph clustering objectives, such as the popular ratio cut, normalized cut, etc. This algorithm for multilevel clustering consists of three steps: (a) iteratively merging nodes of the graph (using various criteria of merging) and creating supergraphs with fewer nodes; (b) applying some baselevel clustering on the resulting supergraph; and (c) restoring the clusters of original graph iteratively from the clustering of the final supergraph. This algorithm does not use eigenvector computation, and is thus notably faster than existing implementations of normalised and ratio-cuts. However, in most of the examples shown in this paper, Shi and Malik's [1] implementation of NORMALIZED-CUT results in a better clustering than Graclus.",
+            "cite_spans": [
+                {
+                    "start": 17,
+                    "end": 20,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 749,
+                    "end": 752,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Related Objective Functions for Hierarchical Clustering"
+        },
+        {
+            "text": "In this paper, after introducing the problem, we first examine the approximability of AH-CUT. In fact, we prove that AH-CUT is APX -hard (and NP-complete) via a reduction from the MAX-CUT problem, which is already known to be APX -hard [3] . Therefore AH-CUT has no polynomial time approximation scheme unless P~NP. We then demonstrate that AH-CUT is fixed-parameter tractable via a greedy localisation algorithm. Such a complexity analysis provides an indication of what practical methods are suitable for application to the problem. In this case the complexity results indicate that there is unlikely to be a polynomial time algorithm (or even approximation), but that the exponential component of the running time is at worst only a function of a small independent parameter and therefore the problem is likely to still have effective algorithms.",
+            "cite_spans": [
+                {
+                    "start": 236,
+                    "end": 239,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Outline of the Paper"
+        },
+        {
+            "text": "Given the complexity result we use a meta-heuristic approach (namely, a memetic algorithm) for AH-CUT (an outline of which was presented previously [10] ). We compare the performance of our algorithm on four diverse types of datasets and compare the results with two recent and highly regarded clustering algorithms: NORMALIZED-CUT; and k-MEANS. The results indicate that AH-CUT gives a robust and broadly useful hierarchical clustering method.",
+            "cite_spans": [
+                {
+                    "start": 148,
+                    "end": 152,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Outline of the Paper"
+        },
+        {
+            "text": "Graph Notation and Problem Definition. We consider only simple, undirected graphs, which may or may not be associated with a weight function on the edges. Given a graph G unless otherwise specified we denote the vertex set of G by V (G) and the edge set of G by E(G). We denote an edge between vertices u and v by uv.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Preliminaries"
+        },
+        {
+            "text": "Given a graph G and two vertex sets X and Y we denote the set of edges with one endpoint in X and the other in Y by E XY (G). When the graph is clear from context we write E XY .",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Preliminaries"
+        },
+        {
+            "text": "Instance: A graph G~(V ,E), two positive integers k and d and a weight function v : E?\u00bd1,d. Question: Is there a partition of V into two sets B and W such that",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ARITHMETIC-HARMONIC CUT (AH-CUT)"
+        },
+        {
+            "text": "Given a graph G and two disjoint vertex sets X and Y , for convenience we denote",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ARITHMETIC-HARMONIC CUT (AH-CUT)"
+        },
+        {
+            "text": "The optimisation verion of AH-CUT is identical except that we maximise the function f .",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ARITHMETIC-HARMONIC CUT (AH-CUT)"
+        },
+        {
+            "text": "Approximation and Complexity. If a maximisation problem P with objective function f has an polynomial time algorithm which given an instance I with optimal solution S guarantees a solution S \u00c3 where f (S \u00c3 )\u0192(1{e)f (S) for some ew0 then we say P has a constant factor approximation algorithm. If there is an algorithm that guarantees such a bound for every ew0, P has a polynomial time approximation scheme (ptas). APX is the class of all problems which have constant factor approximation algorithms. If a problem P is APX -hard, then P has no ptas unless P~NP.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ARITHMETIC-HARMONIC CUT (AH-CUT)"
+        },
+        {
+            "text": "We refer to Ausiello et al. [11] for further reading. Parameterized Complexity. A parameterized problem is a (decision) problem equipped with an additional input called the parameter. Typically the parameter will numeric and should be independent of the size of the instance and relatively small. A problem P is fixed-parameter tractable if there is an algorithm that solves the problem in time bounded by f (k)p(n) where k is the parameter, n is the size of the input, f is a computable function and p is a polynomial.",
+            "cite_spans": [
+                {
+                    "start": 28,
+                    "end": 32,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "ARITHMETIC-HARMONIC CUT (AH-CUT)"
+        },
+        {
+            "text": "As we do not require the parameterized notion of hardness, we refer the reader to Flum and Grohe [12] for complete coverage.",
+            "cite_spans": [
+                {
+                    "start": 97,
+                    "end": 101,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "ARITHMETIC-HARMONIC CUT (AH-CUT)"
+        },
+        {
+            "text": "The Complexity of AH-Cut",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "We first turn to theoretical results for AH-CUT. We show that the optimisation version of the problem is APX -hard, and consquently that the decision version is NP-complete, indicating that AH-CUT is not has no polynomial time algorithm, but has no polynomial time approximation scheme, under standard complexity theoretic assumptions. Under the parameterized complexity framework however we show that AH-CUT is fixed parameter tractable with a 2 O(dk) zDV D 3 time algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results and Discussion"
+        },
+        {
+            "text": "We demonstrate the NP-completeness for AH-CUT via an APX -hardness reduction from MAX-CUT which is known to be APX -hard [3] and NP-complete [13] . The goal of the optimisation version of MAX-CUT is to maximise",
+            "cite_spans": [
+                {
+                    "start": 121,
+                    "end": 124,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 141,
+                    "end": 145,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "NP-Completeness and APX-Hardness"
+        },
+        {
+            "text": "Let (G,k) be an instance of MAX-CUT with m~DE(G)D and DV (G)D\u0192m\u0192DV (G)D 2 (we may assume that there is at least one cycle, as the maximum cut of any forest is trivially E(G)), we construct an",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "and for all other edges uv we set v(uv) :~m 3 . We set k' :~3km 6 . Clearly we can obtain G' in polynomial time.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "Before moving to the hardness proof, we first prove some auxilliary lemmas.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "Proof. Consider the objective function",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": ". Each of the edges between S and S'' that are also in E(G) contribute m 6 to A, and all other edges that are also in E(G) contribute 1 m 6 to B. As a, b and c are in S'', the edges ab, ac and bc contribute 3 to B. The edges between fa,b,cg and S contribute 3m 3 DSD to A. Therefore Proof. If k\u0192 m 2 we may apply the greedy algorithm of Mahajan and Raman [14] which returns a set X such that DE X (V (G)\\X ) D \u00a7 m 2 .",
+            "cite_spans": [
+                {
+                    "start": 355,
+                    "end": 359,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "Therefore we may take X as S \u00c3 and we have",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "If kw m 2 , we have that f G' S,S'' \u00a7 3 2 m 7 . Then by Lemma 2, E SS'' \\fab,ac,bcg~6 0. Without loss of generality we may assume that S\\fa,b,cg~6 0 (by switching S and S'' as necessary). Denote S''\\fa,b,cg by S'. As m \u00a7DV D \u00a73 we have DV D 2 \u00a73DV D. We also have that DV D \u00a7DSD. We may then observe that",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": ":",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "We know that edges otherwise unnaccounted for in E(G')\\E SS'' (G'). Therefore:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "As m \u00a7DV (G)D \u00a73:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": ":",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "We are now prepared to prove the main theorem of this section. It is clear that AH-CUT is in NP. Given a partition, we simply calculate f for that partition and compare to the target value.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MAX-CUT"
+        },
+        {
+            "text": "We show that AH-CUT is fixed-parameter tractable via a greedy localisation technique. First we compute a greedy solution as follows:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Fixed-Parameter Tractability"
+        },
+        {
+            "text": "Add u to B and v to W . Note that we assume that G is connected. If G is not connected then all vertices of degree 0 can be discarded, and the initial selection of vertices must take an adjacent pair from each connected component, then the algorithm continues as before. After all vertices have been assigned if f (B,W ) \u00a7k, then we answer Yes. If f (B,W )\u0192k{1 we make the following claim:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Pick an edge uv[E such that v(uv) \u00a7v(xy) for every xy[E."
+        },
+        {
+            "text": "Lemma 5. Let (G,k) be an instance of AH-CUT and B ] W a partition of V such that f (B,W )\u0192k{1, then DV D\u0192 maxf2dk,2(dz1)(k{1)g and DED\u0192 maxfdk,(dz1)(k{1)g.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Pick an edge uv[E such that v(uv) \u00a7v(xy) for every xy[E."
+        },
+        {
+            "text": "Proof. Let (G,k) be such an instance and B ] W the partition. ), therefore DE\\E BW D\u0192d(k{1) and there are at most k{1zd(k{1) edges and 2(k{1zd(k{1)) vertices in the graph. As the instance is bounded by a function of kzd, we can exhaustively search the instance in time O(2 h ) where h~maxf2dk,2(dz1)(k{1)g.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Pick an edge uv[E such that v(uv) \u00a7v(xy) for every xy[E."
+        },
+        {
+            "text": "This algorithm immediately gives the following result: Theorem 6. AH-CUT is fixed-parameter tractable with an algorithm running in time O(2 maxf2dk,2(dz1)(k{1)g n 3 ) where k is the optimisation target value, d is the maximum edge weight and n is the number of vertices in the input graph.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Pick an edge uv[E such that v(uv) \u00a7v(xy) for every xy[E."
+        },
+        {
+            "text": "We apply our algorithm to four datasets: (i) melanoma-colonleukemia data from National Cancer Institute, U.S [15] (involving gene expression of 6830 genes for 23 samples); (ii) SARS data of Yap et al. [16] and (iii) tissue type data given by Su et al. [17] (involving gene expression of 33689 genes for 158 tissue samples).",
+            "cite_spans": [
+                {
+                    "start": 109,
+                    "end": 113,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 201,
+                    "end": 205,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 252,
+                    "end": 256,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "AH-Cut in Practice"
+        },
+        {
+            "text": "We also consider a large synthetic dataset consisting of 1000 samples and 500 features with a known optimal solution with three clusters. Despite the size of this datasets, our algorithm finds all three clusters.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AH-Cut in Practice"
+        },
+        {
+            "text": "In each case we compare our algorithm to NORMALIZED-CUT and where possible to k-MEANS and Graclus. Implementation details for the memetic algorithm are given in the Materials and Methods section.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AH-Cut in Practice"
+        },
+        {
+            "text": "For the first comparison we use a subset of the data for 60 cancer samples taken for the National Cancer Institute's (NCI) screening for anti-cancer drugs [15] . The dataset consists of 6830 gene expressions of 8 melanoma, 7 colon tumour and 8 leukaemia samples. The reason for taking these three sets of samples is that others (non-small cell lung cancer, breast cancer, etc.) have heterogeneous profiles and removing these gives an expected solution of three clear clusters. Laan and Pollard [18] show that this simple dataset is already hard to cluster using agglomerative hierarchical clustering methods. Nevertheless, AH-CUT is able to cluster the samples of these three diseases effectively, see Figure 1 for the whole dendrogram generated by AH-CUT. We use centred correlation distance as the distance metric to maintain consistency with Golub et al. [19] . Conversely, NORMALIZED-CUT behaves inconsistently in allocating samples to the partitions. Using the negated distance matrix as a similarity matrix and choosing two clusters, it either separates melanoma from colon and leukemia samples, or leukemia from colon and melanoma samples, or splits the leukemia sample group. Even when number of clusters is specified as 3, leukemia samples are split between different clusters. Using e {D as the similarity matrix, where D is the distance matrix, gives worse results.",
+            "cite_spans": [
+                {
+                    "start": 155,
+                    "end": 159,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 494,
+                    "end": 498,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 858,
+                    "end": 862,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 702,
+                    "end": 710,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Melanoma-Colon-Leukemia data from NCI"
+        },
+        {
+            "text": "On the other hand, k-MEANS performs much better than NORMALIZED-CUT and successfully separates melanoma from colon and leukemia samples when k~2 and gives three distinct clusters of colon, melanoma and leukemia samples when k~3.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Melanoma-Colon-Leukemia data from NCI"
+        },
+        {
+            "text": "Next we analyse Yap et al.'s [16] dataset for Severe Acute Respiratory Syndrome (SARS). To explore the exact origin of SARS, the genomic sequence relationships of 31 different singlestranded RNA (ssRNA) viruses (both positive and negative strand ssRNA viruses) of various families were studied. Yap et al. [16] generate the tetra-nucleotide usage pattern profile for each virus from which a distance matrix based on correlation coefficients is created. We use this distance matrix for the following performance comparison of AH-CUT and NORMALIZED-CUT. See Figure 2 for the dendrogram generated by AH-CUT for this dataset. It is interesting to note that SARS virus is grouped in the same subtree as other corona viruses and is closest to the Feline Corona Virus NORMALIZED-CUT mixes positive and negative strand ssRNA viruses even in the first partition for the majority of runs. Graclus puts corona viruses in different partitions even when the number of partition specified is 2. As Graclus requires a distance matrix of integers we scaled the dataset's distance matrix by 100 to obtain an integral distance matrix. As only a distance matrix was available, k-MEANS was not applicable.",
+            "cite_spans": [
+                {
+                    "start": 29,
+                    "end": 33,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 306,
+                    "end": 310,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 556,
+                    "end": 564,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "SARS"
+        },
+        {
+            "text": "Next we present results of applying AH-CUT to Su at al.'s [17] human tissue dataset. This dataset consists of 33689 tissue specific genes from 158 samples collected from 46 individuals. The known origin of tissue samples gives a great advantage in validating clusterings of this dataset. For brevity we will compare only the first partitioning of this dataset generated by the different algorithms. The first partition of AH-CUT consists of: N brain related tissues; N eye related tissues; N face related tissues; N testis tissues; N others (including ovary tissue).",
+            "cite_spans": [
+                {
+                    "start": 58,
+                    "end": 62,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Tissue dataset"
+        },
+        {
+            "text": "The second partition of AH-CUT consists of: N bonemarrow related cells; N blood cells; N heart related cells; N foetal cells; N others (including ovary tissue, uterine tissue and uterine corpus tissue).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tissue dataset"
+        },
+        {
+            "text": "The partitioning for this dataset is quite reasonable except occurrence ovary tissues in different partitions. This can be due to the possible outlier nature of ovary tissues. However, NORMALIZED-CUT repeatedly separates the brain related tissues and thus performs even worse. Graclus performs similarly to NORMALIZED-CUT on this dataset.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tissue dataset"
+        },
+        {
+            "text": "k-MEANS agrees very well with AH-CUT in the partitions, except that it clusters placental tissues within the second partition instead of the first and it puts the two uterine tissues in different partitions. k-MEANS also puts the two ovary tissues in two different partitions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tissue dataset"
+        },
+        {
+            "text": "To test the scalability of our algorithm, we show the results of AH-CUT applied to a large synthetic dataset. Consider 1000 samples of 500 synthetic gene expression profiles corresponding to three subtypes of some disease, giving a known optimum clustering with three clusters. To generate the data, we follow Laan and Pollard's [18] method. We sample three groups of 700, 200 and 100 samples respectively from three multivariate normal distributions with diagonal covariance matrices, which differed only in their mean vector. The number of samples are chosen keeping in mind that in general there are some predominant subtypes of a disease and some rarer subtypes. All genes had common standard deviation log 10 (1:6), which corresponds to a 0:75-quantile of all standard deviations in an actual data set. For the first subpopulation, the first 25 genes had a mean of log 10 (3), genes 25{50 had mean of { log 10 (3), and the other 350 genes had mean zero. Then for the second subpopulation, genes 51{75 had mean of log 10 (3), genes 76{100 had mean of { log 10 (3) and the other 350 genes had mean zero. For the third subpopulation, genes 101{125 had mean of log 10 (3), genes 126{150 had mean of { log 10 (3) and the other 350 genes had mean zero. In other words, signature of the three types of cancer is related to 50 genes of which 25 are under-expressed and 25 are over-expressed.",
+            "cite_spans": [
+                {
+                    "start": 329,
+                    "end": 333,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Synthetic large-sampled gene expression data"
+        },
+        {
+            "text": "The application of AH-CUT on this dataset first separates the first group from the rest. A second application on the rest of the samples yields the second and third group as the two partitions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synthetic large-sampled gene expression data"
+        },
+        {
+            "text": "When number of clusters is specified as two, NORMALIZED-CUT clusters the first and third subtypes together and the second subtype separately. However, specifying number of clusters as three creates a partitioning which does not correspond to the expected known grouping.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synthetic large-sampled gene expression data"
+        },
+        {
+            "text": "k-MEANS puts the first subtype in one partition and the other two subtypes in another partition when k~2, and separates three subtypes successfully when k~3.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Synthetic large-sampled gene expression data"
+        },
+        {
+            "text": "We have introduced a novel objective function for clustering based on graph partitioning. We show that the resulting problem AH-CUT is, unfortunately, NP-complete and APX -hard, but is however fixed-parameter tractable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "We then gave several test cases demonstrating the potential of the approach using a memetic algorithm. The performance of AH-CUT based clustering exceeds the performance of NORMAL-IZED-CUT based clustering across a wide variety of datasets, including large scale datasets, and notably datasets with known optimal clusterings. AH-CUT based clustering also has a wider applicability than k-MEANS based clustering, and at least equal performance.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "There are several avenues for further research from this initial exploration. The fixed-parameter tractability of AH-CUT promises the possibility of a practical exact algorithm, which would give stronger evidence of AH-CUT's performance, as random elements would be removed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "Further studies on datasets of all kinds would also be useful to explore the strengths and weaknesses of AH-CUT based clustering, especially in comparison to other existing methods.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "Tangentially, the quality of the memetic algorithm solutions suggest that there may be a link between the fixed-parameter tractability and the performance of the memetic algorithm. As established by the fixed-parameter tractability of AH-CUT, if a simple greedy algorithm does not produce a solution with a sufficiently high objective value, then the instance size must be bounded by an relatively simple function of the parameters. Therefore it is possible that under these conditions the local search component of the memetic algorithm approximates an exhaustive search, or at least has a greater effectiveness. A definite link of this kind would be an interesting development for both parameterized complexity and memetic algorithmics, above and beyond this application.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusion"
+        },
+        {
+            "text": "The complexity analysis of the AH-CUT problem employ standard complexity theory techniques [11, 12] .",
+            "cite_spans": [
+                {
+                    "start": 91,
+                    "end": 95,
+                    "text": "[11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 96,
+                    "end": 99,
+                    "text": "12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "The NCI60 cancer dataset was drawn from the NCI60 anticancer drug screening program data [20] and the gene expression data for the cell lines was given by Ross et al. [15] .",
+            "cite_spans": [
+                {
+                    "start": 89,
+                    "end": 93,
+                    "text": "[20]",
+                    "ref_id": null
+                },
+                {
+                    "start": 167,
+                    "end": 171,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "The tissue dataset is drawn from Su et al. [17] . The synthetic dataset was generated using the methods of Laan and Pollard [18] .",
+            "cite_spans": [
+                {
+                    "start": 43,
+                    "end": 47,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 124,
+                    "end": 128,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "For the comparisons we use Gene Cluster's implementation of k-MEANS [4] (http://bonsai.ims.u-tokyo.ac.jp/,mdehoon/ software/cluster/software.htm#ctv), Dhillon et al.'s Graclus software [9] (http://userweb.cs.utexas.edu/users/dml/Software/ graclus.html) and Shi and Malik's implementation of NORMALIZED CUT [1] .",
+            "cite_spans": [
+                {
+                    "start": 68,
+                    "end": 71,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 185,
+                    "end": 188,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 306,
+                    "end": 309,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "All experiments were performed on a Dell laptop with a 1.67GHz processor and 2GB of RAM with the software written in Java.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Materials and Methods"
+        },
+        {
+            "text": "We have implemented AH-CUT via a memetic algorithm [21, 22] . Memetic algorithms provide a population-based approach for heuristic search in optimization problems. Broadly speaking they combine local search heuristics with crossover operators used in genetic algorithms [23] [24] [25] . The essence of our algorithm is similar to the work of Merz and Freisleben [26] for GRAPH BI-PARTITIONING. Differences arise from the fact that we need to remove the constraint of equal partitioning of the graph. The method consists of three main procedures: a greedy algorithm for initialization of a set of solutions for AH-CUT (detailed in the parameterized algorithm); a differential greedy crossover for evolution of the population; and a variable neighborhood local search, influenced by Festa et al. [27] , to improve the newly generated solutions.",
+            "cite_spans": [
+                {
+                    "start": 51,
+                    "end": 55,
+                    "text": "[21,",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 56,
+                    "end": 59,
+                    "text": "22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 270,
+                    "end": 274,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 275,
+                    "end": 279,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 280,
+                    "end": 284,
+                    "text": "[25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 362,
+                    "end": 366,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 794,
+                    "end": 798,
+                    "text": "[27]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [],
+            "section": "A memetic algorithm for AH-Cut"
+        },
+        {
+            "text": "We use a ternary tree for population similar to Buriol et al. [28] and keep two solutions at each node of this tree. One solution is the best obtained so far at the node, called pocket solution and the other one is the current solution. Essentially, if we generate a current solution by recombination or local search which is better than the pocket solution, we swap the current solution with the pocket solution. Furthermore, each parent node of the tree must have better pocket solution than its children's pocket solutions. Similar tree structures were previously employed successfully for various combinatorially hard problems [28] [29] [30] .",
+            "cite_spans": [
+                {
+                    "start": 62,
+                    "end": 66,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 631,
+                    "end": 635,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 636,
+                    "end": 640,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 641,
+                    "end": 645,
+                    "text": "[30]",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "A memetic algorithm for AH-Cut"
+        },
+        {
+            "text": "Differential Greedy Crossover. We allow a crossover of a parent's pocket solution with a child's current solution to ensure the diversity in the population. All vertices that are contained in the same set for both the parents, are included in the same set in the offspring. Then both sets are filled according to a greedy recombination method similar to the greedy algorithm used for the parameterized algorithm. Suppose, the parent solutions P and Q have the partitions S P , S' P and S Q ,S' Q respectively (after interchanging the sets suitably). Then the starting set S (resp. S') for the offspring is given by the intersection S P \\S Q (resp. S' P \\S' Q ), with the remainder of the partition calculated greedily.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A memetic algorithm for AH-Cut"
+        },
+        {
+            "text": "Local Search. We employ a variable-neighborhood search (VNS), first proposed by Hansen and Mladenovic [31] for a local search in the neighborhood of the new offspring. Contrary to other local search methods, VNS allows enlargement of the neighborhood structure. A k-th order neighbor of a paritition giving a solution S for AH-CUT is obtained by swapping the partite set of k vertices. In VNS, first local search is done starting from each neighbor S' of the current solution S. If a solution S'' is found which is better than S, then the search moves to the neighborhood of S''. Otherwise, the order k of the neighborhood is increased by one, until some stop criterion holds. We use maximum value of 1 7",
+            "cite_spans": [
+                {
+                    "start": 102,
+                    "end": 106,
+                    "text": "[31]",
+                    "ref_id": "BIBREF30"
+                }
+            ],
+            "ref_spans": [],
+            "section": "A memetic algorithm for AH-Cut"
+        },
+        {
+            "text": ": DV (G)D for k.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A memetic algorithm for AH-Cut"
+        },
+        {
+            "text": "Diversity. Whenever the population stagnates (fails to improve the objective value), we keep the best solution and reinitialize the rest of solutions (using the greedy algorithm with a randomised starting vertex pair) in the set and run the above process again for certain number of generations (say, 30) .",
+            "cite_spans": [
+                {
+                    "start": 301,
+                    "end": 304,
+                    "text": "30)",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "A memetic algorithm for AH-Cut"
+        },
+        {
+            "text": "To get the optimal solution for very small sized problems (graphs containing less than 25 vertices), we used backtracking. Notice that even though backtracking gives us an optimal solution, a greedy or memetic algorithm may not. By applying this method (backtracking, memetic or greedy algorithm depending on the number of vertices) recursively, we have at each step a graph as input, and the two subgraphs induced by each of the sets of the vertex partition as output; stopping when we arrive to a graph with just one vertex, we generate a hierarchical clustering in a top-down fashion.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "A memetic algorithm for AH-Cut"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Normalized cuts and image segmentation",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Malik",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "IEEE Transactions of Pattern Analysis and Machine Intelligence",
+            "volume": "22",
+            "issn": "",
+            "pages": "888--905",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Laws of organization in perceptual forms (partial translation). A Sourcebook of Gestalt Psychology",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Wertheimer",
+                    "suffix": ""
+                }
+            ],
+            "year": 1938,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "71--88",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Optimization, approximation, and complexity classes",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Papadimitriou",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Yannakakis",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "Journal of Computer and System Sciences",
+            "volume": "43",
+            "issn": "",
+            "pages": "425--440",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Open source clustering software",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "De Hoon",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Imoto",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Nolan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Miyano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Bioinformatics",
+            "volume": "20",
+            "issn": "",
+            "pages": "1453--1454",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "An optimal graph theoretic approach to data clustering: theory and its application to image segmentation",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Leahy",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "IEEE Transactions of Pattern Analysis and Machine Intelligence",
+            "volume": "15",
+            "issn": "",
+            "pages": "1101--1113",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Image segmentation with ratio cut",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Siskind",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "IEEE Transactions of Pattern Analysis and Machine Intelligence",
+            "volume": "25",
+            "issn": "",
+            "pages": "675--690",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Ratio cut partitioning for hierarchical designs",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wei",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Cheng",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems",
+            "volume": "10",
+            "issn": "",
+            "pages": "911--921",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Multiclass spectral clustering",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "International Conference on Computer Vision",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Weighted graph cuts without eigenvectors: a multilevel approach",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Dhillon",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Kulis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "IEEE Transactions of Pattern Analysis and Machine Intelligence",
+            "volume": "29",
+            "issn": "",
+            "pages": "1944--1957",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Hierarchical clustering, languages and cancer",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Mahata",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Costa",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cotta",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "EvoWorkshops",
+            "volume": "",
+            "issn": "",
+            "pages": "67--78",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Complexity and Approximation: Combinatorial Optimization Problems and their Approximability Properties",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Ausiello",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Crescenzi",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gambosi",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Kann",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Spaccamela",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Parameterized Complexity Theory",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Flum",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Grohe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Reducibility among combinatorial problems",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Karp",
+                    "suffix": ""
+                }
+            ],
+            "year": 1972,
+            "venue": "Proceedings of a symposium on the Complexity of Computer Computations",
+            "volume": "",
+            "issn": "",
+            "pages": "85--104",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Parameterizing above guaranteed values: Maxsat and maxcut",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Mahajan",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Raman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Electronic Colloquium on Computational Complexity",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Systematic variation in gene expression patterns in human cancer cell lines",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Ross",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Scherf",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Eisen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Perou",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Rees",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Nature Genetics",
+            "volume": "24",
+            "issn": "",
+            "pages": "227--235",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Relationship of SARS-CoV to other pathogenic RNA viruses explored by tetranucleotide usage profiling",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Yap",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Danchin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "BMC Bioinformatics",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Large scale analysis of the human and mouse transcriptomes",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Su",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Cooke",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Ching",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Hakak",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Walker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "PNAS",
+            "volume": "99",
+            "issn": "",
+            "pages": "4465--4470",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A new algorithm for hybrid clustering of gene expression data with visualization and bootstrap",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Laan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Pollard",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Journal of Statistical Planning and Inference",
+            "volume": "117",
+            "issn": "",
+            "pages": "275--303",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Molecular classification of cancer: Class discovery and class prediction by gene expression monitoring",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Golub",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Slonim",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Tamayo",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Huard",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gaasenbeek",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Science",
+            "volume": "286",
+            "issn": "",
+            "pages": "531--537",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "On evolution, search, optimization, genetic algorithms and martial arts: Towards memetic algorithms",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                }
+            ],
+            "year": 1989,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "A gentle introduction to memetic algorithms",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cotta",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Handbook of Metaheuristics",
+            "volume": "",
+            "issn": "",
+            "pages": "105--144",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "A genetic algorithm tutorial",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Whitley",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Statistics and Computing",
+            "volume": "4",
+            "issn": "",
+            "pages": "65--85",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Memetic algorithms",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cotta",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mendes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "New Optimization Techniques in Engineering",
+            "volume": "",
+            "issn": "",
+            "pages": "53--85",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Memetic algorithms",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cotta",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Handbook of Approximation Algorithms and Metaheuristics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Fitness landscapes, memetic algorithms, and greedy operators for graph bipartitioning",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Merz",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Freisleben",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Evolutionary Computation",
+            "volume": "8",
+            "issn": "",
+            "pages": "61--91",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Randomized heuristics for the MAX-CUT problem",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Festa",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Pardalos",
+                    "suffix": ""
+                },
+                {
+                    "first": "Mgc",
+                    "middle": [],
+                    "last": "Resende",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ribeiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Optimization Methods and Software",
+            "volume": "7",
+            "issn": "",
+            "pages": "1033--1058",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "A new memetic algorithm for the asymmetric traveling salesman problem",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Buriol",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Franca",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Journal of Heuristics",
+            "volume": "10",
+            "issn": "",
+            "pages": "483--506",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Enhancing the performance of memetic algorithms by using a matching-based recombination algorithm",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Berretta",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cotta",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Metaheuristics: computer decision-making",
+            "volume": "",
+            "issn": "",
+            "pages": "65--90",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Gene ordering in microarray data using parallel memetic algorithms",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mendes",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Cotta",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Garcia",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Franca",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Moscato",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "ICPP Workshops",
+            "volume": "",
+            "issn": "",
+            "pages": "604--611",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Developments of variable neighborhood search. Essays and Surveys in Metaheuristics",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Hansen",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mladenovi\u0107",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "415--439",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Instance: A graph G~(V,E), a positive integer k. Question: Is there a set S(V , where S'~V \\S such that DE SS' D \u00a7k?",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "a subset of V (G') and T'~V (G')\\T. If E TT' \\fab,ac,bcg= 6 0 then f G' (T,T')v 3 2 m 7 . Proof. Assume E TT' \\fab,ac,bcg= 6 0, without loss of generality (by switching T and T') we may assume that DT\\fa,b,cgD~2. Let R~T\\fa,b,cg, R'~V (G)\\R and t~DE RR' (G)D. Let A~P uv[ETT' v(uv)and B~P uv[E\\ETT'   1 v(uv).As DT\\fa,b,cgD~2 we know DE TT' \\fab,ac,bcgD, which contributes 2 to A. The edges in E RR' contribute tm 6 to A. As two vertices from fa,b,cg are in T, the edges between those two vertices and R' contribute 2DR'Dm 3~2 (DV (G)D{DRD)m 3 to A. The third vertex in fa,b,cg contributes DRDm 3 to A.One of the edges of fab,ac,bcg is not in E TT' and thus contributes 1 to B. There are m{t edges in E(G) that are not inE RR' (and thus not in E TT' ) and so contribute m{t m 6 to B. The edges between the two T\\fa,b,cg vertices and R contribute 2DRD m 3 to B. Finally the edges between the T'\\fa,b,cg vertex and R' contribute DV(G)D{DRD m 3 to B. Thus in total we have A~(2ztm 6 z2(DV (G)D{DRD)m 3 zDRDm 3 ) As m \u00a7DV (G)D,t and DRD\u0192DV (G)D we have f G' (T,T')~AB \u0192As we assume that m \u00a73, f G' (T,T')\u0192 3 2 m 7 :Lemma 3. Assume DV (G)D \u00a73. Let S be a subset of V (G') and S''~V (G)\\S such that f G' (S,S'') \u00a73km6 . In polynomial time we can obtain an S \u00c3 5V (G) such that DE SS\u00c3 D \u00a7k",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "f G' (S,S'') m 6 \u00a73k, and that fab,ac,bcg contributes 3 edges to E(G')\\E SS'' (G'), as k \u00a7 m 2 there are at most m 2 edges of G that are in E SS' (G') and there are at most DV (G'",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "AH-CUT is APX -hard and NP-complete. Proof. Assume there is a (1{e)-approximation algorithm A for AH-CUT. We show that this implies a (1{2e)-approximation algorithm for MAX-CUT. Let (G,k) be an instance of MAX-CUT and (G',k') be the corresponding instance of AH-CUT derived from the reduction described above. If DV (G)D\u01923 or DE(G)D\u01925 3e , we solve the instance by complete enumeration in constant time. Otherwise assume the optimal cut of G cuts at least opt edges of E(G) and induces the partition V (G)~S ] S'. By Lemma 1 the partition V (G')~S ] V (G')\\S induces a solution for AH-CUT such that f G' (S,V (G')\\S) \u00a73DE(G)D 6 : opt. Algorithm A will give a solution with f G' (S,V (G')\\S) \u00a73DE(G)D 6 : opt : (1{e). Then by Lemma 3 we have a set S \u00c3 (V (G) such that DE S \u00c3 (V (G)\\S \u00c3 (G))D \u00a7opt(1{e) 1{ 5 3m \u00a7opt(1{e)(1{e) \u00a7opt(1{2e):",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "While V 6B ] W do (a) Pick a vertex x 6 [ B ] W such that x[N(B ] W ). (b) If f (B|fxg,W ) \u00a7f (B,W |fxg) then set B :~B|fxg, otherwise set W :~W |fxg.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Dendrogram generated from AH-CUT for the melanoma-colon-leukemia dataset. doi:10.1371/journal.pone.0014067.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "(FCoV). Notice that these are all positive strand ssRNA viruses. This group of SARS and Corona viruses also contains other viruses (Porcine epidemic diarrhoea virus (PDV), Transmissible gastroenteritis virus (TGV), Avian infectious bronchitis virus (ABV), Murine hepatitis virus (MHV)). There is also a group of positive strand ssRNA viruses, called ''Outliers'', which exhibit differences in their tetra-nucleotide usage pattern from the rest. Yellow Fever Virus (YFV), Avian Encephalomyelitis Virus (AEV), Rabbit Hemorrhagic disease Virus (RHV), Equine arteritis Virus (EV1), Lactate Dehydrogenase-elevating Virus (LDV) were also identified as outliers by Yap et al. [16]. This group also includes other ssRNA positive strand viruses -Igbo ora virus (IOV), Bovine viral diarrheoa (BDV), Foot and mouth disease virus C (FMV) and Simina Haemorrhagic fever virus (SFV). The negative strand ssRNA viruses are clustered in two subgroups, one unmixed with the positive strand ssRNA viruses, the remainder in the group ''Mixed''. The first class (called -ve strand ssRNA viruses in Figure 2) covers Canine Distemper Virus (CDV) and Tioman virus (TV2), Reston Ebola Virus (REV), Bovine Ephemeral Fever Virus (BFV), Hantaan Virus (HV1), Bovine Respiratory syncytial Virus (BRV), Human Respiratory syncytial Virus (HRV) and Respiratory Syncytial Virus (RSV).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "Dendrogram generated by AH-CUT for the SARS dataset. doi:10.1371/journal.pone.0014067.g002",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "EBW v(uv)\u0192k{1 and therefore DE BW D\u0192k{1. The case with the most edges with both endpoints in the same partite set is then when there is only one edge between the two partite sets, therefore",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Conceived and designed the experiments: RR, P. Mahata, LM, P. Moscato. Performed the experiments: RR, P. Mahata, LM. Analyzed the data: P. Mahata, P. Moscato. Contributed reagents/materials/analysis tools: RR, P. Mahat LM. Wrote the paper: P. Mahat LM.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Contributions"
+        }
+    ]
+}

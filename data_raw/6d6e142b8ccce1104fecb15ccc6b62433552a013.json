@@ -1,0 +1,993 @@
+{
+    "paper_id": "6d6e142b8ccce1104fecb15ccc6b62433552a013",
+    "metadata": {
+        "title": "LAVA: An Open-Source Approach To Designing LAMP (Loop-Mediated Isothermal Amplification) DNA Signatures",
+        "authors": [
+            {
+                "first": "Clinton",
+                "middle": [],
+                "last": "Torres",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Elizabeth",
+                "middle": [
+                    "A"
+                ],
+                "last": "Vitalis",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Brian",
+                "middle": [
+                    "R"
+                ],
+                "last": "Baker",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Shea",
+                "middle": [
+                    "N"
+                ],
+                "last": "Gardner",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Marisa",
+                "middle": [
+                    "W"
+                ],
+                "last": "Torres",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "John",
+                "middle": [
+                    "M"
+                ],
+                "last": "Dzenitis",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "We developed an extendable open-source Loop-mediated isothermal AMPlification (LAMP) signature design program called LAVA (LAMP Assay Versatile Analysis). LAVA was created in response to limitations of existing LAMP signature programs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Results: LAVA identifies combinations of six primer regions for basic LAMP signatures, or combinations of eight primer regions for LAMP signatures with loop primers, which can be used as LAMP signatures. The identified primers are conserved among target organism sequences. Primer combinations are optimized based on lengths, melting temperatures, and spacing among primer sites. We compare LAMP signature candidates for Staphylococcus aureus created both by LAVA and by PrimerExplorer. We also include signatures from a sample run targeting all strains of Mycobacterium tuberculosis.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "We have designed and demonstrated new software for identifying signature candidates appropriate for LAMP assays. The software is available for download at",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Loop-mediated isothermal amplification (LAMP) is a DNA amplification technique with high specificity, efficiency, and speed, performed under isothermal conditions [1] . We are using LAMP to perform highly sensitive and specific detection of blood-borne pathogens with a new point-of-care instrument that is in development, targeting pathogens such as Staphylococcus aureus, Pseudomonas aeruginosa, and Streptococcus pneumoniae. This approach has the potential to operate at significantly lower cost than TaqMan PCR detection because it can be performed with less expensive materials and equipment [2, 3] .",
+            "cite_spans": [
+                {
+                    "start": 163,
+                    "end": 166,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 597,
+                    "end": 600,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 601,
+                    "end": 603,
+                    "text": "3]",
+                    "ref_id": "BIBREF2"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The most common method for designing LAMP primers is to use PrimerExplorer V4 from Eiken Chemical Co. Ltd. http://primerexplorer.jp/e/index.html. While PrimerExplorer is very useful for LAMP signature design, as demonstrated by its widespread use, it has several limitations that reduced its usability for our high-throughput whole-genome analysis. First, PrimerExplorer doesn't support IUPAC characters other than \"ATCG\" in the input sequence, which are often used in MSA representations, because it was not built to handle MSA representations. Second, PrimerExplorer only runs in Windows operating systems, in a specific web browser. Third, PrimerExplorer cannot design signatures with loop primers, as discussed in Nagamine et al. [4] in a single execution, instead requiring two serial executions, which can prevent more optimal primer combinations from being identified. And fourth, Primer-Explorer is less suited for high throughput analysis since it is limited to a single execution process on a computer, accepts only up to 2,000 bp sequences, and outputs only HTML.",
+            "cite_spans": [
+                {
+                    "start": 734,
+                    "end": 737,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "LAVA is designed to be a flexible tool for custom signature design, so it can fulfill varying signature design needs in a high-throughput informatics environment. LAVA was implemented in Perl because Perl interpreters are available for every major operating system, the wide use of BioPerl [5] in bioinformatics, and Bio-Perl's support for several different sequence alignment formats. To simplify discussion of signature design, we refer to LAMP primers as pairs of nested primers: inner, loop, middle, and outer, as shown in Figure 1 . All signature results from LAVA are read in the 5' to 3' direction, even if the opposite strand is used to design a portion of the sequence, and are consistent with the traditional nomenclature in Notomi et al. [1] .",
+            "cite_spans": [
+                {
+                    "start": 290,
+                    "end": 293,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 749,
+                    "end": 752,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 527,
+                    "end": 535,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Background"
+        },
+        {
+            "text": "This is a Multiple-Sequence Alignment (MSA) approach to LAMP signature design. LAVA's processing steps are outlined in Figure 2 . Either a single sequence or a precomputed MSA can be used as input. The individual sequences from the MSA are used for primer enumeration, and design parameters can be adjusted for each primer role. Once potential primer locations are found, they are usually down-selected based on overlap and relative score, which keeps the number of analyzed combinations down. After primers have been identified that are shared among all the individual sequences, combinations of primers for the roles of inner, loop, middle, and outer, are analyzed to select LAMP signature candidates.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 119,
+                    "end": 127,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Implementation"
+        },
+        {
+            "text": "MSAs are read as input with BioPerl's Bio::AlignIO module, which understands many different alignment formats. Long MSAs can sometimes be used as input, but have heavy computer resource requirements, and using long MSAs can result in fewer identified signature candidates.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Find Potential LAMP Primers"
+        },
+        {
+            "text": "LAMP signatures that cover individual non-MSA sequences 20 kbp in length can take up to 90 minutes on a desktop computer if few design constraints are specified. Identification of signatures for MSAs of this type is usually finished in minutes, because only regions of conservation are considered in this version of LAVA. MSAs can have both longer and shorter runtimes, depending on the content of the MSA. MSAs approaching 100% conservation will run similar to single sequences. As the level of conservation decreases, so will LAVA's runtime up to a point.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Find Potential LAMP Primers"
+        },
+        {
+            "text": "We suggest using the LAVA wrapper SLAVA (Serial-LAVA) for individual sequences and highly conserved MSAs over 10 kbp. SLAVA splits the MSA into sections, executes LAVA for each individual section, and combines the results into a single set of non-identical signatures. Running a series of smaller chunks through SLAVA is likely to result in more optimal signature combinations, because each sub-analysis can identify more primer candidate regions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Find Potential LAMP Primers"
+        },
+        {
+            "text": "Primer enumeration is performed by modules which implement the OligoEnumerator interface. By default, this is done with Primer3 [6] , executed through BioPerl's Bio::Tools::Run::Primer3 module. The primer search is separately run for each primer context of inner, loop, middle, and outer. Default primer design parameters, which can be individually customized, were chosen based on our primer design rules for other primer-based amplification techniques [7] . LAVA's default primer design parameters are listed in Table 1 , along with other relevant parameter defaults discussed in this section. These defaults should only be considered as a starting point for signature identification, because a wide range of parameters yield successful LAMP assays.",
+            "cite_spans": [
+                {
+                    "start": 128,
+                    "end": 131,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 454,
+                    "end": 457,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 514,
+                    "end": 521,
+                    "text": "Table 1",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Find Potential LAMP Primers"
+        },
+        {
+            "text": "The first sequence in the MSA is the basis for generating primers. The remaining MSA sequences are used to filter out primers that are not identically present in every target sequence. Sub-sequence with \"N\" or \"-\" characters is not considered a valid primer target. Primers that are shared among all MSA sequences are returned as potential signature components by the Oli-goEnumerator. During primer generation, a maximum poly-base restriction is enforced, limiting number of consecutive identical bases in a potential primer region.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Find Potential LAMP Primers"
+        },
+        {
+            "text": "Primer analysis and scoring is performed by PrimerAnalyzer modules. Penalties get applied to primers and combinations of primers in two separate places. First is as an individual primer, and second is as a combination of primers for a LAMP signature. The PrimerAnalyzer penalty for individual primers in this version of LAVA is simply the Primer3 penalty score, which reflects how closely the primer comes to the design parameters. For combinations of primers, the penalty also includes factors for for inter-primer spacing. The assessment of the primer by the PrimerAnalyzer is returned as PrimerInfo objects, which are used to provide primer sequence information for signature output. This may appear redundant because the primers already contain the Figure 1 Additional description of a LAMP signature. Each named pair refers to a sequence location corresponding to the primer regions of like-numbered primers. These pairs represent the location and orientation of the primers with respect to the target template during each extension in which they participate. original sequence information, but since different scores can exist for the same primer in different roles, and some analysis methods may impose context-sensitive sequence restrictions as part of score calculation, relying on PrimerInfo guarantees that the correct sequence is associated with the analysis result for each context.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 753,
+                    "end": 761,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Find Potential LAMP Primers"
+        },
+        {
+            "text": "To help control the number of primer combinations that need to be scored, the set of candidate primer regions is down-selected based on overlap. Many potential primers often target the same general sequence region. Of the available primers, the best scoring primers are given priority during down-selection. The lower scoring overlapping primers are removed from consideration if they overlap the higher priority primers by a given percentage.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Filter Down By Overlap And Score"
+        },
+        {
+            "text": "Finally, primers are combined into nested sets that can serve as LAMP signatures. The overall LAMP signature penalty is the weighted combination of inner, middle, and outer pair penalties, plus context-dependent spacing penalties. Inter-primer spacing penalty increases as distance increases. The default objective function includes slightly decreasing weights for the penalties of inner primers, middle primers, outer primers, and loop primers respectively.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Evaluate Primer Combinations"
+        },
+        {
+            "text": "If the minimum number of signatures is not identified for the target, the entire primer combination process is repeated with different primer overlap cutoff percentages. The amount of overlap permitted is set for each iteration, based on a \"schedule\" of primer overlap percentages. Since these repeat attempts are effectively multiple runs of LAVA, often with more individually considered primers, regions with difficult to identify signatures will take longer to process. Processing time can increase exponentially as the primer overlap restrictions become lighter.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Evaluate Primer Combinations"
+        },
+        {
+            "text": "We created LAMP signatures with both LAVA and Pri-merExplorer for comparison. The locus we targeted is an 800 base-pair long sequence of Staphylococcus aureus, starting at base 2464089 of the RF122 genome [GenBank: NC_007622.1] at the 3' end of gltA through the 5' start of gltB. This locus is interesting to us because it is a place where a KPATH [7] run identified a TaqMan signature candidate that is both conserved among all targets, and is unique to the targets compared to all other known sequence, which makes this candidate region potentially valuable for S. aureus detection. Input for signature design was a sequence representation of all the genome sequences in Table 2 . Eiken's PrimerExplorer was run with default parameters. LAVA was run with parameters designed to be similar to the PrimerExplorer defaults, but with an adjusted melting temperature target range to compensate for the difference in calculated temperatures between Primer3 and PrimerExplorer. These parameters specifically allow a wider acceptable TM range from LAVA's defaults, and a longer poly-base limit. The best scoring signature results from both programs are provided in Table 3 .",
+            "cite_spans": [
+                {
+                    "start": 348,
+                    "end": 351,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 673,
+                    "end": 680,
+                    "text": "Table 2",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 1159,
+                    "end": 1166,
+                    "text": "Table 3",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "The LAVA selection for a lamp signature is nearly identical to the PrimerExplorer selection, as seen in Figure 3 . We believe the variations between result sets are the result of subtle differences in calculation methods for primer metrics, and would not represent a significant difference in signature behavior. It is likely that LAVA penalizes T m differences slightly more than Pri-merExplorer. The result is that LAVA's top signature selection has a slightly smaller range of melting temperatures.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 104,
+                    "end": 112,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "As an additional example case, we've also created LAMP signature candidates for Mycobacterium tuberculosis, as listed in Table 4 , using default LAVA parameters. We have not screened these in the laboratory, but they represent conserved and unique signatures that we believe would make sensitive and specific detection assays, similar to some of the assays in Iwamoto et al. [9] . A pre-computed MSA of all 25 completed Mycobacterium tuberculosis genomes available was used as input, including known drug-resistant genomes, and non-unique regions were masked out so only unique sequence is used for signature design. Operationally, LAVA has fulfilled our needs, but there are several components that are worthy of further attention. This discussion explores aspects of LAVA's design and operation that we believe will improve or augment LAVA's performance the most. LAVA currently excludes dimerization checks during primer selection, which would contribute to the relative scores of signature candidates. This would have been accomplished using the UNAFold [10] libraries to analyze inter-oligo interactions, and primer self-annealing. This is currently omitted because in some instances, the increase in required processing time to analyze primer combinations was unacceptable. Predicting inter-oligo hybridization is still a serious concern with regards to LAMP signature design, so we separately perform dimerization analysis on the finished signature candidates, and avoid using candidates with high dimerization potential. We will include dimerization checks as part of the native signature design when possible.",
+            "cite_spans": [
+                {
+                    "start": 375,
+                    "end": 378,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 1058,
+                    "end": 1062,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 121,
+                    "end": 128,
+                    "text": "Table 4",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "There are two primary options for controlling the number of primer combinations that need to be analyzed. The first is limiting the number of primer candidates that Primer3 can identify in each execution. This can be accomplished by narrowing the acceptable range of primer design parameters such as length and melting temperature. Primer3 output can also be limited by explicitly setting a maximum number of primers for Pri-mer3 to generate. The second option is to set stricter primer overlap limits. Stringent overlap limits may make it possible to perform the comprehensive dimerization checks discussed above within reasonable processing times.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "We have observed through computer predictions including [10] , that an optional linker sequence, used to connect the two components of the FIP and BIP (F1c and F2, and B1c and B2 respectively), has the potential to disrupt the LAMP reaction. In general, calculations based on a \"TTTT\" linker sequence predict a slight increase in sensitivity in many of the likely hybridization configurations, because of a slightly longer and more stable base pairing at the 5' end of the hybridization. However, in one instance, this linker greatly increased predicted primer self-hybridization because of an unfortunate co-incidence of self-similar sequence. The chance of this being a problem increases if the number of consecutive identical bases in the designed primers cannot be limited. Improper choice of linker sequence can also increase predicted primer dimerization. A more contextaware linker design should yield better results than always using a single linker sequence. One day, we hope LAVA will suggest the most appropriate linker sequence, or omission of the linker, for each designed signature, to help support desired assay behavior. One potential approach is to design linkers that are the least complimentary to the loop regions adjacent to the F1 region in the LAMP dumbbell structures as possible. Another potential approach is to design linker-free primers like Poon et al [11] , which is currently the default behavior of LAVA.",
+            "cite_spans": [
+                {
+                    "start": 56,
+                    "end": 60,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 1381,
+                    "end": 1385,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "When designing LAMP signatures, we found there is a general pattern we fell into of relaxing design parameters to identify signatures for difficult to target sequences. On average, the order which we adjusted parameters were to increase melting temperature range, decrease primer minimum length, and finally to increase signature max length.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "The LAVA wrapper SLAVA was implemented as a serial execution of individual MSA segments. This is provided to enable signature design for long sequences such as whole bacterial genomes, and also to demonstrate how a parallel implementation would be structured. During the further development of LAVA, we hope to transition into a high-performance grid computing environment with a parallel LAVA implementation.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "We are separately developing a OligoEnumerator for creating primers with degeneracy, which are primers with base variations designed to accommodate strain variation. So far, we have used a \"masked\" MSA representation of the target to design signatures. However, since Primer3 does not accept sequence containing the standardized IUPAC character codes, the MSA representation has so far been limited to perfect consensus sequence. The fundamental difference in approach for designing primers with degeneracy, is that primers are enumerated based on all the sequences of the MSA, instead of based on only the first sequence. Our proof of concept requires different internal representations of sub-sequence MSAs, but is built using the existing Oli-goEnumerator and PrimerAnalyzer interfaces.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "We have designed and demonstrated new software for identifying signature candidates appropriate for LAMP assays. LAVA is available as open source, downloadable from the project home page. The focus of LAVA is to improve on other currently available software by accommodating high-throughput signature design, while providing a framework to develop more sophisticated algorithmic and analytical tools. We have used LAVA to design LAMP signatures for several organisms, which are currently undergoing bench screening and optimization for use in a point-of-care detection instrument. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Loop-mediated isothermal amplification of DNA",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Notomi",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Okayama",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Masubuchi",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Yonekawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Watanabe",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Amino",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hase",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Nucleic Acids Research",
+            "volume": "28",
+            "issn": "12",
+            "pages": "63--63",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Loop-mediated isothermal amplification for the rapid detection of Salmonella",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Hara-Kudo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Yoshino",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kojima",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ikedo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "FEMS Microbiology Letters",
+            "volume": "253",
+            "issn": "",
+            "pages": "155--161",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Real-time turbidimetry of LAMP reaction for quantifying template DNA",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Mori",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kitao",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Tomita",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Notomi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Journal of Biochemical and Biophysical Methods",
+            "volume": "59",
+            "issn": "2",
+            "pages": "145--157",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Accelerated reaction by loop-mediated isothermal amplification using loop primers",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Nagamine",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hase",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Notomi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Molecular and Cellular Probes",
+            "volume": "16",
+            "issn": "3",
+            "pages": "223--229",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "The Bioperl toolkit: Perl modules for the life sciences",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Stajich",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Block",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Boulez",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Brenner",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Chervitz",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Dagdigian",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Fuellen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Gilbert",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Korf",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lapp",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lehvslaiho",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Matsalla",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Mungall",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Osborne",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Pocock",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Schattner",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Senger",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Stein",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Stupka",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Wilkinson",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Birney",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Genome Res",
+            "volume": "2",
+            "issn": "10",
+            "pages": "1611--1619",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Primer3 on the WWW for general users and for biologist programmers",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Rozen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Skaletsky",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Bioinformatics Methods and Protocols: Methods in Molecular Biology",
+            "volume": "",
+            "issn": "",
+            "pages": "365--386",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Comparative genomics tools applied to bioterrorism defense",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Slezak",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kuczmarski",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Ott",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Torres",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Medeiros",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Truitt",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Mulakken",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lam",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Vitalis",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Zemla",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Gardner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Briefings in Bioinformatics",
+            "volume": "4",
+            "issn": "2",
+            "pages": "133--149",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A unified view of polymer, dumbbell, and oligonucleotide DNA nearest-neighbor thermodynamics",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Santalucia",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "95",
+            "issn": "",
+            "pages": "1460--1465",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Loop-Mediated Isothermal Amplification for Direct Detection of Mycobacterium Tuberculosis Complex, M. avium, and M. intracellulare in Sputum Samples",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Iwamoto",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Sonobe",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Hayashi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "",
+            "volume": "41",
+            "issn": "",
+            "pages": "2616--2622",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "DINAMelt web server for nucleic acid melting prediction",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Markham",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "577--581",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Rapid Detection of the Severe Acute Respiratory Syndrome (SARS) Coronavirus by a Loop-Mediated Isothermal Amplification Assay",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Poon",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tashiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Chan",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yuen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Peiris",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Clinical Chemistry",
+            "volume": "50",
+            "issn": "6",
+            "pages": "1050--1052",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "LAVA: An Open-Source Approach To Designing LAMP (Loop-Mediated Isothermal Amplification) DNA Signatures",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Torres",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "BMC Bioinformatics",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Schematic diagram of LAVA. MSAs are used as input. Potential primers are found based on the MSA content, and paired in all reasonable configurations as inner primers. The remaining primers are then selected based on the scoring of potential combinations.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Signature layout of PrimerExplorer and LAVA results. This shows results for the specified S. aureus sequence locus, where 'N' characters represent bases not perfectly conserved across all targets. PrimerExplorer results are highlighted, and LAVA results are repeated above or below the double-stranded sequence as appropriate.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF1": {
+            "text": "Default values of the most commonly adjusted LAVA parameters",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Strain sequences used for LAMP signature comparison between LAVA and PrimerExplorer",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "LAMP signature candidate regions for S. aureus, as generated by both LAVA and PrimerExplorer.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "LAMP signature candidates for Mycobacterium tuberculosis, with gene targets based on the reference H37Rv genome [GenBank: NC_000962.2]. The hyphen in FIP and BIP sequences represents where the two segments should be linked together",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "Project name: LAVA-DNA Project home page: http://lava-dna.googlecode.com/ Operating system: Unix/Linux Programming language: Perl Other requirements: BioPerl 1.5.2 or higher [http://www.bioperl.org/] Primer3 1.0 or higher [http://primer3.sourceforge.net/] License: BSD",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The project described was supported by Award Number U54EB007959 (Gerald J. Kost, PI of the UC Davis/LLNL POCT Center) from the National Institute of Biomedical Imaging and Bioengineering. The content is solely the responsibility of the authors and does not necessarily represent the official views of the National Institute of Biomedical Imaging and Bioengineering or the National Institutes of Health. This work performed under the auspices of the U.S. Department of Energy by Lawrence Livermore National Laboratory under Contract DE-AC52-07NA27344.Authors' contributions CT wrote the LAVA software. EAV oversaw the pathogen informatics. BRB and JMD helped define the optimal assay constraints. SNG and MWL contributed to the LAVA architecture and design. All authors read and approved the final manuscript. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "Submit your next manuscript to BioMed Central and take full advantage of: ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        }
+    ]
+}

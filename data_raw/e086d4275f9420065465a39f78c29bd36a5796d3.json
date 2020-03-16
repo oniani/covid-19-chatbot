@@ -1,0 +1,2937 @@
+{
+    "paper_id": "e086d4275f9420065465a39f78c29bd36a5796d3",
+    "metadata": {
+        "title": "Using simple artificial intelligence methods for predicting amyloidogenesis in antibodies",
+        "authors": [
+            {
+                "first": "Maria",
+                "middle": [],
+                "last": "Pamela",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "C",
+                "middle": [],
+                "last": "David",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Gisela",
+                "middle": [
+                    "P"
+                ],
+                "last": "Concepcion",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Eduardo",
+                "middle": [
+                    "A"
+                ],
+                "last": "Padlan",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: All polypeptide backbones have the potential to form amyloid fibrils, which are associated with a number of degenerative disorders. However, the likelihood that amyloidosis would actually occur under physiological conditions depends largely on the amino acid composition of a protein. We explore using a naive Bayesian classifier and a weighted decision tree for predicting the amyloidogenicity of immunoglobulin sequences.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "The average accuracy based on leave-one-out (LOO) cross validation of a Bayesian classifier generated from 143 amyloidogenic sequences is 60.84%. This is consistent with the average accuracy of 61.15% for a holdout test set comprised of 103 AM and 28 non-amyloidogenic sequences. The LOO cross validation accuracy increases to 81.08% when the training set is augmented by the holdout test set. In comparison, the average classification accuracy for the holdout test set obtained using a decision tree is 78.64%. Non-amyloidogenic sequences are predicted with average LOO cross validation accuracies between 74.05% and 77.24% using the Bayesian classifier, depending on the training set size. The accuracy for the holdout test set was 89%. For the decision tree, the nonamyloidogenic prediction accuracy is 75.00%. Conclusions: This exploratory study indicates that both classification methods may be promising in providing straightforward predictions on the amyloidogenicity of a sequence. Nevertheless, the number of available sequences that satisfy the premises of this study are limited, and are consequently smaller than the ideal training set size. Increasing the size of the training set clearly increases the accuracy, and the expansion of the training set to include not only more derivatives, but more alignments, would make the method more sound. The accuracy of the classifiers may also be improved when additional factors, such as structural and physico-chemical data, are considered. The development of this type of classifier has significant applications in evaluating engineered antibodies, and may be adapted for evaluating engineered proteins in general.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Antibodies are used in a number of therapeutic procedures such as target-specific anti-cancer therapy, immunosuppression, and purging prior to bone marrow transplants. Most of those antibodies are of nonhuman origin, and their administration often results in the generation of adverse immune responses, which also limit their efficacy [1] . Humanization is usually performed to lessen the occurrence of these responses, to improve circulation half-life, and to restore effector functions [1, 2] . Current humanization strategies include the retention of variable domains or the specificity-determining residues (SDR) only, grafting of complementarity-determining regions (CDR), and veneering [3] [4] [5] [6] .",
+            "cite_spans": [
+                {
+                    "start": 335,
+                    "end": 338,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 488,
+                    "end": 491,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 492,
+                    "end": 494,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 692,
+                    "end": 695,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 696,
+                    "end": 699,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 700,
+                    "end": 703,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 704,
+                    "end": 707,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Humanization, however, may decrease the thermal stability of an antibody and result in affinity reduction, as well as amyloid fibril formation, especially when the substitutions leave the humanized antibody prone to unfolding [3, 7, 8] . Studies indicate that the potential to form fibrils is a general property of polypeptide chains, but the propensity for amyloidosis is largely influenced by its sequence and the stability of its native state [9] [10] [11] . Furthermore, there is evidence that some antibody sequences, notably kappa light chain sequences, become prone to fibril formation due to point mutations acquired during affinity maturation [12] . Apart from these, events that lead to misfolding, such as conformational transitions between alpha helices and beta sheets, and partial or complete unfolding, could lead to amyloidosis [13] [14] [15] . Consequently, it would be of interest to develop a method to predict such events, as well as to identify mutations that could lead to amyloidosis. Currently, a number of computational methods are available for amyloidogenic potential prediction [16] [17] [18] . These generally use either the physicochemical properties of amino acids to create models for predicting aggregation rate on mutation and identifying hotspots, or the information from overlapping amyloidogenic polypeptide decomposition [17] . Recently, a method using mean packing density profiling has also been reported, and has been found to be able to predict both amyloidogenic and intrinsically disordered regions in both peptides and proteins [19] . Nevertheless, these methods yield predictions on which regions of a sequence are potentially amyloidogenic; for highly similar sequences, as the case is with both amyloidogenic and non-amyloidogenic antibodies, results from such methods are not so easy to distinguish (See Supplementary Information, additional file 1). In this paper, we explore the use of naive Bayesian and decision tree classification methods for predicting the amyloidogenic propensities of antibody sequences, with the primary application of predicting amyloidogenic propensities of engineered antibodies in mind. The naive Bayesian method provides the advantage of taking the effects of mutations at specific combinations of positions into account. The decision tree, on the other hand, intuitively allows the evaluation of more factors that may contribute to the amyloidogenic potential. For generating the classifiers in both methods, 143 amyloidogenic antibody sequences derived from twelve different germlines and 158 corresponding non-amyloidogenic derivatives were used. The unambiguous assignment of amyloidogenic and non-amyloidogenic sequences to their respective germlines is a critical premise in this paper. Germlines are DNA elements that define the basic, inherited antibody repertoire of an individual, which are rearranged and mutated during the response to foreign antigens [20] . As indicated previously, some sequences become prone to fibril formation after this mutation process [12] ; consequently, the generation of separate alignments for the amyloidogenic and non-amyloidogenic derivatives of a single germline might lead to the identification of mutation patterns or characteristics exclusively associated with amyloidosis. It is critical that sequences are assigned correctly to a germline in order to ensure that the mutations observed are actual mutations, and do not arise from incorrect alignments. All alignments used in this paper are handannotated.",
+            "cite_spans": [
+                {
+                    "start": 226,
+                    "end": 229,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 230,
+                    "end": 232,
+                    "text": "7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 233,
+                    "end": 235,
+                    "text": "8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 446,
+                    "end": 449,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 450,
+                    "end": 454,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 455,
+                    "end": 459,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 652,
+                    "end": 656,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 844,
+                    "end": 848,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 849,
+                    "end": 853,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 854,
+                    "end": 858,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1106,
+                    "end": 1110,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 1111,
+                    "end": 1115,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1116,
+                    "end": 1120,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 1359,
+                    "end": 1363,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1573,
+                    "end": 1577,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 2944,
+                    "end": 2948,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 3052,
+                    "end": 3056,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "To test the classifiers and to evaluate the effects of the training set size, a holdout test set consisting of an additional 103 amyloidogenic sequences and 28 non-amyloidogenic sequences for eight of the twelve germlines was used. The naive Bayesian method, which is solely based on positional information, yields a prediction accuracy of 60.84% for amyloid-formers after LOO cross-validation, which is consistent with the 61.16% accuracy for the holdout test set. When the latter is included in the training set, LOO cross-validation accuracy increases to 81.08%. Sequences classified using a decision tree, on the other hand, yielded an average prediction accuracy of 78.64% for the holdout test set.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "A direct implementation of the Naive Bayesian method results in prediction accuracies between 60.84% and 81.08%",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "LOO cross-validation was performed to evaluate the accuracy of the Bayesian classifier; this particular method was used to allow the calibration data to be reused as test samples while simulating the prediction of future unknowns [21] . The average accuracy from this validation was at 60.84 \u00b1 35.96% for classifying amyloidogenic sequences, with 25.95% of the non-amyloidogenic sequences being misclassified ( To evaluate the effects of training set size, the holdout test set was combined with the original training set to generate a new set of classifiers. These were again subjected to LOO cross-validation, yielding a higher average accuracy of 81.08 \u00b1 29.33% (Table 1 , AMC, new).",
+            "cite_spans": [
+                {
+                    "start": 230,
+                    "end": 234,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 665,
+                    "end": 673,
+                    "text": "(Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "In order to construct a decision tree, we analyzed the nature of the mutations exclusively associated with amyloid formers using an algorithm and accompanying visualization program that we have previously developed [22, 23] . Results indicate that most of the mutations that occur exclusively in CDR residues or in FR residues of amyloidogenic derivatives are most likely the biggest contributors to misfolding, with 69% of the mutations in exposed CDR resulting in a general increase in sheetforming propensity, as opposed to the 36% in buried FRs (Figures 1 and 2 ; Table 2 ). In contrast, the complements (31% for exposed CDRs and 64% for buried FRs) resulted in decreased sheet-forming propensities. We used these information as branch weights for an initial decision tree (Table 3) ; before establishing the weight thresholds for classification, however, we checked if paths taken by amyloidogenic and non-amyloidogenic derivatives can be generalized. Interestingly, we found no consensus paths for either amyloidogenic or Figure 1 Normalized mutation matrices of amyloidogenic (Column A) and non-amyloidogenic derivatives (Column B) of 12 antibody germlines. Original residues are in rows and corresponding replacement residues are in columns. The amino acids have been arranged according to increasing b-sheet forming propensities [54] . The intensity matrix of the difference between the amyloidogenic and nonamyloidogenic matrices (Column C) reflects the relative predominance of a mutation type in either amyloid or non-amyloid formers. A fourth matrix set (Column D) is used to indicate the mutations that occur exclusively in amyloidogenic derivatives. Separate matrices were generated for mutations in buried CDR, exposed CDR, buried FR and exposed FR positions. non-amyloidogenic sequences; instead, consensus paths appear to exist for each germline ( Figure 3A , Table 4 ). Consequently, we constructed a second decision tree which takes the germline of origin into account, as the case was in the Bayesian analysis. Depending on the germline, weights along selected paths are either boosted or decreased ( Figure 3B , Table 4 ). Thresholds for separation were chosen to maximally distinguish samples in the training set (Table 5) , and are evaluated using the holdout test set. Table 6 lists the classification results per germline.",
+            "cite_spans": [
+                {
+                    "start": 215,
+                    "end": 219,
+                    "text": "[22,",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 220,
+                    "end": 223,
+                    "text": "23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1338,
+                    "end": 1342,
+                    "text": "[54]",
+                    "ref_id": "BIBREF54"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 549,
+                    "end": 565,
+                    "text": "(Figures 1 and 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 568,
+                    "end": 575,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 777,
+                    "end": 786,
+                    "text": "(Table 3)",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 1028,
+                    "end": 1036,
+                    "text": "Figure 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1866,
+                    "end": 1875,
+                    "text": "Figure 3A",
+                    "ref_id": null
+                },
+                {
+                    "start": 1878,
+                    "end": 1885,
+                    "text": "Table 4",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 2122,
+                    "end": 2131,
+                    "text": "Figure 3B",
+                    "ref_id": null
+                },
+                {
+                    "start": 2134,
+                    "end": 2141,
+                    "text": "Table 4",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 2236,
+                    "end": 2245,
+                    "text": "(Table 5)",
+                    "ref_id": "TABREF6"
+                },
+                {
+                    "start": 2294,
+                    "end": 2301,
+                    "text": "Table 6",
+                    "ref_id": "TABREF7"
+                }
+            ],
+            "section": "Germline-specific decision trees result in an average prediction accuracy of 78%"
+        },
+        {
+            "text": "The diversity of the antibody repertoire is generated through the combinatorial recombination of a small pool of germline genes and its somatic hypermutation. Nevertheless, these diversification processes have setbacks, including the generation of autoreactive antibodies as well as structurally compromised antibodies [24] . The latter are implicated in diseases that range from benign, high-level soluble light-chain production to pathological deposition in glomerular basal membrane cells, bone marrow plasma cells, interstitial tissues, arterial walls and basement membranes [24, 25] . These unwanted effects often result from a set of mutations whose consequences on the structure are not so evident, so much so that the resulting unstable light chains evade elimination during posttranslational quality control [24, 26] . Avoiding such mutations or combinations thereof is critical in antibody engineering. From studies carried out on amyloidogenic antibodies, some patterns that can be linked to amyloidosis have Figure 2 Analysis of mutations exclusive to amyloidogenic derivatives. A rough analysis of mutation patterns could be made by dividing the matrix using the diagonal, or by dividing it into quadrants. Mutations to the right of the diagonal are characterized by increased sheetforming propensities (+), while those to the left imply the opposite (-). In terms of the quadrants, which are numbered in the same way as the Cartesian plane, the first contains information on mutations from low-to mid-propensity, sheet-associated amino acids to relatively highpropensity sheet-associated amino acids (++), while the third quadrant contains the opposite (-). In the most general sense, mutations either on the right of the diagonal, or in the first and third quadrants (shaded), would be the biggest contributors to destabilization. The analysis indicates that a significant number of mutations in the exposed CDR residues result in increased b-sheet-forming propensities, while mutations in buried FR residues tend to be associated with a decrease in b-sheet-forming propensities. been found. Poshusta and co-workers, for instance, have reported that non-conservative mutations account for 0.6 -0.79 of the total mutations in V l sequences, while 0.4 -0.59 account for the mutations in V sequences [27] . They also reported differences in the location of these mutations in patients with different secreted levels of light chains. Specifically, it is implied that the position of mutations, and not the amount secreted, plays a more important role in light chain amyloidogenic propensity, based on studies on patients with very low light chain levels but advanced amyloid deposition [27] . Consequently, it is clear that two factors, at the minimum, have to be considered in generating a protocol for predicting amyloid formation: the combination of positions at which the mutation occurs, as well as how these affect the structural stability of the antibody. A review by Caflisch [17] classified the computational approaches used in predicting protein and peptide aggregation propensity into two general groups. The first makes use of the physicochemical properties of the amino acids to create phenomonological models for predicting aggregation behavior on mutation. The second, on the other hand, uses the decomposition of amyloidogenic peptides into overlapping segments. These are then simulated to the level of atoms to obtain estimates of aggregation propensity, as well as the structural details of the aggregates. Some programs that have since been developed to deal with amyloidosis include the PASTA server [28, 29] , a fibril prediction program [30] , AGGRESCAN [16] , Zyggregator [31] , and Pafig [32] , among others. Nevertheless, these algorithms deal with the prediction of the segments involved or possibly involved in amyloidosis, but do not generate direct predictions on whether a given sequence will be amyloidogenic or not. Here, we propose methods that may be used to complement existing prediction protocols in obtaining direct predictions about the amyloidogenicity of an antibody sequence; the method may be extended to other protein types, provided that there are sufficiently related positive and negative training sets.",
+            "cite_spans": [
+                {
+                    "start": 319,
+                    "end": 323,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 579,
+                    "end": 583,
+                    "text": "[24,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 584,
+                    "end": 587,
+                    "text": "25]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 817,
+                    "end": 821,
+                    "text": "[24,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 822,
+                    "end": 825,
+                    "text": "26]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 2312,
+                    "end": 2316,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 2697,
+                    "end": 2701,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 2995,
+                    "end": 2999,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 3632,
+                    "end": 3636,
+                    "text": "[28,",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 3637,
+                    "end": 3640,
+                    "text": "29]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 3671,
+                    "end": 3675,
+                    "text": "[30]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 3688,
+                    "end": 3692,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 3707,
+                    "end": 3711,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 3724,
+                    "end": 3728,
+                    "text": "[32]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1020,
+                    "end": 1028,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "A Naive Bayesian classifier uses probabilities to link hypotheses to events defined by a set of attributes. In Mitchell [33] , the Naive Bayesian classifier v N B is defined as:",
+            "cite_spans": [
+                {
+                    "start": 120,
+                    "end": 124,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "where v j is one of a set of V classes and a i is one of n attributes describing an event.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "This approach is attractive for the current problem, where there are only two possible outcomes. The most straightforward way of applying it is to use information of the combinations of positions at which mutations occur in amyloidogenic and non-amyloidogenic derivatives of a single germline. For example, to gauge the probability that a test sequence x derived from a germline g will be amyloidogenic, one would use the Bayes equation to evaluate the association between the positional combination of mutations, c, in x and the two hypotheses:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "where x m1 , x m2 , ..., x mn define c, and with p AM and p NAM being defined by the positional mutational probabilities in amyloidogenic and non-amyloidogenic derivatives, respectively. Applying this method (Methods section, equations 4 and 5; Figure 4 ) yielded an average prediction accuracy of 60.8%; for an independent test set, the accuracy was 61.16% (Table 1) . When the test set is used for training as well, the accuracy of amyloid sequence classification increases significantly. Misclassification of non-amyloidogenic sequences is also reduced CDR -exposed 0.78 Ratio of buried:exposed CDR mutations CDR -buried 1.0 FR -exposed 1.0 Ratio of buried:exposed FR mutations FR -buried 0.85 CDR -exposed -\u0394 0.69 Ratio of mutations increasing (\u0394) sheet-forming propensities to mutations decreasing (\u25bd) sheet-forming propensities in exposed CDR residues CDR -exposed -\u25bd 0.31 CDR -buried -\u0394 1.00 Ratio of mutations increasing (\u0394) sheet-forming propensities to mutations decreasing (\u25bd) sheet-forming propensities in buried CDR residues CDR -buried -\u25bd 0.76 FR -exposed -\u0394 1.00 Ratio of mutations increasing (\u0394) sheet-forming propensities to mutations decreasing (\u25bd) sheet-forming propensities in exposed FR residues FR -exposed -\u25bd 0.95 Figure 3 Decision tree for the evaluation of individual mutations. A decision tree (A) was constructed in order to evaluate the contribution of a mutation to amyloidogenicity. A path is followed for each mutation, depending on its position and exposure, as well as on the increase or decrease in sheet-forming propensity associated with it. Each path leads to one of eight terminal nodes, which is associated with a score, defined as the product of the weights (in italics) along the path leading to it. An analysis of paths taken by amyloidogenic and nonamyloidogenic derivatives of the different germlines indicated that different pairs of terminal nodes may be used to provide maximum separation between these derivatives. For instance, amyloidogenic derivatives of X93627 mostly end in leaf 1, while the non-amyloidogenic counterparts are more frequently associated with leaf 7; germline derivatives that can be distinguished using specific terminal nodes are indicated in the illustration. Based on this analysis, a final tree (B) was created which branches first on the basis of the germline to which the derivative being tested belongs; the structure and weights of the original tree (A) are kept. Each edge emanating from a germline node is connected to a copy of the original tree, where weights on paths which could be used for maximizing the separation between amyloidogenic and non-amyloidogenic derivatives are either boosted or decreased tenfold. For the illustrative example in (B), paths for J00248 (Germline 1) and Z22208 (Germline n) are shown.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 245,
+                    "end": 253,
+                    "text": "Figure 4",
+                    "ref_id": null
+                },
+                {
+                    "start": 358,
+                    "end": 367,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1237,
+                    "end": 1245,
+                    "text": "Figure 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "by an average of 3% (Table 1 , NAM Test). This correlation between the size of the training set and prediction accuracy has been previously observed [34] . It may be noteworthy to mention that the prediction accuracy for derivatives of the germline X72813 did not improve significantly even after the augmentation of the data set.",
+            "cite_spans": [
+                {
+                    "start": 149,
+                    "end": 153,
+                    "text": "[34]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 20,
+                    "end": 28,
+                    "text": "(Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Predictions for this germline are similarly low with the decision tree. Interestingly, most of the derivatives of X72813 are implicated in light chain deposition disease (LCDD). An interesting feature of LCDD-associated sequences is that when these are synthesized in vitro, the resulting proteins do not aggregate. Furthermore, the analysis of these sequences frequently show no obvious predisposition towards misfolding [35] . This may be a possible explanation for the difficulty in obtaining correct predictions for its amyloid-forming derivatives. If this set is treated as an outlier, the average prediction accuracy is 83.64 \u00b1 18.49%. In general, however, it is imperative to increase the training set size -not only in terms of the number of derivatives per germline, but in terms of the number of germlines covered, in order to improve the performance of the classifier. A development of a program for automatically generating training sets is a non-trivial task, however, and is beyond the scope of this study. It could also be possible to consider other characteristics, such as the physico-chemical and structural effects of a mutation, as factors for defining p AM or p NAM . Nevertheless, the question of how such factors would be incorporated in the calculation has to be justified first, from both statistical and biological pointsof-view. Since our main interest is to provide a proofof-concept that a simple set of classification algorithms may be used for predicting amyloidosis, we opted to complement the Bayesian method with a decision tree, where one could factor in additional effects of mutations for classifying sequences. Figure 4 Application of the naive Bayesian method for the prediction of amyloidosis. Given a set of amyloidogenic and nonamyloidogenic derivatives of a single germline, it is possible to generate the probability that a mutation at a particular position would cause amyloidosis or not. Briefly, separate mutation propensities for amyloid (p AM ) and non-amyloid (p NAM ) formers are generated by counting the frequency of mutations per position. These fractions, as well as complements thereof (i.e. the probability that there will be no mutation in either an amyloid-former or non-amyloid-former at a particular position, in black) are subsequently used to compute the amyloidogenic and nonamyloidogenic probabilities of a test sequence. To calculate for the amyloidogenic probability of a test sequence, a probability is assigned to each of the n positions in the sequence based on the characteristic of that position (i.e. if it contains a mutation or not). For positions containing no mutations this probability is equivalent to q AM , q AM = 1 -p AM for position x. The probability for positions with mutations is equal to p AM . Non-amyloidogenic probabilities are calculated in a similar manner, but with the use of p NAM instead of p AM . To avoid multiplications by zero, the Laplace correction is used. A product of the probabilities is subsequently taken; if the product of amylodogenic probabilities is higher, the test sequence is classified as amyloidogenic.",
+            "cite_spans": [
+                {
+                    "start": 422,
+                    "end": 426,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1649,
+                    "end": 1657,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Decision trees are particularly useful in classifying unknowns into one of a finite number of categories, based on the results of a series of tests on the attributes of a sample [36, 37] . It works by posing a series of questions about the features associated with unknowns; each question is contained in a node, and each node has child nodes for each possible answer to its question [38, 39] . It eventually terminates in leaves, which correspond to a classification. There are many variants of decision trees; in the simplest form, 'yes'/ 'no' paths are followed throughout the classification process; in others, probability distributions over the classes are used in order to estimate the conditional probability that an item reaching a leaf belongs to the class if defines [39] . In biology, it has been used in Parkinson's disease management [40] , disease severity profiling [41, 42] , toxicity analysis [43] , large-scale proteomic studies [44, 45] , microarray data classification [46] and phylogenetic analysis, among other applications. Depending on the number of factors that will be considered to classify the samples, decision trees may be made by hand or constructed automatically using a learning or an optimization algorithm [38, 47] . Choosing these factors and its arrangement on the tree to optimally separate samples remain challenges in the creation of decision trees; algorithms have since been developed for optimal tree creation [36] [37] [38] . For this study, four splitting variables were considered, based on the mutation trends observed in both amyloidogenic and non-amyloidogenic samples.",
+            "cite_spans": [
+                {
+                    "start": 178,
+                    "end": 182,
+                    "text": "[36,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 183,
+                    "end": 186,
+                    "text": "37]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 384,
+                    "end": 388,
+                    "text": "[38,",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 389,
+                    "end": 392,
+                    "text": "39]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 777,
+                    "end": 781,
+                    "text": "[39]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 847,
+                    "end": 851,
+                    "text": "[40]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 881,
+                    "end": 885,
+                    "text": "[41,",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 886,
+                    "end": 889,
+                    "text": "42]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 910,
+                    "end": 914,
+                    "text": "[43]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 947,
+                    "end": 951,
+                    "text": "[44,",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 952,
+                    "end": 955,
+                    "text": "45]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 989,
+                    "end": 993,
+                    "text": "[46]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 1241,
+                    "end": 1245,
+                    "text": "[38,",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 1246,
+                    "end": 1249,
+                    "text": "47]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 1453,
+                    "end": 1457,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 1458,
+                    "end": 1462,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 1463,
+                    "end": 1467,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In order to obtain weights for the splitting variables, mutation matrices were generated for the amyloiodogenic and non-amyloidogenic derivatives of the different germlines. An interesting result from the analysis of these matrices is that 69% of the mutations exclusively found in exposed CDR residues of amyloid formers appear to be implicated in higher sheet-forming propensities, while 64% exclusive to buried FR residues involve shifts to residues with lower sheet-forming propensities (Figures 1 and 2, Table 2 ). This may suggest that mutations stabilizing sheet structures in the CDR, which normally assume loop structures, contribute as much to amyloidosis as those that destabilize the sheet structure in critical regions (i.e. buried FR residues). This is not unlikely, based on some previous observations. Hurle et al. [48] , for instance, performed a positional analysis of 36 amyloidogenic sequences to find mutations that occur in less than 1% of all sequences at a particular position. These mutations were mostly found in CDRs, notably CDR1, for both and l light chains. Furthermore, Stevens et al. observed that 24 out of the 26 invariant residues in light chains which drastically affect the structure of the antibody upon mutation are found on the protein surface, and make no obvious contributions to folding. Mutations in CDRs are generally more varied, and its contributions to amyloidosis, though not as easy to pinpoint, are probably very significant [49] . Finally, these results are consistent with predictions using other methods (see supplementary information, additional file 1); this consistency may be viewed as a validation of our observations. From these observations, a decision tree was created to approximate the contribution of each mutation to the overall amyloidogenicity of a sequence. The use of this tree on the independent test set yielded a prediction accuracy of 78.64% (Table 6 ), which is close to the 75% prediction accuracy obtained when the decision tree is tested on training set sequences. LOO cross validation was not performed for this method, since this would require weights to be changed as many times as there are sequences. Classifiers generated with the training set appear to have a better performance than those from the naive Bayesian method. One possible reason was that more factors are taken into consideration -one approximates the effect of the mutation itself, as well as the effect that it has in being at a particular region; at the same time, it also roughly approximates the combined effect of mutations, which are likely to be equally responsible for misfolding as individual mutations [27, 50] . Nevertheless, this does not imply that the naive Bayesian method is entirely without merit, since it is clear that position or combinations of positions where mutations occur has a key role in amyloidosis [27] . It is also evident that more sequences have to be used, as with the naive Bayesian method. Prediction results will also be probably improved by including additional factors such as hydrophilicity, size and charge changes as splitting variables, or refining the positions based on precedent studies [27] . In adding splitting variables, the construction of a decision tree could be performed using an [automated] optimization algorithm [38] .",
+            "cite_spans": [
+                {
+                    "start": 831,
+                    "end": 835,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 1476,
+                    "end": 1480,
+                    "text": "[49]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 2661,
+                    "end": 2665,
+                    "text": "[27,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 2666,
+                    "end": 2669,
+                    "text": "50]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 2877,
+                    "end": 2881,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 3182,
+                    "end": 3186,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 3319,
+                    "end": 3323,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 491,
+                    "end": 516,
+                    "text": "(Figures 1 and 2, Table 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 1916,
+                    "end": 1924,
+                    "text": "(Table 6",
+                    "ref_id": "TABREF7"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "A caveat for both methods, however, is the possibility of overfitting, which is the description of random error, instead of true correlations. This phenomenon is one of the key problems in machine learning, and may occur when there are more degrees of freedom than data [51, 52] . Overfitted model results are not representative of the population behavior, and are unlikely to be replicated. There are several rules of thumb for avoiding overfitting, which includes having a minimum of 10 -15 observations per predictor variable, with larger sample sizes required in cases where the effect sizes are small, or when predictors are highly correlated [52] . For binary response models, the sample size may not be directly relevant [52] , although for this problem, it appears that sample size plays an important role. Due to the limited sample set size, it was only possible to perform a single holdout validation and LOO cross validation, whose results were consistent. However, for future work involving larger training sets, it would be possible to include measures and perform more definitive tests to ensure that overfitting is eliminated or minimized.",
+            "cite_spans": [
+                {
+                    "start": 270,
+                    "end": 274,
+                    "text": "[51,",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 275,
+                    "end": 278,
+                    "text": "52]",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 648,
+                    "end": 652,
+                    "text": "[52]",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 728,
+                    "end": 732,
+                    "text": "[52]",
+                    "ref_id": "BIBREF52"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "This exploratory study indicates that the Naive Bayesian classifier and decision trees may be used for \"yes\"or \"no\"-type predictions on the amyloidogenicity of a sequence. Analysis of results from both methods suggests that prediction accuracy may be improved by optimizing the training set sizes, and by incorporating more information about the alterations brought about by mutations into the calculations. Some other factors that may be considered include hydrophilicity and charge changes brought about by the replacement residues, with respect to its location, as well as the way the mutations cluster from sequences with known structures. Another factor that might be considered is the sequence of immunoglobulin folding and the implications of having mutations in the N-terminal region, which is the first to be folded [53] . The further development of these classification techniques, including the possibility of creating a hybrid between Naive Bayesian and decision trees, appears to be worthwhile; these methods may eventually be adapted for predicting the amyloidogenicity of non-immunoglobulin sequences.",
+            "cite_spans": [
+                {
+                    "start": 825,
+                    "end": 829,
+                    "text": "[53]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "The training set, comprised of 143 amyloidogenic and 158 non-amyloidogenic derivatives of the germlines were obtained from the National Center for Biotechnology Information (NCBI, http://www.ncbi.nlm.nih.gov/). A holdout test set comprised of 103 amyloidogenic and 28 non-amyloidogenic sequences, chosen on account of the absence of gaps, as well as the possibility of assigning these unambiguously to a germline set, were also obtained from the NCBI. Sequences were assigned to the closest germline using ClustalW, and resulting alignments were manually annotated. Kabat numbering and CDR/FR definitions were applied to all sequences. The non-amyloidogenic derivation sets were constructed from randomly chosen derivatives of each germline which have, as a derivation set, approximately the same total number of mutations as the amyloidogenic counterparts. The first five amino acid residues are omitted in the analysis, since these may have been primerderived. All sequences of the amyloidogenic and nonamyloidogenic antibodies used in the analysis, which are identified by their NCBI accession codes, as well as their putative germline derivation, are in the supplementary information (additional file 2).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Sequences"
+        },
+        {
+            "text": "We generated a Naive Bayesian Classifier for each germline on the basis of its amyloidogenic and non-amyloidogenic derivatives. Briefly, the probability p of a mutation occurring at position x was quantified for both amyloidogenic (p AM ) and non-amyloidogenic (p NAM ) derivatives of the same germline. Raw values of p AM and p NAM can take the value of 0; to avoid this, we used the Laplace correction method, where 1 is added to the numerator and 2 to the denominator. The respective complements, q AM and q NAM , which represent the retention of the residue, is given by 1 -p AM or 1 -p NAM , respectively. These probabilities are then used to calculate the amyloidogenic and non-amyloidogenic propensities for a test sequence s derived from the same germline as the training set. Supposing that s has mutations at positions defined by the set M, the amyloidogenic probability AM will be calculated as:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Naive Bayesian Classification"
+        },
+        {
+            "text": "while the non-amyloidogenic probability is calculated as: ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Naive Bayesian Classification"
+        },
+        {
+            "text": "where x refers to the position ( Figure 4 ). If AM is greater than NAM, then the sequence is classified as amyloidogenic; otherwise, it is classified as non-amyloidogenic. Classifier accuracy was cross-checked against both the training and test sets were used. Due to the limited number of sequences obtained, validation is preliminary, and consists of a LOO cross-validation, performed for all amyloidogenic and non-amyloidogenic derivatives, and a one-time holdout test validation.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 33,
+                    "end": 41,
+                    "text": "Figure 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Naive Bayesian Classification"
+        },
+        {
+            "text": "A weighted decision tree was constructed to provide a quantitative estimate of both individual and joint contributions of mutations as functions of location (i.e. CDR/ FR), exposure and changes in sheet forming propensity. The steps for generating the tree are shown in Figure 5 . Initially, separate mutation matrices for buried CDR residues, buried FR residues, exposed CDR residues, and exposed FR residues are generated for alignments of amyloidogenic and non-amyloidogenic derivatives, based on the algorithm described in [22] . Here, exposed residues were defined as residues having \u2265 25% accessible surface; exposure information was generated for each alignment using structural homologues of the germline sequence (see supplementary information, additional file 2). These were then visualized to facilitate easier analysis, then post-processed by subtracting the non-amyloidogenic from the amyloidogenic matrix image, resulting in an image where the relative intensities are proportional to the predominance of specific mutations. A binary matrix containing mutations exclusive to amyloidformers was also generated. In the matrices, residues were arranged according to increasing b-sheet-forming propensities (Table 7 ) [54] , with the original residues in the rows and the replacement residues in the columns, such that all mutations to the right of the diagonal are associated with increased sheet-forming propensities, while those to the left correspond to decreased sheetforming propensities (Figure 2 ; Figure 5 , step 1). The trends observed in these matrices (Figures 1, 2 and 5, step 2; Table 2 ) were then used as weights, which were associated with the branches of the tree. At this point, we determined if paths taken by amyloid and non-amyloid-formers could be generalized, or if these showed germline dependence. This led to the identification of paths that may be used in maximizing separation between amyloidogenic and non-amyloidogenic derivatives per germline ( Figure 5 Steps in generating and testing a weighted decision tree. To create a weighted decision tree, mutations from amyloidogenic and non-amyloidogenic derivatives of a single germline are organized into separate matrices that factor in location, exposure and sheet-forming propensity into account (Step 1). These matrices are visualized and analyzed for general trends that may be transformed into weights (Step 2). An initial tree is constructed from these information, which is tested against the training set (Step 3). From this testing, it became evident that certain paths can be used for maximally separating amyloidogenic and non-amyloidogenic derivatives of a germline, and that these paths are germline-dependent. We then generated a tree that takes the germline of origin into account, and which has different boosted paths. The final step was to generate the classification threshold, which was determined from the analysis of scores for the test set (Step 4). This tree was then used to classify sequences in an independent, holdout test set (Step 5). instance, amyloidogenic derivatives of X93627 can be maximally separated from corresponding non-amyloidogenic derivatives by giving a tenfold higher score to mutations that follow the path leading to leaf 2 and a tenfold lower score for mutations leading to leaf 8. Boosted and decreased paths to specific leaves are indicated in Table 4 in boldface and italics, respectively. Consequently, tracing the path through the tree that describes each mutation yields a score, s, calculated as the product of the weights along the path. Using this strategy, the average amyloidogenic potential for every sequence, AM seq , was calculated as follows: ",
+            "cite_spans": [
+                {
+                    "start": 527,
+                    "end": 531,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1228,
+                    "end": 1232,
+                    "text": "[54]",
+                    "ref_id": "BIBREF54"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 270,
+                    "end": 278,
+                    "text": "Figure 5",
+                    "ref_id": null
+                },
+                {
+                    "start": 1217,
+                    "end": 1225,
+                    "text": "(Table 7",
+                    "ref_id": "TABREF9"
+                },
+                {
+                    "start": 1504,
+                    "end": 1513,
+                    "text": "(Figure 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 1516,
+                    "end": 1524,
+                    "text": "Figure 5",
+                    "ref_id": null
+                },
+                {
+                    "start": 1574,
+                    "end": 1587,
+                    "text": "(Figures 1, 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 1603,
+                    "end": 1610,
+                    "text": "Table 2",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 1987,
+                    "end": 1995,
+                    "text": "Figure 5",
+                    "ref_id": null
+                },
+                {
+                    "start": 3384,
+                    "end": 3391,
+                    "text": "Table 4",
+                    "ref_id": "TABREF5"
+                }
+            ],
+            "section": "Decision tree generation and sequence classification"
+        },
+        {
+            "text": "where s corresponds to scores of individual mutations, and n corresponds to the number of mutations in a sequence. Since s is amplified in certain paths, amyloidogenic sequences are expected to have higher AM seq values. Thresholds for classifying sequences as amyloidogenic or non-amyloidogenic were defined per germline based on the average scores of amyloidogenic derivatives ( Figure 5, step 4) . Cross-validation was performed on the holdout test set ( Figure 5 , step 5).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 381,
+                    "end": 398,
+                    "text": "Figure 5, step 4)",
+                    "ref_id": null
+                },
+                {
+                    "start": 458,
+                    "end": 466,
+                    "text": "Figure 5",
+                    "ref_id": null
+                }
+            ],
+            "section": "Decision tree generation and sequence classification"
+        },
+        {
+            "text": "Additional file 1: Comparison of predictions between a germline and an amyloidogenic derivative made using AGGRESCAN [16] and the PASTA server [2829] . This shows that regions that may cause amyloidosis are predicted, with highly similar profiles. However, no direct predictions are provided (i.e. that the germline is non-amyloidogenic, and that the derivative is amyloidogenic) in these methods. Click here for file [ http://www.biomedcentral.com/content/supplementary/1471-2105-11-79-S1.PDF ] Additional file 2: Amyloidogenic and non-amyloidogenic immunoglobulin sequence alignments for each of the germline derivation sets, including the exposure data. The structure indicated at the end of each alignment refers to the structural template used as the basis for determining residue exposure. Sequences in red are those belonging to the holdout test set. Click here for file [ http://www.biomedcentral.com/content/supplementary/1471-2105-11-79-S2.PDF ] Authors' contributions MPCD, GPC and EAP jointly conceptualized the project. EAP obtained and manually annotated the amyloidogenic sequences and their germline assignments. MPCD implemented the programs for Naive Bayesian analysis and decision tree-based classification and performed the analysis of the results. All authors have read and approved the manuscript in this form. ",
+            "cite_spans": [
+                {
+                    "start": 117,
+                    "end": 121,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 143,
+                    "end": 149,
+                    "text": "[2829]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "Decision tree generation and sequence classification"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Antibody engineering",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Presta",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Curr Opin Biotechnol",
+            "volume": "3",
+            "issn": "",
+            "pages": "394--398",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Antibody engineering for therapeutics",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Presta",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Current Opinion in Structural Biology",
+            "volume": "13",
+            "issn": "4",
+            "pages": "519--525",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "A possible procedure for reducing the immunogenicity of antibody variable domains while preserving their ligand-binding properties",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Padlan",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "Molecular Immunology",
+            "volume": "28",
+            "issn": "4-5",
+            "pages": "489--498",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Humanization of murine monoclonal antibodies through variable domain resurfacing",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Roguska",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Pedersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Keddy",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "91",
+            "issn": "",
+            "pages": "969--973",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Antibody humanization: a case of the 'Emperor's new clothes'?",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Clark",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Immunol Today",
+            "volume": "21",
+            "issn": "",
+            "pages": "397--402",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Stability improvement of antibodies for extracellular and intracellular applications: CDR grafting to stable frameworks and structure-based framework engineering",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ewert",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Honegger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Pl\u00fcckthun",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Methods",
+            "volume": "34",
+            "issn": "2",
+            "pages": "184--199",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "A role for destabilizing amino acid replacements in light-chain amyloidosis",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hurle",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Helms",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Chan",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Wetzel",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "91",
+            "issn": "",
+            "pages": "5446--5450",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Humanization of a mouse monoclonal antibody that blocks the epidermal growth factor receptor: recovery of antagonistic activity",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Mateo",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Immunotechnology",
+            "volume": "3",
+            "issn": "",
+            "pages": "71--81",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Sequence determinants of amyloid fibril formation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "De La Paz",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Serrano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "101",
+            "issn": "",
+            "pages": "87--92",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Amyloid-like Fibril Formation in an All beta-Barrel Protein Involves the Formation of Partially Structured Intermediate(s)",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Srisailam",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kumar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Rajalingam",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Sivaraja",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Sheu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Journal of Biological Chemistry",
+            "volume": "277",
+            "issn": "21",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Protein engineering as a strategy to avoid formation of amyloid fibrils",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Villegas",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Zurdo",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Filimonov",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Aviles",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Dobson",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Serrano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Protein Science",
+            "volume": "9",
+            "issn": "",
+            "pages": "1700--1708",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Somatic Mutations of the L12a Gene in V-kappa1 Light Chain Deposition Disease: Potential Effects on Aberrant Protein Conformation andDeposition",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Vidal",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Goni",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Stevens",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Aucouturier",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Kumar",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Frangione",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ghiso",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gallo",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "American Journal of Pathology",
+            "volume": "155",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Conformational constraints for amyloid fibrillation: the importance of being unfolded",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Uversky",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Fink",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Biochimica et Biophysica Acta (BBA) -Proteins & Proteomics",
+            "volume": "1698",
+            "issn": "2",
+            "pages": "131--153",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Mechanism for the-helix to-hairpin transition",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Ding",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Borreguero",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Buldyrey",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proteins: Structure, Function and Genetics",
+            "volume": "53",
+            "issn": "",
+            "pages": "220--228",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Formation of amyloid fibrils by peptides derived from the bacterial cold shock protein CspB",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gross",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gross",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Wilkins",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Wilkins",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Pitkeathly",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Pitkeathly",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Chung",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Chung",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Higham",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Higham",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dobson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dobson",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Protein Sci",
+            "volume": "8",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "AGGRESCAN: a server for the prediction and evaluation of \"hot spots\" of aggregation in polypeptides",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Conchillo-Sol\u00e9",
+                    "suffix": ""
+                },
+                {
+                    "first": "Nsd",
+                    "middle": [],
+                    "last": "Groot",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Avil\u00e9s",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Vendrell",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Daura",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ventura",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Computational models for the prediction of polypeptide aggregation propensity",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Caflisch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Current opinion in chemical biology",
+            "volume": "10",
+            "issn": "5",
+            "pages": "437--481",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Support vector machines with selective kernel scaling for protein classification and identification of key amino acid positions",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Zavaljevski",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Stevens",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Reifman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Bioinformatics",
+            "volume": "18",
+            "issn": "",
+            "pages": "689--696",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Prediction of amyloidogenic and disordered regions in protein chains",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Galzitskaya",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Garbuzynskiy",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Lobanov",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "PLoS Comput Biol",
+            "volume": "2",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Somatic diversification of the S107 (T15) VH11 germ-line gene that encodes the heavy-chain variable region of antibodies to double-stranded DNA in (NZB \u00d7 NZW)F1 mice",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Behar",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Scharff",
+                    "suffix": ""
+                }
+            ],
+            "year": 1988,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "85",
+            "issn": "11",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "The problem of overfitting",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Hawkins",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Chem Inf Comput Sci",
+            "volume": "44",
+            "issn": "",
+            "pages": "1--12",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "A study of the structural correlates of affinity maturation: antibody affinity as a function of chemical interactions, structural plasticity and stability",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "David",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Asprer",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ibana",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Concepcion",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Padlan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Molecular Immunology",
+            "volume": "44",
+            "issn": "",
+            "pages": "1342--1351",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "An efficient visualization tool for the analysis of protein mutation matrices",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "David",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Lapid",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Daria",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "BMC bioinformatics",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Pathogenic light chains and the B-cell repertoire",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Stevens",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Argon",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Immunol Today",
+            "volume": "20",
+            "issn": "10",
+            "pages": "451--458",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Evidence that amyloidogenic light chains undergo antigen-driven selection",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Perfetti",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Ubbiali",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Vignarelli",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Diegoli",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Fasani",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Stoppini",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Lisa",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Mangione",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Obici",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Arbustini",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Blood",
+            "volume": "91",
+            "issn": "8",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Protein misfolding and aggregation: new examples in medicine and biology of the dark side of the protein world. BBA-Molecular Basis of Disease",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Stefani",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "",
+            "volume": "1739",
+            "issn": "",
+            "pages": "5--25",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Mutations in Specific Structural Regions of Immunoglobulin Light Chains Are Associated with Free Light Chain Levels in Patients with AL Amyloidosis",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Poshusta",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Sikkink",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dispenzieri",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ramirez-Alvarado",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Hofmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS ONE",
+            "volume": "4",
+            "issn": "4",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "The PASTA server for protein aggregation prediction",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Trovato",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Seno",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Tosatto",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Protein Engineering Design and Selection",
+            "volume": "20",
+            "issn": "",
+            "pages": "521--523",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Insight into the structure of amyloid fibrils from the analysis of globular proteins",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Trovato",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Chiti",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Maritan",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Seno",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "PLoS Comput Biol",
+            "volume": "2",
+            "issn": "",
+            "pages": "1608--1618",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Identification of amyloid fibril-forming segments based on structure and residue-based statistical potential",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Lai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bioinformatics",
+            "volume": "23",
+            "issn": "17",
+            "pages": "2218--2225",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Prediction of aggregation-prone regions in structured proteins",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Tartaglia",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Pawar",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Campioni",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dobson",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Chiti",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Vendruscolo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Mol Biol",
+            "volume": "380",
+            "issn": "2",
+            "pages": "425--461",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Prediction of amyloid fibril-forming segments based on a support vector machine",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tian",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Guo",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Fan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC bioinformatics",
+            "volume": "",
+            "issn": "10",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Machine Learning McGraw Hill",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Mitchell",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Continuous Naive Bayesian classifications",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Vega",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bressan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Lecture Notes in Computer Science Heidelberg: Springeret al TS",
+            "volume": "2911",
+            "issn": "",
+            "pages": "279--289",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Primary structure of a variable region of the V kappa I subgroup (ISE) in light chain deposition disease",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rocca",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Khamlichi",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Aucouturier",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Noel",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Denoroy",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Preud&apos;homme",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Cogne",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Clinical and Experimental Immunology",
+            "volume": "91",
+            "issn": "",
+            "pages": "506--509",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Moret B: Decision trees and diagrams",
+            "authors": [],
+            "year": 1982,
+            "venue": "Computing Surveys",
+            "volume": "4",
+            "issn": "",
+            "pages": "595--623",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Decision trees and decision-making",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Quinlan",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "IEEE transactions on systems, man and cybernetics",
+            "volume": "20",
+            "issn": "",
+            "pages": "339--346",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Generating better decision trees",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Norton",
+                    "suffix": ""
+                }
+            ],
+            "year": 1989,
+            "venue": "Proceedings of the Eleventh International Joint Conference on Artificial Intelligence",
+            "volume": "800805",
+            "issn": "",
+            "pages": "800--805",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "What are decision trees?",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Kingsford",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nat Biotechnol",
+            "volume": "26",
+            "issn": "9",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "An algorithm (decision tree) for the management of Parkinson's disease (2001): treatment guidelines",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Olanow",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Watts",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Koller",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Neurology",
+            "volume": "56",
+            "issn": "",
+            "pages": "1--88",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Serum Protein Fingerprinting Coupled with a Pattern-matching Algorithm Distinguishes Prostate Cancer from Benign Prostate Hyperplase and Healthy Men",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Adam",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Qu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Davis",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ward",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Clements",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Cazares",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Semmes",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Schellhammer",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Yasui",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Feng",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Wright",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Cancer Research",
+            "volume": "62",
+            "issn": "",
+            "pages": "3609--3614",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Proteomic Fingerprints for Potential Application to Early Diagnosis of Severe Acute Respiratory Syndrome",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Kang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Liang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Guo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Clinical Chemistry",
+            "volume": "51",
+            "issn": "",
+            "pages": "56--64",
+            "other_ids": {}
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "The Hunter Serotonin Toxicity Criteria: simple and accurate diagnostic decision rules for serotonin toxicity",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Dunkley",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Isbister",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Sibbritt",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Q J Med",
+            "volume": "96",
+            "issn": "",
+            "pages": "635--642",
+            "other_ids": {}
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Structural proteomics of an archaeon",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Christendat",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Yee",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Dharamsi",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kluger",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Savchenko",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Cort",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Booth",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Mackereth",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Saridakis",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Ekiel",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Kozlov",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Maxwell",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Mcintosh",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Gehring",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Kennedy",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Davidson",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Pai",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gerstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Edwards",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Arrowsmith",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Nature Structural & Molecular Biology",
+            "volume": "7",
+            "issn": "10",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "Proteomic mass spectra classification using decision tree based ensemble methods",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Geurts",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Fillet",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Seny",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Meuwis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "",
+            "pages": "318--3145",
+            "other_ids": {}
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Gene selection from microarray data for cancer classification-a machine learning approach",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Tetko",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Frank",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Computational Biology and Chemistry",
+            "volume": "29",
+            "issn": "",
+            "pages": "37--46",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Decision tree construction via linear programming",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Bennett",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "Proceedings of the 4th Midwest Artificial Intelligence and Cognitive Science Society Conference",
+            "volume": "",
+            "issn": "",
+            "pages": "97--101",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "A role for destabilizing amino acid replacements in light-chain amyloidosis",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hurle",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Helms",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Chan",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Wetzel",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "91",
+            "issn": "",
+            "pages": "5446--5450",
+            "other_ids": {}
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Analysis of somatic hypermutation and antigenic selection in the clonal B cell in immunoglobulin light chain amyloidosis (AL)",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Abraham",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Geyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ram\u00edrez-Alvarado",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Price-Troska",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Gertz",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Fonseca",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "J Clin Immunol",
+            "volume": "24",
+            "issn": "4",
+            "pages": "340--53",
+            "other_ids": {}
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Missense meanderings in sequence space: a biophysical view of protein evolution",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Depristo",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Weinreich",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hartl",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nature Reviews Genetics",
+            "volume": "6",
+            "issn": "9",
+            "pages": "678--687",
+            "other_ids": {}
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "LNAI et al K",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Vezhnevets",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Barinova",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Avoiding boosting overfitting by removing confusing samples. European Conference on Machine Learning (ECML07)",
+            "volume": "",
+            "issn": "",
+            "pages": "430--441",
+            "other_ids": {}
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "What you see may not be what you get: a brief, nontechnical introduction to overfitting in regression-type models",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Babyak",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Psychosomatic Medicine",
+            "volume": "66",
+            "issn": "",
+            "pages": "411--421",
+            "other_ids": {}
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "Measurement of the beta-sheet-forming propensities of amino acids",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Minor",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                }
+            ],
+            "year": 1994,
+            "venue": "Nature",
+            "volume": "367",
+            "issn": "6464",
+            "pages": "660--663",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-11-79"
+                ]
+            }
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "Using simple artificial intelligence methods for predicting amyloidogenesis in antibodies",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "David",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "BMC Bioinformatics",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF2": {
+            "text": "Received: 10 August 2009 Accepted: 8 February 2010 Published: 8 February 2010",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "AMC and NAMC). Validation performed on the holdout test set yielded an average accuracy of 61.16 \u00b1 13.75%, which falls within the LOO cross validation result (Table 1, AM Test).",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Naive Bayes classifier accuracy",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Summary of mutations exclusive to amyloid formers",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Decision tree weights",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Summary of leaves providing maximum separation between amyloidogenic and non-amyloidogenic derivatives of different germline sets* * Values were obtained by substracting the percentage of mutations in non-amyloidogenic derivatives from the percentage of mutations in amyloidogenic derivatives terminating in a given leaf. Minimum and maximum values per germline set, which were used to identify the paths where scores were decreased and boosted, respectively, are shown in italics and boldface, respectively.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "Summary of thresholds",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF7": {
+            "text": "Decision tree classification accuracy*",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF8": {
+            "text": "Figure 5, step 3); for",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF9": {
+            "text": "-sheet forming propensities of amino acids[54] * N.A. indicates that no additional sequences were obtained for this germline.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Submit your next manuscript to BioMed Central and take full advantage of: ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "annex"
+        }
+    ]
+}

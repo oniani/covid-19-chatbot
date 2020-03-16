@@ -1,0 +1,1493 @@
+{
+    "paper_id": "7398c3a708a291677e55854601f643ba41d79916",
+    "metadata": {
+        "title": "Arapan-S: a fast and highly accurate whole-genome assembly software for viruses and small genomes",
+        "authors": [
+            {
+                "first": "Mohammed",
+                "middle": [],
+                "last": "Sahli",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Tetsuo",
+                "middle": [],
+                "last": "Shibuya",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Genome assembly is considered to be a challenging problem in computational biology, and has been studied extensively by many researchers. It is extremely difficult to build a general assembler that is able to reconstruct the original sequence instead of many contigs. However, we believe that creating specific assemblers, for solving specific cases, will be much more fruitful than creating general assemblers.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Findings: In this paper, we present Arapan-S, a whole-genome assembly program dedicated to handling small genomes. It provides only one contig (along with the reverse complement of this contig) in many cases. Although genomes consist of a number of segments, the implemented algorithm can detect all the segments, as we demonstrate for Influenza Virus A. The Arapan-S program is based on the de Bruijn graph. We have implemented a very sophisticated and fast method to reconstruct the original sequence and neglect erroneous k-mers. The method explores the graph by using neither the shortest nor the longest path, but rather a specific and reliable path based on the coverage level or k-mers' lengths. Arapan-S uses short reads, and it was tested on raw data downloaded from the NCBI Trace Archive.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Conclusions: Our findings show that the accuracy of the assembly was very high; the result was checked against the European Bioinformatics Institute (EBI) database using the NCBI BLAST Sequence Similarity Search. The identity and the genome coverage was more than 99%. We also compared the efficiency of Arapan-S with other wellknown assemblers. In dealing with small genomes, the accuracy of Arapan-S is significantly higher than the accuracy of other assemblers. The assembly process is very fast and requires only a few seconds. Arapan-S is available for free to the public. The binary files for Arapan-S are available through http://sourceforge. net/projects/dnascissor/files/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "Sequencing technologies have been providing us with thousands of sets of genomic reads (sometimes called fragments or segments), with each set being taken from a specific genome. Bringing these reads all together in order to reconstruct the original sequence (the genome) is commonly known as the (whole-) genome assembly problem. This problem has been studied extensively and many assemblers, along with some assembly models, have been proposed. Most models are based either on the overlap graph approach or the de Bruijn graph-based approach. The overlap graph is a graph whose nodes represent the genomic reads, while its edges correspond to the overlaps of these reads. It was the pillar of the first assemblers that appeared on the market, such as: TIGR [1] , CAP3 [2] , PCAP [3] , the string graph of Myers [4] and MIRA [5] . The second category of assemblers is based on the de Bruijn graph, in which the nodes represent the substrings (k-mers) of the genomic reads (which are of the same length), while the edges correspond to the overlaps of these substrings. The de Bruijn graph has become the standard pillar of the so-called \"de novo\" assemblers. Some of the assemblers based on this approach include: Euler assembler [6] , SSAKE [7] , EULER-SR [8] , Velvet [9, 10] , ALLPATHS [11, 12] , ABySS [13] , and SOAPdenovo [14] . Although the assemblers share the same graph structure, they use different (but sometimes similar) algorithms to walk through the graph. To our knowledge, there is no proof that the shortest or the longest path, or the Hamiltonian or Eulerian paths will represent the genome in its natural form; therefore, we developed an algorithm that selects only the reliable nodes in the de Bruijn graph in order to reconstruct the original sequence of small genomes or long contigs when the graph is sparse.",
+            "cite_spans": [
+                {
+                    "start": 759,
+                    "end": 762,
+                    "text": "[1]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 770,
+                    "end": 773,
+                    "text": "[2]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 781,
+                    "end": 784,
+                    "text": "[3]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 813,
+                    "end": 816,
+                    "text": "[4]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 826,
+                    "end": 829,
+                    "text": "[5]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 1230,
+                    "end": 1233,
+                    "text": "[6]",
+                    "ref_id": null
+                },
+                {
+                    "start": 1242,
+                    "end": 1245,
+                    "text": "[7]",
+                    "ref_id": null
+                },
+                {
+                    "start": 1257,
+                    "end": 1260,
+                    "text": "[8]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 1270,
+                    "end": 1273,
+                    "text": "[9,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 1274,
+                    "end": 1277,
+                    "text": "10]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1289,
+                    "end": 1293,
+                    "text": "[11,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 1294,
+                    "end": 1297,
+                    "text": "12]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 1306,
+                    "end": 1310,
+                    "text": "[13]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 1328,
+                    "end": 1332,
+                    "text": "[14]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Because of the diversity of genomes, creating a general assembler that is able to solve all cases will not be as effective and fast as a specific assembler that focuses on solving particular cases. For instance, ploidy can be a serious problem when dealing with plant genomes in which tetraploidy is common. Concerning very small genomes, we believe that we can improve the accuracy of assembly of such genomes by creating an assembler that is devoted to solving small genomes. That is the reason we aimed to create an assembler (named Arapan-S) dedicated to solving small genomes. As a result, the Arapan-S assembler was able to reconstruct one very highly accurate supercontig in most cases. To check the accuracy of Arapan-S, we performed a BLAST sequence similarity search against the EBI (European Bioinformatics Institute) database, which includes the complete genomes of our dataset. This analysis showed that the Arapan-S assemblies were more than 99% accurate. We also compared Arapan-S with other well known assemblers in the assembly of viral genomes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Arapan-S was written in C/C++ language under a programming framework called Qt on a 64-bit Linux machine and was also compiled in Windows. The input data must represent each k-mer (i.e. de Bruijn sequence), along with its frequency in the same line, separated by a whitespace character. Note that all frequency values of generated k-mers are based on the coverage level of the dataset. In other words, we have used such frequency values instead of the coverage value. A tool called kmer-Builder, which is one of several assembly pipelines included in the Arapan software package, can generate k-mer files for Arapan-S (i.e. the dataset must be prepared independently from our assembler). The project acronym (Arapan) represents our primary goal to produce a software system that includes a set of opensource tools dedicated to solving and analyzing the whole genome assembly problem.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Arapan-S parameters"
+        },
+        {
+            "text": "The Arapan-S assembler is very sensitive to the length of k of short reads, and because of its architecture our tool always tries to find one supercontig along with its reverse complement. Nevertheless, if the length of k is very short, Arapan-S will encounter some difficulties in constructing the original sequence. Also, if k is very long, the result of the assembly will not be significant. There is always a trade-off between the specificity and sensitivity of choosing the length of k. By experiment, the most appropriate value of k is when 20 \u2264 k \u2264 35.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Arapan-S parameters"
+        },
+        {
+            "text": "Arapan-S has only one parameter, which is the merging function: the frequency function or the k-mer length function. The graphical user interface of Arapan-S represents this parameter by a check-box. During the experiments, it was preferable to choose the frequency function, since it usually leads to a more accurate result. We have considered the frequency function to be the only objective function in our experiments.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Arapan-S parameters"
+        },
+        {
+            "text": "We downloaded some real datasets from the NCBI Trace Archive (ftp://ftp.ncbi.nih.gov/pub/TraceDB/). The data were cleaned and prepared by a trimming tool (http://sourceforge.net/projects/dnascissor/files/DNA% 20Scissor/). A minimum quality value cut-off of 20 (i.e. the accuracy of the base call was 99%) was set for most of the genomes, and the low-quality end regions were trimmed at the 5\u2032-end and 3\u2032-end of every read. The short reads (k-mers) were generated by the same trimming tool for each set of reads. The Arapan-S assembler was very fast, used less memory and provided us with one supercontig along with its reverse complement in many cases. For checking the accuracy of our assembler, we searched for the obtained supercontigs (the complete genome) on the EBI database using the NCBI BLAST Similarity Search. The input data are given in Table 1, while Table 2, Table 3 , Table 4 and Table 5 show the results.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 849,
+                    "end": 880,
+                    "text": "Table 1, while Table 2, Table 3",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 883,
+                    "end": 890,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 895,
+                    "end": 902,
+                    "text": "Table 5",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "BLAST similarity search"
+        },
+        {
+            "text": "The total length of each genome was very close to the genome length obtained from the EBI database, and yielded very high identities (Table 2) . Moreover, to show the robustness of Arapan-S, we compared its results to other well-known assemblers: ABySS-1.2.7 [13] , SSAKE 3.7 [7] , Velvet 1.1.3 [9, 10] and QSRA [15] . The Overlap-Layout-Consensus-based assemblers that were included for comparison were: Minimus [16] and Mira [5, 17] . The selected version of each assembler was the latest release, except for the SSAKE assembler for which we chose the release SSAKE 3.7 instead of SSAKE 3.8 because of installation problems. All assemblers have been run with default parameters.",
+            "cite_spans": [
+                {
+                    "start": 259,
+                    "end": 263,
+                    "text": "[13]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 276,
+                    "end": 279,
+                    "text": "[7]",
+                    "ref_id": null
+                },
+                {
+                    "start": 295,
+                    "end": 298,
+                    "text": "[9,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 299,
+                    "end": 302,
+                    "text": "10]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 312,
+                    "end": 316,
+                    "text": "[15]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 413,
+                    "end": 417,
+                    "text": "[16]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 427,
+                    "end": 430,
+                    "text": "[5,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 431,
+                    "end": 434,
+                    "text": "17]",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 133,
+                    "end": 142,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "BLAST similarity search"
+        },
+        {
+            "text": "Because of its architecture (de Bruijn graph), Arapan-S is classified as a de novo assembler. However, since our datasets are Sanger reads, we compared our assembler with de novo assemblers and also Overlap-Layout-Consensus assemblers. Note that the current version of QSRA assembler is not able to deal with different read lengths. To solve this problem we used our tool, kmer-Builder, which is also in the Arapan package, to generate reads of the same length (200 bp for QSRA) from shotgun data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparison"
+        },
+        {
+            "text": "Concerning the de novo assemblers, the most competitive assembler to Arapan-S was ABySS in Table 3 . As with Arapan-S, ABySS was also able to produce only one supercontig for the Bovine Respiratory Coronavirus AH187 genome and the Waterbuck Coronavirus US/OH WD358 TC/1994 genome. However, in contrast to ABySS, Arapan-S achieved the greatest genome coverage and only one supercontig in all cases. Since Arapan-S generated only one contig in all cases, it produced the largest contigs compared to other assemblers. In contrast, the other assemblers generated more contigs and SSAKE had the lowest genome coverage every time and more contigs most of the time. QSRA also did not work well with small genomes.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 91,
+                    "end": 98,
+                    "text": "Table 3",
+                    "ref_id": "TABREF2"
+                }
+            ],
+            "section": "De novo assembler competitors"
+        },
+        {
+            "text": "The Influenza A Virus genome consists of eight segments (http://bioafrica.mrc.ac.za/rnavirusdb/virus.php?id=335341). Table 4 shows that Arapan-S was able to detect the eight contigs of different genomes of type Influenza A Virus. According to our empirical results, SSAKE failed to deal with small viral genomes. N50 values of SSAKE were not computed because its results did not cover half of the entire genome. ABySS was again the second best assembler after Arapan-S. However, our assembler succeeded in determining the eight segments of each genome, such that its N50 values, as well as the largest contig, were always the highest compared to other assemblers.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 117,
+                    "end": 124,
+                    "text": "Table 4",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "De novo assembler competitors"
+        },
+        {
+            "text": "Among the Overlap-Layout-Consensus-based assemblers, Arapan-S was comparable to Minimus. Minimus failed in one case, Influenza A Virus A/Memphis/1/71 (H3N2), in which it produced nine contigs instead of eight (Table 4 ). Our assembler showed good approximation compared to Minimus for the Antelope coronavirus US/OH1/2003 genome (Table 5 ). They achieved almost the same result for the Waterbuck Coronavirus US/OH-WD358-TC/1994 and the White-tailed Deer Coronavirus US/OH-WD470/1994 genomes. On the other hand, Mira did not work well with small genomes, as shown in Tables 3, 4 and 5. ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 209,
+                    "end": 217,
+                    "text": "(Table 4",
+                    "ref_id": "TABREF3"
+                },
+                {
+                    "start": 329,
+                    "end": 337,
+                    "text": "(Table 5",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Overlap-layout-consensus competitors"
+        },
+        {
+            "text": "We have relied on only one objective function \"the frequency function\" for the sequence assembly algorithm. In fact, one may also consider another function, which is, \"the k-mer length function\", g\u00f0L\u00de",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "g such that is the set of k-mer lengths. This function is based on the assumption that nodes whose k-mers have longer, relative to shorter, lengths are more probably generated from trustworthy consecutive nodes, that is to say, a chain that has fewer or no sequencing errors. However, we have considered only the frequency function in the analysis presented here.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "In the case of non-uniform coverage of some areas in the genome [18] , the frequency function may suffer from less accuracy. On the other hand, we believe that the kmer length function can be a good choice in the case of coverage non-uniformity. Building an algorithm that combines the two objective functions and switches from one to another may lead to more accurate results. Creating such an effective algorithm is an important issue for future research.",
+            "cite_spans": [
+                {
+                    "start": 64,
+                    "end": 68,
+                    "text": "[18]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Another thing that can be said about the objective function is that the assembly algorithm does not look for the optimal solution. As a matter of fact, the algorithm starts at a determined node whose associated k-mer has the longest length, then starts going forward and backward in the graph selecting nodes that have the highest scores (greatest frequency values) locally in order to construct a contiguous path in a given connected component.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We have noticed that most genome assemblers, which were built for tackling medium or large genomes, could not successfully deal with tiny and small genomes. Only contigs whose lengths \u2265 800 were selected. When the assembler generated only one contig, the N50 value and the mean size are equal to the size of the corresponding contig. Genome coverage was calculated by dividing the total length by the genome length (EBI).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Arapan-S, ABySS and Minimus were able to deal with such cases. In future work a comparison would be worthwhile for all genome assemblers to determine the efficiency field of each set of assemblers. Since our aim was creating a genome assembler for tackling only tiny genomes, dealing with repeats was not an essential task, since they do not regularly appear in very small genomes and the confrontation with tandem repeats does not generally mislead the assembly process (according to our experience). However, in the future, we aim to build another version of the Arapan-S assembler that can handle longer genomes.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "According to our experiments, we have found that general assemblers are not always as effective as the Arapan-S assembler in dealing with tiny genomes. We have used only long reads in our experiments, because the raw data of small genomes can be easily found in the NCBI Trace Archive. However, our assembler can work with any other sequencing technology, such as Illumina/ Solexa, SOLiD and 454 sequencing technologies. The raw data are converted into a set of k-mers by kmer-Builder (http://sourceforge.net/projects/dnascissor/files/ kmerBuilder/). The user can run Arapan-S assembler by providing it with the k-mer file. This feature represents another advantage of our assembler compared to other assemblers. Arapan-S is fast and uses less memory. However, because we are dealing with small genomes, the time and space complexities of all assemblers were negligible. Our assembler is not designed to be applied to medium or large genomes. Only contigs whose lengths \u2265 400 were selected. Each species has eight segments that constitute its genome. Only contigs whose lengths \u2265 400 were selected.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "The assembly process consists of four major phases. In the first phase, the de Bruijn graph is straightforwardly constructed. The second phase (called the cleaning process) is a very important step in which the graph is simplified as much as possible by collapsing paths, removing tips and solving bubbles, as well as handling a few other different structures in the graph. In the third phase the graph components are detected before starting the assembly algorithm in the fourth step. Our algorithm differs from previous works in the following ways:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "1. The cleaning process simplifies the graph by a few iterations without incorporating time-consuming algorithms, such as the Dijkstra-like breadth-first search in Velvet [9, 10] and the Dijkstra algorithm in SOAPdenovo [14] . 2. An algorithm was created to solve only simple bubbles ( Figure 1 ), but by involving other algorithms (i.e. paths collapsing, tips, etc.) all complex bubbles are solved after a few iterations of the cleaning algorithm. 3. The assembly algorithm uses the frequency values and lengths of k-mers in order to construct contigs as will be described below.",
+            "cite_spans": [
+                {
+                    "start": 171,
+                    "end": 174,
+                    "text": "[9,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 175,
+                    "end": 178,
+                    "text": "10]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 220,
+                    "end": 224,
+                    "text": "[14]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 286,
+                    "end": 294,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "Most de novo assemblers focus on solving large genomes; this involves implementing time-consuming and very complicated algorithms. As a result, the construction of contigs becomes stricter, though this is not the case for small genomes, as shown in the results section.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "The entire dataset of k-mers is recorded using hash tables in order to speed up further operations. The reverse complements are also recorded without binding them with their original k-mers. All we need is a linear algorithm for constructing the de Bruijn graph. Since the alphabet is composed of four nucleotide letters, each k-mer will be connected to four k-mers at most. All k-mers that include unknown 'N' nucleotides are discarded. The pseudo-code of the algorithm is shown below: IndexOf(temp+\"A\")); 9. if temp+\"T\" kmerList then createArc( i, kmerList. IndexOf(temp+\"T\")); 10.if temp+\"C\" kmerList then createArc( i, kmerList.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Input data and graph construction"
+        },
+        {
+            "text": "IndexOf(temp+\"C\")); 11.if temp+\"G\" kmerList then createArc( i, kmerList.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Input data and graph construction"
+        },
+        {
+            "text": "IndexOf(temp+\"G\")); 12.//backward connection 13.if \"A\"+ temp kmerList then createArc(kmerList.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Input data and graph construction"
+        },
+        {
+            "text": "IndexOf(\"A\"+ temp), i ); 14.if \"T\"+ temp kmerList then createArc(kmerList.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Input data and graph construction"
+        },
+        {
+            "text": "IndexOf(\"T\"+ temp), i ); 15.if \"C\"+ temp kmerList then createArc(kmerList.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Input data and graph construction"
+        },
+        {
+            "text": "IndexOf(\"C\"+ temp), i ) 16.if \"G\"+ temp kmerList then createArc(kmerList.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Input data and graph construction"
+        },
+        {
+            "text": "IndexOf(\"G\"+ temp), i);",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Input data and graph construction"
+        },
+        {
+            "text": "Let K be the length of the short reads. The variable temp will contain the first prefix of a given K-mer whose length is K \u2212 1. The algorithm computes the outneighbours in the forward orientation, and the inneighbours in the opposite direction.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "17.end"
+        },
+        {
+            "text": "Cleaning process (simplifying the graph and solving errors)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "17.end"
+        },
+        {
+            "text": "The raw DNA data always suffer from errors, and since the de Bruijn graph is based on the exact matching of k-mers, error correction (or removal) becomes very important to the use of such graphs in representing and analyzing sequencing data. The coverage plays a vital role in guiding the cleaning and assembly algorithms to a more accurate result. After constructing the graph, some erroneous kmers appear in the graph in different forms. The most common forms are the so-called \"Tips, Bubbles and Chimeric connections\". However, while analyzing the graph, we found other forms as well. We have implemented an iterative algorithm that reduces the graph to its maximum simplification. The pseudo-code of the algorithm is shown below and its flowchart is given in Figure 2 The collapsePaths() procedure will return false if it does not collapse any path, otherwise, it returns true. The other procedures behave exactly as collapsePaths() does. We will hereafter explain each procedure invoked by the cleaning algorithm.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 763,
+                    "end": 771,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "17.end"
+        },
+        {
+            "text": "To simplify and shrink the graph before applying any cleaning procedure, a path collapsing algorithm should be run immediately after constructing the graph.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Path collapsing"
+        },
+        {
+            "text": "A path is a chain of nodes. Two nodes X and Y are merged if the node X has only one outgoing arc connected to the node Y that has only one incoming arc. Their corresponding k-mers must be concatenated accordingly. Most of the resulting nodes (we call them switch nodes) are seen in Figure 3 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 282,
+                    "end": 290,
+                    "text": "Figure 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Path collapsing"
+        },
+        {
+            "text": "In genome assembly, a bubble appears where two sequences initially align, then diverge in the middle, and align again at the end. Bubbles are caused by repeats or heterozygotes of diploid chromosomes [14] , or created by errors or biological variants, such as SNPs, diploids or cloning artefacts prior to sequencing.",
+            "cite_spans": [
+                {
+                    "start": 200,
+                    "end": 204,
+                    "text": "[14]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Bubble solving"
+        },
+        {
+            "text": "A path is a chain of nodes in a graph. We call a path a simple path if each internal node (i.e., each node between the start node and the end node of the path) has one outgoing edge and one incoming edge. A bubble is a subgraph that consists of multiple simple paths all of which share the same start node and the same end node. In the original graph, the start node must not have any outgoing edges other than those in the bubble, and the end node must not have any incoming edges other than those in the bubble.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Bubble solving"
+        },
+        {
+            "text": "In Velvet [9, 10] , detection of bubbles was done by an algorithm based on a Dijkstra-like breadth-first search called \"The Tour Bus Algorithm\". Similarly, Dijkstra's algorithm is also used to detect bubbles in SOAPdenovo [14] , in which the detected bubbles are merged into a single path if the sequences of the parallel paths are very similar; that is, had fewer than four base pairs difference with more than 90% identity.",
+            "cite_spans": [
+                {
+                    "start": 10,
+                    "end": 13,
+                    "text": "[9,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 14,
+                    "end": 17,
+                    "text": "10]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 222,
+                    "end": 226,
+                    "text": "[14]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Bubble solving"
+        },
+        {
+            "text": "In Arapan-S, all bubbles will be relaxed by combining all the cleaning procedures and without incorporating a time-consuming algorithm. After collapsing all paths, bubbles will appear in the graph as shown in Figure 1 . The node with a high coverage will not be removed from the bubble (However, the algorithm can also be parameterized to keep only the node that has the maximum k-mer's length instead of high coverage).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 209,
+                    "end": 217,
+                    "text": "Figure 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Bubble solving"
+        },
+        {
+            "text": "Tips generally result from errors at the end of reads. In the graph, a tip is a node connected only on one end ( Figure 4) . In Velvet, a tip is removed if it is shorter than 2 k (k is chosen for the k-mer). After removing tips, new paths will appear again in the graph. Almost all the remaining nodes' degrees are \u2265 2. We will hereafter call such nodes: switch nodes. The result of the cleaning process will be similar to what is shown in Figure 5 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 113,
+                    "end": 122,
+                    "text": "Figure 4)",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 440,
+                    "end": 448,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Tips removal"
+        },
+        {
+            "text": "Once the graph is reduced and contains only switch nodes, we start determining the connected components of the graph. There are two cases in which we need to determine the connected component. The first case is the nature of the k-mers and their reverse complements. Since each k-mer was recorded along with its reverse complement, we will obtain a graph composed of two subgraphs, one being the reverse of the other. The second case is the sparseness of the graph, especially when the initial k-mer length is a bit longer. Our assembly algorithm can run on every connected component of the graph. Detection of these components can lead the assembly algorithm to be run in parallel. The breadth-first search or depth-first search can be applied to find the connected components in linear time. The search begins at an arbitrary node v from which the entire connected component including v will be detected. A loop through all nodes of the graph must be implemented in order to find all the connected components. The loop runs until no visited node can be found. The pseudo-code of the modified algorithm is shown as follows: The idea of this algorithm is to traverse the graph from an arbitrary node a, mark it as a visited node and record its neighbors in the set X. The same job is done for the recorded nodes until there are no visited nodes in the set X. The algorithm returns the connected component engendered from the node a. To find all connected components we apply the following algorithm:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Connected components detection"
+        },
+        {
+            "text": "3. Set X' ; 4. Integer i; 5. //Step1 6. X 0 :\u00bc V ; 7. i :\u00bc 1; 8. //Step 2 9. while X 0 6 \u00bc do 10.begin 11.select an arbitrary x2X'; 12.C i :\u00bc connectedComponent\u00f0G; x\u00de; 13.X 0 : X 0 \u00c0 C i ; 14.i :\u00bc i \u00fe 1; 15.end 16.return C; Figure 2 Switch node. All contiguous nodes are merged in one node. This operation is named \"The path collapsing\".",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 224,
+                    "end": 232,
+                    "text": "Figure 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Connected components detection"
+        },
+        {
+            "text": "Bubbles. This figure illustrates three simple bubbles and two complex bubbles. Simple bubbles are A-C, B-D and E-F. The first complex bubble starts at A and ends at D while the second one starts at D and ends at F. (X-Y is the subgraph that starts at X and ends at Y). Complex bubbles are solved by executing the simple bubble-solving algorithm and path-collapsing algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Figure 3"
+        },
+        {
+            "text": "We only need to select an arbitrary node x and determine, due to the connectedComponent() procedure, the connected component C i having x. The determined component's nodes will be removed from the X' (Line 14). The same operation is performed until no connected components can be detected.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Figure 3"
+        },
+        {
+            "text": "Once the connected components are detected, we run the assembly algorithm for each component. The assembly algorithm can be run by using one of two parameters: the coverage (k-mer's frequency), and the k-mer lengths. The latter parameter is obtained by the cleaning process, which provides us with switch nodes whose corresponding k-mers have longer lengths due to the merging process.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Assembly algorithm"
+        },
+        {
+            "text": "Most of the previous work on genome assembly has the following assumption: given a set of reads, the objective of the assembly program is to minimize the length of the assembled genome [18] . However, according to our knowledge, there is no proof that the shortest path can always faithfully represent the genome. The same can be concluded concerning the longest path, the Hamiltonian path and the Eulerian path.",
+            "cite_spans": [
+                {
+                    "start": 185,
+                    "end": 189,
+                    "text": "[18]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Assembly algorithm"
+        },
+        {
+            "text": "The assembly algorithm is a greedy function. It traverses the graph by selecting only the nodes whose frequency values are higher. We have chosen this strategy by assuming that k-mers, which are characterized by high frequency values, are more likely to be free of sequencing errors (we call it \"frequency function\"). All procedures of the assembly algorithm are given as follows:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Assembly algorithm"
+        },
+        {
+            "text": "1. stringPath( Set C ) 2. Ordered Set path; 3. SetP, Visited; 4. Node u, v; 5. //Step1: preprocessing 6. u := the index of the node which have the longest kmer length. The set C represents a connected component of the graph. The resulting path is kept in the ordered set path. After variables initialization, the algorithm goes in a forward direction selecting the best out-neighbors. In the last step, it goes backwards selecting the best in-neighbors. The bestNeighbor() function is the current node and the set of its in-or out-neighbors. Since each node could be connected to several neighbouring nodes, the best neighbor is characterized by the highest frequency value. The two loops stop when no more exploration can be done. To find all possible paths, we apply the following algorithm, called the stringPath() algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Assembly algorithm"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "All questions, comments and requests should be sent by email to nihon.sahli@gmail.com. Project name: Arapan project",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Arapan-S Is",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "TIGR Assembler: a new tool for assembling large shotgun sequencing projects",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Sutton",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "White",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Adams",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Kerlavage",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Genome Sci. Technol",
+            "volume": "1",
+            "issn": "",
+            "pages": "9--19",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "CAP3: A DNA sequence assembly program",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Madan",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Genome Research",
+            "volume": "9",
+            "issn": "",
+            "pages": "868--877",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "PCAP: A whole-genome assembly program",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Aluru",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Hillier",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Genome Research",
+            "volume": "13",
+            "issn": "",
+            "pages": "2164--2170",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "The fragment assembly string graph",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Myers",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "",
+            "pages": "79--85",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Using the miraEST assembler for reliable and automated mrna transcript assembly and snp detection in sequenced ests",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Chevreux",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Pfisterer",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Drescher",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Driesel",
+                    "suffix": ""
+                },
+                {
+                    "first": "Weg",
+                    "middle": [],
+                    "last": "M\u00fcller",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Wetter",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Suhai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Genome Research",
+            "volume": "14",
+            "issn": "",
+            "pages": "1147--1159",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "An Eulerian path approach to DNA fragment assembly",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pevzner",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Waterman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "98",
+            "issn": "",
+            "pages": "9748--9753",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Assembling millions of short DNA sequences using SSAKE",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Warren",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Sutton",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Holt",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bioinformatics",
+            "volume": "23",
+            "issn": "",
+            "pages": "500--501",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Short read fragment assembly of bacterial genomes",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chaisson",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pevzner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Genome Research",
+            "volume": "18",
+            "issn": "",
+            "pages": "324--330",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Velvet: algorithms for de novo short read assembly using de Bruijn graphs",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Zerbino",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Birney",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Genome Research",
+            "volume": "18",
+            "issn": "",
+            "pages": "821--829",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Pebble and rock band: heuristic resolution of repeats and scaffolding in the velvet short read de novo assembler",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Zerbino",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Mcewen",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Margulies",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Birney",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS One",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0008407"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "ALLPATHS: De novo assembly of whole genome shotgun microreads",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Butler",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Maccallum",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kleber",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Shlyakhter",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Belmonte",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lander",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Nusbaum",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Jaffe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Genome Research",
+            "volume": "18",
+            "issn": "",
+            "pages": "810--820",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "ALLPATHS 2: Small genomes assembled accurately and with high continuity from short paired reads",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Maccallum",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Przybylski",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Gnerre",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Burton",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Shlyakhter",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gnirke",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Malek",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Mckernan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ranade",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Shea",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Genome Biology",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/gb-2009-10-10-r103"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "ABySS: a parallel assembler for short read sequence data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Simpson",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Jackman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Schein",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Birol",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Genome Research",
+            "volume": "19",
+            "issn": "",
+            "pages": "1117--1123",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "De novo assembly of human genomes with massively parallel short read sequencing",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ruan",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Qian",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Fang",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Shan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Kristiansen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Genome Research",
+            "volume": "20",
+            "issn": "",
+            "pages": "265--272",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "QSRA -a quality-value guided de novo short read assembler",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Bryant",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Wong",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Mockler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Bioinformatics",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-10-69"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Minimus: a fast, lightweight genome assembler",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Sommer",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Dlecher",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Salzberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Pop",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC Bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-8-64"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Genome Sequence Assembly Using Trace Signals and Additional Sequence Information Computer Science and Biology",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Chevreux",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Proceedings of the German Conference on Bioinformatics",
+            "volume": "99",
+            "issn": "",
+            "pages": "45--56",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Maximum likelihood genome assembly",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Medvedev",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Brudno",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Journal of Computational Biology",
+            "volume": "16",
+            "issn": "",
+            "pages": "1--16",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1756-0500-5-243"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Submit your next manuscript to BioMed Central and take full advantage of: \u2022 Convenient online submission \u2022 Thorough peer review \u2022 No space constraints or color figure charges \u2022 Immediate publication on acceptance \u2022 Inclusion in PubMed, CAS, Scopus and Google Scholar \u2022 Research which is freely available for redistribution",
+            "authors": [],
+            "year": 2012,
+            "venue": "Cite this article as: Sahli and Shibuya: Arapan-S: a fast and highly accurate whole-genome assembly software for viruses and small genomes",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Flowchart. The different phases of the cleaning algorithm.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "cleaningAlgorithm() 2. Boolean col, bub, intip, outip, less, great; 3. Begin 4. do 5. col := collapsePaths(); 6. bub := solveBubbles(); 7. if col==false and bub==false then 8. begin 9. intip := removeInTips(); 10.outip := removeOutTips(); 11.less := removeLessMarkTips(); 12.great := removeGreatMarkTips(); 13.if intip==false and outip==false and 14.less ==false and great==false then stop;",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "7. v :\u00bc u; 8. path :\u00bc path [ u f g; 9. Visited: =\u00d8 10.//Step 2: forward direction 11.do forever 12.begin 13.P := out_neighbors(u) \u2212 Visited; 14.Visited :\u00bc Visited [ P; 15.if P=\u00d8 then stop; 16.u := bestNeighbor(u, P); 17.path :\u00bc path [ u f g; 18.End",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Tips. This figure shows some tips (i.e. C, D, F and I).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Graph visualization. A part of two connected components of the white tailed deer corona virus genome graph after running the cleaning algorithm. Nodes represent k-mers and arrows represent the overlaps between k-mers. This picture was taken from the aiSee graph visualization software (www.aisee.com).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": ".Visited :\u00bc Visited [ P; 24.if P=\u00d8 then stop; 25.v := bestNeighbor(v, P); 26.path :\u00bc v f g [ path; 27.end 28.return path;",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "The Alignment Results By Using the EBI database (BLAST Similarity Search) on seven Virus GenomesThe Total length is the length of the obtained result, while Genome length (EBI) is the genome's supposed length according to the EBI database. The values of Identities were calculated by dividing Alignment scores by the corresponding Total lengths. The Expect-value was calculated by EBI's NCBI BLAST Similarity Search engine.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "The input data include seven Virus GenomesWe considered eight viruses. The genome of each Influenza A Virus consists of eight segments while the others have only one long segment. The datasets represent Sanger reads. The raw data were downloaded from NCBI Trace Archive (ftp://ftp.ncbi.nih.gov/pub/TraceDB/.)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Comparison of Arapan-S with ABySS, SSAKE, Velvet, QSRA, Minimus and Mira assemblers on four Benchmark Virus Genomes",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "Comparison of Arapan-S with all the assemblers on Three Genomes Composed of eight Segments",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Comparison of Arapan-S with all QSRA, Minimus and Mira assemblers on Antelope coronavirus US/OH1/2003 genome",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "Integer N :=|kmerList|; //the size of kmerList 3. String temp; 4. for i:=1 to N do 5. begin 6. temp := kmerList[i][1..K\u22121]; 7. //forward connection 8. if temp+\"A\" kmerList then createArc( i, kmerList.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "This work was partially supported by the Grant-in-Aid from the Ministry of Education, Culture, Sports, Science and Technology of Japan. We should give thanks to Mr. Yassine Bouhmadi and Fouad Kharroubi for their corrections. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        }
+    ]
+}

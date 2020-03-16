@@ -1,0 +1,3915 @@
+{
+    "paper_id": "c6024a8ca787b4af96d36292b86479031416a0b6",
+    "metadata": {
+        "title": "A fast and robust iterative algorithm for prediction of RNA pseudoknotted secondary structures",
+        "authors": [
+            {
+                "first": "Condon Bmc",
+                "middle": [],
+                "last": "Jabbari",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "",
+                "middle": [],
+                "last": "Bioinformatics",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: Improving accuracy and efficiency of computational methods that predict pseudoknotted RNA secondary structures is an ongoing challenge. Existing methods based on free energy minimization tend to be very slow and are limited in the types of pseudoknots that they can predict. Incorporating known structural information can improve prediction accuracy; however, there are not many methods for prediction of pseudoknotted structures that can incorporate structural information as input. There is even less understanding of the relative robustness of these methods with respect to partial information.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "We present a new method, Iterative HFold, for pseudoknotted RNA secondary structure prediction. Iterative HFold takes as input a pseudoknot-free structure, and produces a possibly pseudoknotted structure whose energy is at least as low as that of any (density-2) pseudoknotted structure containing the input structure. Iterative HFold leverages strengths of earlier methods, namely the fast running time of HFold, a method that is based on the hierarchical folding hypothesis, and the energy parameters of HotKnots V2.0. Our experimental evaluation on a large data set shows that Iterative HFold is robust with respect to partial information, with average accuracy on pseudoknotted structures steadily increasing from roughly 54% to 79% as the user provides up to 40% of the input structure. Iterative HFold is much faster than HotKnots V2.0, while having comparable accuracy. Iterative HFold also has significantly better accuracy than IPknot on our HK-PK and IP-pk168 data sets.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Iterative HFold is a robust method for prediction of pseudoknotted RNA secondary structures, whose accuracy with more than 5% information about true pseudoknot-free structures is better than that of IPknot, and with about 35% information about true pseudoknot-free structures compares well with that of HotKnots V2.0 while being significantly faster. Iterative HFold and all data used in this work are freely available at computational methods for prediction of RNA structure are valuable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Currently computational RNA structure prediction methods mainly focus on predicting RNA secondary structure-the set of base pairs that form when RNA molecules fold. When multiple homologous (evolutionarily related) RNA sequences are available, the secondary structure of the sequences can be predicted using multiple sequence alignment and comparative sequence analysis [11] [12] [13] [14] [15] [16] [17] [18] [19] [20] [21] [22] . Alternative approaches, which can be used to predict secondary structure of a single sequence, are",
+            "cite_spans": [
+                {
+                    "start": 370,
+                    "end": 374,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 375,
+                    "end": 379,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 380,
+                    "end": 384,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 385,
+                    "end": 389,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 390,
+                    "end": 394,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 395,
+                    "end": 399,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 400,
+                    "end": 404,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 405,
+                    "end": 409,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 410,
+                    "end": 414,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 415,
+                    "end": 419,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 420,
+                    "end": 424,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 425,
+                    "end": 429,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "RNA molecules are crucial in different levels of cellular function, ranging from translation and regulation of genes to coding for proteins [1] [2] [3] [4] [5] [6] . Understanding the structure of an RNA molecule is important in inferring its function [7] [8] [9] [10] . Since experimental methods for determining RNA structure, such as X-ray, crystallography and NMR, are time consuming, expensive and in some cases infeasible, http://www.biomedcentral.com/1471-2105/15/147 based on thermodynamic parameters derived in part from experimental data [23] . While thermodynamics-based approaches can be less accurate than comparative-based algorithms, thermodynamics-based approaches are applicable in cases of novel RNAs such as the many RNAs of unknown function recently reported by the ENCODE consortium [24] . Thermodynamics-based approaches can also be easier to apply to prediction of the structure of interacting RNA molecules, for example, in gene knockdown studies.",
+            "cite_spans": [
+                {
+                    "start": 140,
+                    "end": 143,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 144,
+                    "end": 147,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 148,
+                    "end": 151,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 152,
+                    "end": 155,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 156,
+                    "end": 159,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 160,
+                    "end": 163,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 252,
+                    "end": 255,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 256,
+                    "end": 259,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 260,
+                    "end": 263,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 264,
+                    "end": 268,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 548,
+                    "end": 552,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 804,
+                    "end": 808,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Many computational thermodynamics-based methods find the structures with the minimum free energy (MFE) from the set of all possible structures, when each structure feature is assigned a free energy value and the energy of a structure is calculated as the sum of the features' energies. There has been significant success in prediction of pseudoknot-free secondary structures (structures with no crossing base pairs) [23, 25, 26] . While many small RNA secondary structures are pseudoknot-free, many biologically important RNA molecules, both in the cell [27, 28] , and in viral RNA [29] are found to be pseudoknotted.",
+            "cite_spans": [
+                {
+                    "start": 416,
+                    "end": 420,
+                    "text": "[23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 421,
+                    "end": 424,
+                    "text": "25,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 425,
+                    "end": 428,
+                    "text": "26]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 554,
+                    "end": 558,
+                    "text": "[27,",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 559,
+                    "end": 562,
+                    "text": "28]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 582,
+                    "end": 586,
+                    "text": "[29]",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Since finding the MFE pseudoknotted secondary structure is NP-hard [30] [31] [32] , polynomial time MFE-based methods for prediction of pseudoknotted secondary structures predict a restricted class of pseudoknotted structures [33] [34] [35] . These methods trade off run-time complexity and the generality of the class of structures they can predict. For example, the most general algorithm of Rivas and Eddy [33] , whose running time is (n 6 ) on inputs of length n, is not practical for RNA sequences of length more than 100 nucleotides. This has been the main reason for development of heuristic methods for prediction of pseudoknotted structures [36] [37] [38] [39] [40] [41] . Although heuristic methods may not find the MFE structure, they usually run faster than the MFE-based methods that handle the same class of structures. For example, HotKnots V2.0 [36, 41] is a heuristic approach that uses carefully trained energy parameters, is guided by energy minimization and can handle kissing hairpin structures. However, HotKnots is still slow on long sequences.",
+            "cite_spans": [
+                {
+                    "start": 67,
+                    "end": 71,
+                    "text": "[30]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 72,
+                    "end": 76,
+                    "text": "[31]",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 77,
+                    "end": 81,
+                    "text": "[32]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 226,
+                    "end": 230,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 231,
+                    "end": 235,
+                    "text": "[34]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 236,
+                    "end": 240,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 409,
+                    "end": 413,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 650,
+                    "end": 654,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 655,
+                    "end": 659,
+                    "text": "[37]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 660,
+                    "end": 664,
+                    "text": "[38]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 665,
+                    "end": 669,
+                    "text": "[39]",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 670,
+                    "end": 674,
+                    "text": "[40]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 675,
+                    "end": 679,
+                    "text": "[41]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 861,
+                    "end": 865,
+                    "text": "[36,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 866,
+                    "end": 869,
+                    "text": "41]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Other methods for prediction of pseudoknotted structures, such as the IPknot method of Sato et al. [42] , are motivated by the finding of Mathews [43] that base pairs with high base pairing probabilities in the thermodynamic ensemble are more likely to be in the known structure. In a comprehensive comparison performed by Puton et al. [44] on the performance of publicly available non-comparative RNA secondary structure prediction methods that can handle pseudoknotted structures, IPknot ranks first for general length RNA sequences.",
+            "cite_spans": [
+                {
+                    "start": 99,
+                    "end": 103,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 146,
+                    "end": 150,
+                    "text": "[43]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 336,
+                    "end": 340,
+                    "text": "[44]",
+                    "ref_id": "BIBREF44"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Incorporating known structural information can improve the accuracy of structure prediction. For example, Mathews et al. [45] used SHAPE reactivity data to improve the prediction accuracy from 26.3% to 86.8% for 5S rRNA of E. coli. Roughly, the larger the SHAPE reactivity value for a given nucleotide, the more likely it is that the nucleotide is unpaired in the structure. However, limited SHAPE reactivity data is available, and the data does not unambiguously determine whether a base is paired or not or, if it is paired, to what other nucleotide. Deigan et al. [46] created pseudo energy terms from SHAPE reactivity data, as a means of integrating such data into prediction software. They reported prediction accuracy of 96% to 100% for three moderate-sized RNAs (< 200 nucleotides) and for 16S rRNA ( 1500 nucleotides). ShapeKnots [47] is a new method for incorporating SHAPE reactivity data for pseudoknotted structures that incorporates the pseudo energy terms into a heuristic method similar to that of Ren et al. [41] .",
+            "cite_spans": [
+                {
+                    "start": 121,
+                    "end": 125,
+                    "text": "[45]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 567,
+                    "end": 571,
+                    "text": "[46]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 838,
+                    "end": 842,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 1024,
+                    "end": 1028,
+                    "text": "[41]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We previously presented HFold [48] , an approach for prediction of pseudoknotted structures, motivated by two goals, namely to avoid the high running time complexity of other methods for pseudoknotted secondary structure prediction and to leverage the hierarchical folding hypothesis. This hypothesis posits that an RNA molecule first folds into a pseudoknot-free structure; then additional base pairs are added that may form pseudoknots with the first structure so as to lower the structure's free energy [49] . Given a pseudoknot-free structure as input, HFold predicts a possibly pseudoknotted structure from a broad class that contains the given input structure and, relative to that constraint, has minimum free energy. HFold's running time is O(n 3 ), significantly faster than other methods for predicting pseudoknotted structures. Several experts have provided evidence for, and support, the hierarchical folding hypothesis [49] [50] [51] [52] . The class of structures that HFold can handle, density-2 structures, is quite general and includes many important pseudoknots including Htype pseudoknots, kissing hairpins and infinite chains of interleaved bands, with arbitrary nested (pseudoknotted) substructures. (Roughly, a structure is density-2 if no base is enclosed by more than two overlapping pseudoknotted stems.) Another advantage of HFold over heuristic methods such as HotKnots or ShapeKnots is that unlike these methods, HFold minimizes the free energy of the possibly pseudoknotted output structure relative to the given input structure. Therefore HFold's method of adding pseudoknotted stems is better motivated energetically than that of HotKnots or ShapeKnots.",
+            "cite_spans": [
+                {
+                    "start": 30,
+                    "end": 34,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 506,
+                    "end": 510,
+                    "text": "[49]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 932,
+                    "end": 936,
+                    "text": "[49]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 937,
+                    "end": 941,
+                    "text": "[50]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 942,
+                    "end": 946,
+                    "text": "[51]",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 947,
+                    "end": 951,
+                    "text": "[52]",
+                    "ref_id": "BIBREF52"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "While HFold is fast, our earlier implementation of HFold had its own shortcomings. First, due to a high pseudoknot initiation penalty in its underlying energy model, many of its predicted structures did not have pseudoknots. Also low band penalty (i.e., penalty for addition of pseudoknotted stems or bands) in its energy model encouraged addition of pseudoknotted stems when a pseudoknot was predicted. Second, if the first structure http://www.biomedcentral.com/1471-2105/15/147 input to HFold contains base pairs that are not in the true pseudoknot-free structure for the given RNA sequence or is not the complete pseudoknot-free structure (i.e., it does not include all the base pairs in the pseudoknot-free structure), HFold is often unable to predict the known pseudoknotted structure as output.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "To summarize, existing methods for prediction of pseudoknotted structures suffer from one or both of the following shortcomings: 1) slow running time, or 2) poor prediction accuracy. Moreover there is limited opportunity for the user to provide structural information, or constraints, that can guide prediction. In cases of a prediction method that incorporates user-defined constraints, it is also useful to understand the degree to which the method's accuracy persists as the input information degrades. We use the term robustness with respect to partial information or robustness to refer to this property of a method. (We note that in our definition of robustness we do not mean robust with respect to noise.) To the best of our knowledge, the concept of robustness in secondary structure prediction methods has not been studied before.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In this work we present a new method that addresses these shortcomings. Our method, Iterative HFold, takes a pseudoknot-free input structure and produces a possibly pseudoknotted structure whose energy is at least as low as that of any (density-2) pseudoknotted structure containing the input structure. Iterative HFold incorporates four different methods and reports as its final structure the structure with the lowest energy, among all structures produced by these methods. While one of its underlying methods, HFold, strictly adheres to the hierarchical folding hypothesis, the other three use iterations to extend or remove the base pairs of input structure, with the goal of finding a structure that has lower energy than the structure found by HFold. Thus, unlike HFold, iterative HFold is able to modify the input structure (while the class of structures handled by both methods is the same). This is valuable since 1) computationally produced structures may not be completely accurate and 2) while the hierarchical folding hypothesis is a useful guiding principle, there is evidence that allowing for disruption of some base pairs in the initially formed pseudoknot-free secondary structure can improve prediction [53, 54] .",
+            "cite_spans": [
+                {
+                    "start": 1223,
+                    "end": 1227,
+                    "text": "[53,",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 1228,
+                    "end": 1231,
+                    "text": "54]",
+                    "ref_id": "BIBREF54"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "All of Iterative HFold's underlying methods use the energy model of HotKnots V2.0 DP09 [36] ; with this model, HFold obtained predictions with higher accuracy than those obtained with our earlier implementation of HFold. One of Iterative HFold's underlying methods is HFold-PKonly, which given the input structure only adds pseudoknotted base pairs. HFold-PKonly is especially useful for cases when the user has either complete information about the true pseudoknot-free structure or wants to check whether a single stem of the input structure can be part of a pseudoknot since, if the input structure only has the specific stem in question, the output structure of HFold-PKonly will determine if the given stem can be part of a pseudoknot.",
+            "cite_spans": [
+                {
+                    "start": 87,
+                    "end": 91,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "Based on our experiments on our HK-PK and HK-PKfree data sets that include 88 pseudoknotted structures, and 337 pseudoknot-free structures respectively, ranging in length from 10 to 400 nucleotides, a single run of Iterative HFold does not take more than 9 seconds time and 62 MB of memory. In contrast, one of the best heuristic methods, HotKnots V2.0, takes 1.7 hours and 91 GB of memory for a sequence with 400 nucleotides. Therefore our method is practical for prediction of long RNA structures. Iterative HFold bootstrap 95% percentile confidence interval for average accuracy of pseudoknotted structures of the HK-PK data set is significantly higher than that of IPknot, ((72.83%, 83.37%) vs. (54.56%, 66.25%)) and is comparable to that of HotKnots V2.0, (vs. (73.60%, 83.35%)) two of the best prediction methods available. Iterative HFold's accuracy is significantly higher than that of IPknot and HotKnots on our IP-pk168 data set. Iterative HFold also has higher accuracy than HFold even when just partial information about the true pseudoknot-free structure is provided, so it is more robust than HFold. Specifically, Iterative HFold's average accuracy on pseudoknotted structures steadily increases from roughly 54% to 79% as the user provides up to 40% of the input structure, and improves with a more modest but still positive improvement in accuracy when further structural information is provided.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "We represent an RNA molecule by a sequence, S, of its four bases, Adenine (A), Cytosine (C), Guanine (G) and Uracil (U). We denote the length of the RNA molecule by n and refer to each base by its index i, 1 \u2264 i \u2264 n.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Methods"
+        },
+        {
+            "text": "When an RNA molecule folds, bonds may form between canonical pairs of bases (A-U, C-G, and G-U) (see Figure 1 ). Throughout this work, we consider only cases where each base may pair at most with one other base, and represent base pairing between i and j by i.j. We define a secondary structure, R, as a set of pairs i.j, 1 \u2264 i < j \u2264 n; i.j and k.j can belong to the same set if and only if i = k.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 101,
+                    "end": 109,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "If i.j and k.l are two base pairs of a secondary structure, R, and 1 \u2264 i < k < j < l \u2264 n, we say i.j crosses k.l. We refer to a secondary structure with crossing base pairs as a pseudoknotted secondary structure and a secondary structure with no crossing base pairs as a pseudoknot-free secondary structure (see Figure 1 ). Figure 1 shows different kinds of loops in a secondary structure. We refer the readers to Jabbari et al. [48] or Rastegari et al. [56] for precise definition and illustration of terms used in the figure. Figure 1 Pseudoknotted and pseudoknot-free secondary structures. Examples of loops and canonical base pairs in a pseudoknotted and a pseudoknot-free secondary structure. The blue base pairs belong to the G big structure and the green base pairs belong to the G small structure, as defined in Section 'Definition of G big and G small '. This figure was produced using the VARNA software [55] .",
+            "cite_spans": [
+                {
+                    "start": 429,
+                    "end": 433,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 454,
+                    "end": 458,
+                    "text": "[56]",
+                    "ref_id": "BIBREF56"
+                },
+                {
+                    "start": 914,
+                    "end": 918,
+                    "text": "[55]",
+                    "ref_id": "BIBREF55"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 312,
+                    "end": 320,
+                    "text": "Figure 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 324,
+                    "end": 332,
+                    "text": "Figure 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 528,
+                    "end": 536,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Methods"
+        },
+        {
+            "text": "Many computational methods for predicting the secondary structure of an RNA (or DNA) molecule are based on models of the free energy of loops [23, 25, 26, [33] [34] [35] [36] 48] . Table 1 summarizes the energy constants and functions used in our energy model for pseudoknotted structures. The values of these energy parameters are those of the DP09 parameter set of Andronescu et al. [36] , used by the HotKnots V2.0 prediction software.",
+            "cite_spans": [
+                {
+                    "start": 142,
+                    "end": 146,
+                    "text": "[23,",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 147,
+                    "end": 150,
+                    "text": "25,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 151,
+                    "end": 154,
+                    "text": "26,",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 155,
+                    "end": 159,
+                    "text": "[33]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 160,
+                    "end": 164,
+                    "text": "[34]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 165,
+                    "end": 169,
+                    "text": "[35]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 170,
+                    "end": 174,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 175,
+                    "end": 178,
+                    "text": "48]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 385,
+                    "end": 389,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 181,
+                    "end": 188,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Energy model"
+        },
+        {
+            "text": "We use three data sets to analyze performance of our algorithms. Our first data set is the test data set of Andronescu et al. [36] , that contains 446 distinct RNA sequences and their reference structures, of which 348 are pseudoknotfree and 98 are pseudoknotted. This set has four structures that are not in the class of structures our methods can handle (i.e., have densities higher than 2 [48] ). Since the number of such structures is too small to be useful in an experimental analysis, we removed them from our set of pseudoknotted structures, resulting in a set of size 442.",
+            "cite_spans": [
+                {
+                    "start": 126,
+                    "end": 130,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 392,
+                    "end": 396,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data sets"
+        },
+        {
+            "text": "There are eight cases in this data set for which the original sequence and structure were shortened to accommodate restrictions in length. We removed them from our data set, resulting in a set of size 425. From now on we use \"HK-PK\" to refer to the pseudoknotted structures in this set (with 88 structures) and \"HK-PKfree\" to refer to the pseudoknot-free structures in this set (with 337 structures). RNA sequences in HK-PK and HK-PK-free have length between 10 and 400 nucleotides.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data sets"
+        },
+        {
+            "text": "Our second data set is the pk168 data set of Sato et al. [42] . This set contains 168 pseudoknotted structures from 16 categories of pseudoknots. The sequences in this set have at most 85% similarity and have length of at most 140 nucleotides. We refer to this data set as \"IP-pk168\".",
+            "cite_spans": [
+                {
+                    "start": 57,
+                    "end": 61,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data sets"
+        },
+        {
+            "text": "Our third data set is the test data set of Sperschneider et al. [57] . This set contains 16 pseudoknotted structures with strong experimental support. RNA sequences in this set have length between 34 and 363 nucleotides. We refer to this data set as \"DK-pk16\".",
+            "cite_spans": [
+                {
+                    "start": 64,
+                    "end": 68,
+                    "text": "[57]",
+                    "ref_id": "BIBREF57"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Data sets"
+        },
+        {
+            "text": "To test the robustness of our methods on a given RNA sequence, we need to provide partial information about the true pseudoknot-free structure as input structure for that sequence. To obtain the true pseudoknot-free http://www.biomedcentral.com/1471-2105/15/147 This table provides the names, description and values of the energy parameters and functions that we used in our methods. The names and definitions are the same as in our original HFold [48] , and the values were updated based on the work of Andronescu et al. [36] . These parameters were derived for a temperature of 37\u00b0C and 1 M salt concentration.",
+            "cite_spans": [
+                {
+                    "start": 448,
+                    "end": 452,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 522,
+                    "end": 526,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Definition of G big and G small"
+        },
+        {
+            "text": "structure, G big , we remove the minimum number of pseudoknotted base pairs from the reference structure to make the reference structure pseudoknot-free. If the reference structure is pseudoknot-free, then G big is the same as the reference structure itself. We call the removed base pairs from the reference structure G small . Blue base pairs in Figure 1 represent base pairs of the G big structure and green base pairs represent the G small structure.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 348,
+                    "end": 356,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Definition of G big and G small"
+        },
+        {
+            "text": "Following common practice [36, 58] , we measure the accuracy of a predicted RNA secondary structure relative to a reference secondary structure by F-measure, which is the harmonic mean of sensitivity and positive predictive value (PPV ). We define these values as follows:",
+            "cite_spans": [
+                {
+                    "start": 26,
+                    "end": 30,
+                    "text": "[36,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 31,
+                    "end": 34,
+                    "text": "58]",
+                    "ref_id": "BIBREF58"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Accuracy measures"
+        },
+        {
+            "text": "Number of correctly predicted base pairs Number of base pairs in the reference structure PPV = Number of correctly predicted base pairs Number of predicted base pairs and F-measure = 2 \u00d7 sensitivity \u00d7 PPV sensitivity + PPV",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy measures"
+        },
+        {
+            "text": "We also define these values as 0 when their denominators are 0. When a prediction agrees with the reference structure, the value of F-measure is equal to 1 (so are the values of sensitivity and PPV). When the values of sensitivity or PPV is equal to 0, the predicted structure does not have any base pairs in common with the reference structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy measures"
+        },
+        {
+            "text": "To formally assess the dependency of measured prediction accuracy of results of a method on a given set of RNA we use bootstrap confidence intervals, a well-known statistical resampling technique [59, 60] . Following the recent work of Aghaeepour and Hoos [61] and Hajiaghayi et al. [58] we calculate the bootstrap 95% percentile confidence interval of average F-measure as follows. For each vector f of F-measures (where, for example, f may be the F-measures of predictions obtained by Iterative HFold on pseudoknotted structures) we first take 10 4 resamples with replacement, where the resamples have the same length as the original sample vector f (|f |), and then calculate their average F-measures. These 10 4 calculated average F-measures represent the bootstrap distribution for the vector f . We then report the 2.5th and 97.5th percentile of this distribution (i.e., the bootstrap distribution of the 10 4 average F-measures calculated above) as the lower and upper bounds of the confidence interval respectively, and call it the bootstrap 95% percentile confidence interval. By reporting the bootstrap 95% percentile confidence interval for average F-measure of a method, A, on a data set, D, we say that we are 95% confident that the average F-measure of method A on data set D is in the reported interval. All calculations are performed using the \"boot\" package of the R statistics software environment [62] .",
+            "cite_spans": [
+                {
+                    "start": 196,
+                    "end": 200,
+                    "text": "[59,",
+                    "ref_id": null
+                },
+                {
+                    "start": 201,
+                    "end": 204,
+                    "text": "60]",
+                    "ref_id": "BIBREF60"
+                },
+                {
+                    "start": 256,
+                    "end": 260,
+                    "text": "[61]",
+                    "ref_id": "BIBREF61"
+                },
+                {
+                    "start": 283,
+                    "end": 287,
+                    "text": "[58]",
+                    "ref_id": "BIBREF58"
+                },
+                {
+                    "start": 1416,
+                    "end": 1420,
+                    "text": "[62]",
+                    "ref_id": "BIBREF62"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Bootstrap percentile confidence intervals"
+        },
+        {
+            "text": "Following the recent work of Hajiaghayi et al. [58] , we use a two sided permutation test to assess the statistical significance of the observed performance differences between two methods. The test proceeds as follows, given a data set and two structure prediction procedures, A and B. First, we calculate the difference mean(f A ) \u2212 mean(f B ) in means http://www.biomedcentral.com/1471-2105/15/147 between sets of F-measure values obtained by A and B. Then we combine the two sets f A and f B and record the difference in sample means for 10 4 randomly chosen ways of choosing two sets with the same size as |f A | and |f B | from the combined set. The p-value is the proportion of the sampled permutations where the absolute difference was greater than or equal to that of absolute difference of the means of sets f A and f B . Then, if the p-value of this test is less than the 5% significance level, we reject the null hypothesis that methods A and B have equal accuracy and thus accept the alternative hypothesis that the difference in accuracy of method A and B is significant. Otherwise, we cannot reject the null hypothesis. All calculations are performed using the \"perm\" package of the R statistics software environment.",
+            "cite_spans": [
+                {
+                    "start": 47,
+                    "end": 51,
+                    "text": "[58]",
+                    "ref_id": "BIBREF58"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Permutation test"
+        },
+        {
+            "text": "We provide a high level description of our Iterative HFold algorithm.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "Pseudocode of our Iterative HFold algorithm is available in Additional file 1. The algorithm builds on two simpler methods, the first being our original HFold algorithm [48] :",
+            "cite_spans": [
+                {
+                    "start": 169,
+                    "end": 173,
+                    "text": "[48]",
+                    "ref_id": "BIBREF48"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "HFold: Given an RNA sequence, S, and a pseudoknotfree input structure, G, find a pseudoknot-free structure, G such that G\u222aG is the lowest energy structure that contains G. We note that G \u222a G might not be pseudoknotted.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "The second method on which Iterative HFold builds, called HFold-PKonly, is similar to HFold except that G may only contain base pairs that cross base pairs in G. The prediction provided by HFold-PKonly can be useful in cases where HFold does not produce a pseudoknotted structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "HFold-PKonly: Given an RNA sequence, S, and a pseudoknot-free input structure, G, find a pseudoknotfree structure, G such that every base pair in G crosses some base pair of G and such that G \u222a G is the lowest energy structure that contains G among all such G s. Note that G may contain no base pairs. Iterative HFold also uses the SimFold RNA secondary structure prediction method [63] , which predicts the minimum free energy pseudoknot-free secondary structure for a given RNA sequence. SimFold uses a dynamic programming method similar to Zuker's MFold method [64] . In this work we used the HotKnots energy parameters when running SimFold. In addition to an RNA sequence, S, SimFold can also take a pseudoknot-free secondary structure, G, as input and predict the MFE pseudoknotfree secondary structure that contains all base pairs of G.",
+            "cite_spans": [
+                {
+                    "start": 382,
+                    "end": 386,
+                    "text": "[63]",
+                    "ref_id": "BIBREF63"
+                },
+                {
+                    "start": 564,
+                    "end": 568,
+                    "text": "[64]",
+                    "ref_id": "BIBREF64"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "Iterative HFold is distinguished from the above three methods, namely HFold, HFold-PKonly and SimFold, in two important ways. First, the output of HFold, HFold-PKonly and SimFold methods must contain the given pseudoknot-free input structure, G, whereas Iterative HFold may modify the input structure. This can be useful when the given input structure is not a high-accuracy estimate of G big , the true pseudoknot-free substructure of the reference structure. Second, while HFold and HFold-PKonly can add base pairs that cross those in G, they cannot add base pairs that cross each other, and neither can SimFold. In contrast, Iterative HFold can add base pairs that cross each other. This is particularly useful when the input structure contains limited information about G big , and so it is necessary both to predict base pairs in G big and in G small in order to get a good prediction.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "Iterative HFold is comprised of four different iterative methods. Following the description of each method, we motivate why we chose to include it as part of our overall algorithm. Iterative HFold takes as input both an RNA sequence, S and a pseudoknot-free secondary structure, G; later we show that structure G can be produced by computational methods, for example, HotKnots hotspots or SimFold suboptimal structures, when only the sequence S is initially available.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "Iterative HFold: Given an RNA sequence, S, and a pseudoknot free input structure, G, run the following four methods and pick the structure with the lowest free energy among these four as the output structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "Iterative HFold runs in O(n 3 ) time, as it runs four methods sequentially, when each one is O(n 3 ).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "Method 1: Run HFold on S and G, and store the resulting G \u222a G . Motivation: This is the core HFold method, motivated by the hierarchical folding hypothesis. .) ))))) -14.67",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 157,
+                    "end": 159,
+                    "text": ".)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "example, method 2 of Iterative HFold outperforms method 1: although both HFold and HFold PKonly produce the same result on sequence S and input structure G, namely the structure G \u222a G , the additional iteration in method 2, in which HFold is run with S and G , finds a structure with lower energy than that of G \u222a G . Method 3: First run SimFold on S and G to obtain result G -a pseudoknot-free structure that contains G. Then let G updated be the secondary structure of S containing the relaxed stems of G that include the base pairs of G. By a relaxed stem, we mean a secondary structure containing stacked base pairs, bulges of size 1 and internal loops of maximum size of 3 (i.e., either the symmetric loop of 1 \u00d7 1 or the non-symmetric loop of 1 \u00d7 2 or 2 \u00d7 1 but no other loop types; this is motivated by common practice [65] ). Then run method 2 on S and G updated , and store the result. See Example 2.",
+            "cite_spans": [
+                {
+                    "start": 826,
+                    "end": 830,
+                    "text": "[65]",
+                    "ref_id": "BIBREF65"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "Motivation: This method can work well when the given input structure has a small number of base pairs from G big , because G updated contains stems that includes these base pairs, but avoids \"overcrowding\" with further base pairs that might prevent HFold-PKonly from finding pseudoknotted stems.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "In this example, method 3 of Iterative HFold outperforms the other methods. Because the input structure G consists of just one base pair, method 1 (HFold) outputs a pseudoknot-free structure containing G. The output of both methods 2 and 4 are pseudoknotted but do not contain the base pair of the input structure G. In contrast, method 3 first adds base pairs to G, resulting in the pseudoknot-free structure G updated , and then adds .(((........)) ).)))))))))).. .(((........)) ).))))))))))................ .(((........)) ).)))))))))).. (((((.(((.[[[.[[[)) ).))))))))))....... (((....) ))).))..))))...)). -5.10 (((....) ))).))..))))...).. (((..[[) ))).))..))))..))]] -6.05",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 436,
+                    "end": 450,
+                    "text": ".(((........))",
+                    "ref_id": null
+                },
+                {
+                    "start": 466,
+                    "end": 480,
+                    "text": ".(((........))",
+                    "ref_id": null
+                },
+                {
+                    "start": 510,
+                    "end": 524,
+                    "text": ".(((........))",
+                    "ref_id": null
+                },
+                {
+                    "start": 540,
+                    "end": 559,
+                    "text": "(((((.(((.[[[.[[[))",
+                    "ref_id": null
+                },
+                {
+                    "start": 580,
+                    "end": 588,
+                    "text": "(((....)",
+                    "ref_id": null
+                },
+                {
+                    "start": 614,
+                    "end": 622,
+                    "text": "(((....)",
+                    "ref_id": null
+                },
+                {
+                    "start": 642,
+                    "end": 650,
+                    "text": "(((..[[)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "In this example, method 4 of Iterative HFold outperforms the other methods. The input structure G has a high energy value and neither method 1 (HFold) nor method 2 (HFold-PKonly) can expand the pseudoknot-free structure to add the pseudoknotted stem. Also, by adding too many pseudoknot-free base pairs, method 3 fails to find the pseudoknotted base pairs. Thus, method 4 performs better than methods 1, 2 and 3.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold"
+        },
+        {
+            "text": "In this section we explain details of our computational experiments.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Experimental settings"
+        },
+        {
+            "text": "One of our goals is to understand the degree to which our methods are robust with respect to partial information, that is, provide a reliable prediction even when limited information about the true pseudoknot-free structure, G big , is available. For this purpose we generate subset structures of the corresponding G big , for each RNA sequence in the HK-PK and HK-PK-free data sets. For each \u03b1, 0.05 \u2264 \u03b1 \u2264 0.95 with 0.05 steps, we choose each base pair of G big structure with probability \u03b1. We also generate 1% information and 99% information about the G big structure (i.e., \u03b1 = 0.01 and \u03b1 = 0.99). We repeat this step 100 times to generate 100 substructures of G big for each value of \u03b1 for each RNA sequence in our data sets. We then run our methods on all 100 substructures for each RNA sequence in our data sets and \u03b1 value and calculate the bootstrap 95% percentile confidence interval for average F-measure of these 100 cases as the accuracy interval for each method and each RNA sequence and \u03b1 value in our data set. We also compare our methods when the true pseudoknot-free structure, G big is provided.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Robustness test"
+        },
+        {
+            "text": "We compare the accuracy of HFold, HFold-PKonly and Iterative HFold with each other on different input structures, and with other methods, namely SimFold [63] , HotKnots V2.0 [36, 41] and IPknot [42] . We first describe the latter two methods and the settings we choose for our experiments. We then describe the ways in which we choose input structures for HFold and its variants.",
+            "cite_spans": [
+                {
+                    "start": 153,
+                    "end": 157,
+                    "text": "[63]",
+                    "ref_id": "BIBREF63"
+                },
+                {
+                    "start": 174,
+                    "end": 178,
+                    "text": "[36,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 179,
+                    "end": 182,
+                    "text": "41]",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 194,
+                    "end": 198,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Accuracy comparison tests"
+        },
+        {
+            "text": "HotKnots HotKnots is a heuristic program that given an RNA sequence, first finds about 20 lowest energy stems (from the set of all stems for the given RNA sequence), called hotspots. Then keeping all these stems, it adds other http://www.biomedcentral.com/1471-2105/15/147 non-overlapping low energy stems to the stems found in the first step, so as to minimize the energy of the overall structure, eventually producing up to 20 output structures. In our experiments, we choose the structure with the lowest energy value among the 20 output structures as the final structure predicted by HotKnots. When reporting prediction accuracy for HotKnots, we report the bootstrap 95% percentile confidence interval for the average F-measure of the lowest energy structure for all RNA sequences in our data set.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy comparison tests"
+        },
+        {
+            "text": "IPknot IPknot is a secondary structure prediction method based on Maximum Expected Accuracy (MEA) of the base pairs. In addition to the RNA sequence, IPknot gets several parameters as input. Following, we describe each of these parameters and settings briefly.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy comparison tests"
+        },
+        {
+            "text": "\u2022 level: If structure G can be decomposed into k disjoint pseudoknot-free structures, G 1 , G 2 , . . . , G k , such that every base pair in G i crosses the base pairs of G j , 1 \u2264 i \u2264 j \u2264 k, Sato et al. say that structure G has k levels. For example, a pseudoknot-free structure has level 1, and an H-type pseudoknot has level 2. In another example, when representing the secondary structure in dot bracket format, the number of different brackets used to represent the structure is the level of the structure. IPknot can handle structures up to level 3. \u2022 scoring model: The energy model used to produce posterior probabilities for each base pair is called \"scoring model\". IPknot has 3 different scoring models, namely \"CONTRAfold\", \"McCaskill\" and \"NUPACK\". \u2022 refining parameters: The procedure of recalculating the base pair probabilities based on the original prediction results is referred to as \"refining parameters\". \u2022 base pair weights for each level: Positive numbers representing the rate of true base pairs in each level.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy comparison tests"
+        },
+        {
+            "text": "We run IPknot using the provided source code and the default parameters for scoring model and level (i.e., scoring model = McCaskill and level = 2). The default values provided for base pair weights are not the same on the IPknot website (i.e., \u03b3 1 = 2 and \u03b3 2 = 16), its source code (i.e., for some cases \u03b3 1 = 2 and \u03b3 2 = 4 and for others \u03b3 1 = 1 and \u03b3 2 = 1) and the provided perl script (i.e., \u03b3 1 = 4 and \u03b3 2 = 8). We run IPknot with all of these values with and without refinement and provide IPknot's bootstrap 95% confidence intervals for average F-measures for all of our data sets as a table in the Additional file 2. Based on its performance we present IPknot's results with default settings (i.e., no refinement, scoring model = McCaskill and level = 2) and \u03b3 1 = 4 and \u03b3 2 = 8, for comparison with other methods.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy comparison tests"
+        },
+        {
+            "text": "We compare the average accuracy of HFold, HFold-PKonly and Iterative HFold with different input structures.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Different versions of HFold"
+        },
+        {
+            "text": "To determine which input structures are good to use when G big is not known, we compare two different options. Since HFold (HFold-PKonly and Iterative HFold) cannot accept pseudoknotted input structures we use the following methods to produce pseudoknot-free input structures to HFold (HFold-PKonly and Iterative HFold). First, we use HotKnots hotspots [36] , i.e., the 20 lowest energy pseudoknot-free stems produced in the first phase of HotKnots. We choose the lowest free energy structure predicted by each of our methods as their final prediction given these hotspots. Second, we use SimFold's MFE structure [63] where the energy parameters of SimFold are changed to match that of HotKnots V2.0.",
+            "cite_spans": [
+                {
+                    "start": 353,
+                    "end": 357,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 613,
+                    "end": 617,
+                    "text": "[63]",
+                    "ref_id": "BIBREF63"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Different versions of HFold"
+        },
+        {
+            "text": "We ran all methods on the same platform (Macbook pro. OS X 10.5.8 with 2.53 GHz Intel Core 2 Duo processor and 4 GB 1067 MHz DDR3 RAM). We use the time command to measure the running time of our methods on each sequence, and record the wall clock time.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Running time"
+        },
+        {
+            "text": "To find the memory usage of the programs, we use the Valgrind package [66] and record the total heap usage as memory usage of each program. IPknot and HotKnots are completely written in C and so we can easily find their memory usage by running Valgrind. However, Iterative HFold program is a perl script that runs a few C programs (HFold, HFold-pkonly and SimFold) sequentially. So we find the memory usage of each C component using Valgrind and assign the maximum as the memory usage of Iterative HFold.",
+            "cite_spans": [
+                {
+                    "start": 70,
+                    "end": 74,
+                    "text": "[66]",
+                    "ref_id": "BIBREF66"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Memory usage"
+        },
+        {
+            "text": "As mentioned in Section 'Background', in the literature on hierarchical folding, there are reports of counter examples to the hierarchical folding hypothesis where bases that are initially part of the pseudoknot-free structure for a molecule later change as the pseudoknot forms. This motivates a comparison of HFold versus Iterative HFold, in order to see how a method that sticks strictly with the hypothesis (i.e., HFold) compares with a method that allows for some base changes (i.e., Iterative HFold). In Section 'Robustness comparison', we compare the robustness of HFold and Iterative HFold with respect to partial information; that is, the degree to which they provide accurate predictions as a function of how much http://www.biomedcentral.com/1471-2105/15/147 information about G big , the true pseudoknot-free secondary structure, is provided as input. Then in Section 'Accuracy comparison of different versions of HFold' we compare HFold, HFold-PKonly and Iterative HFold when a (possibly inaccurate) computational prediction of G big is provided as input. In Section 'Accuracy comparison with existing methods' we compare Iterative HFold-the method that performs best overall in Sections 'Robustness comparison' and 'Accuracy comparison of different versions of HFold'with existing methods for pseudoknotted secondary structure prediction. Sections 'Running time comparison' and 'Memory consumption comparison' report on the running time and memory usage of our methods.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "One of our goals is to learn what is the accuracy of each of our methods when partial information about G big is available (see Section 'Robustness test' for experimental settings). Figure 2 shows the results of this robustness evaluation, for pseudoknotted structures (Figure 2A) , pseudoknot-free structures ( Figure 2B ) and the overall results ( Figure 2C ). Since HFold-PKonly cannot add pseudoknot-free base pairs to the given input structure, we do not compare its performance here with HFold and Iterative HFold. However we provide detailed performance of all versions of HFold including HFold-PKonly in Additional file 3.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 182,
+                    "end": 190,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 269,
+                    "end": 280,
+                    "text": "(Figure 2A)",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 312,
+                    "end": 321,
+                    "text": "Figure 2B",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 350,
+                    "end": 359,
+                    "text": "Figure 2C",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Robustness comparison"
+        },
+        {
+            "text": "As shown in Figure 2A , which pertains to pseudoknotted structures of the HK-PK data set, when provided with \u2248 1% of the G big structure as input, Iterative HFold's bootstrap 95% percentile confidence interval of average F-measures has higher accuracy than those of HFold. Iterative HFold continues to be significantly superior to HFold until approximately 90% of G big is available, after which HFold is more accurate. Iterative HFold is most successful when little information about G big is known because it can add both pseudoknot-free and pseudoknotted base pairs. In particular, using methods 3 and 4 (see Section 'Iterative HFold') Iterative HFold first finds a low energy pseudoknot-free structure that includes the given input structure (by extending the stems of the given structure), and then adds pseudoknotted base pairs to further lower the energy of the overall structure. However, when the vast majority of base pairs of G big are provided as input, HFold dominates as it keeps the base pairs of the input structure, thereby often adding base pairs of G small . When 100% of G big is provided as input, HFold's bootstrap 95% percentile confidence interval is (85.74%, 91.87%), compared with (79.36%, 87.41%) for Iterative HFold.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 12,
+                    "end": 21,
+                    "text": "Figure 2A",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Robustness comparison"
+        },
+        {
+            "text": "As shown in Figure 2A , Iterative HFold's average accuracy on pseudoknotted structures steadily increases from about 54% to 79% as the user provides 1% to 40% of the input structure. This improvement in accuracy slows down but still persists when further structural information is provided. If we compare the slope of the curve for Iterative HFold's average accuracy to that of HFold in Figure 2A , we can see that HFold's slope is steeper than that of Iterative HFold, making Iterative HFold more robust than HFold. For pseudoknot-free structures of the HK-PK-free data set, as shown in Figure 2B , HFold performs better than Iterative HFold. Even with 1% information about G big , HFold results in (79.76%, 84.32%) 95% bootstrap confidence interval in comparison with (79.14%, 83.84%) for Iterative HFold with the same inputs. Roughly, HFold's success for pseudoknot-free structures is because it often http://www.biomedcentral.com/1471-2105/15/147 adds base pairs that do not cross those provided as part of the input, and thus are likely to be in G big .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 12,
+                    "end": 21,
+                    "text": "Figure 2A",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 387,
+                    "end": 396,
+                    "text": "Figure 2A",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 588,
+                    "end": 597,
+                    "text": "Figure 2B",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Robustness comparison"
+        },
+        {
+            "text": "When 100% of G big is provided as input, the overall bootstrap 95% confidence interval for HFold is (96.11%, 97.24%) compared with (93.85%, 96.07%) for Iterative HFold.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Robustness comparison"
+        },
+        {
+            "text": "Often, partial information about G big is not available; this is the case for many RNAs of unknown function reported by the ENCODE consortium [24] . Therefore, we next compare the quality of results obtained by HFold, HFold-PKonly and Iterative HFold when given a pseudoknot-free input, G that is predicted by existing computational methods. One way to produce an input structure is to use an MFE pseudoknot-free structure prediction method, such as MFold. We chose SimFold as it is an implementation of MFold and, because of its energy parameters, gives more accurate predictions than MFold. Of course, when comparative information is available, the user can input such information as structural constraint as a pseudoknot-free structure to Iterative HFold and expect a better prediction result. Here we compare two methods for predicting G, namely SimFold and the hotspots produced by HotKnots V2.0. Table 2 reports the bootstrap 95% percentile confidence intervals of average F-measures. The accuracy of HFold-PKonly is significantly worse than that of HFold and Iterative HFold, both with the output of SimFold, and with the HotKnots hotspots as input, so we do not discuss HFold-PKonly further.",
+            "cite_spans": [
+                {
+                    "start": 142,
+                    "end": 146,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 902,
+                    "end": 909,
+                    "text": "Table 2",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Accuracy comparison of different versions of HFold"
+        },
+        {
+            "text": "For pseudoknotted structures, using HotKnots hotspots as input is far superior to using SimFold as input, for both HFold and Iterative HFold. This appears to be because MFE structures predicted by SimFold tend to have more base pairs than the true pseudoknot free structure, G big , so that HFold and Iterative HFold are unlikely to add pseudoknotted base pairs to the input structure. For pseudoknotfree structures, using SimFold as input is somewhat better than using HotKnots hotspots, but the permutation test indicates that the difference is not significant.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy comparison of different versions of HFold"
+        },
+        {
+            "text": "The confidence intervals for HFold and Iterative HFold with HotKnots hotspots are (73.35%, 83.53%) and (72.83%, 83.37%), respectively, and on pseudoknot-free structures they are (75.53%, 80.79%) and (74.93%, 80.26%) respectively. Again, based on the result of the permutation test, the difference in the results of HFold and Iterative HFold on pseudoknotted and pseudoknot-free structures are not significant. Similarly, the permutation test shows that the difference in prediction accuracy of HFold and Iterative HFold on SimFold input is not significant.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy comparison of different versions of HFold"
+        },
+        {
+            "text": "For comparisons with other methods already in the literature, we choose to use our Iterative HFold method with HotKnots hotspots as input structure, based on its overall good accuracies in Section 'Accuracy comparison of different versions of HFold'. We compare this method with two of the best-performing methods [44] for prediction of pseudoknotted structures, namely HotKnots V2.0 [36] , a MFE-based heuristic method, and IPknot [42] , a method that is based on maximum expected accuracy. (Prepared by Puton et al. [44] , CompaRNA, is the website for continuous comparison of RNA secondary structure methods on both PDB data set and RNA strand. We chose IPknot because it was the best-performing noncomparative pseudoknot prediction method that can handle long RNA sequences, based on the ranking on their website as of March 25, 2014 . We also noticed that Puton et al. used HotKnots V1 for their comparison, and not the more recently available and better performing Hot-Knots V2.0. Therefore we chose to include HotKnots in our comparisons as well. Since the focus of this paper is on prediction of pseudoknotted structures, we do not compare our results with that of Co-Fold [26] or other methods for prediction of pseudoknot free structures.) Table 3 presents the bootstrap 95% percentile confidence interval of average F-measure for Iterative HFold with hotspots as input, HotKnots V2.0, Sim-Fold and IPknot with default setting (see Section 'Accuracy comparison tests') on the HK-PK and HK-PKfree data sets. For pseudoknotted structures, our permutation tests show that the difference in accuracy of Iterative HFold and HotKnots is not significant. However, the superior accuracy of Iterative HFold compared with SimFold and IPknot is significant. For pseudoknotfree structures, the difference in accuracy between IPknot, Iterative HFold, HotKnots and SimFold is not significant. Table 4 presents the bootstrap 95% percentile confidence interval for average F-measure for Iterative HFold (with hotspots as input), HotKnots and IPknot (with default setting) on the IP-pk168 and DK-pk16 data sets.",
+            "cite_spans": [
+                {
+                    "start": 314,
+                    "end": 318,
+                    "text": "[44]",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 384,
+                    "end": 388,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 432,
+                    "end": 436,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 518,
+                    "end": 522,
+                    "text": "[44]",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 823,
+                    "end": 837,
+                    "text": "March 25, 2014",
+                    "ref_id": null
+                },
+                {
+                    "start": 1181,
+                    "end": 1185,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1250,
+                    "end": 1257,
+                    "text": "Table 3",
+                    "ref_id": "TABREF5"
+                },
+                {
+                    "start": 1889,
+                    "end": 1896,
+                    "text": "Table 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Accuracy comparison with existing methods"
+        },
+        {
+            "text": "Our permutation tests show that the difference in accuracy of Iterative HFold, HotKnots and IPknot on the DK-pk16 data set is not significant. However, the superior accuracy of Iterative HFold compared with HotKnots and IPknot on the IP-pk168 data set is significant.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Accuracy comparison with existing methods"
+        },
+        {
+            "text": "Since prediction of pseudoknotted structures are of interest to us, we only report running time comparison on pseudoknotted structures of our HK-PK data set. Figure 3 presents result of time comparison between Iterative HFold and HotKnots in a log plot (when log is in base 10). The X axis shows log(time) for HotKnots data points and the Y axis shows log(time) for Iterative HFold on the HK-PK data set. RNA sequences in this data set are between 26 and 400 bases long. HFold runs significantly faster than HotKnots and finishes under 1.5 seconds for even the longest RNA sequence in our data set (400 bases). HotKnots is faster than Iterative HFold on sequences of up to 47 bases, where Iterative HFold starts being faster than HotKnots. Iterative HFold runs in less than 8.3 seconds for all RNA sequences in this data set whereas HotKnots runs for over 6000 seconds (about 1.7 hours) on the longest RNA sequence in our data set. information about performance of each method see Additional file 4.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 158,
+                    "end": 166,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Running time comparison"
+        },
+        {
+            "text": "Here we present memory consumption of HFold, Iterative HFold and HotKnots on our HK-PK pseudoknotted structures. Since HotKnots predicts and keeps about 20 structures in memory, its memory consumption can vary significantly from one sequence to another, and is not predictable. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Memory consumption comparison"
+        },
+        {
+            "text": "In Section 'Comparison with Hotknots and IPknot' we provide more insight on the differences and merits of Iterative HFold, HotKnots and IPknots. Then in Section 'Comparison with ShapeKnots' we compare accuracy of Iterative HFold with ShapeKnots, a method that incorporates SHAPE reactivity data to predict RNA pseudoknotted secondary structure. In Section 'Iterative HFold with SimFold's suboptimal structures' we compare performance accuracy of Iterative HFold with two inputs: HotKnots hotspots and suboptimal structures. Section 'Energy model' provides more insight into the energy model used in this work.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Comparing accuracy of Iterative HFold and HotKnots V2.0 on HK-PK, HK-PK-free, DK-pk16 and IP-pk168, we found that the difference in their accuracies is insignificant on HK-PK, HK-PK-free and DK-pk16 data sets when Iterative HFold is provided with HotKnots hotspots as input. Based on our results on the HK-PK data set, with only about 15% information about the true pseudoknot-free structures, Iterative HFold's 95% percentile confidence interval is (65.08%; 73.36%) (data shown in Additional file 3). If the user has about 35% information about the true pseudoknot-free structure, Iterative HFold's accuracy is comparable with that of HotKnots (i.e., (74.18%; 82.30%) vs. (73.60%; 83.35%)). However Iterative HFold's accuracy (with hotspots as input) is significantly better than that of HotKnots on the IP-pk168 data set. One of the advantages of Iterative HFold over HotKnots is that in Iterative HFold base pairs are added to lower the energy of the given structure while in HotKnots stems are added in a way that does not take into account the energy of stems in the previous steps.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparison with Hotknots and IPknot"
+        },
+        {
+            "text": "When reporting on time and memory consumption of Iterative HFold and HotKnots on the HK-PK data set, we did not include the time and memory required to get the input structures to Iterative HFold. Since we only run Hot-Knots V2.0 partially to produce hotspots it does not take as long as running HotKnots and does not consume as much memory. For example, for the 400 nucleotides long RNA sequence in our data set (A.tum.RNaseP), it only takes 0.5 seconds time and 4 MB of memory to produce the hotspots. (The time required to get the hotspots for all RNA sequences in this data set is provided in Additional file 4.) We also note that since calculating hotspots and running Iterative HFold are done sequentially, the memory consumption is calculated as the maximum of the two, so the memory consumption of Iterative HFold for this sequence is still the same even including the memory needed for calculating hotspots. As we can see based on this example, even including time and memory requirements of calculating hotspots, Iterative HFold is still faster than HotKnots and uses less memory.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparison with Hotknots and IPknot"
+        },
+        {
+            "text": "We also compared Iterative HFold with IPknot [42] . While IPknot is faster than Iterative HFold and uses less memory, we found that for the HK-PK and IP-pk168 data sets, Iterative HFold provides significantly more accurate predictions of pseudoknotted structures, compared with IPknot. Based on our results on the HK-PK data set, Iterative HFold's performance with more than 5% information about the true pseudoknot-free structure, is better than that of IPknot with default settings (data shown in Additional file 3). We note that Sato et al. [42] find the performance of IPknot with predictions using \"NUPACK\" superior to all versions of IPknot, but since this model can be used for RNA sequences of length < 80 nucleotides, we did not compare our results with this version of IPknot. Among all different versions of IPknot we tested, we found all but \u03b3 1 = 1 and \u03b3 2 = 1 setting producing similar confidence intervals for all but the HK-PK-free data sets, for which \u03b3 1 = 4 and \u03b3 2 = 8 produces the best result (data shown in Additional file 2). While running parameter refinement with one iteration improved the confidence intervals in the HK-PK data set, it did not result in any improvement in accuracy in the rest of our data sets as in many cases IPknot failed to produce results. We note that our results on the IP-pk168 data set with different weight parameters perfectly match the results of Sato et al. [42] .",
+            "cite_spans": [
+                {
+                    "start": 45,
+                    "end": 49,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 544,
+                    "end": 548,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 1415,
+                    "end": 1419,
+                    "text": "[42]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Comparison with Hotknots and IPknot"
+        },
+        {
+            "text": "A disadvantage of IPknot over Iterative HFold is that being an MEA-based method, IPknot does not produce free energy of the predicted structure. Also to get the best prediction, the user needs to provide some guidance as to what type of structure to predict for the given sequence, e.g., whether pseudoknot-free or pseudoknotted.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Comparison with Hotknots and IPknot"
+        },
+        {
+            "text": "Similar to HotKnots, the ShapeKnots method of Hajdin et al. [47] is a heuristic algorithm for prediction of pseudoknotted structures. This method incorporates SHAPE reactivity data as a pseudo energy term into the prediction method. SHAPE reactivity data is only available for a limited number of RNA sequences, so we cannot compare Iterative HFold with ShapeKnots on our data set. Therefore, we use data set of Hajdin et al. to compare these two methods. In their data set Hajdin et al. have 18 RNA sequences in their training set and 6 RNA sequences in their test set. We run Iterative HFold with hotspots for each RNA sequence and choose the lowest http://www.biomedcentral.com/1471-2105/15/147 energy structure as the final output of our program. For Shapeknots, we use the sensitivity and positive predictive values reported in the work of Hajdin et al. [47] to compare with Iterative HFold. Table 5 shows the results of this comparison. In all but one sequence of the test set, Iterative HFold obtains higher accuracy than ShapeKnots. The exception is the HIV-1 5' pseudoknot domain; Hajdin et al. note that the accepted structure of HIV-1 5' pseudoknot domain is based on a SHAPE directed prediction and thus an accuracy comparison between ShapeKnots and Iterative HFold may be biased towards ShapeKnots. In the training set, however, Iterative HFold does not perform as well as ShapeKnots. This might be because parameters of ShapeKnots were tuned on the training set to achieve the highest possible accuracy. Since both the training and test data sets are small, we cannot make more general statements about the significance of the differences in accuracy between the two methods.",
+            "cite_spans": [
+                {
+                    "start": 60,
+                    "end": 64,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 859,
+                    "end": 863,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 897,
+                    "end": 904,
+                    "text": "Table 5",
+                    "ref_id": "TABREF8"
+                }
+            ],
+            "section": "Comparison with ShapeKnots"
+        },
+        {
+            "text": "To further investigate which input structures are good to use when G big is not known, we use the first 50 suboptimal structures produced by SimFold (including the MFE structure). Then for each RNA sequence we run our methods on all 50 suboptimal structures and choose the one with the lowest free energy as the final result for that RNA sequence. With this approach, the bootstrap 95% percentile confidence interval of average F-measure of HFold and Iterative HFold is (61.80%, 80.63%) and (67.70%, 79.57%) respectively for pseudoknotted structures and (77.17%, 82.35%) and (76.27%, 81.46%) respectively for pseudoknot-free structures. The permutation test indicates that the difference between these results and the corresponding results when input structures are hotspots is not significant. We also test the significance of results of HFold with first 50 suboptimal structures versus Iterative HFold with the same input structures and Iterative HFold with hotspots for both pseudoknotted and pseudoknot-free structures. Although the bootstrap 95% percentile confidence intervals for average F-measures seem different, the permutation test indicates that the difference is not significant. Similarly, results of Iterative HFold with the first 50 suboptimal structures are not significantly better or worse than the result of HFold with hotspots as input structures for both pseudoknotted and pseudoknot-free structures.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Iterative HFold with SimFold's suboptimal structures"
+        },
+        {
+            "text": "In this paper we use the HotKnots V2.0 DP09 [36] energy parameters in our implementation of Iterative HFold. To investigate the degree to which the energy model may be causing mis-predictions by HotKnots V2.0 or Iterative HFold, we considered the degree to which the maximum accuracy structures produced by these methods, i.e., the structure with highest F-measure, is better than the minimum free energy structures. Similarly, if we compare the maximum accuracy structure output by Iterative HFold with the minimum free energy structure, whether given HotKnots hotspots or the first 50 suboptimal structures to Iterative HFold as input, the bootstrap 95% percentile confidence intervals of average F-measure also show improvement -see Table 6 . The difference in improvements is significant in all but one case, namely Iterative HFold on hotspots structures as input for pseudoknotted structures of the HK-PK data set. We conclude that improvements on the energy parameter values for pseudoknotted structures may further improve accuracy of both HotKnots and Iterative HFold.",
+            "cite_spans": [
+                {
+                    "start": 44,
+                    "end": 48,
+                    "text": "[36]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 736,
+                    "end": 743,
+                    "text": "Table 6",
+                    "ref_id": "TABREF9"
+                }
+            ],
+            "section": "Energy model"
+        },
+        {
+            "text": "In this work we present Iterative HFold, a fast and robust iterative algorithm that matches the accuracy of the best existing pseudoknot prediction methods. Iterative HFold is significantly more accurate than IPknot while matching the accuracy of HotKnots on the HK-PK data set. Iterative HFold is superior to both IPknot and HotKnots on the IP-pk168 data set. Moreover both Iterative HFold and IPknot use less memory and run much faster than HotKnots on long sequences.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Iterative HFold also has lower rate of accuracy deterioration than HFold with loss of information about the true pseudoknot-free structure, so it is more robust than HFold. This is particularly helpful when the given input structure may be unreliable and/or limited information about the true pseudoknot-free structure is available. Iterative HFold is also more accurate than ShapeKnots [47] on the test set of Hajdin et al. [47] .",
+            "cite_spans": [
+                {
+                    "start": 387,
+                    "end": 391,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 425,
+                    "end": 429,
+                    "text": "[47]",
+                    "ref_id": "BIBREF47"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "In this work, we compared two different ways to generate pseudoknot-free input structures for input to Iterative HFold, namely the first 50 suboptimal structures produced by SimFold, and HotKnots hotspots. On the HK-PK and HK-PK-free data sets, accuracy of Iterative HFold is not significantly different on each of these. An alternative approach that may be worth exploring in future work would be to use the most highly probable base pairs, as calculated using the partition function [43] . Even better may be to calculate base pair probabilities for base pairs of pseudoknotted RNA structures; however this requires (n 5 ) time. Since HFold finds minimum free energy structure in O(n 3 ) time, conditional on the given input structure, we are currently investigating ways to develop an O(n 3 )-time partition function version of HFold that can produce pseudoknotted base pair probabilities that are conditional on the given input structure.",
+            "cite_spans": [
+                {
+                    "start": 485,
+                    "end": 489,
+                    "text": "[43]",
+                    "ref_id": "BIBREF43"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "Comparing accuracy of the minimum free energy structures with the maximum accuracy structures in this work, Table 6 Comparison of bootstrap 95% percentile confidence interval of average F-measure between the minimum energy structures and the maximum accuracy structures of the HK-PK and the HK-PK-free data sets ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 108,
+                    "end": 115,
+                    "text": "Table 6",
+                    "ref_id": "TABREF9"
+                }
+            ],
+            "section": "Conclusions"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Small RNA regulation of reproductive function",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hale",
+                    "suffix": ""
+                },
+                {
+                    "first": "C-X",
+                    "middle": [],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Ross",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Mol Reprod Dev",
+            "volume": "81",
+            "issn": "2",
+            "pages": "148--159",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Novel small cajal-body-specific RNAs identified in drosophila: probing guide RNA function",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Deryusheva",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Gall",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "RNA",
+            "volume": "19",
+            "issn": "12",
+            "pages": "1802--1814",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "The central dogma decentralized: New perspectives on RNA function and local translation in neurons",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Holt",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Schuman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Neuron",
+            "volume": "80",
+            "issn": "3",
+            "pages": "648--657",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Non-coding RNA",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Mattick",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Makunin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Hum Mol Genet",
+            "volume": "15",
+            "issn": "1",
+            "pages": "17--29",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "The transcriptional landscape of the mammalian genome",
+            "authors": [
+                {
+                    "first": "Fantom",
+                    "middle": [],
+                    "last": "The",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Consortium",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Carninci",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kasukawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Katayama",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gough",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Frith",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Maeda",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Oyama",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Ravasi",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Lenhard",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wells",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Kodzius",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Shimokawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Bajic",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Brenner",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Batalov",
+                    "suffix": ""
+                },
+                {
+                    "first": "Arr",
+                    "middle": [],
+                    "last": "Forrest",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zavolan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Davis",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Wilming",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Aidinis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Allen",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ambesi-Impiombato",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Aturaliya",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Bailey",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bansal",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Baxter",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Beisel",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Bersano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Science",
+            "volume": "309",
+            "issn": "5740",
+            "pages": "1559--1563",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "The brave new world of RNA",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Dennis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Nature",
+            "volume": "418",
+            "issn": "6894",
+            "pages": "122--124",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "In vivo determination of RNA structure-function relationships: analysis of the 790 loop in ribosomal RNA",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Varma",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Santalucia",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Cunningham",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "J Mol Biol",
+            "volume": "269",
+            "issn": "5",
+            "pages": "732--743",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Contribution of 16S rRNA nucleotides forming the 30S subunit a and p sites to translation in escherichia coli",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Abdi",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Fredrick",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "RNA",
+            "volume": "11",
+            "issn": "11",
+            "pages": "1624--1632",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Identification and role of functionally important motifs in the 970 loop of escherichia coli 16S ribosomal RNA",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Saraiya",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Lamichhane",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Chow",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Santalucia",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Cunningham",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Mol Biol",
+            "volume": "376",
+            "issn": "3",
+            "pages": "645--657",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "The N-terminal extension of S12 influences small ribosomal subunit assembly in Escherichia coli",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Calidas",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Lyon",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Culver",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "RNA",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1261/rna.042432.113"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "DAFS: simultaneous aligning and folding of RNA sequences via dual decomposition",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kato",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Akutsu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Asai",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sakakibara",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Bioinformatics",
+            "volume": "2012",
+            "issn": "24",
+            "pages": "3218--3224",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Improving the accuracy of predicting secondary structure for aligned RNA sequences",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hamada",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Asai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "2",
+            "pages": "393--402",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "CentroidHomfold-LAST: accurate prediction of RNA secondary structure using automatically collected homologous sequences",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hamada",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Yamada",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Frith",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Asai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic Acids Res",
+            "volume": "39",
+            "issn": "2",
+            "pages": "100--106",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Multilign: an algorithm to predict secondary structures conserved in multiple RNA sequences",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Bioinformatics",
+            "volume": "27",
+            "issn": "5",
+            "pages": "626--632",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Transat -a method for detecting the conserved helices of functional rna structures, including transient, pseudo-knotted and alternative structures",
+            "authors": [
+                {
+                    "first": "Njp",
+                    "middle": [],
+                    "last": "Wiebe",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Meyer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS Comput Biol",
+            "volume": "6",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "RNAalifold: improved consensus structure prediction for RNA alignments",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bernhart",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Hofacker",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Will",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gruber",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Stadler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "BMC Bioinformatics",
+            "volume": "9",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "SimulFold: simultaneously inferring RNA structures including pseudoknots, alignments, and trees using a Bayesian MCMC framework",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Meyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Mikl\u00f3s",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "PLoS Comput Biol",
+            "volume": "3",
+            "issn": "8",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Identification and classification of conserved RNA secondary structures in the human genome",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Pedersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Bejerano",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Siepel",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Rosenbloom",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Lindblad-Toh",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Lander",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Kent",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Haussler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "PLoS Comput Biol",
+            "volume": "2",
+            "issn": "4",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Rfam: annotating non-coding RNAs in complete genomes",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Griffiths-Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Moxon",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Marshall",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Khanna",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bateman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic Acids Res",
+            "volume": "33",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "CARNAC: folding families of related RNAs",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Touzet",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Perriquet",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkh415"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "RNA secondary structure prediction using stochastic context-free grammars and evolutionary history",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Knudsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hein",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Bioinformatics",
+            "volume": "15",
+            "issn": "6",
+            "pages": "446--454",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Biological Sequence Analysis: Probabilistic Models of Proteins and Nucleic Acids",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Durbin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Krogh",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Mitchison",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Expanded sequence dependence of thermodynamic parameters improves prediction of RNA secondary structure",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sabina",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Turner",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "288",
+            "issn": "5",
+            "pages": "911--940",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "The ENCODE Project Consortium: Identification and analysis of functional elements in 1% of the human genome by the ENCODE pilot project",
+            "authors": [],
+            "year": 2007,
+            "venue": "Nature",
+            "volume": "447",
+            "issn": "7146",
+            "pages": "799--816",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Fast folding and comparison of RNA secondary structures",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hofacker",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Fontana",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Stadler",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Bonhoeffer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tacker",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Schuster",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "CoFold: an RNA secondary structure prediction method that takes co-transcriptional folding into account",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Proctor",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Meyer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Res",
+            "volume": "41",
+            "issn": "9",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Pseudoknots: RNA structures with diverse functions",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Staple",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Butcher",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "PLoS Biol",
+            "volume": "3",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pbio.0030213"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Pseudobase: structural information on RNA pseudoknots",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Van Batenburg",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Gultyaev",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Pleij",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Nucleic Acids Res",
+            "volume": "29",
+            "issn": "1",
+            "pages": "194--195",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Pseudoknots: A vital feature in viral RNA",
+            "authors": [
+                {
+                    "first": "Balm",
+                    "middle": [],
+                    "last": "Deiman",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cwa",
+                    "middle": [],
+                    "last": "Pleij",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Semin Virol",
+            "volume": "s",
+            "issn": "3",
+            "pages": "166--175",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Dynamic programming algorithms for RNA secondary structure prediction with pseudoknots",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Akutsu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Disc App Math",
+            "volume": "104",
+            "issn": "1-3",
+            "pages": "45--62",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Complexity of pseudoknot prediction in simple models",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Lyngs\u00f8",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "ICALP. Automata, Languages and Programming",
+            "volume": "3142",
+            "issn": "",
+            "pages": "919--931",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "RNA pseudoknot prediction in energy-based models",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Lyngs\u00f8",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Pedersen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "J Comput Biol",
+            "volume": "7",
+            "issn": "3-4",
+            "pages": "409--427",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "A dynamic programming algorithm for RNA structure prediction including pseudoknots",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Rivas",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Eddy",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "285",
+            "issn": "5",
+            "pages": "2053--2068",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "A partition function algorithm for nucleic acid secondary structure including pseudoknots",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Dirks",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pierce",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "J Comput Chem",
+            "volume": "24",
+            "issn": "13",
+            "pages": "1664--1677",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Design, implementation and evaluation of a practical pseudoknot folding algorithm based on thermodynamics",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Reeder",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Giegerich",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Bioinformatics",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-5-104"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Improved free energy parameters for RNA pseudoknotted secondary structure prediction",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Andronescu",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Pop",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Condon",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "RNA",
+            "volume": "2010",
+            "issn": "1",
+            "pages": "26--42",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Heuristic RNA pseudoknot prediction including intramolecular kissing hairpins",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sperschneider",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Datta",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wise",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "RNA",
+            "volume": "2011",
+            "issn": "1",
+            "pages": "27--38",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "DotKnot: pseudoknot prediction using the probability dot plot under a refined energy model",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sperschneider",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Datta",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nucleic Acids Res",
+            "volume": "38",
+            "issn": "7",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "KnotSeeker: Heuristic pseudoknot detection in long RNA sequences",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sperschneider",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Datta",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "RNA",
+            "volume": "14",
+            "issn": "4",
+            "pages": "630--640",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "A heuristic approach for detecting RNA h-type pseudoknots",
+            "authors": [
+                {
+                    "first": "C-H",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H-T",
+                    "middle": [],
+                    "last": "Chiu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Bioinformatics",
+            "volume": "21",
+            "issn": "17",
+            "pages": "3501--3508",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Hotknots: Heuristic prediction of rna secondary structures including pseudoknots",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rastegari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hoos",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "RNA",
+            "volume": "11",
+            "issn": "10",
+            "pages": "1494--1504",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "IPknot: fast and accurate prediction of RNA secondary structures with pseudoknots using integer programming",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Sato",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kato",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hamada",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Akutsu",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Asai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Bioinformatics",
+            "volume": "27",
+            "issn": "13",
+            "pages": "85--93",
+            "other_ids": {}
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Using an RNA secondary structure partition function to determine confidence in base pairs predicted by free energy minimization",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "RNA",
+            "volume": "10",
+            "issn": "8",
+            "pages": "1178--1190",
+            "other_ids": {}
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "CompaRNA: a server for continuous benchmarking of automated methods for RNA secondary structure prediction",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Puton",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Kozlowski",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Rother",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Bujnicki",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Nucleic Acids Res",
+            "volume": "41",
+            "issn": "7",
+            "pages": "4307--4323",
+            "other_ids": {}
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "Incorporating chemical modification constraints into a dynamic programming algorithm for prediction of RNA secondary structure",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Disney",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Childs",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Schroeder",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Turner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "101",
+            "issn": "19",
+            "pages": "7287--7292",
+            "other_ids": {}
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Accurate SHAPE-directed RNA structure determination",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Deigan",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Weeks",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "106",
+            "issn": "1",
+            "pages": "97--102",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Accurate SHAPE-directed RNA secondary structure modeling, including pseudoknots",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Hajdin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bellaousov",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Huggins",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Leonard",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Weeks",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "110",
+            "issn": "14",
+            "pages": "5498--5503",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Novel and efficient RNA secondary structure prediction using hierarchical folding",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Jabbari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "J Comput Biol",
+            "volume": "15",
+            "issn": "2",
+            "pages": "139--163",
+            "other_ids": {}
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "How RNA folds",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Tinoco",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Bustamante",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "J Mol Biol",
+            "volume": "293",
+            "issn": "2",
+            "pages": "271--281",
+            "other_ids": {}
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Predicting RNA secondary structure by free energy minimization",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Theor Chem Acc: Theory, Computation, and Modeling",
+            "volume": "",
+            "issn": "",
+            "pages": "1--9",
+            "other_ids": {}
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Assembly mechanisms of RNA pseudoknots are determined by the stabilities of constituent secondary structures",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Cho",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Pincus",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Thirumalai",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Proc Natl Acad Sci",
+            "volume": "106",
+            "issn": "41",
+            "pages": "17349--17354",
+            "other_ids": {}
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Topology links RNA secondary structure with global conformation, dynamics, and adaptation",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Bailor",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Sun",
+                    "suffix": ""
+                },
+                {
+                    "first": "Al-Hashimi",
+                    "middle": [],
+                    "last": "Hm",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Science",
+            "volume": "2010",
+            "issn": "5962",
+            "pages": "202--206",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1181085"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "RNA SHAPE chemistry reveals nonhierarchical interactions dominate equilibrium structural transitions in tRNAasp transcripts",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Wilkinson",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Merino",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Weeks",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "J Am Chem Soc",
+            "volume": "127",
+            "issn": "13",
+            "pages": "4659--4667",
+            "other_ids": {}
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "Ab initio RNA folding by discrete molecular dynamics: From structure prediction to folding mechanisms",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Ding",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sharma",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Chalasani",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Demidov",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Broude",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Dokholyan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "RNA",
+            "volume": "14",
+            "issn": "6",
+            "pages": "1164--1173",
+            "other_ids": {}
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "VARNA: interactive drawing and editing of the RNA secondary structure",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Darty",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Denise",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Ponty",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Bioinformatics",
+            "volume": "25",
+            "issn": "15",
+            "pages": "1974--1975",
+            "other_ids": {}
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "Parsing nucleic acid pseudoknotted secondary structure: algorithm and applications",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rastegari",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "J Comput Biol",
+            "volume": "14",
+            "issn": "1",
+            "pages": "16--32",
+            "other_ids": {}
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "Predicting pseudoknotted structures across two RNA sequences",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sperschneider",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Datta",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wise",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Bioinformatics",
+            "volume": "2012",
+            "issn": "23",
+            "pages": "3058--3065",
+            "other_ids": {}
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "Analysis of energy-based algorithms for RNA secondary structure prediction",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hajiaghayi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Hoos",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "BMC Bioinformatics",
+            "volume": "13",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF60": {
+            "ref_id": "b60",
+            "title": "Bootstrap methods and permutation tests",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hesterberg",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Monaghan",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Moore",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cipson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Epstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Farace",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Ward",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Swearengin",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Donnellan",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "The practice of business statistics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF61": {
+            "ref_id": "b61",
+            "title": "Ensemble-based prediction of RNA secondary structures",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Aghaeepour",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Hoos",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "BMC Bioinformatics",
+            "volume": "14",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF62": {
+            "ref_id": "b62",
+            "title": "R Foundation for Statistical Computing",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "R Core Team",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "R: A Language and Environment for Statistical Computing",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF63": {
+            "ref_id": "b63",
+            "title": "Secondary structure prediction of interacting RNA molecules",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Andronescu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Chuan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Condon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "J Mol Biol",
+            "volume": "345",
+            "issn": "5",
+            "pages": "987--1001",
+            "other_ids": {}
+        },
+        "BIBREF64": {
+            "ref_id": "b64",
+            "title": "Mfold web server for nucleic acid folding and hybridization prediction",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zuker",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nucleic Acids Res",
+            "volume": "31",
+            "issn": "",
+            "pages": "3406--3415",
+            "other_ids": {}
+        },
+        "BIBREF65": {
+            "ref_id": "b65",
+            "title": "ProbKnot: fast prediction of RNA secondary structure including pseudoknots",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bellaousov",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Mathews",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "RNA",
+            "volume": "2010",
+            "issn": "10",
+            "pages": "1870--1880",
+            "other_ids": {}
+        },
+        "BIBREF66": {
+            "ref_id": "b66",
+            "title": "Valgrind: a framework for heavyweight dynamic binary instrumentation. SIGPLAN Not",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Nethercote",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Seward",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "",
+            "volume": "42",
+            "issn": "",
+            "pages": "89--100",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-15-147"
+                ]
+            }
+        },
+        "BIBREF67": {
+            "ref_id": "b67",
+            "title": "Cite this article as: Jabbari and Condon: A fast and robust iterative algorithm for prediction of RNA pseudoknotted secondary structures",
+            "authors": [],
+            "year": 2014,
+            "venue": "BMC Bioinformatics",
+            "volume": "15",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF1": {
+            "text": "Example of result of method 3 compared to all four methods of Iterative HFold. S = GUUUGUUAGUGGCGUGUCCGUCCGCAGCUGGCAAGCGAAUGUAAAGACUGAC G = ............(..........)............................ Method 1: HFold on S and G ((((((((((",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": ".............. -11.01 Method 2 and 4: (((.......))).[[[[.[[.(((.]].]]]].)))............... -5.08 Method 3: Simfold on S and G ((((((((((",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "G updated ((((((((((",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": ".............. Method 2 on S and G updated (((((",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Example of result of method 4 compared to all four methods of Iterative HFold. S = CCGAGCUCUGUAGCGAGUGCUUGUAACCCGAGCGGGGGC G = .(..................................).. Method 1 and 3: ((..((((.((.(",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "Method 2: .(..................................).. +3.04 Method 4: S 1 and G 1 S 1 = CGAGCUCUGUAGCGAGUGCUUGUAACCCGAGCGGGG G 1 = (..................................) Simfold on S 1 and G 1 : (..((((.((.((((....)))).))..))))...) G updated .(..((((.((.(",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "Method 2 on S and G updated ((..((((.((.(",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Comparison of robustness of HFold and Iterative HFold.Robustness results for pseudoknotted structures of the HK-PK data set (2A), pseudoknot-free structures of the HK-PK-free data set (2B) and all structures (2C). The X axes show the available information about G big structure in percentage format, and the Y axes show bootstrap 95% percentile confidence intervals for average F-measure. Dashed lines show the borders of the bootstrap 95% percentile for average F-measure and solid lines show the average F-measure itself.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "Time comparison. Comparison of running times of Iterative HFold and HotKnots in a log plot. The X axis shows log 10 (time) for HotKnots data points and the Y axis shows log 10 (time) for Iterative HFold. Time is measured in seconds.",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Energy parameters",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Method 2: First run HFold-PKonly on S and G. IfHFold-PKonly results in a structure G \u222a G such that G is not the empty structure, then run HFold with sequence S and structure G , and store the result. Otherwise, simply store G as the result. See the following example. (We note that running HFold with S and G results in a structure G \u222a G , where it may be the case that G = G (i.e., G may not be part of the result of method 2).) Motivation: When input structure G does not agree with the reference G big structure, it may still be the case that HFold-PKonly finds the pseudoknotted structure G small (or a good approximation to G small ). A call to HFold with input G small may then find a better approximation to G big . In this http://www.biomedcentral.com/1471-2105/15/147 Example 1: Example of results of method 1 and method 2 of Iterative HFold. S = GGGCUCUGGAGCCCCCCCCGAGCCCCGGCUAACUCUAUCUGUAGGGGGGC G = ...........(((((...........................))))).. Method 1: HFold on S and G [[[[[[.[[..(((((]].]]]]]]..................))))).. -12.75 Method 2: HFold Pkonly on S and G [[[[[[.[[..(((((]].]]]]]]..................))))).. G 1 [[[[[[.[[.......]].]]]]]]......................... HFold on S and G 1 [[[[[[.[[.((((((]].]]]]]]..................",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "..]]].]]] -11.26 http://www.biomedcentral.com/1471-2105/15/147",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Comparison of bootstrap 95% percentile confidence interval of average F-measure of different versions of HFold when given SimFold structure as input vs. when given HotKnots hotspots structures as input",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF5": {
+            "text": "",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "Comparison of bootstrap 95% percentile confidence interval of average F-measure with existing methods on the DK-pk16 and the IP-pk168 data sets",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF7": {
+            "text": "IPknot uses much less memory than all other methods. For the longest RNA sequence in this data set, IPknot uses less than 5.5 MB of memory in comparison to 61.33 MB of HFold and Iterative HFold and 93419 MB of Hot-Knots. For detailed information about memory usage of each method see Additional file 4.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF8": {
+            "text": "Comparison of Iterative HFold F-measure with ShapeKnots on SHAPE data",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF9": {
+            "text": "presents the difference in bootstrap 95% percentile confidence intervals of average F-measure. If we choose the maximum accuracy structure among the 20 output structures predicted by HotKnots for each RNA sequence, the bootstrap 95% percentile confidence intervals of average F-measure of HotKnots will increase to (84.50%, 91.48%) for pseudoknotted structures of the HK-PK data set (vs. (73.6%, 83.35%) when choosing the lowest energy structure) and (88.32%, 91.08%) for pseudoknot-free structures of the HK-PK-free data set (vs. (76.74%, 81.95%) when choosing the lowest energy structure).",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "The authors thank the reviewers for their very constructive suggestions. The authors also thank and acknowledge Dr. Holger Hoos for his helpful comments and early discussion about the paper. This research was funded by a grant from the Natural Sciences and Engineering Research Council of Canada (NSERC). ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgements"
+        },
+        {
+            "text": "http://www.biomedcentral.com/1471-2105/ 15/147 we found that, on average, the minimum free energy structure has significantly poorer F-measure than the maximum accuracy structure. This suggests that an improved energy model for pseudoknotted structure prediction may improve accuracy of prediction algorithms for pseudoknotted structures.Another direction for future work can be to use Iterative HFold for structure prediction of two interacting RNA molecules. Iterative HFold may be well suited for this purpose because, given input structures for each individual input molecule, it allows for modification of these input structures as it explores potential base pairing interactions between the two molecules.",
+            "cite_spans": [
+                {
+                    "start": 40,
+                    "end": 46,
+                    "text": "15/147",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "annex"
+        },
+        {
+            "text": "Iterative HFold and all data used in this work are freely available at http://www.cs.ubc.ca/~hjabbari/software.php.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Data and software availability"
+        },
+        {
+            "text": "Additional file 1: Pseudocode. We provide pseudocode of our Iterative HFold algorithm in this section.Additional file 2: IPknot Performance. Table 1 provides the bootstrap 95% confidence intervals for average F-measure of IPknot on different data sets and different weight parameters. The energy model in all these experiments is set to McCaskill and level is set to 2 (both default values).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 141,
+                    "end": 148,
+                    "text": "Table 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Additional files"
+        },
+        {
+            "text": "Positives. Tables 1 and 2 provide complete presenting robustness comparison of HFold-PKonly, HFold, and Iterative HFold, when provided with different percentage of G big information of HK-PK and HK-PK-free data sets. Note that the reported interval in each case is the bootstrap 95% confidence interval for F-measure of the 100 structures with 1 \u2264 \u03b1 \u2264 99 percent information about the G big structure. The 100% information is the bootstrap 95% confidence interval for F-measure when input structure is G big . Table 3 provides Pearson correlation coefficient of HFold and Iterative HFold with HotKnots hotspots, SimFold MFE and SimFold first 50 suboptimal structures. Here FP represents false positive rate and F represents the F-measure as the accuracy measure. Tables 1 and 2 provide complete data presenting running time comparison of HFold, Iterative HFold, HotKnots V2.0 and IPknot on the HK-PK data set. Timing is presented in seconds. Tables 3 and 4 provide complete data presenting memory (total heap usage) comparison of HFold, Iterative HFold, HotKnots V2.0 and IPknot on the HK-PK data set. Memory usage is presented in Mega Bytes.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 510,
+                    "end": 517,
+                    "text": "Table 3",
+                    "ref_id": null
+                },
+                {
+                    "start": 763,
+                    "end": 777,
+                    "text": "Tables 1 and 2",
+                    "ref_id": null
+                },
+                {
+                    "start": 942,
+                    "end": 956,
+                    "text": "Tables 3 and 4",
+                    "ref_id": null
+                }
+            ],
+            "section": "Additional file 3: Robustness Comparison and Correlation to False"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "HJ designed and implemented the algorithms, acquired, analyzed and interpreted the data and drafted the manuscript. AC supervised the research, participated in analysis of data and in revising the manuscript. Both authors read and approved the final manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Authors' contributions"
+        }
+    ]
+}

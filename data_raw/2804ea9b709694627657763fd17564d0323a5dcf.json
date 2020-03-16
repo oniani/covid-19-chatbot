@@ -1,0 +1,4026 @@
+{
+    "paper_id": "2804ea9b709694627657763fd17564d0323a5dcf",
+    "metadata": {
+        "title": "Multi-omic network signatures of disease",
+        "authors": [
+            {
+                "first": "David",
+                "middle": [
+                    "L"
+                ],
+                "last": "Gibbs",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "McWeeney Lab",
+                    "institution": "Oregon Health & Science University",
+                    "location": {
+                        "settlement": "Portland",
+                        "region": "OR",
+                        "country": "USA"
+                    }
+                },
+                "email": "gibbsd@ohsu.edu"
+            },
+            {
+                "first": "Lisa",
+                "middle": [],
+                "last": "Gralinski",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "Baric Lab",
+                    "institution": "University of North Carolina at Chapel Hill",
+                    "location": {
+                        "addrLine": "Chapel Hill",
+                        "region": "NC",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Ralph",
+                "middle": [
+                    "S"
+                ],
+                "last": "Baric",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "Baric Lab",
+                    "institution": "University of North Carolina at Chapel Hill",
+                    "location": {
+                        "addrLine": "Chapel Hill",
+                        "region": "NC",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Shannon",
+                "middle": [
+                    "K"
+                ],
+                "last": "Mcweeney",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "McWeeney Lab",
+                    "institution": "Oregon Health & Science University",
+                    "location": {
+                        "settlement": "Portland",
+                        "region": "OR",
+                        "country": "USA"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Xiaogang",
+                "middle": [],
+                "last": "Wu",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Lifan",
+                "middle": [],
+                "last": "Zeng",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Andrei",
+                "middle": [],
+                "last": "Dragomir",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "To better understand dynamic disease processes, integrated multi-omic methods are needed, yet comparing different types of omic data remains difficult. Integrative solutions benefit experimenters by eliminating potential biases that come with single omic analysis. We have developed the methods needed to explore whether a relationship exists between co-expression network models built from transcriptomic and proteomic data types, and whether this relationship can be used to improve the disease signature discovery process. A na\u00efve, correlation based method is utilized for comparison. Using publicly available infectious disease time series data, we analyzed the related co-expression structure of the transcriptome and proteome in response to SARS-CoV infection in mice. Transcript and peptide expression data was filtered using quality scores and subset by taking the intersection on mapped Entrez IDs. Using this data set, independent co-expression networks were built. The networks were integrated by constructing a bipartite module graph based on module member overlap, module summary correlation, and correlation to phenotypes of interest. Compared to the module level results, the na\u00efve approach is hindered by a lack of correlation across data types, less significant enrichment results, and little functional overlap across data types. Our module graph approach avoids these problems, resulting in an integrated omic signature of disease progression, which allows prioritization across data types for down-stream experiment planning. Integrated modules exhibited related functional enrichments and could suggest novel interactions in response to infection. These disease and platform-independent methods can be used to realize the full potential of multi-omic network signatures. The data (experiment SM001) are publically available through the NIAID Systems Virology (https://www.systemsvirology.org) and PNNL (http://omics.pnl.gov) web portals. Phenotype data is found in the supplementary information. The ProCoNA package is available as part of Bioconductor 2.13.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Statistical and computational methods are used in systems biology to infer underlying networks associated with disease (Aderem et al., 2011) . Networks can be used for deriving predictive signatures of disease progression or severity, as well as helping to elucidate the underlying mechanisms (Zak and Aderem, 2009) . A primary objective in systems biology is to understand the structure and connection between the diverse biological elements composing the living system, and how they dynamically change and interact in response to biologically important events, such as the host response to infection (Forst, 2006) .",
+            "cite_spans": [
+                {
+                    "start": 119,
+                    "end": 140,
+                    "text": "(Aderem et al., 2011)",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 293,
+                    "end": 315,
+                    "text": "(Zak and Aderem, 2009)",
+                    "ref_id": "BIBREF61"
+                },
+                {
+                    "start": 602,
+                    "end": 615,
+                    "text": "(Forst, 2006)",
+                    "ref_id": "BIBREF18"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "Single data-type signatures and biomarkers have found mixed success where many potentially useful biomarkers have not been validated (Ntzani and Ioannidis, 2003; Feng et al., 2004; Brenner and Normolle, 2007; Hughes, 2009; Bhavsar et al., 2010; Kint et al., 2010; Sturdevant et al., 2010) . In virology, biomarkers could be used to predict the host response, allowing for earlier care, before the onset of extreme and damaging cytokine responses (Davey et al., 2013) . The biomarker discovery process can utilize a range of different data types including genomic (DNA sequence data), transcriptomic (gene expression), proteomic (protein levels), metabolomics (metabolite levels), and prior biological knowledge such as that found in interactomics (encompassing protein-protein interactions databases).",
+            "cite_spans": [
+                {
+                    "start": 133,
+                    "end": 161,
+                    "text": "(Ntzani and Ioannidis, 2003;",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 162,
+                    "end": 180,
+                    "text": "Feng et al., 2004;",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 181,
+                    "end": 208,
+                    "text": "Brenner and Normolle, 2007;",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 209,
+                    "end": 222,
+                    "text": "Hughes, 2009;",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 223,
+                    "end": 244,
+                    "text": "Bhavsar et al., 2010;",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 245,
+                    "end": 263,
+                    "text": "Kint et al., 2010;",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 264,
+                    "end": 288,
+                    "text": "Sturdevant et al., 2010)",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 446,
+                    "end": 466,
+                    "text": "(Davey et al., 2013)",
+                    "ref_id": "BIBREF13"
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "It is thought that predictors or biomarkers utilizing multiple data types and/or exploiting the underlying network structure will prove more robust, as these more reflect the complex biology involved (Sung et al., 2012) . A range of integration techniques have been suggested including machine learning methods (Lanckriet et al., 2004; Zhang et al., 2006; Daemen et al., 2008) , probabilistic networks (Hartemink et al., 2002; Troyanskaya et al., 2003; Gat-Viks et al., 2006; Vaske et al., 2009) , correlation networks (Adourian et al., 2008) , statistical models (Nie et al., 2006; Fagan et al., 2007; L\u00ea Cao et al., 2008; Torres-Garc\u00eda et al., 2009) , clustering techniques (Cancer Genome Atlas Network, 2012; Waters et al., 2012) and applications of spectral theory (Berger et al., 2006; Tan et al., 2009; Kim et al., 2012) . To produce integrated network signatures, however, methods must be applied across extremely heterogeneous sources, which has proven difficult because of the extreme differences between data types. In particular, the integration of the transcriptome and proteome is a current challenge in omics research due to differences in dynamic range of measurements, incomplete annotation, isoform differences, and temporal effects, as several examples (Cox et al., 2005; Waters et al., 2006a,b; Cancer Genome Atlas Network, 2012) .",
+            "cite_spans": [
+                {
+                    "start": 200,
+                    "end": 219,
+                    "text": "(Sung et al., 2012)",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 311,
+                    "end": 335,
+                    "text": "(Lanckriet et al., 2004;",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 336,
+                    "end": 355,
+                    "text": "Zhang et al., 2006;",
+                    "ref_id": "BIBREF63"
+                },
+                {
+                    "start": 356,
+                    "end": 376,
+                    "text": "Daemen et al., 2008)",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 402,
+                    "end": 426,
+                    "text": "(Hartemink et al., 2002;",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 427,
+                    "end": 452,
+                    "text": "Troyanskaya et al., 2003;",
+                    "ref_id": "BIBREF54"
+                },
+                {
+                    "start": 453,
+                    "end": 475,
+                    "text": "Gat-Viks et al., 2006;",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 476,
+                    "end": 495,
+                    "text": "Vaske et al., 2009)",
+                    "ref_id": "BIBREF55"
+                },
+                {
+                    "start": 519,
+                    "end": 542,
+                    "text": "(Adourian et al., 2008)",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 564,
+                    "end": 582,
+                    "text": "(Nie et al., 2006;",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 583,
+                    "end": 602,
+                    "text": "Fagan et al., 2007;",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 603,
+                    "end": 623,
+                    "text": "L\u00ea Cao et al., 2008;",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 624,
+                    "end": 651,
+                    "text": "Torres-Garc\u00eda et al., 2009)",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 676,
+                    "end": 711,
+                    "text": "(Cancer Genome Atlas Network, 2012;",
+                    "ref_id": null
+                },
+                {
+                    "start": 712,
+                    "end": 732,
+                    "text": "Waters et al., 2012)",
+                    "ref_id": "BIBREF56"
+                },
+                {
+                    "start": 769,
+                    "end": 790,
+                    "text": "(Berger et al., 2006;",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 791,
+                    "end": 808,
+                    "text": "Tan et al., 2009;",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 809,
+                    "end": 826,
+                    "text": "Kim et al., 2012)",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 1271,
+                    "end": 1289,
+                    "text": "(Cox et al., 2005;",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 1290,
+                    "end": 1313,
+                    "text": "Waters et al., 2006a,b;",
+                    "ref_id": null
+                },
+                {
+                    "start": 1314,
+                    "end": 1348,
+                    "text": "Cancer Genome Atlas Network, 2012)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "We have developed the methods needed to explore whether a relationship exists between co-expression network models built from transcriptomic and proteomic data types, and whether this relationship can be used to improve the disease signature discovery process. This work uses publically available data from an NIAID systems biology consortium study involving infection of SARS-CoV in mice. We have developed an approach to produce integrated network signatures of disease by leveraging earlier work on co-expression transcriptome networks (Zhang and Horvath, 2005; Yip and Horvath, 2007; Mason et al., 2009; Langfelder et al., , 2011 Langfelder and Horvath, 2012) and our own work in proteomic co-expression networks (Gibbs et al., 2013) . The signature consisted of a bipartite module graph, connecting co-expression modules obtained from transcriptomic and proteomic data, that is constructed using significant module member overlap, correlation of eigenvector summaries, and common phenotypic associations with outcomes of interest. The functional enrichment of module sub-graphs was overlapping across data types, further offering evidence of the underlying biological network structure. This work provides a framework for multi-omic prioritization of module members for biomarker studies as well as perturbation and validation experiments (see Figure 1 ).",
+            "cite_spans": [
+                {
+                    "start": 539,
+                    "end": 564,
+                    "text": "(Zhang and Horvath, 2005;",
+                    "ref_id": "BIBREF62"
+                },
+                {
+                    "start": 565,
+                    "end": 587,
+                    "text": "Yip and Horvath, 2007;",
+                    "ref_id": "BIBREF60"
+                },
+                {
+                    "start": 588,
+                    "end": 607,
+                    "text": "Mason et al., 2009;",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 608,
+                    "end": 633,
+                    "text": "Langfelder et al., , 2011",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 634,
+                    "end": 663,
+                    "text": "Langfelder and Horvath, 2012)",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 717,
+                    "end": 737,
+                    "text": "(Gibbs et al., 2013)",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1349,
+                    "end": 1357,
+                    "text": "Figure 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "INTRODUCTION"
+        },
+        {
+            "text": "This publically available data (https://www.systemsvirology.org, experiment SM001) was generated from 20-week-old C57/B6 mice infected with the MA15 mouse adapted SARS-CoV virus (Roberts et al., 2007) . In total, transcript and proteomic expression profiles were collected for 92 mice representing four dosage levels (10 2 , 10 3 , 10 4 , 10 5 PFU) over four time points (1, 2, 4, 7 days), including 3 mock samples per day (5 mice * 4 time points * 4 dose levels + 3 mocks * 4 time points).",
+            "cite_spans": [
+                {
+                    "start": 178,
+                    "end": 200,
+                    "text": "(Roberts et al., 2007)",
+                    "ref_id": "BIBREF46"
+                }
+            ],
+            "ref_spans": [],
+            "section": "EXPERIMENTAL DATA"
+        },
+        {
+            "text": "The control mouse at Day 7, replicate 2, and infected mouse (PFU 10 2 ), Day 4, replicate 3, were removed from the study since in the transcript data, the mice clustered with the incorrect infection label.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "EXPERIMENTAL DATA"
+        },
+        {
+            "text": "Phenotype data quantified the pathological severity resulting from infection (see Gibbs et al., 2013 for more on the phenotype data. The phenotype data can be found in Supplementary Table 3 ). While the difference in pathology level among the viral dosages is small, there was some observed difference in the kinetics of infection. Higher doses prompted more immediate responses. The difference in pathology among the viral dosages is relatively small. In total, 15 phenotype variables were recorded including an aggregate measure called the \"overall pathology score.\" Many of the phenotype variables are highly correlated, such as inflammation, airspace inflammation, and interstitial inflammation. Other phenotype variables include physical characteristics such as diffuse alveolar damage (DAD), debris, edema, and hyaline membranes. Day and dose are also included in the analysis.",
+            "cite_spans": [
+                {
+                    "start": 82,
+                    "end": 100,
+                    "text": "Gibbs et al., 2013",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 168,
+                    "end": 189,
+                    "text": "Supplementary Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "EXPERIMENTAL DATA"
+        },
+        {
+            "text": "Using the VIPER software (v3.48) (Monroe et al., 2007) peptides are matched to an Accurate Mass and Time (AMT) tag database (Zimmer et al., 2006) . Details are given on the systemsvirology.org site and in Gibbs et al. (2013) . Abundance measurements for 16,890 peptides mapping to 3277 proteins were recorded for 184 LC-MS runs. Taking all observed peptides, protein inference was performed using the Fido protein inference model (Serang et al., 2010; Serang and Noble, 2012) . Inferred Proteins were accepted with scores above 0.95. From the total set of proteins, 691 proteins had this score or better.",
+            "cite_spans": [
+                {
+                    "start": 33,
+                    "end": 54,
+                    "text": "(Monroe et al., 2007)",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 124,
+                    "end": 145,
+                    "text": "(Zimmer et al., 2006)",
+                    "ref_id": "BIBREF64"
+                },
+                {
+                    "start": 205,
+                    "end": 224,
+                    "text": "Gibbs et al. (2013)",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 430,
+                    "end": 451,
+                    "text": "(Serang et al., 2010;",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 452,
+                    "end": 475,
+                    "text": "Serang and Noble, 2012)",
+                    "ref_id": "BIBREF48"
+                }
+            ],
+            "ref_spans": [],
+            "section": "TAKING THE PEPTIDE-TRANSCRIPT INTERSECTION"
+        },
+        {
+            "text": "Peptide data was filtered by peptide matching quality scores (given by the VIPER software) STAC (>0.6), UP (>0.5), and Peptide Prophet tag score (>0.9), which resulted in a matrix of 184 sample rows by 9326 peptides. Sample replicates were combined by taking the mean over replicates.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "TAKING THE PEPTIDE-TRANSCRIPT INTERSECTION"
+        },
+        {
+            "text": "A second round of filtering was performed by assessing the quantity of missing data. Missing data are encountered when peptides are identified in a subset of samples. \"Missingness filtration\" involves removing any peptide with greater than X% missing data across samples. Peptides were filtered by missingness, taking peptides with not more than 20% missing data, resulting in a matrix of 90 samples by 2273 peptides. This process eliminates a large proportion of the measured peptides (86.5%), however, for statistical analysis that depends on nearly complete matrices, many peptides are unusable since they are identified in a very small number of samples.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "TAKING THE PEPTIDE-TRANSCRIPT INTERSECTION"
+        },
+        {
+            "text": "The matched microarray data were processed using the Agilent Preprocess Bioconductor package (Lopez-romero, 2010) . After considering quality measures, 31,416 probes passed probe QC flags for all replicates of at least one infected time point.",
+            "cite_spans": [
+                {
+                    "start": 93,
+                    "end": 113,
+                    "text": "(Lopez-romero, 2010)",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": "TAKING THE PEPTIDE-TRANSCRIPT INTERSECTION"
+        },
+        {
+            "text": "In order to focus on the dynamic relationship between the transcriptome and proteome, the two data types were subset using the intersection based upon Entrez gene IDs. Transcript probes on the gene microarray were mapped to Entrez gene IDs using annotation databases (mgug4122a.db) found in Bioconductor (2.11). Proteins in the AMT tag database were mapped to Entrez IDs and protein families using the Uniprot web service (Apweiler et al., 2004; Wu et al., 2006; Magrane and Consortium, 2011) .",
+            "cite_spans": [
+                {
+                    "start": 422,
+                    "end": 445,
+                    "text": "(Apweiler et al., 2004;",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 446,
+                    "end": 462,
+                    "text": "Wu et al., 2006;",
+                    "ref_id": "BIBREF59"
+                },
+                {
+                    "start": 463,
+                    "end": 492,
+                    "text": "Magrane and Consortium, 2011)",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [],
+            "section": "TAKING THE PEPTIDE-TRANSCRIPT INTERSECTION"
+        },
+        {
+            "text": "Networks were constructed using intersection between quality filtered peptide and transcript data. This corresponded to 90 total samples with 2205 peptides mapping to 445 Uniprot IDs (in the mass tag database) and 490 Entrez gene IDs. These gene IDs were used to select transcript probes, resulting in 814 probes that corresponded to 439 Uniprot IDs and 447 Entrez gene IDs. Between the two data sets, 437 Entrez IDs are shared. Some discrepancy was observed, since peptides are often degenerate, mapping to multiple proteins, creating a scenario in which an entry maps from a given Uniprot ID to multiple Entrez IDs. To address mapping discrepancies, after mapping to Entrez IDs, only IDs contained within the intersection were considered.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "TAKING THE PEPTIDE-TRANSCRIPT INTERSECTION"
+        },
+        {
+            "text": "Network based integration of transcript and peptide data was performed by constructing independent co-expression networks for each data type using methods derived from WGCNA. Mason et al., 2009; Iancu et al., 2012a) . FIGURE 1 | Prioritization of integrated data leading to a multi-omic integrated co-expression signature for SARS-CoV infection. Given mice infected with a mouse adapted SARS-CoV virus, transcript (gene microarray) and peptide (LC-MS) data are collected from lung tissue. The data is used to construct independent co-expression networks for each data type. Using three metrics, transcript and peptide modules are compared and joined, producing a bipartite module graph. In the module graph, two kinds of edges are shown. Solid edges indicate a significant correlation between module eigenvectors. Dashed edges indicate significant overlap in terms of module membership. Node sizes correspond to the size of the module and node outlines show the direction of correlation compared to the degree of lung pathology (the overall-pathology-score).",
+            "cite_spans": [
+                {
+                    "start": 175,
+                    "end": 194,
+                    "text": "Mason et al., 2009;",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 195,
+                    "end": 215,
+                    "text": "Iancu et al., 2012a)",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "Co-expression networks are composed of nodes connected by weighted edges. Edge weights were computed using signed, robust correlations producing a similarity matrix . The similarity matrix raised to a power, beta, produces the adjacency matrix. Beta was selected according to scale-free model criterion (R 2 describes the model fit), peptide networks had an R 2 greater than 0.8 and transcript networks greater than 0.9. The adjacency matrix is used to compute topological overlap between nodes, weighting the network edges. Topological overlap is defined as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "where l ij is the dot product on row i and column j in adjacency matrix [a] and k i (the connectivity) is the summation of row i in adjacency matrix [a] .",
+            "cite_spans": [
+                {
+                    "start": 72,
+                    "end": 75,
+                    "text": "[a]",
+                    "ref_id": null
+                },
+                {
+                    "start": 149,
+                    "end": 152,
+                    "text": "[a]",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "Groups of nodes were partitioned into subnetworks, or modules, containing (in this case) either transcripts or peptides. Modules were composed of strongly connected (high edge weights) nodes. The dynamic hybrid treecut method was used to derive subnetworks or modules , using default settings.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "Modules were summarized by taking the first right-singular vector produced by singular value decomposition on expression data represented by nodes contained in the module. The module eigenvectors (MEs or module summaries) allowed us to associate modules to biological phenotypes using correlation. Modules were labeled numerically according to decreasing size, module 1 being the largest.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "Although the hybrid treecut algorithm generally works well, there is no guarantee for a module's average connectivity to be greater than what is expected by random. Permutation testing was used to assess module significance by comparing the mean topological overlap of nodes within a module to the mean topological overlap of a randomly sampled set of nodes equal in size to the module being tested. This is equivalent to permuting the module labels on nodes. Ten thousand permutations were performed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "Finally, to build the bipartite module graph, the first step involved measuring the member overlap between all pairs of modules (peptide-transcript). To test the significance of overlaps, random modules were constructed, keeping the module sizes fixed (equivalent in size to our derived modules) and varying the contents. Ten thousand permutations were performed. The count of permuted overlaps larger than the observed was used as an empirical p-value. Significant overlaps were used as edges between modules if FDR adjusted p-values were less than 0.1. This relaxed threshold was picked to increase sensitivity.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "The edges of the bipartite graph are filtered by correlation between eigenvector summaries. The connection between module eigenvectors was measured using the Pearson correlation. Using Bonferroni multiple testing correction, p-values less than 0.0006 [0.05/(14 peptide modules * 6 transcript modules)] were accepted. If deemed appropriate, edges could be retained without significant overlap, as long as the annotation reflects that. The third step involved filtering edges by comparing the joined modules association to a phenotype. Edges were kept if the eigenvector-phenotype association was in the same direction and adjusted p-values were less than 0.05.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "The combination of these three measures-member overlap, eigenvector correlation, and similar phenotype associationsconstructed an integrated bipartite module graph that describes an integrated signature.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "Functional enrichment via Gene Ontology terms was performed using the GOstats package (Ashburner et al., 2000; Falcon and Gentleman, 2007) . The universe consisted of the 5521 Entrez IDs found in mass tag database, the limiting factor on peptide identifications. The conditional method was used which minimizes the correlation between GO terms. P-values were adjusted using the Benjamini and Yekutieli method (Benjamini and Yekutieli, 2001) .",
+            "cite_spans": [
+                {
+                    "start": 86,
+                    "end": 110,
+                    "text": "(Ashburner et al., 2000;",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 111,
+                    "end": 138,
+                    "text": "Falcon and Gentleman, 2007)",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 409,
+                    "end": 440,
+                    "text": "(Benjamini and Yekutieli, 2001)",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "CONSTRUCTING THE INTEGRATED BIPARTITE MODULE GRAPHS"
+        },
+        {
+            "text": "A Pearson correlation based na\u00efve approach was designed for comparison to the module level analysis. The approach involved computing correlations-independently for each peptide and transcript-on the overall pathology score phenotype. This produced two ranked lists for peptides and transcripts, each with both positive and negative correlations. The na\u00efve top ranked entities were compared to the rankings within modules.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "NA\u00cfVE METHOD BASED ON CORRELATION FOR COMPARISON TO THE MODULE LEVEL ANALYSIS"
+        },
+        {
+            "text": "For comparison to the enrichment results, members of the ranked lists were selected from the most negative and most positive correlations separately, with size equal to the mean module sizes for the peptide and transcript networks (151 peptides and 130 transcripts). These selections were used for gene ontology enrichment using the same method as described in Constructing the Integrated Bipartite Module Graphs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "NA\u00cfVE METHOD BASED ON CORRELATION FOR COMPARISON TO THE MODULE LEVEL ANALYSIS"
+        },
+        {
+            "text": "The transcript network consisted of 6 modules containing between 42 and 357 transcripts. The peptide network consisted of 14 modules containing between 70 and 316 peptides. The modules were labeled numerically in order of decreasing size. Each co-expression network independently showed significant Pearson correlations between the module eigenvectors and phenotype data (See Supplementary Figures 1 and 2) . In both networks, the greatest positive correlation was found with day of infection (transcript module 3, r = 0.84, peptide module 10, r = 0.70). When inflammation related variables were considered (inflammation, airspace inflammation and interstitial septum inflammation) transcript module 3 and peptide module 2 showed the strongest correlations (inflammation, transcript module 3, R = 0.6, peptide module 2, R = 0.6). These modules also showed the strongest correlation with the overall pathology of the mice. Conversely, transcript module 1 and peptide module 4 showed the same pattern of associations with phenotype as transcript module 3 and peptide module 2, but with negative correlations. Members of these modules had abundance profiles that decreased over time. In contrast to the previous two patterns of association, transcript module 4 and peptide module 12 were more associated with the administered viral dosage instead of day of infection. The modules showed strong associations with denudation, debris, and airway pathology whereas the previous two module sets did not.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 376,
+                    "end": 406,
+                    "text": "Supplementary Figures 1 and 2)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "CHARACTERIZATION OF THE CO-EXPRESSION NETWORKS OBTAINED FROM SINGLE OMIC DATA TYPES"
+        },
+        {
+            "text": "Significant module member overlaps were observed between the two co-expression networks. Overlaps were represented as a count of similar Entrez gene IDs (after mapping). Using permutation testing we ascertained whether the size of the overlap was larger that what is expected by chance. Permutation test significance was defined as FDR adjusted p-values less than 0.1. By that definition, ten out of 84 possible significant module overlaps were observed, forming three distinct sub-graphs, initializing the bipartite module graph. Overlaps were quantified by taking |Intersection(A,B)|/ min[size(A), size(B)]. Transcript module 1 overlapped with peptide modules 1, 4, and 8 (overlap amounts of 0.33, 0.39, and 0.42 with FDRs 0.0, 0.08, and 0.016 respectively). Transcript module 2 overlapped with peptide modules 2 and 3 (overlap amounts of 0.38 and 0.35 with FDRs 0.016 and 0.041 respectively). Transcript module 3 overlapped with peptide modules 2, 3, 5, and 10 (overlap amounts of 0.37, 0.38, 0.31, and 0.26 with FDRs of 0.068, 0.016, 0.087, and 0.016 respectively), and lastly, transcript module 4 overlapped with peptide module 12 (overlap amount 0.11, FDR 0.080). These overlaps formed the initial edges of the bipartite module graph.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INITIAL CONSTRUCTION OF THE BIPARTITE MODULE GRAPH BY OVERLAP OF MODULE MEMBERS"
+        },
+        {
+            "text": "From the 10 edges in the overlap graph, eight showed significant eigenvector correlation after Bonferroni multiple testing correction (p-values < 0.0006; See Supplementary Figure 3) . Summarizing the results: the Pearson correlations between transcript module 1 and peptide modules 4 and 8 were 0.523 and 0.434 respectfully (p-values 1.16e-07 and 1.908e-05). The correlation between transcript module 4 and peptide modules 12 and 13 was 0.696 and 0.683 (p-values 1.159e-13 and 2.554e-14). The correlation between eigenvectors of transcript module 3 and peptide modules 2 and 10 was 0.755 and 0.801 (p-value 2.2e-16 for both). A particularly interesting case is seen with transcript module 4 and peptide module 13, where module overlap is not observed, but a strong connection between module eigenvectors is present. This encouraged us to include an additional edge between these modules. These cases are potentially very interesting connections, where connected modules are driven by unmatched hubs in the network, which might imply previously unknown interactions.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 158,
+                    "end": 181,
+                    "text": "Supplementary Figure 3)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "MODULE EIGENVECTOR CORRELATION CONFIRMS AND ADDS EDGES TO THE BIPARTITE GRAPH"
+        },
+        {
+            "text": "The bipartite module graph can be further modified by comparing independent module associations to a phenotype of interest. Strong correlation between eigenvectors typically brings a shared correlation to sample phenotypes due to the similar vector structures. However, correlation is not transitive, which explains why this should be accounted for, because if two module eigenvectors correlate, it does not mean the two modules both correlate to a given phenotype.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ADDITIONAL EDGE CONFIRMATION WITH SHARED PHENOTYPE ASSOCIATIONS"
+        },
+        {
+            "text": "Considering only the overall pathology score phenotype, transcript module 3 and peptide module 2 remained connected. Transcript module 4 and peptide modules 12 and 13 also demonstrated strong shared phenotype associations. Transcript module 1 and peptide modules 4 and 8 shared negative correlations with the overall pathology. These associations reinforced the bipartite graph structure. Edges that did not reflect this similarity in phenotype associations were removed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ADDITIONAL EDGE CONFIRMATION WITH SHARED PHENOTYPE ASSOCIATIONS"
+        },
+        {
+            "text": "The rich set of phenotypes was used to prioritize the bipartite sub-graphs. We briefly describe an algorithm to prioritize module sub-graphs, given a set of phenotypes: initialize an n by m matrix where n is the number of transcript modules and m is the number of peptide modules. For each phenotype, the maximum and minimum (i.e., negative correlation) correlating modules from each data type are found. For each pair of modules in the matrix, and for each phenotype, if a pair of modules is maximum, +1 is added to the matrix element corresponding to this pair, and if the module pair has the minimum correlation, a \u22121 is added to the matrix position corresponding to the pair (see Figure 2 and Supplementary_Network_Results). In some cases, a module could arrive at a final summed score of 0 by alternatively winning both negative and positive correlations. Therefore, it might be necessary to keep scores strictly positive. This would return the maximum score by magnitude, without regard to direction, as an alternative prioritization procedure. After the prioritization routine, the set of biologically relevant multi-omic modules is ranked, providing a clear path toward targeted, downstream, analysis.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 684,
+                    "end": 692,
+                    "text": "Figure 2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "ADDITIONAL EDGE CONFIRMATION WITH SHARED PHENOTYPE ASSOCIATIONS"
+        },
+        {
+            "text": "The peptides and transcript expression profiles, within a module sub-graph, showed two types of temporal patterns. The expression response either varied with time or with viral dosage. The patterns are made clear after collapsing the eigenvector summaries by day (see Figure 3) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 268,
+                    "end": 277,
+                    "text": "Figure 3)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "MODULE SUB-GRAPHS SHOW TEMPORAL TRENDS"
+        },
+        {
+            "text": "The first row of Figure 3 shows the abundance peaks of transcript module 3 and peptide module 2. Baseline abundance is observed on day 1 followed by abundance increases over the course of infection.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 17,
+                    "end": 25,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "MODULE SUB-GRAPHS SHOW TEMPORAL TRENDS"
+        },
+        {
+            "text": "The second type of trend is exemplified by transcript module 1 with peptide modules 4 and 8, as well as transcript module 4 with peptide modules 12 and 13. This trend showed a response pattern associated with viral dosage rather than time. This is clearly seen in the high dose column. In summary, we have found two different patterns of module response, one by time (increasing over time) and the other by dosage. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "MODULE SUB-GRAPHS SHOW TEMPORAL TRENDS"
+        },
+        {
+            "text": "After sub-graph prioritization, we were interested in what biological entities were most central (i.e., correlated with the module eigenvector) in the network modules. By filtering module members by centrality, we have a metric by which to rank and prioritize the module members. Taking the ten most central module elements and using Uniprot web services, we examined the associated protein families. For transcript module 1 and peptide module 4, shared families included the Caveolin family, GST superfamily, Mu family, Cu-Zn superoxide dismutase family and transcript module 4 contained members of the aldehyde dehydrogenase family. These protein families are associated with metal binding proteins, interactions with DNA and engaging in changes to acetylation patterns. Putative caveolin-binding sites have been observed in SARS-CoV encoded proteins, and aldehyde dehydrogenases have been found to have a role in infection (Cai et al., 2003; Cinatl et al., 2004) .",
+            "cite_spans": [
+                {
+                    "start": 926,
+                    "end": 944,
+                    "text": "(Cai et al., 2003;",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 945,
+                    "end": 965,
+                    "text": "Cinatl et al., 2004)",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SUB-GRAPHS SHARE FUNCTIONAL ANNOTATIONS"
+        },
+        {
+            "text": "In transcript module 3, central members included proteins from the CAP family, Histone H1/H5 family, Histone H2A family, and the intermediate filament family, while for peptide module 2 protein families included the GTP-binding elongation factor family, the EF-Tu/EF-1A subfamily, the heat shock protein 90 family, the Histone H1/H5 family, and the DEAD box helicase family (eIF4A subfamily). Both histones and elongation factors have previously been associated with SARS-CoV infection (Reghunathan et al., 2005) .",
+            "cite_spans": [
+                {
+                    "start": 486,
+                    "end": 512,
+                    "text": "(Reghunathan et al., 2005)",
+                    "ref_id": "BIBREF45"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SUB-GRAPHS SHARE FUNCTIONAL ANNOTATIONS"
+        },
+        {
+            "text": "Transcript module 4 and peptide modules 12 and 13 were enzyme-driven and were associated with Serpin family members, which are protease inhibitors. This is potentially important since it was recently reported that-along with Serpin1-the coagulation and urokinase pathways are activated during infection. (Gralinski et al., 2013) . This is closely related to lung pathology involving disseminated small vessel thromboses in the lungs (Ng et al., 2004a,b; de Lang et al., 2007) . This module sub-graph could be used for further examining the systems level connection between omics and pathology.",
+            "cite_spans": [
+                {
+                    "start": 304,
+                    "end": 328,
+                    "text": "(Gralinski et al., 2013)",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 433,
+                    "end": 453,
+                    "text": "(Ng et al., 2004a,b;",
+                    "ref_id": null
+                },
+                {
+                    "start": 454,
+                    "end": 475,
+                    "text": "de Lang et al., 2007)",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SUB-GRAPHS SHARE FUNCTIONAL ANNOTATIONS"
+        },
+        {
+            "text": "Examination of significant GO terms shows largely similar trends compared to protein family annotations (all adjusted p-values are Bonferroni adjusted p-values). For transcript module 1 and peptide modules 4 and 8, the most significant overlapping GO terms include processes involving actin filament processes (\"actin filament-based movement,\" transcript module 1, adj. p-value 5.51e-05, \"actin cytoskeleton organization,\" peptides modules 4 and 8, adj. p-values 5.84e-02 and 4.11e-03 respectively), component assembly (\"protein complex assembly,\" transcript module 1, adj. p-value 1.09e-02, \"cellular component assembly,\" peptides module 4, adj. p-values 3.93e-07). It has been observed that SARS-CoV infection induces structural changes involving actin reorganization (Ng et al., 2004a,b; Surjit et al., 2004) .",
+            "cite_spans": [
+                {
+                    "start": 770,
+                    "end": 790,
+                    "text": "(Ng et al., 2004a,b;",
+                    "ref_id": null
+                },
+                {
+                    "start": 791,
+                    "end": 811,
+                    "text": "Surjit et al., 2004)",
+                    "ref_id": "BIBREF51"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SUB-GRAPHS SHARE FUNCTIONAL ANNOTATIONS"
+        },
+        {
+            "text": "Transcript module 3 and peptide module 2 have a number of overlapping enriched GO terms including \"nucleosome assembly\" (transcript module 3, adj. p-value 9.66e-05, peptides module 2, adj. p-value 2.37e-05), and \"protein-DNA complex subunit organization\" (transcript module 3, adj. p-value 2.63e-03, peptide module 2, adj p-value 2.58e-04). Also, shared terms include \"cellular component assembly\" (transcript module 3, adj. p-value 5.48e-05, peptides module 2, adj. p-value 5.00e-05), and \"cellular macromolecular complex assembly\" (transcript module 3, adj. p-value 5.80e-05, peptides module 2, adj. p-value 4.71e-09). These functional associations again point to structural changes (Reghunathan et al., 2005) .",
+            "cite_spans": [
+                {
+                    "start": 685,
+                    "end": 711,
+                    "text": "(Reghunathan et al., 2005)",
+                    "ref_id": "BIBREF45"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SUB-GRAPHS SHARE FUNCTIONAL ANNOTATIONS"
+        },
+        {
+            "text": "In transcript module 4, peptide module 12 and peptide module 13, enriched GO terms associated with the regulation of processes. In particular, the \"negative regulation of endopeptidase\" (transcript module 1, adj. p-value 5.59-02, peptides modules 12 and 13, adj. p-values 8.36e-15 and 4.76e-06 respectively). Although, the transcript module is not highly significant when considering Bonferroni adjusted p-values, the GO term overlap between modules is strong here. Clearly endopeptidases, hydrolases, and cytokines have important roles in SARS-CoV infection (Loureiro and Ploegh, 2006) . Cystatins, one of the represented protein families, has been proposed as a potential therapeutic target (Leung-Toung et al., 2006) .",
+            "cite_spans": [
+                {
+                    "start": 559,
+                    "end": 586,
+                    "text": "(Loureiro and Ploegh, 2006)",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 693,
+                    "end": 719,
+                    "text": "(Leung-Toung et al., 2006)",
+                    "ref_id": "BIBREF35"
+                }
+            ],
+            "ref_spans": [],
+            "section": "SUB-GRAPHS SHARE FUNCTIONAL ANNOTATIONS"
+        },
+        {
+            "text": "Overall, each set of integrated modules was overlapping in its functional annotation. Similarity in annotation between connected modules of different data types adds further evidence of true biological connection.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SUB-GRAPHS SHARE FUNCTIONAL ANNOTATIONS"
+        },
+        {
+            "text": "A motivating use case for this approach was to develop a framework for integrated, network-based prioritization of targets for perturbation and validation. We compared the module level results to those attained by use of a na\u00efve correlation-based method.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "The na\u00efve results took the form of two ranked lists for each data type. In the lists, there were both negative and positive correlations to the overall pathology phenotype. After mapping peptides and transcripts to Entrez IDs, correlation to the overall pathology phenotype, and the correlation between data types was compared (See Supplementary Figure 4) . While some peptide-transcript pairs showed both strong correlation to the phenotype and strong correlation across data types, 33.1% of peptide-transcript pairs were essentially uncorrelated (across data type correlation, \u22120.1 < r < 0.1), and 4.6% of peptide-transcript pairs were anti-correlated (r < \u22120.3).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 332,
+                    "end": 355,
+                    "text": "Supplementary Figure 4)",
+                    "ref_id": null
+                }
+            ],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "The na\u00efve top ranked peptides and transcripts were not necessarily the most central within a given module. In transcript module 1, the most central (by correlation to the module eigenvector) was ranked 4th in the list of positive correlations. The next two top ranked module transcripts were not in the na\u00efve top 10. On the peptide side, in module 4, the top ranked peptide was ranked 10th in the na\u00efve list. This is due to the fact that the module construction is independent of any phenotype measurement. Module structure is a result of entities sharing a pattern of expression, rather than sharing a correlation with some external measurement.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "The na\u00efve results showed a reduction in significance compared to the module level tests. Four sets were taken from the ranked lists: 151 positively correlated peptides (PCP), 151 negatively correlated peptides (NCP), 130 positively correlated transcripts (PCT), and 130 negatively correlated transcripts (NCT). The results are listed in Supplementary Table 1 . The PCP set of 151 peptides resulted in four significant GO terms, with Bonferroni adjusted p-values ranging from 2.67e-03 to 2.55e-02. The NCP set showed no significant GO term enrichment after Bonferroni adjustment. On the other hand, the PCT set of 130 transcripts showed 16 significant GO terms, with Bonferroni adjusted pvalues in the range of 9.14e-11 to 2.24e-02. The NCT set showed three significant GO terms, Bonferroni p-value range of 2.61e-04 to 1.29e-02.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 337,
+                    "end": 358,
+                    "text": "Supplementary Table 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "Two of the four significant GO terms found in the PCP set were also found in the PCT set (\"protein polymerization\" and \"cellular macromolecular complex assembly\"). However, one GO term, \"cellular response to interleukin-4\" (adj. p-value 2.67e-03), was not found in the enrichment results for both the na\u00efve transcript sets and the peptide modules.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "From the PCT set, eight of ten of the most significant GO terms were also found in the bipartite module graph results. The two that were not included were \"regulation of actin filament length\" (adj. p-value 1.07e-04) and \"regulation of actin filament polymerization\" (adj. p-value 3.96e-04). Enrichment in the NCT set showed one term that was also found in the bipartite module graph, and two terms, including \"xenobiotic metabolic process\" (adj. p-value 7.77e-03) and \"response to xenobiotic stimulus\" (adj. p-value 1.29e-02), which were not.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "The module level organization provided more significance in enrichment tests compared to the na\u00efve results. In peptide modules, the most significant results were found in peptide module 7 (not part of the module-graph) for GO terms \"cellular component biogenesis\" (adj. p-value 1.94e-17), \"cellular macromolecular complex assembly\" (adj. p-value 2.47e-17) and \"nucleosome assembly\" (adj. p-value 8.29e-12) where 15 of 36 Entrez IDs were present. In the NCP results, where the expression profile is negatively correlated with pathology, no GO terms were significantly enriched, whereas in the module-graph, there were sixteen significantly enriched GO terms.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "On the module level, highly ranked members (by module centrality), showed little overlap across data types in terms of shared Entrez IDs, even in the presence of significant module membership overlap (Supplementary Tables 1 and 2) . Regardless, we found that significant GO term enrichment was observed to be overlapping across the data types. By utilizing the module sub-graph, the most central members were functionally compared, producing potentially novel connections to investigate. An example was found in the module sub-graph including transcript module 4 and peptide modules 12 and 13 (See Figure 4) . The most central members (r > 0.8) enriched the same GO terms, and in taking the union across modules, each data type brings unique, and functionally related, members to the analysis.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 200,
+                    "end": 230,
+                    "text": "(Supplementary Tables 1 and 2)",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 598,
+                    "end": 607,
+                    "text": "Figure 4)",
+                    "ref_id": null
+                }
+            ],
+            "section": "INTEGRATION OF MODULE SUB-GRAPHS LEADS TO RICHER RESULTS"
+        },
+        {
+            "text": "In this work, a new strategy for data integration has been developed that leverages existing network inference methodology for transcriptomics and more recent extensions in proteomics. The method was applied to infection time course data to examine both the individual networks and the bipartite module graph with regard to phenotypic correlation and functional enrichment, as well as to provide integrated prioritization across data types.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "Information needed to construct the bipartite module graph included membership overlaps, summary eigenvector correlations and common correlations to phenotype. The strong correlations between module eigenvectors highlights the biological organization observed across data types. Given that a large portion of peptides and transcripts, mapping to the same Entrez ID, are essentially uncorrelated, it is striking to observe the modularity in our inferred networks, and the strong connection between a subset of the modules. Effectively, this can provide the foundation of a true multi-omic signature of SARS-CoV viral infection that may have relation to other viral respiratory infections as well. Additionally, this provides a perspective on modularity in the FIGURE 4 | An increase in the number of entities mapped to GO terms using the union of module members within a module sub-graph. Enrichment was performed using only the module members with correlations to the module eigenvector greater than 0.8, these GO terms were all in the top 5 most significant after GO term enrichment within each module, and, after taking the union, they were still in the top 5 most significant. Adjusted p-values for all modules can be found in Supplementary Table 1. proteome and its relationship to the module structure of the transcriptome.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1230,
+                    "end": 1252,
+                    "text": "Supplementary Table 1.",
+                    "ref_id": null
+                }
+            ],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "Initially modeling each data type individually offers a high degree of flexibility in the analysis. In co-expression network construction, one has choices about correlation type or metric for association between nodes in the network, how or whether to scale the associations, and how to cluster for module discovery. Additionally, there are questions of normalization and missing data that can affect on the downstream network structure. These parameters can be separately tuned in order to produce optimal independent networks on data types, which can be used to produce integrated module graphs. Generating well-formed, independent networks should improve the odds of successful integration since they each more accurately reflect the underlying biology. Without treating different data sources independently, it is possible that the inherent noise found in biological data would obscure patterns linking data types.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "In the correlation of expression profiles across data types, there was a large degree of uncorrelated peptides and transcripts, which has been previously observed (Ghazalpour et al., 2011) . Additionally, there are peptides and transcripts, which are both correlated to phenotype, but are anti-correlated across data types. The apparent disconnect between data types makes interpretation difficult. The na\u00efve ranked list is expected to be less ordered compared to within-module rankings. This is seen in the fact that for NCP, the na\u00efve method returned no significant enrichment results, while the module level results did show significance. Compared to the na\u00efve ranking approach, the module level analysis avoided the problem of uncorrelated peptides and transcripts, by connecting modules using a set of metrics, rather than simple Entrez ID mapping. Additionally, the module organization returned considerably more significant enrichment results, and also showed more functional overlap across data types.",
+            "cite_spans": [
+                {
+                    "start": 163,
+                    "end": 188,
+                    "text": "(Ghazalpour et al., 2011)",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "One of the most difficult aspects of data integration can be the annotation of highly heterogeneous data sets, connecting the transcript and peptide to their correct source gene for instance. For transcripts, this annotation is more straightforward since microarray probes have been designed specifically to avoid degeneracy among genes and have relatively good documentation. On the other hand, given a peptide, it can be quite difficult to determine what gene it ultimately resulted from. Our knowledge of the proteome is still rapidly expanding, directly affecting our peptide-transcript integration solution. As proteomics technologies improve, however, the intersection between the proteome and transcriptome will continue to grow, improving our integrated models, and our understanding of the cell.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "In this work, we have provided a strategy for integrated analysis in order to shed light on complex biology. With these methods, it is possible to learn novel and biologically relevant information about the relationship between the host and pathogen, but more generally between the transcriptome and the proteome. This work should prove to be platform independent, allowing the use of RNAseq (see Iancu et al., 2012b) or other forms of proteomic data. This can then be used to inform systems-level prioritization for the subsequent perturbation and validation experiments, allowing the full realization of systems based approaches.",
+            "cite_spans": [
+                {
+                    "start": 397,
+                    "end": 417,
+                    "text": "Iancu et al., 2012b)",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "Supplementary Table 1 | Shows the top ten enriched GO terms for each module sub-graph. The tables correspond to the module sub-graphs in Figures 1, 3, and 4 . Also contains the GO enrichment results for the Na\u00efve comparison.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 137,
+                    "end": 156,
+                    "text": "Figures 1, 3, and 4",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "DISCUSSION"
+        },
+        {
+            "text": "the module summaries (ME, module eigenvector). The second column shows the correlation with the Overall-total-score phenotype describing the level of lung pathology. The tables correspond to the module sub-graphs in Figures 1, 3, and 4. Supplementary Table 3 ",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 216,
+                    "end": 236,
+                    "text": "Figures 1, 3, and 4.",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 251,
+                    "end": 258,
+                    "text": "Table 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "Supplementary Table 2 | Shows the top ten entities by correlation with"
+        },
+        {
+            "text": "Probe ID (the transcript probe), Module (the assigned module), MM1 to MM6 (correlations with module eigenvectors), p.MM1 to p.MM6 (p-values for each correlation), and then correlations with phenotype variables, and p-values for phenotype correlations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Transcript_Module_Contents. A large table with columns:"
+        },
+        {
+            "text": "Peptide_Module_Contents. A large table with columns: Peptide ID, Module (the assigned module), MM1 to MM14 (correlations with module eigenvectors), p.MM1 to p.MM14 (p-values for each correlation), and then correlations with phenotype variables, and p-values for phenotype correlations.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Transcript_Module_Contents. A large table with columns:"
+        },
+        {
+            "text": "Supplementary_Network_Results. A brief account of peptide and transcript networks in terms of module sizes and modulesignificance permutation tests. Also shown are module overlap sizes with permutation test results, and the pairwise module prioritization results for each phenotype.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Transcript_Module_Contents. A large table with columns:"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "A systems biology approach to infectious disease research: innovating the pathogen-host research paradigm",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Aderem",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Adkinsb",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Ansongb",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Galaganc",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kaisera",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Korthf",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "MBio",
+            "volume": "2",
+            "issn": "",
+            "pages": "325--335",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/mBio.00325-10"
+                ]
+            }
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Correlation network analysis for data integration and biomarker selection",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Adourian",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Jennings",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Balasubramanian",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Hines",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Damian",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Plasterer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Mol. Biosyst",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1039/b708489g"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "UniProt: the Universal Protein knowledgebase",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bairoch",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Barker",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Boeckmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Ferro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nucleic Acids Res",
+            "volume": "32",
+            "issn": "",
+            "pages": "115--119",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkh131"
+                ]
+            }
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Gene ontology: tool for the unification of biology",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ashburner",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Ball",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Blake",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Botstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Butler",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Cherry",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Gene Ontol. Consortium. Nat. Genet",
+            "volume": "25",
+            "issn": "",
+            "pages": "25--29",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "The control of the false discovery rate in multiple testing under dependency",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Benjamini",
+                    "suffix": ""
+                },
+                {
+                    "first": "Yekutieli",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Ann. Stat",
+            "volume": "29",
+            "issn": "",
+            "pages": "1165--1188",
+            "other_ids": {
+                "DOI": [
+                    "10.1214/aos/1013699998"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Jointly analyzing gene expression and copy number data in breast cancer using data reduction models",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Berger",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Hautaniemi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Mitra",
+                    "suffix": ""
+                },
+                {
+                    "first": "Astola",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "IEEE/ACM Trans. Comput. Biol. Bioinform",
+            "volume": "3",
+            "issn": "",
+            "pages": "2--16",
+            "other_ids": {
+                "DOI": [
+                    "10.1109/TCBB.2006.10"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Proteomics as a probe of microbial pathogenesis and its molecular boundaries",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Bhavsar",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Auweter",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Finlay",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Future Microbiol",
+            "volume": "5",
+            "issn": "",
+            "pages": "253--265",
+            "other_ids": {
+                "DOI": [
+                    "10.2217/fmb.09.114"
+                ]
+            }
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Biomarkers for cancer risk, early detection, and prognosis: the validation conundrum",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Brenner",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Normolle",
+                    "suffix": ""
+                }
+            ],
+            "year": 1918,
+            "venue": "Cancer Epidemiol. Biomarkers Prev",
+            "volume": "16",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1158/1055-9965.EPI-07-2619"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Putative caveolin-binding sites in SARS-CoV proteins",
+            "authors": [
+                {
+                    "first": "Q",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Cai",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Jiang",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Guo",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Cao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Chen",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Acta Pharmacol. Sin",
+            "volume": "24",
+            "issn": "",
+            "pages": "1051--1059",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Comprehensive molecular portraits of human breast tumours",
+            "authors": [],
+            "year": 2012,
+            "venue": "Cancer Genome Atlas Network",
+            "volume": "490",
+            "issn": "",
+            "pages": "61--70",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Infection of cultured intestinal epithelial cells with severe acute respiratory syndrome coronavirus",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Cinatl",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Hoever",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Morgenstern",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Preiser",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "U"
+                    ],
+                    "last": "Vogel",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Hofmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Cell. Mol. Life Sci",
+            "volume": "61",
+            "issn": "",
+            "pages": "2100--2112",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/s00018-004-4222-9"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Integrating gene and protein expression data: pattern analysis and profile mining",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Cox",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kislinger",
+                    "suffix": ""
+                },
+                {
+                    "first": "Emili",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Methods",
+            "volume": "35",
+            "issn": "",
+            "pages": "303--314",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.ymeth.2004.08.021"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Integrating microarray and proteomics data to predict the response on cetuximab in patients with rectal cancer",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Daemen",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Gevaert",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "De Bie",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Debucquoy",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Machiels",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "De Moor",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Pac. Symp. Biocomput",
+            "volume": "",
+            "issn": "",
+            "pages": "166--177",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "The association between serum biomarkers and disease outcome in influenza A(H1N1)pdm09 virus infection: results of two international observational cohort studies",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Davey",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Lynfield",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Dwyer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Losso",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cozzi-Lepri",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Wentworth",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS ONE",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/jour-nal.pone.0057121"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Functional genomics highlights differential induction of antiviral pathways in the lungs of SARS-CoV-infected macaques",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "De Lang",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Baas",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Teal",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Leijten",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Rain",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Osterhaus",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "PLoS Pathog",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.ppat.0030112"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "A multivariate analysis approach to the integration of proteomic and gene expression data",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Fagan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Culhane",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Higgins",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proteomics",
+            "volume": "7",
+            "issn": "",
+            "pages": "2162--2171",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/pmic.200600898"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Using GOstats to test gene lists for GO term association",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Falcon",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Gentleman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bioinformatics",
+            "volume": "23",
+            "issn": "",
+            "pages": "257--258",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btl567"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Research issues and strategies for genomic and proteomic biomarker discovery and validation: a statistical perspective",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Feng",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Prentice",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Srivastava",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Pharmacogenomics",
+            "volume": "5",
+            "issn": "",
+            "pages": "709--719",
+            "other_ids": {
+                "DOI": [
+                    "10.1517/14622416.5.6.709"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Host-pathogen systems biology",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Forst",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Drug Discov. Today",
+            "volume": "11",
+            "issn": "",
+            "pages": "220--227",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S1359-6446(05)03735-9"
+                ]
+            }
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "A probabilistic methodology for integrating knowledge and experiments on biological networks",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Gat-Viks",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Tanay",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Raijman",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Shamir",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "J. Comput. Biol",
+            "volume": "13",
+            "issn": "",
+            "pages": "165--181",
+            "other_ids": {
+                "DOI": [
+                    "10.1089/cmb.2006.13.165"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Comparative analysis of proteome and transcriptome variation in mouse",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ghazalpour",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Bennett",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Petyuk",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Orozco",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Hagopian",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Mungrue",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PLoS Genet",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pgen.1001393"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Protein co-expression network analysis (ProCoNA)",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Gibbs",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Baratt",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Baric",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kawaoka",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Orwoll",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "J. Clin. Bioinforma",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/2043-9113-3-11"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Mechanisms of severe acute respiratory syndrome coronavirus induced acute lung injury",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Gralinski",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bankhead",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jeng",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Menachery",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Proll",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Belisle",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "MBio",
+            "volume": "4",
+            "issn": "",
+            "pages": "271--284",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/mBio.00271-13"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Combining location and expression data for principled discovery of genetic regulatory network models",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hartemink",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Gifford",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Jaakkola",
+                    "suffix": ""
+                },
+                {
+                    "first": "Young",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Pac. Symp. Biocomput",
+            "volume": "",
+            "issn": "",
+            "pages": "437--449",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Markers of dispute",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Hughes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nat. Med",
+            "volume": "15",
+            "issn": "",
+            "pages": "1339--1343",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/nm1209-1339"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Utilizing RNA-Seq data for de novo co-expression network inference",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Iancu",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Darakjian",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Malmanger",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Walter",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mcweeney",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "; O D"
+                    ],
+                    "last": "Hitzemann",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kawane",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bottomly",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Searles",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Hitzemann",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mcweeney",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Genes Brain Behav",
+            "volume": "11",
+            "issn": "",
+            "pages": "1592--1597",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1601-183X.2011.00736.xIancu"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Synergistic effect of different levels of genomic data for cancer clinical outcome prediction",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Shin",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Song",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J. Biomed. Inform",
+            "volume": "45",
+            "issn": "",
+            "pages": "1191--1198",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.jbi.2012.07.008"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "Integration of \"omics\" data: does it lead to new insights into hostmicrobe interactions?",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Kint",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fierro",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Marchal",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Vanderleyden",
+                    "suffix": ""
+                },
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Keersmaecker",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Future Microbiol",
+            "volume": "5",
+            "issn": "",
+            "pages": "313--328",
+            "other_ids": {
+                "DOI": [
+                    "10.2217/fmb.10.1"
+                ]
+            }
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Kernel-based data fusion and its application to protein function prediction in yeast",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Lanckriet",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Deng",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Cristianini",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Jordan",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Noble",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Pac. Symp. Biocomput",
+            "volume": "",
+            "issn": "",
+            "pages": "300--311",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "A systems genetic analysis of high density lipoprotein metabolism and network preservation across mouse models",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Langfelder",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Castellani",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Paul",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Davis",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Schadt",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Biochim. Biophys. Acta",
+            "volume": "1821",
+            "issn": "",
+            "pages": "435--447",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.bbalip.2011.07.014"
+                ]
+            }
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "WGCNA: an R package for weighted correlation network analysis",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Langfelder",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Horvath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "BMC Bioinformatics",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-9-559"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Fast R functions for robust correlations and hierarchical clustering",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Langfelder",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Horvath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "J. Stat. Softw",
+            "volume": "46",
+            "issn": "",
+            "pages": "1--17",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Is my network module preserved and reproducible?",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Langfelder",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Luo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Oldham",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Horvath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "PLoS Comput. Biol",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1001057"
+                ]
+            }
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Defining clusters from a hierarchical cluster tree: the Dynamic Tree Cut package for R",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Langfelder",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Horvath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Bioinformatics",
+            "volume": "24",
+            "issn": "",
+            "pages": "719--720",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btm563"
+                ]
+            }
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "A sparse PLS for variable selection when integrating omics data",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "L\u00ea Cao",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Rossouw",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Robert-Grani\u00e9",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Besse",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Stat. Appl. Genet. Mol. Biol",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.2202/1544-6115.1390"
+                ]
+            }
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Thiol proteases: inhibitors and potential therapeutic targets",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Leung-Toung",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhao",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Tam",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Karimian",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Spino",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Curr. Med. Chem",
+            "volume": "13",
+            "issn": "",
+            "pages": "547--581",
+            "other_ids": {
+                "DOI": [
+                    "10.2174/092986706776055733"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Agi4x44Preprocess. Available online at",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Lopez-Romero",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Antigen presentation and the ubiquitin\u2212proteasome system in host-pathogen interactions",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Loureiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ploegh",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Adv. Immunol",
+            "volume": "92",
+            "issn": "",
+            "pages": "92006--92015",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S0065-2776(06"
+                ]
+            }
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "UniProt Knowledgebase: a hub of integrated protein data",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Magrane",
+                    "suffix": ""
+                },
+                {
+                    "first": "U",
+                    "middle": [],
+                    "last": "Consortium",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Database",
+            "volume": "",
+            "issn": "",
+            "pages": "1--13",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/database/bar009"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Signed weighted gene co-expression network analysis of transcriptional regulation in murine embryonic stem cells",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Mason",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Fan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Plath",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Horvath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Genomics",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2164-10-327"
+                ]
+            }
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "VIPER: an advanced software package to support high-throughput LC-MS peptide identification",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Monroe",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Toli\u0107",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Jaitly",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Shaw",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Adkins",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Bioinformatics",
+            "volume": "23",
+            "issn": "",
+            "pages": "2021--2023",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinfor-matics/btm281"
+                ]
+            }
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "A human in vitro model system for investigating genome-wide host responses to SARS coronavirus infection",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Ng",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Hibberd",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ooi",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Tang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Neo",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Tan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "BMC Infect. Dis",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2334-4-34"
+                ]
+            }
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Topographic changes in SARS coronavirus-infected cells at late stages of infection",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ng",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Leong",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ling",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Tan",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ooi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Emerg. Infect. Dis",
+            "volume": "10",
+            "issn": "",
+            "pages": "1907--1914",
+            "other_ids": {
+                "DOI": [
+                    "10.3201/eid1011.040195"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Correlation between mRNA and protein abundance in Desulfovibrio vulgaris: a multiple regression to identify sources of variations",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Nie",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Biochem. Biophys. Res. Commun",
+            "volume": "339",
+            "issn": "",
+            "pages": "603--610",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.bbrc.2005.11.055"
+                ]
+            }
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Predictive ability of DNA microarrays for cancer outcomes and correlates: an empirical assessment",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Ntzani",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "P A"
+                    ],
+                    "last": "Ioannidis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Lancet",
+            "volume": "362",
+            "issn": "",
+            "pages": "1439--1444",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/S0140-6736(03)14686-7"
+                ]
+            }
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "Expression profile of immune response genes in patients with Severe Acute Respiratory Syndrome",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Reghunathan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Jayapal",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Hsu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Chng",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Tai",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "BMC Immunol",
+            "volume": "6",
+            "issn": "2",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2172-6-2"
+                ]
+            }
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "A mouse-adapted SARS-coronavirus causes disease and mortality in BALB/c mice",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Roberts",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Deming",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Paddock",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Cheng",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Yount",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Vogel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "PLoS Pathog",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.ppat.0030005"
+                ]
+            }
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Efficient marginalization to compute protein posterior probabilities from shotgun mass spectrometry data",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Serang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Maccoss",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Noble",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J. Proteome Res",
+            "volume": "9",
+            "issn": "",
+            "pages": "5346--5357",
+            "other_ids": {
+                "DOI": [
+                    "10.1021/pr100594k"
+                ]
+            }
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Faster mass spectrometry-based protein inference: junction trees are more efficient than sampling and marginalization by enumeration",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Serang",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Noble",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "IEEE/ACM Trans. Comput. Biol. Bioinform",
+            "volume": "9",
+            "issn": "",
+            "pages": "809--817",
+            "other_ids": {
+                "DOI": [
+                    "10.1109/TCBB.2012.26"
+                ]
+            }
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Host-microbe interaction systems biology: lifecycle transcriptomics and comparative genomics",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Sturdevant",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Virtaneva",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Martens",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Bozinov",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Ogundare",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Castro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Future Microbiol",
+            "volume": "5",
+            "issn": "",
+            "pages": "205--219",
+            "other_ids": {
+                "DOI": [
+                    "10.2217/fmb.09.125"
+                ]
+            }
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Molecular signatures from omics data: from chaos to consensus",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Sung",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Chandrasekaran",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Witten",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Price",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Biotechnol. J",
+            "volume": "7",
+            "issn": "",
+            "pages": "946--957",
+            "other_ids": {
+                "DOI": [
+                    "10.1002/biot.201100305"
+                ]
+            }
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "The SARS coronavirus nucleocapsid protein induces actin reorganization and apoptosis in COS-1 cells in the absence of growth factors",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Surjit",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Jameel",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Chow",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Lal",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Biochem. J",
+            "volume": "383",
+            "issn": "",
+            "pages": "13--18",
+            "other_ids": {
+                "DOI": [
+                    "10.1042/BJ20040984"
+                ]
+            }
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Correlating gene and protein expression data using Correlated Factor Analysis",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Tan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Salim",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ploner",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Lehti\u00f6",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Chia",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Pawitan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMC Bioinformatics",
+            "volume": "10",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-10-272"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Integrative analysis of transcriptomic and proteomic data of Desulfovibrio vulgaris: a non-linear model to predict abundance of undetected proteins",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Torres-Garc\u00eda",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Runger",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Meldrum",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Bioinformatics",
+            "volume": "25",
+            "issn": "",
+            "pages": "1905--1914",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btp325"
+                ]
+            }
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "A Bayesian framework for combining heterogeneous data sources for gene function prediction (in Saccharomyces cerevisiae)",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Troyanskaya",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Dolinski",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Owen",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Altman",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Botstein",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proc. Natl. Acad. Sci. U.S.A",
+            "volume": "100",
+            "issn": "",
+            "pages": "8348--8353",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0832373100"
+                ]
+            }
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "A Factor graph nested effects model to identify networks from genetic perturbations",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Vaske",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "House",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Luu",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Frank",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Yeang",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Lee",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS Comput. Biol",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1000274"
+                ]
+            }
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "Network analysis of epidermal growth factor signaling using integrated genomic, proteomic and phosphorylation data",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Waters",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Quesenberry",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Willse",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bandyopadhyay",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kathmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS ONE",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone"
+                ]
+            }
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "Data merging for integrated microarray and proteomic analysis",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Waters",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Pounds",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Thrall",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Brief. Funct. Genomic. Proteomic",
+            "volume": "5",
+            "issn": "",
+            "pages": "261--272",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bfgp/ell019"
+                ]
+            }
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "Breaking the high-throughput bottleneck: new tools help biologists integrate complex datasets",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Waters",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Singhal",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Webb-Robertson",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Stephan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Gephart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Sci. Comput",
+            "volume": "23",
+            "issn": "",
+            "pages": "22--26",
+            "other_ids": {}
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "The universal protein resource (UniProt): an expanding universe of protein information",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Apweiler",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bairoch",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Natale",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Barker",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Boeckmann",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Nucleic Acids Res",
+            "volume": "34",
+            "issn": "",
+            "pages": "187--191",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/nar/gkj161"
+                ]
+            }
+        },
+        "BIBREF60": {
+            "ref_id": "b60",
+            "title": "Gene network interconnectedness and the generalized topological overlap measure",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Yip",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Horvath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC Bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-8-22"
+                ]
+            }
+        },
+        "BIBREF61": {
+            "ref_id": "b61",
+            "title": "Systems biology of innate immunity",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Zak",
+                    "suffix": ""
+                },
+                {
+                    "first": "Aderem",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Immunol. Rev",
+            "volume": "227",
+            "issn": "",
+            "pages": "264--282",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1600-065X.2008.00721.x"
+                ]
+            }
+        },
+        "BIBREF62": {
+            "ref_id": "b62",
+            "title": "A general framework for weighted gene coexpression network analysis",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Horvath",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Stat. Appl. Genet. Mol. Biol",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.2202/1544-6115.1128"
+                ]
+            }
+        },
+        "BIBREF63": {
+            "ref_id": "b63",
+            "title": "Recursive SVM feature selection and sample classification for mass-spectrometry and microarray data",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Leung",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Harris",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "BMC Bioinformatics",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/1471-2105-7-197"
+                ]
+            }
+        },
+        "BIBREF64": {
+            "ref_id": "b64",
+            "title": "Advances in proteomics data analysis and display using an accurate mass and time tag approach",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Zimmer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Monroe",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Qian",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Mass Spectrom. Rev",
+            "volume": "25",
+            "issn": "",
+            "pages": "450--448",
+            "other_ids": {}
+        },
+        "BIBREF65": {
+            "ref_id": "b65",
+            "title": "Conflict of Interest Statement: The authors declare that the research was con",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Module graph prioritization by examination of the relationship of module-pairs to all phenotypic variables. Clear patterns show transcript module 1 and peptide module 4 with the bulk of maximum negative correlations and transcript module 3 and peptide module 2 with the bulk of maximum positive correlations with the phenotype. This matrix clearly provides ranking on sub-graphs.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Overlapping eigenvector summaries show similar response patterns observed across transcript and peptide modules. The blue lines show collapsed transcript module eigenvectors plotted over days post infection. Red dotted lines show the collapsed peptide module eigenvectors. The top row shows the module sub-network of transcript module 3 and peptide module 2. The middle row shows transcript module 4 and peptide modules 12 and 13. The bottom row shows transcript module 1 with peptide modules 4 and 8. There is clear evidence of a shared response between transcript and peptide modules, demonstrating a multi-omic signature. See the supplementary tables for lists of the drivers and enriched functional categories.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "| The mouse phenotype for experiment SM001, for both mocks and infected mice. Pathological variables are given along with viral dosages (Dose), day of tissue sampling post infection (Day), Mouse ID (RepName). Supplementary Figure 1 | Pearson correlations between transcript module eigenvector summaries and mouse phenotypes. In rows, each module is labeled as ME_followed by the module ID number. Supplementary Figure 2 | Pearson correlations between peptide module eigenvector summaries and mouse phenotypes. In rows, each module is labeled as ME_ followed by the module ID number. Supplementary Figure 3 | Pearson correlations between peptide module eigenvector summaries and transcript module summaries. Each module is labeled as ME_ followed by the module ID number. Supplementary Figure 4 | Points are composed of peptide-transcript pairs, where each entity maps to the same Entrez ID. The x and y axis are correlations with the overall pathology phenotype, while the size and hue indicates correlation across the data types. Blue indicates a positive correlation while red shows a negative correlation.",
+            "latex": null,
+            "type": "figure"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "David L. Gibbs designed the methods, analyzed the results, developed the code, and wrote the manuscript. Lisa Gralinski and Ralph S. Baric are responsible for all aspects of generating the SARS data. Shannon K. McWeeney designed methods, contributed to the analysis and edited the manuscript. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "AUTHOR CONTRIBUTIONS"
+        },
+        {
+            "text": "The authors would like to thank Arie Baratt and the Pacific Northwest National Lab assistance in peptide identification. The Baric Lab was invaluable in providing discussions regarding the phenotypic data they generated, along with helpful discussion regarding the integration strategy with respect to prioritization. David Maier provided extremely useful insight with regard to the data integration strategies.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "ACKNOWLEDGMENTS"
+        },
+        {
+            "text": "The Supplementary Material for this article can be found online at:http://www.frontiersin.org/journal/10.3389/fgene.2013. 00309/abstract",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "SUPPLEMENTARY MATERIAL"
+        }
+    ]
+}

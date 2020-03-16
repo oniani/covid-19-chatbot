@@ -1,0 +1,3381 @@
+{
+    "paper_id": "01110a24b6ce133ae80d21a36c7994e364ba296c",
+    "metadata": {
+        "title": "Feature Selection Methods for Identifying Genetic Determinants of Host Species in RNA Viruses",
+        "authors": [
+            {
+                "first": "R",
+                "middle": [],
+                "last": "Aguas",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "N",
+                "middle": [
+                    "M"
+                ],
+                "last": "Ferguson",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Despite environmental, social and ecological dependencies, emergence of zoonotic viruses in human populations is clearly also affected by genetic factors which determine cross-species transmission potential. RNA viruses pose an interesting case study given their mutation rates are orders of magnitude higher than any other pathogen -as reflected by the recent emergence of SARS and Influenza for example. Here, we show how feature selection techniques can be used to reliably classify viral sequences by host species, and to identify the crucial minority of host-specific sites in pathogen genomic data. The variability in alleles at those sites can be translated into prediction probabilities that a particular pathogen isolate is adapted to a given host. We illustrate the power of these methods by: 1) identifying the sites explaining SARS coronavirus differences between human, bat and palm civet samples; 2) showing how cross species jumps of rabies virus among bat populations can be readily identified; and 3) de novo identification of likely functional influenza host discriminant markers.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Emerging infectious diseases (EIDs) continue to represent a significant public health threat, as illustrated by the 2009 H1N1 influenza pandemic and the 2003 severe acute respiratory syndrome (SARS) epidemic. Of particular concern are the 60%+ of EIDs of zoonotic origin [1, 2] . In addition to influenza and SARS [3] , notable examples include hantaviruses [4] , Nipah and Hendra viruses [5] and HIV [6] .",
+            "cite_spans": [
+                {
+                    "start": 271,
+                    "end": 274,
+                    "text": "[1,",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 275,
+                    "end": 277,
+                    "text": "2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 314,
+                    "end": 317,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 358,
+                    "end": 361,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 389,
+                    "end": 392,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 401,
+                    "end": 404,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "While predicting the emergence of new pathogens is likely to remain an unachievable goal for the immediate future, an emphasis of current research has been to try to identify ecological, behavioural and biological predictors of cross-species transmission and consequent disease emergence [2, 7, 8, 9, 10] . The wealth of pathogen sequence data becoming available makes identification of pathogen genomic markers of emergence one of the more promising approaches [11] , particularly for RNA viruses given their high mutation rate and resulting high diversity at the population level [12] .",
+            "cite_spans": [
+                {
+                    "start": 288,
+                    "end": 291,
+                    "text": "[2,",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 292,
+                    "end": 294,
+                    "text": "7,",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 295,
+                    "end": 297,
+                    "text": "8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 298,
+                    "end": 300,
+                    "text": "9,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 301,
+                    "end": 304,
+                    "text": "10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 462,
+                    "end": 466,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 582,
+                    "end": 586,
+                    "text": "[12]",
+                    "ref_id": "BIBREF11"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The identification of genetic markers predicting cross-species disease emergence faces many of the same challenges as genotypeto-phenotype mapping in other spheres, such as human genomewide association studies of risk factors for chronic diseases [13] . Principle among these are relatively small sample sizes coupled with a very large number of potential explanatory variables (single nucleotide substitutions and their interactions) [14, 15] . However, the much higher frequency of polymorphisms in RNA viruses and their fast population-level evolution offers unique challenges and opportunities.",
+            "cite_spans": [
+                {
+                    "start": 247,
+                    "end": 251,
+                    "text": "[13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 435,
+                    "end": 439,
+                    "text": "[14,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 440,
+                    "end": 443,
+                    "text": "15]",
+                    "ref_id": "BIBREF14"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "While most viral variants generated in a specific host are selectively neutral in that host, upon crossing the species barrier they are under strong selective pressure. We expect selection to shape the relative frequencies of viral variants found in donor and recipient species. Specific hosts impose specific evolutionary landscapes on viruses which will translate into signature genetic sequences. We therefore expect comparisons of allele frequencies between sequences of the same pathogen isolated from different hosts to reveal a large subset of alleles which are conserved between host species and a smaller subset of host specific alleles. This comparison can be performed by statistical techniques able to discriminate phenotype (host) relevant variables (alleles). Here we apply feature selection methods which identify a subset of variable sites which can be used to build a robust phenotype classifier [16] . We focus on one algorithm for classification -the random forest algorithm (RFA) -that offers excellent performance in classification tasks, providing direct measures of variable importance and classification error [17] .",
+            "cite_spans": [
+                {
+                    "start": 913,
+                    "end": 917,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 1134,
+                    "end": 1138,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Our goals are two-fold. First, we investigate how well featureselection algorithms such as RFA can reliably classify RNA viruses according to their host species reservoir, thereby giving insight into pathogen evolution, and the frequency of cross-species transition events. Identification of functional polymorphisms is not critical in meeting this goal, though clearly is desirable. Second, we evaluate how well RFA can identify sets of sites that are functionally relevant to the phenotype of interest (in this case host species), in the context of dense RNA virus genomes and their high degree of linkage.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "We first analyse polymerase gene sequences of RNA viruses to identify the genetic signatures predicting host species. As an example, Figure 1a represents the diversity of Flavivirus polymerase amino acid sequences (Table S2 ). Here we use principal component analysis (PCA) solely to visualise the variation between samples, not as a classification tool. Figure 1b illustrates how feature selection identifies amino acid positions which robustly classify samples by host species, resulting in clustering of samples which infect the same reservoir. The clustering of samples seen in the PCA plot is similar to that seen in the maximum likelihood tree (Figure 1c) , supporting the use of PCA as a useful tool for generating low-dimensional representations of genetic variation.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 133,
+                    "end": 142,
+                    "text": "Figure 1a",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 214,
+                    "end": 223,
+                    "text": "(Table S2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 355,
+                    "end": 364,
+                    "text": "Figure 1b",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 650,
+                    "end": 661,
+                    "text": "(Figure 1c)",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "Second, we examine the potential of RFA applied as a phenotypic classifier to give insight into cross-species disease emergence. In this case, analysis of sequences of viruses which have fully adapted to particular host species -as in the Flavivirus example -is insufficient to distinguish between the subset of mutations required to allow cross-species emergence and later non-essential mutations which further increase viral fitness in a new species. We therefore need to examine data collected from zoonotic outbreaks. The 2003 SARS epidemic is a good example of a zoonosis which rapidly developed a high level of transmissibility in humans [3, 18, 19] . The pathogen was rapidly identified [3] and the origin of the virus was initially traced back to palm civets [19] , before bats were identified as the natural reservoirs of SARS-like coronaviruses [20] . We applied the RFA to nucleotide sequences of the spike protein of SARS-like coronaviruses (Table  S3) , recovered from human patients and palm civets from the 2003 and 2004 epidemics and bat sequences available in the Genbank database. Figure 2a illustrates the extent to which bat sequences differ from the human and palm civet sequences recovered in China in 2002-2004, and also highlights the similarity of palm civet and human sequences [19] . Analysis of the variation in the selected host-discriminant viral alleles (highlighted in Figure 3 ) reveals interesting relationships between host reservoirs (Figure 2b) . Firstly, there is noticeable genetic variation in the samples from human SARS patients collected in the early and mid-stages of the 2003 epidemic, compatible with adaptation of the virus to a new host species. The late 2003 samples were less variable, suggesting selective pressures may by then have stabilized [21] . Secondly, human patient samples from a small outbreak in January 2004 are more closely related to palm civet 2004 samples than to any human sample from the previous year, indicating that the 2004 outbreak represented an independent cross species transition [22] . The palm civet samples from 2003 were collected a few months after the human epidemic ended so there might have been an accumulation of mutations responsible for the substantial distance between palm civet 2003 samples and human 2003 samples. However, the close proximity between the bat samples and the first samples from the human 2003 epidemic suggests that the transition from palm civet to human occurred quite rapidly after the transition from bat to palm civet. With respect to our second goal -identifying functional relevant sites -it is notable that 12 of the 15 positions identified by feature selection coded for non-synonymous substitutions (Table  S4) , most of which are mapped onto the surface of the spike protein. It should be noted that of the 15 positions identified in the current study, 13 overlap with those found in [23] . The functional relevance of the two unique positions (239 and 311) found here and that of the 13 unique positions identified in [23] is not clear. When running the RFA for amino acid sequences of the same viruses, we obtain a subset of 12 significant amino acid positions that are coded for by the exact same non-synonymous substitutions highlighted by the RFA conducted on the nucleotide sequences.",
+            "cite_spans": [
+                {
+                    "start": 644,
+                    "end": 647,
+                    "text": "[3,",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 648,
+                    "end": 651,
+                    "text": "18,",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 652,
+                    "end": 655,
+                    "text": "19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 694,
+                    "end": 697,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 767,
+                    "end": 771,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 855,
+                    "end": 859,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1304,
+                    "end": 1308,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 1795,
+                    "end": 1799,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 2059,
+                    "end": 2063,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 2906,
+                    "end": 2910,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 3041,
+                    "end": 3045,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 953,
+                    "end": 964,
+                    "text": "(Table  S3)",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 1099,
+                    "end": 1108,
+                    "text": "Figure 2a",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1401,
+                    "end": 1409,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1470,
+                    "end": 1481,
+                    "text": "(Figure 2b)",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 2720,
+                    "end": 2731,
+                    "text": "(Table  S4)",
+                    "ref_id": "TABREF3"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "High mutation rates in RNA viruses facilitate the overcoming of host specific barriers [24] particularly in ecological settings where hosts display high contact rates [8, 22] . However, cross-species transfer seems to be favoured between closely related host species [9, 25, 26, 27] , suggesting that the fitness landscape of host adaptation is shaped by host phylogeny. Streicker and colleagues [26] defined lineages of rabies virus associated to particular bat taxa, identifying 43 cross species transmission events involving 15 bat species. Here we reanalyse the complete nucleoprotein sequences available for five of those bat species (Table S5) . PCA applied to these sequences ( Figure 4a ) shows how viruses collected from 3 of the bats species (L. borealis, L. seminolus, L. cinereus) are extremely similar, with a substantially divergent lineage infecting E. fuscus bats and an isolated small cluster of viruses seen in T. brasiliensis. Applying RFA to predict host species to these sequences allows discrimination of L. cinereus specific traits (Figure 4b ), but does not significantly separate the L. borealis and L. seminolus clusters. This suggests that transmission of rabies virus between these two bat species is much more frequent than between any other pair of species examined. The advantage of RFA compared with phylogenetic methods is that it allows a probability of ''belonging'' to each host bat species to be estimated for each virus sample. Thus we can examine whether a virus isolated in one species is in fact native to a different host species. Figure 4b highlights the 8 outlier sequences (T1-T8) in this dataset -viruses which are closer to rabies viruses native to a different species from that in which they were isolated. For these 8 viruses, Figure 4c gives the RFA classification probabilities of these viruses to the 5 different host species considered. In six cases, the cross-species transitions thus identified agree with those identified in [26] . Five of these 8 transitions occurred between L. borealis and L. seminolus. This, and the relatively poor ability of RFA to choose between these species in classifying viruses (Table S6 ), suggests that phylogenetic closeness between host species ( Figure S4 ) facilitates cross-species transmission.",
+            "cite_spans": [
+                {
+                    "start": 87,
+                    "end": 91,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 167,
+                    "end": 170,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 171,
+                    "end": 174,
+                    "text": "22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 267,
+                    "end": 270,
+                    "text": "[9,",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 271,
+                    "end": 274,
+                    "text": "25,",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 275,
+                    "end": 278,
+                    "text": "26,",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 279,
+                    "end": 282,
+                    "text": "27]",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 396,
+                    "end": 400,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 1981,
+                    "end": 1985,
+                    "text": "[26]",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 639,
+                    "end": 649,
+                    "text": "(Table S5)",
+                    "ref_id": "TABREF4"
+                },
+                {
+                    "start": 685,
+                    "end": 694,
+                    "text": "Figure 4a",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1055,
+                    "end": 1065,
+                    "text": "(Figure 4b",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1573,
+                    "end": 1582,
+                    "text": "Figure 4b",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1776,
+                    "end": 1785,
+                    "text": "Figure 4c",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 2163,
+                    "end": 2172,
+                    "text": "(Table S6",
+                    "ref_id": null
+                },
+                {
+                    "start": 2236,
+                    "end": 2245,
+                    "text": "Figure S4",
+                    "ref_id": "FIGREF3"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "To address our second goal of investigating the functional relevance of identified discriminant features, we applied RFA to a collection of influenza A samples from distinct host species",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "Moving away from genome scan methods used for human GWAS (ultimately inappropriate for the short highly polymorphic genomes of RNA viruses), our work shows the power and potential of multi-class machine learning algorithms in inferring the functional genetic changes associated with phenotypic change (e.g. crossing a species barrier). We show that even distantly related viruses within a viral family share highly conserved genetic signatures of host specificity; reinforce how fitness landscapes of host adaptation are shaped by host phylogeny; and highlight the evolutionary trajectories of RNA viruses in rapid expansion and under great evolutionary pressure. We do so by (for each dataset) unveiling a set of phenotype characteristic mutations which are shown to be functionally relevant, thus providing new insights into phenotypic relationships between RNA viruses. These methods also provide a solid statistical framework with which the degree of host adaptation can be inferred, thus serving as a valuable tool for studying host transition events with particular relevance for emerging infectious diseases. These methods can then serve as rigorous tools of emergence potential assessment, specifically in scenarios where rapid host classification of newly emerging viruses can be more important than identifying putative functional sites.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "focusing on two viral segments that have been suggested to be major determinants of host range and virulence [28] . First, as a critical validation of the RFA, we analysed H1N1 hemagglutinin (HA) amino acid sequences collected in human (pre and post 2009 pandemic) and swine hosts, since multiple sources of empirical evidence for the functional relevance of specific amino acids in that gene are available [29, 30, 31] . Second, we analysed the PB2 Influenza A gene, since it is highly conserved across subtypes and its evolution has been hypothesised to reflect host specific adaptation [32] .",
+            "cite_spans": [
+                {
+                    "start": 109,
+                    "end": 113,
+                    "text": "[28]",
+                    "ref_id": "BIBREF27"
+                },
+                {
+                    "start": 407,
+                    "end": 411,
+                    "text": "[29,",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 412,
+                    "end": 415,
+                    "text": "30,",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 416,
+                    "end": 419,
+                    "text": "31]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 589,
+                    "end": 593,
+                    "text": "[32]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Author Summary"
+        },
+        {
+            "text": "The HA analysis serves not only as an assessment of the functional relevance of the positions being highlighted as host specific by RFA, but also as a benchmark of the method by direct comparison with a recently published study [33] which made use of an alternative feature-selection algorithm (Adaboost). We compare algorithm performance on three levels: prediction ability, percentage of selected amino acids in functionally relevant positions, and overlap of selected amino acids. We use full HA segment amino acid sequences and analyse the proportion of selected amino acids that fall in the Receptor Binding Domain (RBD), and in known antigenic sites. Table 1 summarises our findings by comparison with the Adaboost results [33] . There is substantial overlap with the sets of relevant positions between the two methods, although RFA seems to consistently identify a larger proportion of amino acids in HA's receptor binding domain (RBD), particularly those that are also known antigenic sites, with a greater predictive ability. Even if one were to aggregate the Adaboost results (Adaboost can only undertake binary classification, so two comparisons were needed to explore host-specific determinants for 3 virus groups), that algorithm identifies 47 significant positions, 20 (42.5%) of which belong to the RBD, 7 (35%) in known antigenic sites. A multi-class RFA is able to identify a significant larger subset of amino acids in known antigen sites (12 in the RBD plus 2 others), the functional relevance of which can be explored in future experimental studies. Table S7 lists all the positions selected as significant, while Figure 5 portrays allelic diversity across the HA samples analysed and gives clear intuition into why the identified sites were selected by RFA. We should note the absence of the 190 and 225 mutations (hallmark mutations of human-adapted H1N1 HA) from the subset of significant residues determined by RFA. Although these mutations confer optimal contact with the sialic acid receptors [29] , we find that 190D is highly conserved throughout our sequences, contrasting with the 190E amino acid found in avian samples. Residue 225 is picked as one of the 100 most informative sites for host discrimination by the RFA. All the virus groups examined contain samples with the 225D allele, while the 225G allele (the consensus in avian viruses) is present in some seasonal human and swine samples. Had we included avian samples in the analysis, the 225 positions would certainly be classified as highly host discriminant. Here, we identify other mutations which have empirically been found to influence contact with the a2-6 glycans, either by providing additional anchoring sites for the sialic acid (position 145); by forming a network interacting with Asp190 (186, 187 and 189); or by modulating the stability of those contacts (219 and 227) [34, 35] . Identified positions 155 and 131 are also thought to play a relevant role in binding to sialic acid receptors [34, 36] . Feature selection performed on the PB2 segment highlights subtype transcending functionally relevant amino acids from sequences of 7 influenza subtypes (H1N1, H1N2, H2N2, H3N2, H5N1, H3N8, H7N7), collected in 5 different hosts (humans, birds, pigs, dogs, and horses), as detailed in Table S8 . Overall, we identified a subset of 23 host discriminant positions (Table S9) , out of which only 7 fall outside known functional domains [37, 38] . Our results are substantially congruent (overlap of 7 identified positions out of 12) with those of a phylogenetic study aimed at identifying amino acid sites with strong support for different selection constraints in human and avian viruses [39] , even though our analysis is not limited to differences between these two hosts. A closer look at the identified sites in the most extensively studied functional domains (the 627 and NLS domains) reveals that all lie on the surface of the protein (Figure 6) , with mutations at positions 588, 591,627, and 702 being responsible for the most drastic conformational changes. Analysis of the physiochemical properties of the selected amino acids reveals side chain charge reversals in positions 591 and 627 (Table S9 ). The insertion of a lysine in an otherwise avian adapted H5N1 virus (which is unable to infect humans) has been shown to promote host adaptation [40, 41] and increase virulence [42, 43] . Conversely, mutation in amino acid 591 can reduce the selective pressure for mutations at amino acid 627, serving as an alternate human adaptive strategy [44] . This possible interaction is emphasised by the juxtaposition of residues 591 and 627, as observed in Figure 6 . Of the remaining selected amino acids, some refer to mutations that can alter domain structure, three of which are human discriminating (661, 674, and 702). Interestingly, only one of the selected sites (292) differentiates canine viruses from equine viruses. The paired mean distance between groups (measured in terms of the number of differences observed in the full gene sequences) is smallest for the canine and equine viruses (Table S10 ). These host species turn out to be the ones with the most recent common ancestor [45, 46] , lending additional support to the hypothesis that host phylogeny shapes evolution of viruses by affecting cross-species mutational barriers. However, influenza H1N1 viruses found in human hosts are more similar (on average) to avian viruses than to viruses found in other mammalian hosts. Bird viruses are also the least divergent comparison group from swine viruses, perhaps reflecting the avian origin of all influenza viruses, and that, for influenza, transmission between birds and some mammalian hosts (human and swine in this case) is more frequent than expected by their phylogenetic relationships, probably due to persistent exposure in domestic settings.",
+            "cite_spans": [
+                {
+                    "start": 228,
+                    "end": 232,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 729,
+                    "end": 733,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 2019,
+                    "end": 2023,
+                    "text": "[29]",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 2873,
+                    "end": 2877,
+                    "text": "[34,",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 2878,
+                    "end": 2881,
+                    "text": "35]",
+                    "ref_id": "BIBREF34"
+                },
+                {
+                    "start": 2994,
+                    "end": 2998,
+                    "text": "[34,",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 2999,
+                    "end": 3002,
+                    "text": "36]",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 3436,
+                    "end": 3440,
+                    "text": "[37,",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 3441,
+                    "end": 3444,
+                    "text": "38]",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 3689,
+                    "end": 3693,
+                    "text": "[39]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 4356,
+                    "end": 4360,
+                    "text": "[40,",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 4361,
+                    "end": 4364,
+                    "text": "41]",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 4388,
+                    "end": 4392,
+                    "text": "[42,",
+                    "ref_id": "BIBREF41"
+                },
+                {
+                    "start": 4393,
+                    "end": 4396,
+                    "text": "43]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 4553,
+                    "end": 4557,
+                    "text": "[44]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 5197,
+                    "end": 5201,
+                    "text": "[45,",
+                    "ref_id": "BIBREF44"
+                },
+                {
+                    "start": 5202,
+                    "end": 5205,
+                    "text": "46]",
+                    "ref_id": "BIBREF45"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 657,
+                    "end": 664,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1570,
+                    "end": 1578,
+                    "text": "Table S7",
+                    "ref_id": null
+                },
+                {
+                    "start": 1634,
+                    "end": 1642,
+                    "text": "Figure 5",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 3288,
+                    "end": 3296,
+                    "text": "Table S8",
+                    "ref_id": null
+                },
+                {
+                    "start": 3365,
+                    "end": 3375,
+                    "text": "(Table S9)",
+                    "ref_id": null
+                },
+                {
+                    "start": 3942,
+                    "end": 3952,
+                    "text": "(Figure 6)",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 4199,
+                    "end": 4208,
+                    "text": "(Table S9",
+                    "ref_id": null
+                },
+                {
+                    "start": 4661,
+                    "end": 4669,
+                    "text": "Figure 6",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 5103,
+                    "end": 5113,
+                    "text": "(Table S10",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Author Summary"
+        },
+        {
+            "text": "In recent years, genome-wide association studies (GWAS) have become an increasingly popular tool to identify genetic determinants of non-infectious human diseases [47] . However, statistically rigorous genotype-to-phenotype mapping for pathogens has been The receptor binding domain refers to positions 114 through 268 of the HA segment. 2 The antigenic sites considered here are those defined as such in [60] . 3 The Adaboost algorithm as implemented in [33] . doi:10.1371/journal.pcbi.1003254.t001",
+            "cite_spans": [
+                {
+                    "start": 163,
+                    "end": 167,
+                    "text": "[47]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 338,
+                    "end": 339,
+                    "text": "2",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 405,
+                    "end": 409,
+                    "text": "[60]",
+                    "ref_id": "BIBREF59"
+                },
+                {
+                    "start": 412,
+                    "end": 413,
+                    "text": "3",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 455,
+                    "end": 459,
+                    "text": "[33]",
+                    "ref_id": "BIBREF32"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "much less common. The methods used for human GWAS are particularly ill-suited to feature selection in RNA viruses, due to the short genome length, very high substitution rate and diversity, and the high degree of genetic linkage [48, 49] . Human GWAS tend to concentrate on common variants to explain the observed phenotypes [15, 49, 50] by looking at individual SNPs, thus having severe limitations in the presence of epistasis [15, 48, 50, 51] ; our work demonstrates that non-parametric machine-learning based methods -such as RFA -are more appropriate in the context of RNA viruses, by identifying sets of substitutions associated with a particular phenotypic class, rather than solely evaluating the significance of individual polymorphisms [48, 51] . The incorporation of interactions among predictor variables in RFA makes it possible to identify possible epistatic effects, as highlighted in Figure 3 , with substitutions being determinant for host discrimination when found together with other substitutions at other sites, but being fairly unimportant by themselves. While RFA and other related discriminative methods arise from a different theoretical paradigm from likelihood-based statistical models, their predictive performance can be readily assessed via bootstrapping and other resampling methods. Our work demonstrates that machine-learning based feature selection methods are a powerful tool for de novo discovery of likely functional host discriminating markers, whilst providing a measure of the relative importance of those markers to host specificity. More generally, we highlight the potential of RFA for gaining important biological insights on cross-species transitions of RNA viruses.. First, we find that even relatively distantly related viruses within viral families -that might be geographically isolated and transmitted by different routes -share highly conserved genetic signatures of host specificity. Second, we see that the fitness landscapes of host adaptation are shaped by host phylogeny, with evolutionary barriers generally being lower between closely related host species, though not always (influenza A viruses transfer between birds and some mammalian hosts being a counterexample). Third, our analysis of influenza A often selects sites with empirically proven functional relevance [34, 36, 41, 44] to host specificity -in the case of HA, playing critical roles in cell receptor binding; for PB2, being exposed on the protein surface ( Figure 6 ) and thus potentially interacting with host importin molecules to gain access to the nucleus [52] or with the nucleoprotein in the ribonucleoprotein complex [53, 54] .",
+            "cite_spans": [
+                {
+                    "start": 229,
+                    "end": 233,
+                    "text": "[48,",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 234,
+                    "end": 237,
+                    "text": "49]",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 325,
+                    "end": 329,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 330,
+                    "end": 333,
+                    "text": "49,",
+                    "ref_id": "BIBREF48"
+                },
+                {
+                    "start": 334,
+                    "end": 337,
+                    "text": "50]",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 429,
+                    "end": 433,
+                    "text": "[15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 434,
+                    "end": 437,
+                    "text": "48,",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 438,
+                    "end": 441,
+                    "text": "50,",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 442,
+                    "end": 445,
+                    "text": "51]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 746,
+                    "end": 750,
+                    "text": "[48,",
+                    "ref_id": "BIBREF47"
+                },
+                {
+                    "start": 751,
+                    "end": 754,
+                    "text": "51]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 2327,
+                    "end": 2331,
+                    "text": "[34,",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 2332,
+                    "end": 2335,
+                    "text": "36,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 2336,
+                    "end": 2339,
+                    "text": "41,",
+                    "ref_id": "BIBREF40"
+                },
+                {
+                    "start": 2340,
+                    "end": 2343,
+                    "text": "44]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 2584,
+                    "end": 2588,
+                    "text": "[52]",
+                    "ref_id": "BIBREF51"
+                },
+                {
+                    "start": 2648,
+                    "end": 2652,
+                    "text": "[53,",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 2653,
+                    "end": 2656,
+                    "text": "54]",
+                    "ref_id": "BIBREF53"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 900,
+                    "end": 908,
+                    "text": "Figure 3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 2481,
+                    "end": 2489,
+                    "text": "Figure 6",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Overall, genotype to phenotype mapping using host reservoir as the discriminant phenotype can reveal evolutionary trajectories of RNA viruses in rapid expansion and under great evolutionary pressure (capturing the effects of diversification and expansion in a new host, as well as the contraction of diversity following host adaptation), while establishing the genetic signatures imposed by specific hosts which permit cross-species transmission events to be identified. Although discriminant analysis approaches are typically marred by biases related to sampling efforts and founder effects [55] , RFA enables the circumvention of some of these biases through cross-validation, sampling with replacement and attribution of weights to unequally sampled groups (see Text S1 for more details). Even though some residual sources of bias are impossible to eliminate, these rigorous methods (which are computationally efficient and thus applicable to large numbers of sequences) are potentially useful for assessing the risk of viral emergence, and represent a powerful additional tool alongside phylogenetic analysis for analysing the phenotypic evolution of RNA viruses.",
+            "cite_spans": [
+                {
+                    "start": 592,
+                    "end": 596,
+                    "text": "[55]",
+                    "ref_id": "BIBREF54"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Feature selection methods try to find the subset of relevant features for building robust learning models that can accurately inform a classification algorithm [16] . We focussed on the random forest algorithm (RFA), since it offers excellent performance in classification tasks [17] , and provides direct measures of variable importance and classification error. Each tree in a random forest is trained on a bootstrap sample of the data, and at each split a random subset of the variables is chosen from all the available variables (in this case, a subset of positions in the sequence for each split). Final classification of each sample results from aggregating the votes of all trees in the forest. The importance measure of each variable is obtained as the loss of accuracy of classification caused by the random permutation of attribute values for that variable. RFA identifies which variables give the most discriminating information regarding the independent categorical variable of interest (host reservoir in this case). We used the varSelRF package in R to run the random forest algorithm [56] .",
+            "cite_spans": [
+                {
+                    "start": 160,
+                    "end": 164,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 279,
+                    "end": 283,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 1099,
+                    "end": 1103,
+                    "text": "[56]",
+                    "ref_id": "BIBREF55"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Feature selection algorithm"
+        },
+        {
+            "text": "The information within a given sequence alignment was numerically recoded into an allele frequency matrix, using the adegenet R package [57] (see Text S1 for more details). Starting from a multiple sequence alignment, all conserved sites are discarded, and a presence/absence matrix of all other alleles is assembled. Since we are dealing with RNA viruses, this matrix is actually equivalent to a presence/absence matrix of amino acid/ nucleotide types in polymorphic sites (Table S1 ).",
+            "cite_spans": [
+                {
+                    "start": 136,
+                    "end": 140,
+                    "text": "[57]",
+                    "ref_id": "BIBREF56"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 474,
+                    "end": 483,
+                    "text": "(Table S1",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Data preparation"
+        },
+        {
+            "text": "Outside of phylogenetic analysis, direct comparison of genetic sequences is challenging, due to the high dimensionality of the datasets, typically consisting of dozens of sequences containing thousands of nucleotides. However, the relationship between a set of viral sequences can be represented through dimensional reduction techniques such as principal component analysis (PCA) [58] . Here we use PCA simply as a tool to graphically represent the variance in our datasets and to highlight the relationships between the viral samples collected in different host species, similar to past studies [59] . Selecting the two dominant principal components (which in our study always explained more than 40% of the variance) allows for a straightforward interpretation of differences between any set of sequences through a two dimensional plot, with the scores for the two principal components serving as the coordinates. We can then assess how well feature selection clusters RNA viruses by phenotype class (here host reservoir) by applying PCA to both the original dataset and to the dataset consisting exclusively of sites selected by feature selection.",
+            "cite_spans": [
+                {
+                    "start": 380,
+                    "end": 384,
+                    "text": "[58]",
+                    "ref_id": "BIBREF57"
+                },
+                {
+                    "start": 596,
+                    "end": 600,
+                    "text": "[59]",
+                    "ref_id": "BIBREF58"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Visualising the results"
+        },
+        {
+            "text": "RFA prediction errors and variable importance are estimated from the samples which are left out of the training set at each split of the tree -the 'out-of-bag' samples. This makes RFA highly robust to over-fitting. Although RFA is unlikely to over-fit, we carried out cross-validation of the algorithm by performing multiple bootstrap runs of the feature selection procedure. Each bootstrap run is a new realisation of the complete feature selection procedure, thus removing selection bias concerns on the importance of the most significant variables.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performance evaluation and solution stability"
+        },
+        {
+            "text": "More details on the methods employed throughout can be found in Text S1. Figure S1 RFA error rates as a function of the number of variables in the forest (panels on the left) and solution stability (panels on the right) for 4 viral taxa. Points in the panels on the right reflect the proportion of trees in which the variable of the rank given on the x-axis from the original random forest are included among the top ranked X variables (X = 10 for blue points and X = 30 for red points) in the 100 bootstrap samples. (TIF) Figure S2 RFA error rates as a function of the number of variables in the forest (panels on the left) and solution stability (panels on the right) for 4 viral taxa. Points in the panels on the right reflect the proportion of trees in which the variable of the rank given on the xaxis from the original random forest are included among the top ranked X variables (X = 10 for blue and X = 30 for red points in the Rabies and SARS RFA runs; X = 25 for blue and X = 100 for red points in the influenza runs) in the 100 bootstrap samples. (TIF) Figure S3 Feature selection impact on host reservoir clustering, training set (TS) and out-of-bag samples (OOB) error rates for the viruses of 3 taxa (excluding Flaviviruses) discriminated in Table  S1 . We display the relationship between viral sequences according to the scores of the first two principal components of the PCA analysis of both the original sequences and the sequences containing only those amino acids which were selected by feature selection. Colour coding of host reservoir is as follows: goldprimates/humans; purple -birds; green -other mammals/ artiodactyls; red -bats/carnivores; blue -rodents/lagomorphs. (TIF) Figure S4 Bat species phylogeny according to the 12S ribosomal RNA gene (Genbank reference for sequences -AF263219, AF326092, AY495480, AY495484, and AY495482). The maximum likelihood tree is shown, displaying the percentage of trees in which the associated taxa clustered together next to the branches. The tree is drawn to scale, with branch lengths measured in number of substitutions per site. All positions containing gaps and missing data were eliminated. There were a total of 1014 positions in the final dataset. (TIF) Figure S5 Variable importance scores obtained from the RFA when using only viruses from the Human and Swine groups and all the samples (Human, Swine and pandemic Human groups). The different colors discriminate the 4 groups defined by k-means clustering.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 73,
+                    "end": 82,
+                    "text": "Figure S1",
+                    "ref_id": "FIGREF0"
+                },
+                {
+                    "start": 523,
+                    "end": 532,
+                    "text": "Figure S2",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 1063,
+                    "end": 1072,
+                    "text": "Figure S3",
+                    "ref_id": "FIGREF2"
+                },
+                {
+                    "start": 1255,
+                    "end": 1264,
+                    "text": "Table  S1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1699,
+                    "end": 1708,
+                    "text": "Figure S4",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 2226,
+                    "end": 2235,
+                    "text": "Figure S5",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Performance evaluation and solution stability"
+        },
+        {
+            "text": "Table S1 Representation of the genetic data matrixes used to run the RFA. From a starting multiple sequence alignment (A) we discard all non-polymorphic sites (marked by asterisks), and build a presence/absence matrix of all other alleles as in Table S1B . (DOCX) Putative residue positions in the 3D conformation of the spike protein were suggested by [22] . Synonymous substitutions are shown in italic. (DOCX) Table S10 Mean pairwise distance (measured in terms of amino acid differences) between and within host reservoir groups for the influenza viruses used in the PB2 analysis. (DOCX)",
+            "cite_spans": [
+                {
+                    "start": 353,
+                    "end": 357,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 245,
+                    "end": 254,
+                    "text": "Table S1B",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "(TIF)"
+        },
+        {
+            "text": "Table S11 Summary of the classification type random forest algorithms performed and overall prediction error. (DOCX)",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "(TIF)"
+        },
+        {
+            "text": "Text S1 Includes a more detailed description of the methods used throughout, as well as Figures S1, S2 , S3, S4, S5 and Tables S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11. (DOCX)",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 88,
+                    "end": 102,
+                    "text": "Figures S1, S2",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": "(TIF)"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Diseases of humans and their domestic mammals: pathogen characteristics, host range and the risk of emergence",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Cleaveland",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Laurenson",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Taylor",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Philos Trans R Soc Lond B Biol Sci",
+            "volume": "356",
+            "issn": "",
+            "pages": "991--999",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Global trends in emerging infectious diseases",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Jones",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Patel",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Levy",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Storeygard",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Balk",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature",
+            "volume": "451",
+            "issn": "",
+            "pages": "990--993",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Aetiology: Koch's postulates fulfilled for SARS virus",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Fouchier",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kuiken",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Schutten",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Van Amerongen",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Van Doornum",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nature",
+            "volume": "423",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Hantaviruses: a global disease problem",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Schmaljohn",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Hjelle",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "Emerg Infect Dis",
+            "volume": "3",
+            "issn": "",
+            "pages": "95--104",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Nipah virus: a recently emergent deadly paramyxovirus",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Chua",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Bellini",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rota",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Harcourt",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Tamin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Science",
+            "volume": "288",
+            "issn": "",
+            "pages": "1432--1435",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "AIDS as a zoonosis: scientific and public health implications",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hahn",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Shaw",
+                    "suffix": ""
+                },
+                {
+                    "first": "De",
+                    "middle": [],
+                    "last": "Cock",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Sharp",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Science",
+            "volume": "287",
+            "issn": "",
+            "pages": "607--614",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Host range and emerging and reemerging pathogens",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Woolhouse",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Gowtage-Sequeria",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Emerg Infect Dis",
+            "volume": "11",
+            "issn": "",
+            "pages": "1842--1847",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Crossspecies virus transmission and the emergence of new epidemic diseases",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Parrish",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Holmes",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Morens",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Park",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Burke",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Microbiol Mol Biol Rev",
+            "volume": "72",
+            "issn": "",
+            "pages": "457--470",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Phylogeny and geography predict pathogen community similarity in wild primates and humans",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Davies",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Pedersen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Proc Biol Sci",
+            "volume": "275",
+            "issn": "",
+            "pages": "1695--1701",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Ability to replicate in the cytoplasm predicts zoonotic transmission of livestock viruses",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Pulliam",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Dushoff",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J Infect Dis",
+            "volume": "199",
+            "issn": "",
+            "pages": "565--568",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Identifying genetic markers of adaptation for surveillance of viral host jumps",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Pepin",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Lass",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Pulliam",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Read",
+                    "suffix": ""
+                },
+                {
+                    "first": "Lloyd-Smith",
+                    "middle": [],
+                    "last": "Jo",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nat Rev Microbiol",
+            "volume": "8",
+            "issn": "",
+            "pages": "802--813",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Rates of spontaneous mutation among RNA viruses",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Drake",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "90",
+            "issn": "",
+            "pages": "4171--4175",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "A genome-wide association study identifies susceptibility loci for Wilms tumor",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Turnbull",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Perdeaux",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Pernet",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Naranjo",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Renwick",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nat Genet",
+            "volume": "44",
+            "issn": "",
+            "pages": "681--684",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Predicting genetic predisposition in humans: the promise of whole-genome markers",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "De Los Campos",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Gianola",
+                    "suffix": ""
+                },
+                {
+                    "first": "Allison",
+                    "middle": [],
+                    "last": "Db",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nat Rev Genet",
+            "volume": "11",
+            "issn": "",
+            "pages": "880--886",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Genomewide association studies and assessment of the risk of disease",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Manolio",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "N Engl J Med",
+            "volume": "363",
+            "issn": "",
+            "pages": "166--176",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "An Introduction to Variable and Feature Selection",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Guyon",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Elisseeff",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Journal of Machine Learning Research",
+            "volume": "",
+            "issn": "",
+            "pages": "1157--1182",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Gene selection and classification of microarray data using random forest",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Diaz-Uriarte",
+                    "suffix": ""
+                },
+                {
+                    "first": "Alvarez",
+                    "middle": [],
+                    "last": "De Andres",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "BMC Bioinformatics",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "A cluster of cases of severe acute respiratory syndrome in Hong Kong",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Tsang",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Ho",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ooi",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Yee",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "N Engl J Med",
+            "volume": "348",
+            "issn": "",
+            "pages": "1977--1985",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Isolation and characterization of viruses related to the SARS coronavirus from animals in southern China",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Guan",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Zheng",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Q"
+                    ],
+                    "last": "He",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Zhuang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Science",
+            "volume": "302",
+            "issn": "",
+            "pages": "276--278",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Bats are natural reservoirs of SARS-like coronaviruses",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Yu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Ren",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Smith",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Science",
+            "volume": "310",
+            "issn": "",
+            "pages": "676--679",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Molecular evolution of the SARS coronavirus during the course of the SARS epidemic in China",
+            "authors": [
+                {
+                    "first": "Tcsme",
+                    "middle": [],
+                    "last": "Consortium",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Science",
+            "volume": "303",
+            "issn": "5664",
+            "pages": "1666--1675",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Cross-host evolution of severe acute respiratory syndrome coronavirus in palm civet and human",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Song",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Tu",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Zheng",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "102",
+            "issn": "",
+            "pages": "2430--2435",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Virus pathogen database and analysis resource (ViPR): a comprehensive bioinformatics database and analysis resource for the coronavirus research community",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Pickett",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Greer",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Stewart",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Viruses",
+            "volume": "4",
+            "issn": "",
+            "pages": "3209--3226",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "The population genetics and evolutionary epidemiology of RNA viruses",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Moya",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Holmes",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Gonzalez-Candelas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Nat Rev Microbiol",
+            "volume": "2",
+            "issn": "",
+            "pages": "279--288",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Host species barriers to influenza virus infections",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Kuiken",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Holmes",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Mccauley",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Rimmelzwaan",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Williams",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Science",
+            "volume": "312",
+            "issn": "",
+            "pages": "394--397",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Host phylogeny constrains cross-species emergence and establishment of rabies virus in bats",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Streicker",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Turmelle",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Vonhof",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "V"
+                    ],
+                    "last": "Kuzmin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Mccracken",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Science",
+            "volume": "329",
+            "issn": "",
+            "pages": "676--679",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Patterns of host specificity and transmission among parasites of wild primates",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Pedersen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Altizer",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Poss",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Cunningham",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Nunn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Int J Parasitol",
+            "volume": "35",
+            "issn": "",
+            "pages": "647--657",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "and hemagglutinin mutations are major determinants of host range and virulence in mouse-adapted influenza A virus",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Ping",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Dankar",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Forbes",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Keleta",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Virol",
+            "volume": "84",
+            "issn": "",
+            "pages": "10606--10618",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Early alterations of the receptor-binding properties of H1, H2, and H3 avian influenza virus hemagglutinins after their introduction into mammals",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Matrosovich",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Tuzikov",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Bovin",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Gambaryan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Klimov",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "J Virol",
+            "volume": "74",
+            "issn": "",
+            "pages": "8502--8512",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Emergence and pandemic potential of swine-origin H1N1 influenza virus",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Neumann",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Noda",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kawaoka",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nature",
+            "volume": "459",
+            "issn": "",
+            "pages": "931--939",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "A two-amino acid change in the hemagglutinin of the 1918 influenza virus abolishes transmission",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Tumpey",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Maines",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Van Hoeven",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Glaser",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Solorzano",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Science",
+            "volume": "315",
+            "issn": "",
+            "pages": "655--659",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "Evolution of influenza A virus PB2 genes: implications for evolution of the ribonucleoprotein complex and origin of human influenza A virus",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Gorman",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Donis",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kawaoka",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Webster",
+                    "suffix": ""
+                }
+            ],
+            "year": 1990,
+            "venue": "J Virol",
+            "volume": "64",
+            "issn": "",
+            "pages": "4893--4902",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Putative amino acid determinants of the emergence of the 2009 influenza A (H1N1) virus in the human population",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Meroz",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Yoon",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Ducatez",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Fabrizio",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Webby",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "108",
+            "issn": "",
+            "pages": "13522--13527",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Transmission and pathogenesis of swine-origin 2009 A(H1N1) influenza viruses in ferrets and mice",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Maines",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Jayaraman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Belser",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Wadford",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Pappas",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Science",
+            "volume": "325",
+            "issn": "",
+            "pages": "484--487",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Quantitative biochemical rationale for differences in transmissibility of 1918 pandemic influenza A viruses",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Srinivasan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Viswanathan",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Raman",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Chandrasekaran",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Raguram",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "105",
+            "issn": "",
+            "pages": "2800--2805",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Extrapolating from sequence-the 2009 H1N1 'swine' influenza virus",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Soundararajan",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Tharakaraman",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Raman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Raguram",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Shriver",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Nat Biotechnol",
+            "volume": "27",
+            "issn": "",
+            "pages": "510--513",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Interaction of the Influenza A Virus Polymerase PB2 C-terminal Region with Importin alpha Isoforms Provides Insights into Host Adaptation and Polymerase Assembly",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Boivin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Hart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Biological Chemistry",
+            "volume": "286",
+            "issn": "",
+            "pages": "10439--10448",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Structures of influenza A proteins and insights into antiviral drug targets",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Das",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Aramini",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ma",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Krug",
+                    "suffix": ""
+                },
+                {
+                    "first": "Arnold",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Nature Structural & Molecular Biology",
+            "volume": "17",
+            "issn": "",
+            "pages": "530--538",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Identifying changes in selective constraints: host shifts in influenza",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "U"
+                    ],
+                    "last": "Tamuri",
+                    "suffix": ""
+                },
+                {
+                    "first": "Dos",
+                    "middle": [],
+                    "last": "Reis",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hay",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Goldstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "PLoS Comput Biol",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Genetic analysis of the compatibility between polymerase proteins from human and avian strains of influenza A viruses",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Naffakh",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Massin",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Escriou",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Crescenzo-Chaigne",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Van Der Werf",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "Journal of General Virology",
+            "volume": "81",
+            "issn": "",
+            "pages": "1283--1291",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "A Single Amino-Acid in the Pb2-Gene of Influenza-a Virus Is a Determinant of Host Range",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Subbarao",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "London",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Murphy",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Journal of Virology",
+            "volume": "67",
+            "issn": "",
+            "pages": "1761--1764",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Molecular basis for high virulence of Hong Kong H5N1 influenza A viruses",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hatta",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Gao",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Halfmann",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Kawaoka",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Science",
+            "volume": "293",
+            "issn": "",
+            "pages": "1840--1842",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Role of host-specific amino acids in the pathogenicity of avian H5N1 influenza viruses in mice",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Hatta",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Watanabe",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Neumann",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Watanabe",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Gen Virol",
+            "volume": "91",
+            "issn": "",
+            "pages": "1284--1289",
+            "other_ids": {}
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Adaptive strategies of the influenza virus polymerase for replication in humans",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mehle",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Doudna",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Proc Natl Acad Sci U S A",
+            "volume": "106",
+            "issn": "",
+            "pages": "21312--21316",
+            "other_ids": {}
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "The adaptive evolution of the mammalian mitochondrial genome",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Da Fonseca",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Johnson",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "O&apos;brien",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Ramos",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Antunes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "BMC Genomics",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "Molecules remodel the mammalian tree",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "De Jong",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Trends Ecol Evol",
+            "volume": "13",
+            "issn": "",
+            "pages": "270--275",
+            "other_ids": {}
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Genome-wide association studies for complex traits: consensus, uncertainty and challenges",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Mccarthy",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Abecasis",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Cardon",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Goldstein",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Little",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nat Rev Genet",
+            "volume": "9",
+            "issn": "",
+            "pages": "356--369",
+            "other_ids": {}
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Bioinformatics challenges for genome-wide association studies",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Moore",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Asselbergs",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Williams",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Bioinformatics",
+            "volume": "26",
+            "issn": "",
+            "pages": "445--455",
+            "other_ids": {}
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "Implication of next-generation sequencing on association studies",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Siu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jin",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Xiong",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "BMC Genomics",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Genome-wide association studies",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Bush",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Moore",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS Comput Biol",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "From single-SNP to wide-locus: genome-wide association studies identifying functionally related genes and intragenic regions in small sample studies",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Wittkowski",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Sonakya",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Song",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Seybold",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Keddache",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Pharmacogenomics",
+            "volume": "14",
+            "issn": "",
+            "pages": "391--401",
+            "other_ids": {}
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Interaction of polymerase subunit PB2 and NP with importin alpha1 is a determinant of host range of influenza A virus",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Gabriel",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Herwig",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Klenk",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Plos Pathogens",
+            "volume": "4",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Organization of the Influenza Virus Replication Machinery",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Moeller",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Kirchdoerfer",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Potter",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Carragher",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Wilson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1227270"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Avian Influenza A virus polymerase association with nucleoprotein, but not polymerase assembly, is impaired in human cells during the course of infection",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Rameix-Welti",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Tomoiu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Dos",
+                    "middle": [],
+                    "last": "Santos Afonso",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Van Der Werf",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Naffakh",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J Virol",
+            "volume": "83",
+            "issn": "",
+            "pages": "1320--1331",
+            "other_ids": {}
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "All that glitters is not gold -founder effects complicate associations of flu mutations to disease severity",
+            "authors": [
+                {
+                    "first": "Rtc",
+                    "middle": [],
+                    "last": "Lee",
+                    "suffix": ""
+                },
+                {
+                    "first": "Cls",
+                    "middle": [],
+                    "last": "Santos",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "De Paiva",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Cui",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Sirota",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Virology Journal",
+            "volume": "7",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "GeneSrF and varSelRF: a web-based tool and R package for gene selection and classification using random forest",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Diaz-Uriarte",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "BMC Bioinformatics",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "adegenet: a R package for the multivariate analysis of genetic markers",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Jombart",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Bioinformatics",
+            "volume": "24",
+            "issn": "",
+            "pages": "1403--1405",
+            "other_ids": {}
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "A method to predict functional residues in proteins",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Casari",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Sander",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Valencia",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "Nat Struct Biol",
+            "volume": "2",
+            "issn": "",
+            "pages": "171--178",
+            "other_ids": {}
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "Genome-wide survey of SNP variation uncovers the genetic structure of cattle breeds",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Gibbs",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Taylor",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Van Tassell",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Barendse",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Eversole",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Science",
+            "volume": "324",
+            "issn": "",
+            "pages": "528--532",
+            "other_ids": {}
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "Structural basis of preexisting immunity to the 2009 H1N1 pandemic influenza virus",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Xu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Ekiert",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Krause",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Hai",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Crowe",
+                    "suffix": ""
+                },
+                {
+                    "first": "Jr",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Science",
+            "volume": "328",
+            "issn": "",
+            "pages": "357--360",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Feature selection of host specific genetic signatures within Flaviviridae. The scatterplots display the first two principal components of the PCA undertaken using allele frequency information from (a) Flaviviruses' full polymerase sequences and (b) an alignment of the amino acids selected by the random forest algorithm. The maximum likelihood phylogenetic tree obtained from full polymerase sequences is presented in (c). Tree branch lengths reflect the number of amino acid differences per sequence. doi:10.1371/journal.pcbi.1003254.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "SARS coronavirus species transitions and evolution. The first two principal components of the PCA undertaken using (a) SARS coronavirus complete spike protein nucleotide sequences, and (b) nucleotides selected by the RFA. Viral groups, defined by host species and season, are represented by ellipses of different colours: Human patient samples from 2002/2003 collected in early, mid and late epidemic phase are HP03E (green), HP03M (purple) and HP03L (yellow); 2004 Human samples are labelled HP04 (black); palm civets samples collected in 2003 and 2004 are labelled PC03 (blue) and PC04 (red); bat samples are labelled BT (magenta). doi:10.1371/journal.pcbi.1003254.g002",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Allele importance for host reservoir classification of SARS-like coronaviruses. The alleles which were identified as significant for classification by the feature selection algorithm are represented by red points. doi:10.1371/journal.pcbi.1003254.g003",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Cross-species transition events of rabies viruses in bats. The first two principal components of the PCA undertaken using (a) complete Rabies virus nucleoprotein sequences, and (b) an alignment of nucleotides selected by the RFA. The ellipses of different colours represent the bat species in which virus samples were collected. Eight putative cross-species transmission events are highlighted in yellow with the respective predicted bat species of origin shown in (c). doi:10.1371/journal.pcbi.1003254.g004",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Allele diversity across samples of influenza A H1N1 HA sequences collected from human (pre and post 2009 pandemic) and swine hosts. Each vertical stripe represents allelic variance for a specific amino acid residue in three blocks of 40 sequences (taken at random) per host/virus type. The block of amino acids marked by an asterisk refers to the 100 residues to which the RFA has attributed the highest significance in explaining the allelic differences observed between groups. The ordering of other amino acids follow that of the HA gene. For each position (column) the allele present in the first human (seasonal) virus is colored blue. Moving from bottom to top, different alleles at the same position are then sequentially colored green, red, cyan, yellow and purple. Non polymorphic sites are not shown. doi:10.1371/journal.pcbi.1003254.g005",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Computationally predicted structure of the 531-738 subset of amino acids in the PB2 subunit of the polymerase protein of influenza A viruses. For structural prediction we used the consensus sequence for the subset of viruses' samples collected from each host species. These sequences contain two functional domains: the 627 (in cyan) and the NLS binding (in grey) domains. Highlighted in yellow are the amino acids which were identified by the RFA as discriminating host species. doi:10.1371/journal.pcbi.1003254.g006",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "RFA selected set of putative functionally relevant host discriminating amino acids in H1N1 influenza HA compared with those found with the Adaboost algorithm.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Polymerase gene sequences used to analyse RNA viruses of several taxa. Sources are provided for the natural host reservoir classification. (DOCX)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "SARS coronavirus sequences used. (DOCX)",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF3": {
+            "text": "SARS-like virus nucleotide variants present in the feature selected alleles and corresponding amino acid residues.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "Rabies virus nucleoprotein sequences analysed. (DOCX)Table S6 Random forest host reservoir prediction probabilities for rabies viruses, excluding the putative species transition samples. (DOCX) Table S7 Positions selected as host-specific in the influenza A HA analysis. The positions are ordered according to their predicted RFA importance for classification. (DOCX) Table S8 Sequences used for the analysis of the influenza A PB2 segment by subtype and host reservoir. (DOCX) Table S9 Influenza virus host reservoir relevant amino acids and their respective level of conservation across all viral subtypes (dh, da, ds, dc, and de). (DOCX)",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We thank Thibaut Jombart and Simon Cauchemez for helpful discussion and comments, and Tomer Hertz for sharing the alignments used for the HA analysis.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        },
+        {
+            "text": "Conceived and designed the experiments: RA NMF. Analyzed the data: RA. Wrote the paper: RA NMF.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Contributions"
+        }
+    ]
+}

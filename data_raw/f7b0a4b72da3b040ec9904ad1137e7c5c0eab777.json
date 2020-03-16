@@ -1,0 +1,2413 @@
+{
+    "paper_id": "f7b0a4b72da3b040ec9904ad1137e7c5c0eab777",
+    "metadata": {
+        "title": "",
+        "authors": [
+            {
+                "first": "You-Yu",
+                "middle": [],
+                "last": "Lin",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Taiwan University",
+                    "location": {
+                        "postCode": "106",
+                        "settlement": "Taipei",
+                        "country": "Taiwan"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Chia-Hung",
+                "middle": [],
+                "last": "Hsieh",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jiun-Hong",
+                "middle": [],
+                "last": "Chen",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Taiwan University",
+                    "location": {
+                        "postCode": "106",
+                        "settlement": "Taipei",
+                        "country": "Taiwan"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Xuemei",
+                "middle": [],
+                "last": "Lu",
+                "suffix": "",
+                "affiliation": {},
+                "email": ""
+            },
+            {
+                "first": "Jia-Horng",
+                "middle": [],
+                "last": "Kao",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Taiwan University",
+                    "location": {
+                        "postCode": "100",
+                        "settlement": "Taipei",
+                        "country": "Taiwan"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Pei-Jer",
+                "middle": [],
+                "last": "Chen",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Taiwan University",
+                    "location": {
+                        "postCode": "100",
+                        "settlement": "Taipei",
+                        "country": "Taiwan"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Ding-Shinn",
+                "middle": [],
+                "last": "Chen",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Taiwan University",
+                    "location": {
+                        "postCode": "100",
+                        "settlement": "Taipei",
+                        "country": "Taiwan"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Hurng-Yi",
+                "middle": [],
+                "last": "Wang",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "National Taiwan University",
+                    "location": {
+                        "postCode": "100",
+                        "settlement": "Taipei",
+                        "country": "Taiwan"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Background: The accuracy of metagenomic assembly is usually compromised by high levels of polymorphism due to divergent reads from the same genomic region recognized as different loci when sequenced and assembled together. A viral quasispecies is a group of abundant and diversified genetically related viruses found in a single carrier. Current mainstream assembly methods, such as Velvet and SOAPdenovo, were not originally intended for the assembly of such metagenomics data, and therefore demands for new methods to provide accurate and informative assembly results for metagenomic data.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Results: In this study, we present a hybrid method for assembling highly polymorphic data combining the partial de novo-reference assembly (PDR) strategy and the BLAST-based assembly pipeline (BBAP). The PDR strategy generates in situ reference sequences through de novo assembly of a randomly extracted partial data set which is subsequently used for the reference assembly for the full data set. BBAP employs a greedy algorithm to assemble polymorphic reads. We used 12 hepatitis B virus quasispecies NGS data sets from a previous study to assess and compare the performance of both PDR and BBAP. Analyses suggest the high polymorphism of a full metagenomic data set leads to fragmentized de novo assembly results, whereas the biased or limited representation of external reference sequences included fewer reads into the assembly with lower assembly accuracy and variation sensitivity. In comparison, the PDR generated in situ reference sequence incorporated more reads into the final PDR assembly of the full metagenomics data set along with greater accuracy and higher variation sensitivity. BBAP assembly results also suggest higher assembly efficiency and accuracy compared to other assembly methods. Additionally, BBAP assembly recovered HBV structural variants that were not observed amongst assembly results of other methods. Together, PDR/BBAP assembly results were significantly better than other compared methods. Conclusions: Both PDR and BBAP independently increased the assembly efficiency and accuracy of highly polymorphic data, and assembly performances were further improved when used together. BBAP also provides nucleotide frequency information. Together, PDR and BBAP provide powerful tools for metagenomic data studies.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "Next-generation sequencing (NGS) has become the mainstream method for obtaining high quantities of genomic data during the past decade, and the increased accessibility of massive datasets has driven up the need for compatible analytic algorithms and software [1] . There are several key components for an assembly algorithm, including the capacity to handle massive data sets, the accuracy and efficiency of the assembly, the nature of the data set itself, and the intended use of the assembly results. The former two are dependent of the hardware and algorithms implemented, whereas the latter two influences the optimization strategy and the type of information to be extracted during assembly. For example, metagenomic studies commonly aim to understand the composition and relative abundances of the data set as well as the intra-species or inter-population heterogeneity, therefore the assembly depth and length as well as accuracy are prioritized for such data sets [2] .",
+            "cite_spans": [
+                {
+                    "start": 259,
+                    "end": 262,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 972,
+                    "end": 975,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "A viral quasispecies is a group of highly genetically related viruses found in a single carrier and can be both abundant (viral titer \u2248 10 6 -10 9 ge/ml) and greatly diversified (nucleotide diversity \u2248 10 \u22122 -10 \u22123 ) within patient carriers [3] [4] [5] . Two main NGS platforms, 454/Roche pyrosequencing [6] and Illumina Genome Analyzer [7] , have been commonly used for recent quasispecies-related studies. Pyrosequencing has longer sequence reads and typically does not require data set assembly [8] [9] [10] , although some studies still performed de novo assembly [11] or reference sequence assembly [12, 13] . Illumina sequencing generates much larger data sets compared to pyrosequencing, but its shorter read length limits the efficiency for de novo assembly [2] . Therefore, Illumina sequenced viral quasispecies data sets are usually assembled using reference sequences as templates [14] [15] [16] [17] while de novo assembly is applicable but not commonly used [18] .",
+            "cite_spans": [
+                {
+                    "start": 241,
+                    "end": 244,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 245,
+                    "end": 248,
+                    "text": "[4]",
+                    "ref_id": "BIBREF3"
+                },
+                {
+                    "start": 249,
+                    "end": 252,
+                    "text": "[5]",
+                    "ref_id": "BIBREF4"
+                },
+                {
+                    "start": 304,
+                    "end": 307,
+                    "text": "[6]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 337,
+                    "end": 340,
+                    "text": "[7]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 498,
+                    "end": 501,
+                    "text": "[8]",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 502,
+                    "end": 505,
+                    "text": "[9]",
+                    "ref_id": "BIBREF8"
+                },
+                {
+                    "start": 506,
+                    "end": 510,
+                    "text": "[10]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 568,
+                    "end": 572,
+                    "text": "[11]",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 604,
+                    "end": 608,
+                    "text": "[12,",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 609,
+                    "end": 612,
+                    "text": "13]",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 766,
+                    "end": 769,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 892,
+                    "end": 896,
+                    "text": "[14]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 897,
+                    "end": 901,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 902,
+                    "end": 906,
+                    "text": "[16]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 907,
+                    "end": 911,
+                    "text": "[17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 971,
+                    "end": 975,
+                    "text": "[18]",
+                    "ref_id": "BIBREF17"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "The high throughput Illumina platform, compared to the pyrosequencing platform, is capable of detecting greater amounts of genetic variation within viral quasispecies [15] . However, a major challenge for Illumina quasispecies NGS studies is the sequence assembly of the data sets. Sequence assembly using a reference approach is not only subject to bias of the chosen reference sequence, but also assembles less reads and thus less genetic variation information in the assembly [15] . De novo assembly should be able to provide the most complete and accurate genetic information of NGS data, but can be hindered by regions with high levels of diversity. The commonly used de novo assembly algorithms, such as Velvet [19] , SOAPdenovo [20] , CLC Genomics Workbench (CLC, CLC bio, Aarhus, Denmark), and Euler-SR [21] , were not originally intended for the assembly of metagenomics data with high diversity and coverage depth. Recent progress have been made in the development of de novo assembly algorithms for metagenomes, such as MetaVelvet [22] and Genovo [23] .",
+            "cite_spans": [
+                {
+                    "start": 167,
+                    "end": 171,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 479,
+                    "end": 483,
+                    "text": "[15]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 717,
+                    "end": 721,
+                    "text": "[19]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 735,
+                    "end": 739,
+                    "text": "[20]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 811,
+                    "end": 815,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 1042,
+                    "end": 1046,
+                    "text": "[22]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 1058,
+                    "end": 1062,
+                    "text": "[23]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "In this study, we propose a partial de novo-reference assembly strategy, PDR, which is a de novo-reference hybrid assembly strategy that utilizes the completeness of de novo assembly while complementing its low-efficiency with reference assembly. PDR generates an in situ reference sequence by de novo assembly of a smaller yet less diverse partial data set followed by the reference assembly of the full data set. Results show that the PDR assembly results are more complete and accurate than direct de novo or reference assembly of highly polymorphic metagenomic data sets. We also present a novel BLAST-based assembly pipeline, BBAP, capable of both de novo and reference assembly specifically designed for assembly of metagenomic data sets. The assembly efficiency and accuracy of both PDR and BBAP were examined using actual NGS data sets as well as in silico generated simulated NGS data sets and compared with the assembly results of other assembly methods.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Background"
+        },
+        {
+            "text": "To examine the performance of BBAP and the proposed hybrid assembly strategy, we acquired 12 NGS data sets of HBV viral quasispecies from 7 HBV patient samples [24] . The 12 data sets used for assembly consisted of an average of 21,494,295 101-bp raw reads (RRs), 14,388,844 high quality reads (HQRs, quality score \u2267 20 for all bases; i.e., sequencing error rate = 1%), and 60,228 HRURs (high redundancy unique representative reads; unique representative reads with redundancy \u2267 5, Table 1 and Additional file 1: Table S1 ). The optimized parameters for BBAP assembly are listed in Additional file 1: Table S2 . The same parameters were used for all BBAP assemblies in this study unless mentioned otherwise.",
+            "cite_spans": [
+                {
+                    "start": 160,
+                    "end": 164,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 482,
+                    "end": 489,
+                    "text": "Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 513,
+                    "end": 521,
+                    "text": "Table S1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 601,
+                    "end": 609,
+                    "text": "Table S2",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "BBAP de novo assembly of full and partial data sets",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "The de novo assembly of the full data sets (FD) resulted in an average of 46.0 contigs (minimum length of 150 bp) for each library with an average contig length of 321 bp, suggesting that the assembly results were fragmentized (Table 1 and Additional file 1: Table S3 ). For de novo assembly of partial data sets (PD) of each data set, five partial data sets were initially randomly generated and assembled independently. Because the PD assembly results of the partial data sets from each library were highly similar (data not shown), a single partial data set and its assembly results were used for representation of the sample in further analyses. The PD assembly yielded fewer number of contigs and longer average maximum contig lengths, indicating the PD assembly results were not as fragmentized as FD assembly. Furthermore, PD assembly required fewer contigs than the FD assembly to span the full genome to recover the full length HBV genome (Fig. 1a , Additional file 2: Figure S1 ). PD assembly also yielded a higher proportion of mapped HRURs (95.9% vs 70.3%) and RiHRURs (reads included in high redundancy unique representative reads, 80.4% vs. 68.7%) than FD, further demonstrating its better assembly efficiency.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 227,
+                    "end": 267,
+                    "text": "(Table 1 and Additional file 1: Table S3",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 948,
+                    "end": 956,
+                    "text": "(Fig. 1a",
+                    "ref_id": null
+                },
+                {
+                    "start": 978,
+                    "end": 987,
+                    "text": "Figure S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "Fragmentation is possibly due to high polymorphic reads from the same genomic regions recognized by BBAP as different haplotypes and subsequently assembled into separate clusters. The proportion of polymorphic sites in overlapping contig regions of D2_1 FD assembly was 10 times higher than that in non-overlapping regions (0.238 vs. 0.022; p < 10 \u221210 ). A similar trend was also found in D2_1 PD assembly (Additional file 1: Table S4 ). The shorter FD assembled contigs (<300 bp) had a significantly higher proportion of polymorphic sites than the longer FD assembled contigs (Additional file 2: Figure S2 , Student's t-test, p < 0.05). HRURs that were included or excluded in the partial data sets (for PD assembly) had average redundancies of 1,808X (n = 75,173) and 38X (n = 647,561), respectively, within the full data set. Additionally, the redundancies of the included HRURs in the full and partial data sets were highly correlated (R 2 = 0.9997). This suggests the random selection partial data sets was unbiased and effectively excluded HRURs of low redundancies, resulting in lower polymorphism levels and, in turn, less fragmented assembly results.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 426,
+                    "end": 434,
+                    "text": "Table S4",
+                    "ref_id": null
+                },
+                {
+                    "start": 597,
+                    "end": 606,
+                    "text": "Figure S2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "To fully represent the full data set, the PD assembled contigs were used as references for the reference assembly of the full data set (PDR). For comparison purposes, a Sanger sequence from each patient sample was chosen as the reference sequence for the reference assembly of the full data set (SR). SR assembly resulted in single contigs with average lengths of 3207 bp, whereas PDR assembly produced an average of 3.9 contigs with maximum and average lengths of 3148 bp and 1268 bp, respectively (Table 1 and Additional file 1: Table S3 ). Both PDR and SR recovered full HBV genomes and similar levels of The full data sets were used in the BBAP assembly with FD, SR, and PDR approaches, whereas partial data sets consisting of 1% of randomly selected RRs were used in the BBAP PD assembly approach a Partial data set de novo assembly b Full data set de novo assembly c Sanger reference assembly d Partial data set reference assembly of the full data set e Only minimum assembled contig length > 150 bp was shown RRs raw reads, HQRs high quality reads (quality score threshold = 20, i.e., sequencing error rate = 1%), URs unique representative reads, HRURs high redundancy unique representative reads (unique representative reads with redundancy threshold = 5), RiHRURs reads included in high redundancy unique representative reads Fig. 1 Assembly results of full and partial D2_1 data set by a BBAP, b Velvet, c SOAPdenovo, and d Genovo. The contigs were aligned to the Sanger reference sequence. MetaVelvet assembly results for both full and partial D2_1 data set were identical to those of Velvet and thus not shown polymorphism in the consensus sequences (Additional file 1: Table S5 ), but the PDR assembly additionally identified HBV structural variants (Additional file 1: Table S6 , Additional file 2: Figure S3 -S5 and Additional file 3: SA). PDR alignment accuracy was also higher than SR. SR assembly of D2_1 resulted in a single contig with 50,587 HRURs, but only 50,211 of the SR assembled HRURs were mapped to the two main PDR assembled contigs (M1 and M2; Additional file 2: Figure S6 , 50,396 HRURs) covering the full HBV genome and have identical sequences as the SR contig. Not only did the remaining 376 HRURs all mapped to one of the nine PDR assembled variant contigs, but the SR alignment qualities of those 376 HRURs was less optimal than the 50,211 HRURs, shown by the significantly greater BLAST e-value and lower BLAST alignment score (Wilcoxon rank-sum test, p < 0.001), both supporting the higher alignment accuracy of PDR assembly. Overall, results of SR assembly and PDR assembly were similar in recovering sequence variation, but the latter included more HRURs and RiHRURs with increased accuracy due to the additional mapping options of the shorter HBV variant contigs provided by the de novo assembly of the partial data set, whereas the lower assembly accuracy of the former resulted in low quality alignments and slightly more polymorphic sites.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 499,
+                    "end": 507,
+                    "text": "(Table 1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 531,
+                    "end": 539,
+                    "text": "Table S3",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 1335,
+                    "end": 1341,
+                    "text": "Fig. 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1682,
+                    "end": 1690,
+                    "text": "Table S5",
+                    "ref_id": null
+                },
+                {
+                    "start": 1783,
+                    "end": 1791,
+                    "text": "Table S6",
+                    "ref_id": null
+                },
+                {
+                    "start": 1813,
+                    "end": 1822,
+                    "text": "Figure S3",
+                    "ref_id": null
+                },
+                {
+                    "start": 2093,
+                    "end": 2102,
+                    "text": "Figure S6",
+                    "ref_id": null
+                }
+            ],
+            "section": "BBAP reference assembly with different reference sequences"
+        },
+        {
+            "text": "We were able to measure the polymorphism level of BBAP assembly results (Additional file 2: Figure S6 ) by calculating the nucleotide frequencies for each position (Additional file 1: Table S7 , Additional file 2: Figure S7 and Additional file 3: SB). Furthermore, the nucleotide frequencies derived from BBAP PDR assembly were validated by pyrosequencing (Additional file 1: Table S8 ), demonstrating the assembly results of BBAP are reliable.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 92,
+                    "end": 101,
+                    "text": "Figure S6",
+                    "ref_id": null
+                },
+                {
+                    "start": 184,
+                    "end": 192,
+                    "text": "Table S7",
+                    "ref_id": null
+                },
+                {
+                    "start": 214,
+                    "end": 223,
+                    "text": "Figure S7",
+                    "ref_id": null
+                },
+                {
+                    "start": 376,
+                    "end": 384,
+                    "text": "Table S8",
+                    "ref_id": null
+                }
+            ],
+            "section": "BBAP reference assembly with different reference sequences"
+        },
+        {
+            "text": "We next compared the efficiency and accuracy of BBAP to different assembly methods using both full and partial D2_1 data set. Similar to BBAP FD, the full data set assemblies by Velvet, MetaVelvet, SOAPdenovo, and Genovo resulted in fragmented contigs. De novo assembly of full data set with Velvet resulted in 13 contigs with maximum and average lengths of 1102 bp and 303 bp, respectively (Table 2) , and recovered only 19% of the HBV genome (Fig. 1b , Additional file 2: Figure S1 ). MetaVelvet assembly results, which are based on initial Velvet assembly results, did not show any improvement and were completely identical to Velvet assembly results for both full and partial data set. SOAPdenovo generated 8 assembled contigs with maximum and average lengths of 934 bp and 340 bp, respectively, and covered 14% of the HBV genome (Fig. 1c) . Genovo assembly for the D2_1 data set resulted in a total of 60 contigs with maximum and average contig lengths of 1352 bp and 395 bp, respectively, but only 44% of the HBV genome were recovered ( Fig. 1d , Additional file 2: Figure S1 ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 391,
+                    "end": 400,
+                    "text": "(Table 2)",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 444,
+                    "end": 452,
+                    "text": "(Fig. 1b",
+                    "ref_id": null
+                },
+                {
+                    "start": 474,
+                    "end": 483,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 834,
+                    "end": 843,
+                    "text": "(Fig. 1c)",
+                    "ref_id": null
+                },
+                {
+                    "start": 1043,
+                    "end": 1050,
+                    "text": "Fig. 1d",
+                    "ref_id": null
+                },
+                {
+                    "start": 1072,
+                    "end": 1081,
+                    "text": "Figure S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "BBAP assembly results compared with other assembly methods"
+        },
+        {
+            "text": "We proposed that the high polymorphic nature of virus quasispecies may have hindered the efficiency of sequence assembly, and a randomly extracted yet less polymorphic partial data set may provide a better start for initial assembly as shown in FD vs. PD assemblies. Assembly results of different methods all show that the assembly of the partial data set not only generated longer contigs, but also recovered more than 90% of the full HBV genome, demonstrating that exclusion of low redundant HRURs by random selection of partial data effectively reduced level of polymorphism which, in turn, improved the assembly results as judged by contig length and coverage ( Table 2 , Additional file 2: Figure S1 ).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 666,
+                    "end": 673,
+                    "text": "Table 2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 695,
+                    "end": 704,
+                    "text": "Figure S1",
+                    "ref_id": null
+                }
+            ],
+            "section": "BBAP assembly results compared with other assembly methods"
+        },
+        {
+            "text": "We also noticed that BBAP had better performance in recovering structural variants than the other methods tested. While some of BBAP assembled HBV variants were validated by PCR sequencing (Fig. 2) , both Velvet/ MetaVelvet and SOAPdenovo did not identify any contigs with HBV structural variation. Although Genovo assembled 34 structural containing contigs, their accuracies were questionable as most of them with non-retraceable junction regions (Additional file 2: Figure S8 and Additional file 3: SC).",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 189,
+                    "end": 197,
+                    "text": "(Fig. 2)",
+                    "ref_id": null
+                },
+                {
+                    "start": 468,
+                    "end": 477,
+                    "text": "Figure S8",
+                    "ref_id": null
+                }
+            ],
+            "section": "BBAP assembly results compared with other assembly methods"
+        },
+        {
+            "text": "For a more general assessment and comparison of BBAP performance, in silico NGS data sets were generated from the NCBI HBV complete genome and assembled separately using BBAP FD, Velvet, MetaVelvet, SOAPdenovo, and Genovo. Data set sizes were set to 1,726,462 (55,799X), 172,646 (5,579X), 17,264 (557X), and 1726 (55X) HQRs in combination with error rates of 10 \u22122 , 10 \u22123 , and 10 \u22124 /site. Due to computing time considerations, the maximum simulated data set size of 55,799X was approximately 10% of the D2_1 data set size. Five independent data sets were generated for each parameter combination. BBAP assembly results were highly consistent regardless of the data set parameter values. All but one of the 60 assembly results had both perfect coverage and accuracy; the lone standout assembly result had perfect coverage but a 0.9996 (3214/3215) accuracy (Table 3 and Additional file 1: Table S9 ). The single \"inaccurate\" nucleotide was not an assembly error, but rather a degenerate nucleotide (Y) representing the reference nucleotide (T, 2/3 or 0.67) and the in silico generated erroneous nucleotide (C, 1/3 or 0.33). The corresponding in silico data set was generated with the highest error rate (0.01) and smallest data set size (55X), which is the most likely parameter value combination for erroneous nucleotides to exceed the minimum nucleotide frequency threshold (0.2). Velvet assembly of the in silico data sets produced mixed results (Additional file 1: Table S10 ). Data sets with low error rates and/or small data set sizes were assembled with near perfect coverage and accuracy, whereas both large data sets and high error rates were poorly assembled. As the degree and amount of polymorphism are proportional to the error rate and data set size, respectively, results suggest Velvet is inefficient in assembling highly polymorphic data sets. Unlike the assembly results for D2_1 data sets, MetaVelvet in silico data set assembly results, compared to Velvet results, were improved with higher coverage and less fragmentation (Additional file 1: Table S11 ). MetaVelvet has wider parameter handling range than Velvet, but was still unable to assemble highly polymorphic data sets with high error rates and large data set sizes. Similar to that of Velvet and MetaVelvet, SOAPdenovo could not efficiently assemble data sets of high polymorphism (large data set size and high error rate). In addition, SOAPdenovo also performed poorly when assembling data sets of low polymorphism (low error rate and small data set size). Only data sets of medium sizes and error rates were efficiently assembled by SOAPdenovo (Additional file 1: Table S12 ). Genovo assembly of smaller data set sizes (55X, 557X, and 5,579X), regardless of the error rate, were highly consistent, with only a single nucleotide assembly error among all 45 assembly results (Additional file 1: Table S13 ). The assembly result for the largest data sets (55,799X) were slightly fragmentized across all error rates and on average 4 assembly errors were identified among high error rate (0.01) data sets.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 858,
+                    "end": 866,
+                    "text": "(Table 3",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 890,
+                    "end": 898,
+                    "text": "Table S9",
+                    "ref_id": null
+                },
+                {
+                    "start": 1470,
+                    "end": 1479,
+                    "text": "Table S10",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 2064,
+                    "end": 2073,
+                    "text": "Table S11",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 2646,
+                    "end": 2655,
+                    "text": "Table S12",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 2875,
+                    "end": 2884,
+                    "text": "Table S13",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Results of in silico data set assembly"
+        },
+        {
+            "text": "We developed BBAP, an assembly pipeline designed for the accurate and efficient assembly of highly polymorphic Fig. 2 Schematic summary of corresponding HBV genome (NC_003977) regions for assembled contigs identified as HBV variants. Arrows indicate 5' to 3' direction. Only reads containing the sequences spanning the junction regions were assembled separately into variant contigs; reads spanning non-junction regions of the variant contigs (dotted lines) were assembled into the main HBV contig. The L1 sequence, which is similar to T5, resulted from HBV variant validation with PCR using specialized primers followed by Sanger sequencing. Positions are in correspondence with NC_003977, with dotted lines representing the remaining portion of the circular HBV genome, and the boxed section indicating the encapsidation signal (or episilon, \u03b5) metagenomic NGS data sets. BBAP implements a unique BLAST-based greedy algorithm to assemble data set reads and provides multiple intuitive parameters, depending on the nature of the data set, the sequencing platform, and information demands, to adjust the threshold for read alignment, variant retention, and error removal during assembly. BBAP assembly results of both real and simulated NGS data sets were of higher quality than assembly results of other methods compared.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 111,
+                    "end": 117,
+                    "text": "Fig. 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "We also introduce a new partial de novo-reference (PDR) assembly strategy, which in situ generates reference sequences by de novo assembly of a randomly extracted partial data set to be subsequently used for the reference assembly of the full data set. Current assembly approaches typically assemble the full data set straightforward with either de novo or reference assembly methods, each with their respective advantages and disadvantages. Reference assembly is a much more direct process than de novo assembly which reduces alignment ambiguities and low coverage issues. However, the quality of reference assembly is reliant on the representation level of the reference sequence, as the assembly result will be biased towards the reference sequence and sequence variations not represented by the reference sequence will not be captured. De novo assembly, which is independent of reference sequences, possesses the potential to generate a more complete assembly result including majority consensus sequences and minor variant sequences, but can be hindered by coverage gaps that lack sequencing information and polymorphic regions with high levels of diversity as shown in Tables 1 and 2.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The partial de novo-reference assembly strategy utilizes the advantages of both traditional approaches to contemplate each other. De novo assembly of a randomly extracted yet less polymorphic partial data set provides assembly results that are more complete and highly representative of both majority sequence as well as minor variant sequences in the full data set. In turn, the following reference assembly not only assembles more reads due to the accurate representation of the reference sequences, but also has increased assembly accuracy than both straight-up de novo and reference assemblies (Table 1) . More importantly, the improved quality of assembly resulting from this hybrid PDR approach was not limited to BBAP, as better assembly results using partial data sets were also demonstrated by Velvet, MetaVelvet, SOAPdenovo, and Genovo ( Table 2) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 598,
+                    "end": 607,
+                    "text": "(Table 1)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 848,
+                    "end": 856,
+                    "text": "Table 2)",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "The assembly efficiency of metagenomics data sets is also dependent on the algorithms each assembly method employs. Velvet, MetaVelvet, and SOAPdenovo all assemble NGS data sets through the construction of de Bruijn graphs and Eulerian paths. De Bruijn graphs contain overlapping sequence information represented by branching nodes and stemming vertices, and is extremely sensitive and results quickly deteriorate even with the slightest amount of polymorphism [21] . The assembly algorithm of Velvet and SOAPdenovo both manipulate the constructed de Bruijn graph with error removal and simplification to generate optimal assembly results, which effectively excludes the essential polymorphism information vital to metagenomics data sets during assembly. In contrast, MetaVelvet decomposes the de Bruijn graphs into individual subgraphs and assembles each subgraphs into separate contigs. On the other hand, BBAP adopts a greedy assembly approach by incorporating and clustering sequence reads through BLAST results, and Genovo implements a Bayesian-based probabilistic model and takes into account the potential presence of multiple genomes in the data set. Therefore, it was reasonably expected for BBAP, MetaVelvet, and Genovo to have better assembly results than Velvet and SOAPdenovo when assembling metagenomics data sets, and this was consistent with our results that support BBAP, MetaVelvet, and Genovo are better equipped to assemble metagenomics data sets than Velvet or SOAPdenovo. We compared the average assembly times for in silico and NGS data sets on our server (E5310 1.6GHz x4 x2, 12GB RAM) between all methods to further assess the performance of both BBAP and PDR. For smaller in silico data sets (data set size \u22665,579X or 17.44 Mb) BBAP assembly time was slightly longer than Velvet, MetaVelvet, and SOAPdenovo, but still within a couple minutes (Additional file 1: Table S14 ). BBAP assembly time for the largest in silico data sets tested (data set size = 55,799X or 174 Mb) were similar to the assembly time by the other methods except Genovo, which required considerably much more assembly time than BBAP or the other methods for all in silico data sets. The average BBAP PDR assembly time (624 s) for the 12 NGS data sets was drastically faster than the average BBAP FD assembly time (14,347 s). Overall, results suggest not only do both BBAP and PDR individually increase assembly efficiency and accuracy compared to their respective counterparts, but the combination of BBAP and PDR together further improves the overall assembly quality of metagenomic data sets.",
+            "cite_spans": [
+                {
+                    "start": 461,
+                    "end": 465,
+                    "text": "[21]",
+                    "ref_id": "BIBREF20"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1888,
+                    "end": 1897,
+                    "text": "Table S14",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "Viral pathogens are responsible for the majority of pandemic and epidemic diseases listed by the World Health Organization. Recent studies have utilized the advantages of NGS data sets of the viral quasispecies genome to construct genome-wide diversity profiles for studying the virus-host interactions during infection and, treatment and vaccination [8, 10, 11, 15, 17] . Resistance associated variants and novel variants of the viral quasispecies usually are rare and not detectable by conventional or low depth sequencing, therefore detection of minor variants is clinically important for customizing patient management and treatment strategies [10, 16] . Our results show that BBAP and PDR not only provided an accurate assembly sequence but also generates a high resolution diversity profile of the data set. Additionally, we were able to detect and recover novel variants that were otherwise undetectable to alternative assembly methods.",
+            "cite_spans": [
+                {
+                    "start": 351,
+                    "end": 354,
+                    "text": "[8,",
+                    "ref_id": "BIBREF7"
+                },
+                {
+                    "start": 355,
+                    "end": 358,
+                    "text": "10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 359,
+                    "end": 362,
+                    "text": "11,",
+                    "ref_id": "BIBREF10"
+                },
+                {
+                    "start": 363,
+                    "end": 366,
+                    "text": "15,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 367,
+                    "end": 370,
+                    "text": "17]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 648,
+                    "end": 652,
+                    "text": "[10,",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 653,
+                    "end": 656,
+                    "text": "16]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Assembly of a highly polymorphic NGS data set is a complicated process as it involves multiple steps (such as quality control, read assembly and error removal) and is dependent of several prerequisite factors (data set type, sequencing platform, intended use of results, etc.). In addition, a functional understanding of the algorithms and sufficient parameters are important for the optimization of assembly results. We believe both BBAP and the partial de novo-reference assembly strategy will provide a powerful tool for future metagenomic and viral quasispecies studies.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Conclusions"
+        },
+        {
+            "text": "The BLAST-based assembly pipeline, BBAP, is divided into four major steps: quality control (QC), blast and cluster (BC), alignment and consensus determination (AC), and contig assembly (CA) (Fig. 3a) . BBAP assembles high quality sequences into contigs according to BLAST results. Alignment files of the assembled contigs are generated as a result. The contigs are further assembled into extended-contigs and resulting in contig sequences, a log file, and a statistical analysis of the assembly. All steps, with the sole exception of BLAST, used in-house developed perl scripts.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 190,
+                    "end": 199,
+                    "text": "(Fig. 3a)",
+                    "ref_id": null
+                }
+            ],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "The QC step excludes sequences with low quality scores, trims sequences from both ends, removes redundant identical sequences, and filters unique representative sequences with low redundancy. First, raw reads (RRs) that include any called base with a quality score less than the given threshold is omitted. The remaining high quality reads (HQRs) are trimmed from both ends for the given length to remove barcodes, artificial sequences such as linker, adapters or vectors, and error-prone regions that are more frequently found in the terminal regions for some sequencing platforms. Identical HQRs are compressed and represented by a single unique representative read (UR) while retaining the redundancy count information. Unique representative reads with redundancy counts greater than or equal to the given threshold, high redundancy unique representative reads (HRURs), are retained for further assembly.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "For de novo assembly, the BLAST and cluster step (BC) is initiated with the reciprocal BLAST of the HRURs fasta file. The BLAST parameter of repeat masking was set to include repetitive regions into the results (-F \"\"). BLAST results with gaps or e-value, identity, or BLAST length not meeting the given thresholds were excluded from further assembly. During clustering, if two reads are BLASTed to one another and are both unassigned, then they are assigned to a same new cluster. If only one read has been assigned a cluster, then the unassigned read is added to the cluster of the assigned read. If both have been separately assigned to different clusters, then the two clusters are merged into one single cluster. Finally, clusters with number of assigned reads less than the given threshold sequence number are excluded from further assembly.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "The BC step of reference assembly is similar to that of de novo assembly but with some minor differences. Instead of reciprocal BLAST, the HRURs fasta file is BLASTed to the reference sequences. If a read has identical e-values for multiple reference sequences, the read will be assigned to the reference sequence with the longest sequence length.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "The alignment and consensus determination step (AC) calculates the alignment position for each read of a cluster based on its BLAST results. Only top BLAST results with identity and BLAST length greater than the given thresholds were used for alignment. Consensus sequences were calculated for each base according to the alignment results. Nucleotides with frequencies greater than or equal to the given threshold are retained for polymorphic sites.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "Contigs with identical terminal sequences longer than the given threshold are merged together into extendedcontigs. Identical terminal sequences were identified by self-BLAST of contigs. This step is optional and dependent on the nature of the data set.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "Overall, BBAP uses BLAST results (reciprocal BLAST for de novo assembly, and data set to reference sequence BLAST for reference assembly) to cluster reads into contig groups to increase computation efficiency of following steps. The reads in each contig group are then positioned/ aligned according to their respective BLAST results into contigs. The grouped reads are then extended into contigs according to positioning/alignment information provided from the BLAST results in a greedy strategy manner. Extension of contigs and prevention of assembly artifacts (such as artificial chimeras) are directly dictated by the BLAST identify and length threshold parameters, and indirectly effected by quality control parameters, including the QC-score threshold and the redundancy threshold.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "BBAP can assemble data sets with or without a reference sequence by reference assembly or de novo assembly, respectively. We also introduce a third assembly strategy, the partial de novo-reference assembly approach (Fig. 3b) . A randomly extracted partial data set is first de novo assembled, and then the resulting contig sequences are used as reference sequences to assemble the entire data set through reference assembly.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 215,
+                    "end": 224,
+                    "text": "(Fig. 3b)",
+                    "ref_id": null
+                }
+            ],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "Next generation sequencing data set assembly and statistical analyses NGS data sets were downloaded from a previous study [24] , which consisted of 12 libraries derived from 7 patients chronically infected with HBV within a single family (Additional file 1: Table S15 ). The full data set was separately assembled with BBAP through full data set de novo (FD) assembly, Sanger reference (SR) assembly, and partial de novo-reference (PDR) assembly. A single Sanger sequence from each patient sample was chosen and used as the reference sequence for the SR assembly of the corresponding full data set. For the PDR assembly, partial data sets were constructed independently by randomly choosing 1% of the RRs from the full data set and assembled de novo, and the results of the partial data set de novo (PD) assembly were used as reference sequences for the reference assembly of the full data set. Partial data sets of different ratios were assembled and 1% partial data sets generated the most optimal assembly results (Additional file 1: Table S16 and Additional file 3: SD). Assembly results of different BBAP methods were then compared to each other. Fig. 3 Flow chart summary of BBAP. a The pipeline is divided into four major steps: quality control (QC), blast and cluster (BC), alignment and consensus determination (AC), and contig assembly (CA). b BBAP can perform de novo assembly, reference assembly, or partial de novo-reference assembly, which includes the initial de novo assembly of a randomly extracted partial data set followed by the reference assembly of the full data set using the assembly results from the initial assembly as reference sequences Variant contigs were identified by BLAST against the NCBI HBV complete genome sequence (NC_003977), the Sanger reference sequence, and the NCBI nr/nt database. To verify that the identified variants were not artifacts of incorrect assembly by BBAP, sequences of at least 20 bp and spanning the junction regions of the structural variations were searched for in both the RRs and HQRs fasta files.",
+            "cite_spans": [
+                {
+                    "start": 122,
+                    "end": 126,
+                    "text": "[24]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 258,
+                    "end": 267,
+                    "text": "Table S15",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1037,
+                    "end": 1046,
+                    "text": "Table S16",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1152,
+                    "end": 1158,
+                    "text": "Fig. 3",
+                    "ref_id": null
+                }
+            ],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "The full data set and partial data sets of one library, D2_1 (Additional file 1: Table S15 ), were also assembled using all methods. Statistical analyses and comparisons between assembly methods were performed with perl scripts.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 81,
+                    "end": 90,
+                    "text": "Table S15",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "In silico data set assembly",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "We also compared the performance of different assembly methods by using simulated data sets. In silico data sets were generated by randomly generating 101 bp reads from the reference NCBI HBV complete genome, NC_003977. To mimic observed polymorphism from virus diversity or sequencing error of NGS, different error rates, 10 \u22122 , 10 \u22123 , and 10 \u22124 /site, were applied to the simulated reads. Data set sizes were set to 1,726,462 (55,799X), 172,646 (5,579X), 17,264 (557X), and 1726 (55X) HQRs. Five independent data sets were generated for each parameter combination, error rate and dataset size. Data sets were assembled using BBAP FD assembly, Velvet, MetaVelvet, SOAPdenovo, and Genovo. All in silico data sets, except for data sets of high error rate (0.01) coupled with small data set sizes (55X and 557X), used the same BBAP parameter values for NGS de novo assembly. For the high error rate-low coverage depth data sets, the redundancy threshold was reduced from 5 to 1 to compensate for its low redundancy. For Velvet, MetaVelvet, and SOAPdenovo assembly, the k-mer size was optimally set to 57, 57, and 63, respectively. For Genovo assembly, different numbers of iterations were used for data sets of different coverage depths because of the extreme long run time for larger data sets; the number of iterations for data sets with coverage depths of 55,799X, 5,579X, 557X and 55X was 10, 2000, 10,000, and 10,000, respectively.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "BLAST-based assembly pipeline"
+        },
+        {
+            "text": "Additional file 1: Table S1 . Statistics of next generation sequencing data set of HBV genome from patient serum. Table S2 : Parameters used for de novo, reference, and partial de novo reference BBAP assembly. Table S3 : Assembly results of individual data sets using BBAP with multiple approaches. Table S4 : Comparison of polymorphism between non-overlapping and overlapping regions of D2_1 assembled contigs alignment. Table S5 : Comparison of polymorphism levels between assembly results of BBAP PDR and SR assemblies. Table S6 : Summary of assembled contigs from the PDR assembly of D2_1 NGS data set. Table S7 : Top ten non-synonymous frequency positions of the HBV quasispecies. Table S8 : Nucleotide frequencies derived from BBAP PDR assembly and pyrosequencing. Table S9 : Results of BBAP de novo assembled in silico NCBI HBV complete genome (NC_003977) data sets (n = 5). Table S10 : Results of Velvet assembled in silico NCBI HBV complete genome (NC_003977) data sets (n = 5). Table S11 : Results of MetaVelvet assembled in silico NCBI HBV complete genome (NC_003977) data sets (n = 5). Table S12 : Results of SOAPdenovo assembled in silico NCBI HBV complete genome (NC_003977) data sets (n = 5). Table S13 : Results of Genovo assembled in silico NCBI HBV complete genome (NC_003977) data sets (n = 5). Table S14 : Assembly time required for in silico data sets by BBAP, Velvet, MetaVelvet, SOAPdenovo, and Genovo. Table S15 : Summary of study subjects and samples. Table S16 : Summary of assembly results for D2_1 partial data sets of different size ratio. (DOC 461 kb) Additional file 2: Figure S1 . Comparison of HBV recover ratio by BBAP, Velvet, SOAPdenovo, and Genovo assembly of full and partial D2_1 data sets. Figure S2 : Correlation between assembled scaffold length and scaffold degeneracy for all 12 data sets. Figure S3 : (a) Nucleotide sequence of the R1 scaffold. (b) Schematic alignment of the R1 scaffold, HBV X gene and HBV precore/core gene. Figure S4 : Schematic diagram of the T1 scaffold and its corresponding HBV genome regions. Figure S5 : Schematic diagram of the T6 scaffold and its corresponding HBV genome and Sanger reference sequence regions. Figure S6 : Alignment of Sanger (SR) and partial D2_1 data set assembled scaffolds reference assembled (PDR) scaffolds to the Sanger reference sequence. Figure S7 : Diversity profile of D2_1 HBV quasispecies according to assembly results of partial data set reference assembly of the full data set. Figure S8 : Schematic diagram of two Genovo assembled scaffolds with identified HBV structural variants and its corresponding HBV genome regions. (PDF 489 kb) Additional file 3: A. Variant sequences and human genome sequences. B. Diversity profile of D2_1 HBV quasispecies. C. Structure variation by Genovo. D. Determining optimal size of partial data set. (DOC 67 kb)",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 19,
+                    "end": 27,
+                    "text": "Table S1",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 114,
+                    "end": 122,
+                    "text": "Table S2",
+                    "ref_id": "TABREF1"
+                },
+                {
+                    "start": 210,
+                    "end": 218,
+                    "text": "Table S3",
+                    "ref_id": "TABREF2"
+                },
+                {
+                    "start": 299,
+                    "end": 307,
+                    "text": "Table S4",
+                    "ref_id": null
+                },
+                {
+                    "start": 422,
+                    "end": 430,
+                    "text": "Table S5",
+                    "ref_id": null
+                },
+                {
+                    "start": 523,
+                    "end": 531,
+                    "text": "Table S6",
+                    "ref_id": null
+                },
+                {
+                    "start": 607,
+                    "end": 615,
+                    "text": "Table S7",
+                    "ref_id": null
+                },
+                {
+                    "start": 686,
+                    "end": 694,
+                    "text": "Table S8",
+                    "ref_id": null
+                },
+                {
+                    "start": 771,
+                    "end": 779,
+                    "text": "Table S9",
+                    "ref_id": null
+                },
+                {
+                    "start": 882,
+                    "end": 891,
+                    "text": "Table S10",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 988,
+                    "end": 997,
+                    "text": "Table S11",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1098,
+                    "end": 1107,
+                    "text": "Table S12",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1208,
+                    "end": 1217,
+                    "text": "Table S13",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1314,
+                    "end": 1323,
+                    "text": "Table S14",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1426,
+                    "end": 1435,
+                    "text": "Table S15",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1477,
+                    "end": 1486,
+                    "text": "Table S16",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 1601,
+                    "end": 1610,
+                    "text": "Figure S1",
+                    "ref_id": null
+                },
+                {
+                    "start": 1730,
+                    "end": 1739,
+                    "text": "Figure S2",
+                    "ref_id": null
+                },
+                {
+                    "start": 1834,
+                    "end": 1843,
+                    "text": "Figure S3",
+                    "ref_id": null
+                },
+                {
+                    "start": 1972,
+                    "end": 1981,
+                    "text": "Figure S4",
+                    "ref_id": null
+                },
+                {
+                    "start": 2063,
+                    "end": 2072,
+                    "text": "Figure S5",
+                    "ref_id": null
+                },
+                {
+                    "start": 2184,
+                    "end": 2193,
+                    "text": "Figure S6",
+                    "ref_id": null
+                },
+                {
+                    "start": 2337,
+                    "end": 2346,
+                    "text": "Figure S7",
+                    "ref_id": null
+                },
+                {
+                    "start": 2483,
+                    "end": 2492,
+                    "text": "Figure S8",
+                    "ref_id": null
+                }
+            ],
+            "section": "Additional files"
+        },
+        {
+            "text": "Abbreviations AC: Alignment and consensus determination; BBAP: BLAST-based assembly pipeline; BC: Blast and cluster; CA: Contig assembly; CLC: CLC Genomics Workbench; FD: De novo assembly of the full data set; HQRs: High quality reads; HRURs: High redundancy unique representative reads; NGS: Next generation sequencing; PD: De novo assembly of the partial data set; PDR: Partial de novo-reference assembly; QC: Quality control; RiHRURs: Reads included in HRURs; RRs: Raw reads; SR: Reference assembly of the full data set with Sanger generated reference sequences; URs: Unique representative reads",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional files"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Assembly algorithms for next-generation sequencing data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Miller",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Koren",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Sutton",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Genomics",
+            "volume": "95",
+            "issn": "6",
+            "pages": "315--342",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Next generation sequencing and bioinformatic bottlenecks: the current state of metagenomic data analysis",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Scholz",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Lo",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Chain",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Curr Opin Biotechnol",
+            "volume": "23",
+            "issn": "1",
+            "pages": "9--15",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "High levels of HIV-1 in plasma during all stages of infection determined by competitive PCR",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Piatak",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Saag",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Yang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Kappes",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Luk",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hahn",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Shaw",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Lifson",
+                    "suffix": ""
+                }
+            ],
+            "year": 1993,
+            "venue": "Science",
+            "volume": "259",
+            "issn": "5102",
+            "pages": "1749--54",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "Distinct hepatitis B virus dynamics in the immunotolerant and early immunoclearance phases",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Chien",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Chang",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "J Virol",
+            "volume": "84",
+            "issn": "7",
+            "pages": "3454--63",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Hepatitis C (HCV) genotype and viral titer distribution among Argentinean hemophilic patients in the presence or absence of human immunodeficiency virus (HIV) co-infection",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Picchio",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Nakatsuno",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Boggiano",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Sabbe",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Corti",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Daruich",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Perez-Bianco",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tezanos-Pinto",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Kokka",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wilber",
+                    "suffix": ""
+                }
+            ],
+            "year": 1997,
+            "venue": "J Med Virol",
+            "volume": "52",
+            "issn": "2",
+            "pages": "219--244",
+            "other_ids": {}
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Genome sequencing in microfabricated high-density picolitre reactors",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Margulies",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Egholm",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Altman",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Attiya",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Bader",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Bemben",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Berka",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Braverman",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Chen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nature",
+            "volume": "437",
+            "issn": "7057",
+            "pages": "376--80",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Accurate whole human genome sequencing using reversible terminator chemistry",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Bentley",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Balasubramanian",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Swerdlow",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Smith",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Milton",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Brown",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Hall",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Evers",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Barnes",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Bignell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Nature",
+            "volume": "456",
+            "issn": "7218",
+            "pages": "53--62",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "High-resolution deep sequencing reveals biodiversity, population structure, and persistence of HIV-1 quasispecies within host ecosystems",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Yin",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sun",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Hou",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Lowe",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Gardner",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Salemi",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Williams",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Farmerie",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Sleasman",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Retrovirology",
+            "volume": "9",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Quasispecies Analysis of JC Virus DNA Present in Urine of Healthy Subjects",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Van Loy",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Thys",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Tritsmans",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Stuyver",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS One",
+            "volume": "8",
+            "issn": "8",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Use of massively parallel ultradeep pyrosequencing to characterize the genetic diversity of hepatitis B virus in drug-resistant and drug-naive patients and to detect minor variants in reverse transcriptase and hepatitis B S antigen",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Solmone",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Vincenti",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Prosperi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Bruselles",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Ippolito",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Capobianchi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "J Virol",
+            "volume": "83",
+            "issn": "4",
+            "pages": "1718--1744",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Whole genome deep sequencing of HIV-1 reveals the impact of early minor variants upon immune recognition during acute infection",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Henn",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Boutwell",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Charlebois",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Lennon",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Power",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Macalalad",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Berlin",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Malboeuf",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ryan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Gnerre",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS Pathog",
+            "volume": "8",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Empirical validation of viral quasispecies assembly algorithms: state-of-the-art and challenges",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Prosperi",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Yin",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Nolan",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Lowe",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Goodenow",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Salemi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Scientific reports",
+            "volume": "3",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Sequencing approach to analyze the role of quasispecies for classical swine fever",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Topfer",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Hoper",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Blome",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Beer",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Beerenwinkel",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Ruggli",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Leifer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Virology",
+            "volume": "438",
+            "issn": "1",
+            "pages": "14--23",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Read length versus depth of coverage for viral quasispecies reconstruction",
+            "authors": [
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Zagordi",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Daumer",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Beisel",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Beerenwinkel",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS One",
+            "volume": "7",
+            "issn": "10",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "The role of viral population diversity in adaptation of bovine coronavirus to new host environments",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Borucki",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Allen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Chen-Harris",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Zemla",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Vanier",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Mabery",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Torres",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Hullinger",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Slezak",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS One",
+            "volume": "8",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Deep sequencing analysis of HCV NS3 resistance-associated variants and mutation linkage in liver transplant recipients",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Kirst",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "X"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Dong",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Fried",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Nelson",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS One",
+            "volume": "8",
+            "issn": "7",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Full genomic sequence of an African avian paramyxovirus type 4 strain isolated from a wild duck",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Abolnik",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "De Castro",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Rees",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Virus Genes",
+            "volume": "45",
+            "issn": "3",
+            "pages": "537--578",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Characterization of quasispecies of pandemic 2009 influenza A virus (A/H1N1/2009) by de novo sequencing using a next-generation DNA sequencer",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kuroda",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Katano",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Nakajima",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tobiume",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ainai",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Sekizuka",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Hasegawa",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Tashiro",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sasaki",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Arakawa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "PLoS One",
+            "volume": "5",
+            "issn": "4",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Velvet: algorithms for de novo short read assembly using de Bruijn graphs",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Zerbino",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Birney",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Genome Res",
+            "volume": "18",
+            "issn": "5",
+            "pages": "821--830",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "SOAP: short oligonucleotide alignment program",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Kristiansen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Bioinformatics",
+            "volume": "24",
+            "issn": "5",
+            "pages": "713--717",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "De novo fragment assembly with short mate-paired reads: Does the read length matter?",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chaisson",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Brinza",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Pevzner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Genome Res",
+            "volume": "19",
+            "issn": "2",
+            "pages": "336--382",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "MetaVelvet: an extension of Velvet assembler to de novo metagenome assembly from short sequence reads",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Namiki",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Hachiya",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Tanaka",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Sakakibara",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Nucleic Acids Res",
+            "volume": "40",
+            "issn": "20",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Genovo: de novo assembly for metagenomes",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Laserson",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Jojic",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Koller",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "J Comput Biol",
+            "volume": "18",
+            "issn": "3",
+            "pages": "429--472",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "New insights into the evolutionary rate of hepatitis B virus at different biological scales",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Lin",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Chien",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Tao",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Lu",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Hsieh",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Chen",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "J Virol",
+            "volume": "89",
+            "issn": "7",
+            "pages": "3512--3534",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "TABREF0": {
+            "text": "Average assembly statistics of all 12 data sets using BBAP with multiple approaches",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Comparison of D2_1 assembly results with different methods and different data set sizes Max length Average length Number of contigs % of HBV genome recovered",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Assembled results of in silico generated data sets from the reference HBV genome by different methods a",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We would like to acknowledge Chia-Hua Chen for discussions and suggestions during this study. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgement"
+        },
+        {
+            "text": "The datasets generated during and/or analysed during the current study are available in the NCBI SRA repository (accession number SRP051091). BBAP is implemented in perl and is publicly available at http://homepage.ntu.edu.tw/ youylin/BBAP.html. ",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Availability of data and materials"
+        },
+        {
+            "text": "The authors declare that they have no competing interests.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Competing interests"
+        },
+        {
+            "text": "Not applicable.Ethics approval and consent to participate Not applicable.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Consent for publication"
+        },
+        {
+            "text": "Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.Author details 1 Department of Life Science, National Taiwan University, Taipei 106, Taiwan.\u2022 We accept pre-submission inquiries \u2022 Our selector tool helps you to find the most relevant journal Submit your next manuscript to BioMed Central and we will help you at every step:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Publisher's Note"
+        }
+    ]
+}

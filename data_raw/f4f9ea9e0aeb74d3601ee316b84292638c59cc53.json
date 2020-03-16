@@ -1,0 +1,1803 @@
+{
+    "paper_id": "f4f9ea9e0aeb74d3601ee316b84292638c59cc53",
+    "metadata": {
+        "title": "Prediction of lncRNA-protein interactions using HeteSim scores based on heterogeneous networks OPEN",
+        "authors": [
+            {
+                "first": "Yun",
+                "middle": [],
+                "last": "Xiao",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Central South University",
+                    "location": {
+                        "postCode": "410075",
+                        "settlement": "Changsha",
+                        "country": "China"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Jingpu",
+                "middle": [],
+                "last": "Zhang",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Central South University",
+                    "location": {
+                        "postCode": "410083",
+                        "settlement": "Changsha",
+                        "country": "China"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Lei",
+                "middle": [],
+                "last": "Deng",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Central South University",
+                    "location": {
+                        "postCode": "410075",
+                        "settlement": "Changsha",
+                        "country": "China"
+                    }
+                },
+                "email": "leideng@csu.edu.cn"
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Massive studies have indicated that long non-coding RNAs (lncRNAs) are critical for the regulation of cellular biological processes by binding with RNA-related proteins. However, only a few experimentally supported lncRNA-protein associations have been reported. Existing network-based methods are typically focused on intrinsic features of lncRNA and protein but ignore the information implicit in the topologies of biological networks associated with lncRNAs. Considering the limitations in previous methods, we propose PLPIHS, an effective computational method for Predicting lncRNA-Protein Interactions using HeteSim Scores. PLPIHS uses the HeteSim measure to calculate the relatedness score for each lncRNA-protein pair in the heterogeneous network, which consists of lncRNA-lncRNA similarity network, lncRNA-protein association network and protein-protein interaction network. An SVM classifier to predict lncRNA-protein interactions is built with the HeteSim scores. The results show that PLPIHS performs significantly better than the existing state-of-the-art approaches and achieves an AUC score of 0.97 in the leave-one-out validation test. We also compare the performances of networks with different connectivity density and find that PLPIHS performs well across all the networks. Furthermore, we use the proposed method to identify the related proteins for lncRNA MALAT1. Highlyranked proteins are verified by the biological studies and demonstrate the effectiveness of our method.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Long non-coding RNAs (lncRNAs) are becoming critically important for the understanding of life sciences. Studies have indicated that lncRNAs play critical roles in many important biological processes such as chromatin modification 1 , transcriptional and post-transcriptional regulation 2, 3 , and human diseases 4, 5 . Relating proteins with Long non-coding RNAs (lncRNAs) is a tremendous and meaningful task in human health with applications in understanding lncRNA mechanisms, diagnosis and therapy 6, 7 . In general, lncRNAs exert functions by interfacing with corresponding RNA-binding proteins. Thus, identifying lncRNA interacted proteins is significant to understand complex functions of lncRNA and molecular mechanism 8, 9 of disease progression and cellular circuitry 10, 11 .",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Since experimental methods to detect lncRNA-protein interactions are time-consuming and costly, several computational approaches have been reported for predicting RNA-binding proteins (RBPs). For example, Pancaldi et al. 12 proposed a method to predict ncRNA-protein interactions in 2011 and a approach named RPISeq was presented by Muppirala et al. 13 at the same year, which was constructed by using the features derived from protein and RNA sequences. They trained Random Forest (RF) and Support Vector Machine (SVM) classifiers using 3-mer and 4-mer conjoint triad features for amino acid and nucleotide sequences, respectively 14 . Bellucci et al. created a method named catRAPID 15 by exploiting the physicochemical properties including secondary structure, hydrogen bonding and van der Waals propensities. Wang et al. proposed an approach based on Na\u00edve Bayes (NB) and Extended NB (ENB) classifiers using the similar data and features supported in Muppirala et al. 's work 16 . In 2013, IncPro 17 was created by Lu et al. using three types of classical protein secondary structures, hydrogen-bond and Van der Waals propensities, and six types of RNA secondary structures (RSS).",
+            "cite_spans": [
+                {
+                    "start": 221,
+                    "end": 223,
+                    "text": "12",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Nevertheless, all of these methods only focus on intrinsic features of lncRNA and protein but ignore the information implicit in the topologies of biological networks associated with lncRNAs. On the other hand, biological network-based methods was already widely used in many types of studies, such as disease gene prioritization 18 and drug-target interaction prediction and some of them have achieved good performances. One of the Published: xx xx xxxx OPEN www.nature.com/scientificreports/ 2 Scientific RepoRts | 7: 3664 |",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "most commonly used approach is guilt-by-association (GBA) 19 , which provides the central top-down principle for analyzing gene networks in functional terms or assessing their quality in encoding functional information. New emerged methods, including the Katz method 20 , Combining dATa Across species using Positive-Unlabeled Learning Techniques(CATAPULT) 19 , Random Walk with Restart (RWR) 21 , and LncRNA-protein Interaction prediction based on Heterogeneous Network model (LPIHN) 22 , have extended the association from just direct protein interactions to more distant connections in various ways. The KATZ measure 20 is a weighted sum of the number of paths in the network that measures the similarity of two nodes. CATAPULT 19 is a supervised machine learning method that uses a biased support vector machine where the features are derived from walks in a heterogeneous gene-trait network. RWR 21 is a method for prioritization of candidate genes by use of a global network distance measure, random walk analysis, for definition of similarities in protein-protein interaction networks and it add weight to the assumption that phenotypically similar diseases are associated with disturbances of subnetworks within the larger protein interactome that extend beyond the disease proteins themselves. LPIHN 22 is a network-based method by implement a random walk on a heterogeneous network. PRINCE is a global method based on formulating constraints on the prioritization function that relate to its smoothness over the network and usage of prior information. Compared with LPIHN and RWR, PRINCE propagates information in a smaller network but contains more connotative meaning when build the initial probability values and has made great performance in gene prioritization 23 and disease identification 24 .",
+            "cite_spans": [
+                {
+                    "start": 58,
+                    "end": 60,
+                    "text": "19",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 357,
+                    "end": 359,
+                    "text": "19",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 393,
+                    "end": 395,
+                    "text": "21",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 485,
+                    "end": 487,
+                    "text": "22",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 731,
+                    "end": 733,
+                    "text": "19",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1309,
+                    "end": 1311,
+                    "text": "22",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 1776,
+                    "end": 1778,
+                    "text": "23",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 1806,
+                    "end": 1808,
+                    "text": "24",
+                    "ref_id": "BIBREF24"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "However, many existing network-based methods simply view objects in heterogeneous networks as the same type and do not consider the subtle semantic meanings of different paths. In this paper, we adopt a method named HeteSim, which is a path-based measure to calculate the relevance between objects in heterogeneous network 25 . The basic idea is that similar objects are more likely to be related to some other objects. Considering the relatedness of heterogeneous objects is path-constrained, HeteSim gives a uniform and symmetric measure for arbitrary paths to evaluate the relatedness of heterogeneous object pair (same or different types) with one single score. Due to the relevance path not only captures the semantics information but also constrains the walk path, the score is also a path-based similarity measure.",
+            "cite_spans": [
+                {
+                    "start": 323,
+                    "end": 325,
+                    "text": "25",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "An example of HeteSim score is illustrated in (Fig. 1 ). The number of paths from A to C and B to C is 3 and 2, respectively. The walk count between A and C is larger than B and C, which might indicate that A is more closer to C than B. But the connectivity between B and C is more intense than A and C in the sight of HeteSim score, since most edges starting from B are connected with C, when A only has a small part of edges connected with C.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 46,
+                    "end": 53,
+                    "text": "(Fig. 1",
+                    "ref_id": "FIGREF0"
+                }
+            ],
+            "section": ""
+        },
+        {
+            "text": "Here, we propose a method named PLPIHS (Fig. 2) to predict lncRNA-Protein interactions using HeteSim scores. We first construct a heterogeneous network consisting of a lncRNA-lncRNA similarity network, a lncRNA-protein association network and a protein-protein interaction network. Then, we use the HeteSim measure to calculate the score for each lncRNA-protein pair in the network. A SVM classifier is built based on the scores of different paths. We compare our PLPIHS with PRINCE, RWR and LPIHN and find that PLPIHS outperforms the other methods in many performance measures.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 39,
+                    "end": 47,
+                    "text": "(Fig. 2)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": ""
+        },
+        {
+            "text": "Validation measures. LOOCV(Leave-One-Out Cross Validation) 26 is implemented on the verified lncR-NA-protein associations to evaluate the performance of LPIHN 22 . We leave a known lncRNA-protein pair in turn as the test sample and all the other known lncRNA-protein pairs are regarded as training samples. In order to improve the accuracy of PLPIHS, we remove all connected lncRNAs and proteins while in each validation round. Receiver Operating Characteristic(ROC) curve 27 is used to evaluate the prediction performance, which plots true-positive rate (TPR, sensitivity or recall) versus false-positive rate (FPR, 1-specificity) at different rank cutoffs. When varying the rank cutoffs of successful prediction, we can obtain the corresponding TPR and FPR. In this way, ROC curve is drawn and the area under the curve(AUC) is calculated as well. For a rank threshold, sensitivity(SEN) 28 and specificity(SPE) 29 These measurements are also used to assess the capability of PLPIHS during the preprocessing procedure.",
+            "cite_spans": [
+                {
+                    "start": 59,
+                    "end": 61,
+                    "text": "26",
+                    "ref_id": "BIBREF26"
+                },
+                {
+                    "start": 159,
+                    "end": 161,
+                    "text": "22",
+                    "ref_id": "BIBREF22"
+                },
+                {
+                    "start": 888,
+                    "end": 890,
+                    "text": "28",
+                    "ref_id": "BIBREF28"
+                },
+                {
+                    "start": 912,
+                    "end": 914,
+                    "text": "29",
+                    "ref_id": "BIBREF29"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "Affection of network preprocessing characteristics. In this paper, we only have two kinds of objects, lncRNA and protein. Thus, the paths from a lncRNA to a protein in our heterogeneous network with length less than six is listed in Table 1 . In order to pick out the most efficient paths, we compared the performances of these 14 paths under different combinations (Fig. 3) . We can see that all paths achieve a favorable status except path 1\u2032~2\u2032. Path 1\u2032~14\u2032 obtains the best performance across all measures, which means that the path with length greater than three contains more significant meanings. The constant factor \u03b2 is used to control the influence of longer paths. The longer the path length is, the smaller the inhibiting factor is. Path length equals 3 matches with constant \u03b2, path length equals 4 matches with constant \u03b2*\u03b2 and path length equals 5 matches with constant \u03b2*\u03b2*\u03b2. Table 2 shows that \u03b2 has tiny impact on the final results and \u03b2 = 0.2, 0.4 and 0.7 achieved the best AUC score and the others are not far behind yet.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 233,
+                    "end": 240,
+                    "text": "Table 1",
+                    "ref_id": null
+                },
+                {
+                    "start": 366,
+                    "end": 374,
+                    "text": "(Fig. 3)",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 892,
+                    "end": 899,
+                    "text": "Table 2",
+                    "ref_id": null
+                }
+            ],
+            "section": "Results"
+        },
+        {
+            "text": "To further verify the dependability of our method, we compare the three networks of different connectivity density under different cutoff value 0.3, 0.5 and 0.9 (see lncRNA-Protein associations). The results are shown in Fig. 4 . There are tiny performance differences between different sparse networks. The AUC score of the 0.5 network is higher than that of others while the 0.9 network outperforms others in ACC, SEN, MCC and F1-Score. This suggests that PLPIHS performs well across networks with different densities. Table 1 . The paths from a lncRNA to a protein in our heterogeneous network with length less than six.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 221,
+                    "end": 227,
+                    "text": "Fig. 4",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 521,
+                    "end": 528,
+                    "text": "Table 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Performance comparison of networks with different connectivity density."
+        },
+        {
+            "text": "the RWR method, there is only one restart probability r and it's effects is very slight, which is proved by experiments. The parameter r is set as 0.5 in this comparison. In order to calculate the performance of the different methods, we use a leave-one-out cross validation procedure. We extract 2000 lncRNA-protein associations from the 0.9 network as positive samples, the same number of negative samples are chosen randomly from the 0.3 network as well, avoiding the error caused by imbalance dataset. The gold set which containing 185 lncRNA-protein interactions downloaded from NPinter database has been included in positive pairs as well. In the lncRNA protein prioritization, each lncRNA-protein interaction is utilized as the test set in turn and the remaining associations are used as training data. The whole experiment will be repeated 4000 times to testing each lncRNA-protein pairs in the dataset. ROC curve is drawn based on true positive rate (TPR) and false positive rate (FPR) at different thresholds. The AUC score is utilized to measure the performance. AUC = 1 demonstrates the perfect performance and AUC = 0.5 demonstrates the random performance.The ROC curve of PLPIHS, LPIHS, PRINCE and RWR are plotted in Fig. 5 . The results show that the AUC score of PLPIHS in 0.3 network is 96.8%, which is higher than that of PRINCE, LPIHN and RWR, achieving an AUC value of 81.3%, 88.4% and 79.2%, respectively. Similarly, PLPIHS outperforms other methods in 0.5 network and 0.9 network as well.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 1231,
+                    "end": 1237,
+                    "text": "Fig. 5",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Performance comparison of networks with different connectivity density."
+        },
+        {
+            "text": "Performance evaluation by independent test. For further validation, we also randomly selected 2000 lncRNA-protein associations from the rest of positive samples in 0.9 network and the same number of negative interactions are picked out from the remaining negative samples of 0.3 network to generate the independent test data set. Since the existing network based methods is not suitable for independent test, we only evaluate the performance for the proposed PLPIHS. The independent test results are shown in Fig. 6 , an AUC score of 0.879 is achieved by PLPIHS, illustrating the effectiveness and advantage of the proposed approach. Case Studies. By applying the proposed PLPIHS method, novel candidate lncRNA-related proteins are predicted using LOOCV. We applied PLPIHS onto the 2000 known lncRNA-protein associations, which includes 1511 lncRNAs and 344 proteins to infer novel lncRNA-protein interactions. As a result, an area under the ROC curve of 0.9669, 0.9705 and 0.9703 (Fig. 5) is achieved using the three networks of different connectivity density, which demonstrate that our proposed method is effective in recovering known lncRNA-related proteins.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 509,
+                    "end": 515,
+                    "text": "Fig. 6",
+                    "ref_id": "FIGREF6"
+                },
+                {
+                    "start": 981,
+                    "end": 989,
+                    "text": "(Fig. 5)",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Performance comparison of networks with different connectivity density."
+        },
+        {
+            "text": "To further illustrate the application of our approach, a case study of lncRNA MALAT1(ensemble ID: ENSG00000251562) is examined. MALAT1 is a long non-coding RNA which is over-expressed in many human oncogenic tissues and regulates cell cycle and survival 31 . MALAT1 have been identified in multiple types of physiological processes, such as alternative splicing, nuclear organization, epigenetic modulating of gene expression. A large amount of evidence indicates that MALAT1 also closely relates to various pathological processes, including diabetes complications, cancers and so on 32, 33 .",
+            "cite_spans": [
+                {
+                    "start": 254,
+                    "end": 256,
+                    "text": "31",
+                    "ref_id": "BIBREF31"
+                },
+                {
+                    "start": 584,
+                    "end": 587,
+                    "text": "32,",
+                    "ref_id": "BIBREF32"
+                },
+                {
+                    "start": 588,
+                    "end": 590,
+                    "text": "33",
+                    "ref_id": "BIBREF33"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Performance comparison of networks with different connectivity density."
+        },
+        {
+            "text": "MALAT1 is associated with 68 proteins in NPInter 3.0 34 . We construct the interaction networks of lncRNA MALAT1 by using the prediction results of these four methods (Fig. 7) . Among the 68 known lncRNA-protein interactions, PLPIHS wrongly predicts 6 interactions, while 13 associations are predicted mistakenly by PRINCE and RWR method and 15 lncRNA-protein pairs are falsely predicted by the LPIHN method.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 167,
+                    "end": 175,
+                    "text": "(Fig. 7)",
+                    "ref_id": "FIGREF7"
+                }
+            ],
+            "section": "Performance comparison of networks with different connectivity density."
+        },
+        {
+            "text": "We manually check the top 10 proteins in the ranked list under 0.5 network ( Table 3) .Three of the top 10 predicted proteins have interactions with MALAT1, and most of them had high ranks in the predicted protein lists. For example, In the investigation of colorectal cancer (CRC), MALAT1 could bind to SFPQ, thus releasing PTBP2 from the SFPQ/PTBP2 complex and the interaction between MALAT1 and SFPQ could be a novel therapeutic target for CRC 35 . MALAT1 interacts with SR proteins (SRSF1, SRSF2, SRSF3 and SRSF5) and regulates cellular levels of phosphorylated forms of SR proteins 36 . And it is also as target of TARDBP to play the biological performance and found that TDP-43 bound to long ncRNAs in highly sequence-specific manner in tissue from subjects with or without FTLD-TDP, the MALAT1 ncRNA recruits splicing factors to nuclear speckles and affects phosphorylation of serine/arginine-rich splicing factor proteins 37, 38 . All these results indicate that our proposed method is effective and reliable in identifying novel lncRNA-related proteins. ",
+            "cite_spans": [
+                {
+                    "start": 447,
+                    "end": 449,
+                    "text": "35",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 587,
+                    "end": 589,
+                    "text": "36",
+                    "ref_id": "BIBREF36"
+                },
+                {
+                    "start": 930,
+                    "end": 933,
+                    "text": "37,",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 934,
+                    "end": 936,
+                    "text": "38",
+                    "ref_id": "BIBREF38"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 77,
+                    "end": 85,
+                    "text": "Table 3)",
+                    "ref_id": "TABREF4"
+                }
+            ],
+            "section": "Performance comparison of networks with different connectivity density."
+        },
+        {
+            "text": "LncRNAs are involved in a wide range of biological functions through diverse molecular mechanisms often including the interaction with one or more protein partners 12, 13 . Only a small number of lncRNA-protein interactions have been well-characterized. Computational methods can be helpful in suggesting potential interactions for possible experimentation 25 . In this study, we use HeteSim measure to calculate the relevance between lncRNA and protein in a heterogeneous network. The importance of inferring novel lncRNA-protein interactions by considering the subtle semantic meanings of different paths in the heterogeneous network have been verified 39 . We first construct a heterogeneous network consisting of a lncRNA-lncRNA similarity network, a lncRNA-protein association network and a protein-protein interaction network. Then, we use the HeteSim measure to calculate a score for each lncRNA-protein pairs in each path. Finally, a SVM classifier is used to combine the scores of different paths and making predictions. We compare the proposed PLPIHS with PRINCE, RWR and LPIHN and find that PLPIHS obtain an AUC score of 0.9679 in 0.3 network, which is significantly higher than PRINCE, RWR and LPIHN (0.813, 0.884 and 0.7918, respectively). We also compare the performance of these four methods in networks of different connectivity density. As a result, PLPIHS outperforms the other method across all the networks. Moreover, when analysing the predicted proteins interacted with lncRNA MALAT1, PLPIHS successfully predicts 63 out of 68 associations, while PRINCE, RWR and LPIHN retrieve much lower interactions of 57, 57 and 53, respectively. And the top-ranked lncRNA-protein interactions predicted by our method are supported by existing literatures. The results highlight the advantages of our proposed method in predicting possible lncRNA-protein interactions.",
+            "cite_spans": [
+                {
+                    "start": 164,
+                    "end": 167,
+                    "text": "12,",
+                    "ref_id": "BIBREF12"
+                },
+                {
+                    "start": 168,
+                    "end": 170,
+                    "text": "13",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 357,
+                    "end": 359,
+                    "text": "25",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 655,
+                    "end": 657,
+                    "text": "39",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Methods lncRNA-Protein associations. All human lncRNA genes and protein-coding genes are downloaded from the GENCODE Release 24 9 . A total of 15941 lncRNA genes and 20284 protein-coding genes are extracted. To obtain genome-wide lncRNA and protein-coding gene associations, we combine three sources of data:",
+            "cite_spans": [
+                {
+                    "start": 128,
+                    "end": 129,
+                    "text": "9",
+                    "ref_id": "BIBREF9"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "\u2022 Co-expression data from COXPRESdb 40 . Three preprocessed co-expression datasets (Hsa.c4-1, Hsa2.c2-0 and Hsa3.c1-0) including pre-calculated pairwise Pearson's correlation coefficients for human were collected from COXPRESdb. The correlations are calculated as follows:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "where C(l, p) is the overall correlation between gene l (lncRNA) and protein-coding gene p, C d (l, p) is the correlation score between l and p in dataset d, D is the number of gene pairs (l and p) with positive correlation scores. Gene pairs with negative correlation scores are removed.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "\u2022 Co-expression data from ArrayExpress 41 and GEO 42 . We obtained the co-expresionn data from the work of Jiang et al. 43 . RNA-Seq raw data of 19 human normal tissues are obtained from ArrayExpress (E-MTAB-513) and GEO (GSE30554). TopHat and Cufflinks with the default parameters are used to calculate the expression values. Pearson's correlation coefficients are used to evaluate the co-expression of lncRNA-protein pairs. \u2022 lncRNA-protein interaction data. We download known lncRNA-protein interaction dataset from Protein-protein interactions. We obtain the protein-protein interaction (PPI) data from STRING database V10.0 45 , which contains weighted protein interactions derived from computational prediction methods, high-throughput experiments, and text mining. The confidence scores are computed by combining the probabilities from the different evidence channels, correcting for the probability of randomly observing an interaction.",
+            "cite_spans": [
+                {
+                    "start": 50,
+                    "end": 52,
+                    "text": "42",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 120,
+                    "end": 122,
+                    "text": "43",
+                    "ref_id": "BIBREF43"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The HeteSim measure. The HeteSim measure is a uniform and symmetric relevance measure. It can be used to calculate the relatedness of objects with the same or different types in a uniform framework, and it is also a path-constrained measure to estimate the relatedness of object pairs based on the search path that connects two objects through a sequence of node types 39 . Further, the HeteSim score has some good properties (i.e., selfmaximum and symmetric), which have achieved positive performance in many studies 25 . In this study, we use HeteSim scores to measure the similarities between lncRNAs and proteins.",
+            "cite_spans": [
+                {
+                    "start": 369,
+                    "end": 371,
+                    "text": "39",
+                    "ref_id": "BIBREF39"
+                },
+                {
+                    "start": 518,
+                    "end": 520,
+                    "text": "25",
+                    "ref_id": "BIBREF25"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Definition 1 Transition probability matrix 39 L and P are two kinds of object in the heterogeneous network, (I LP ) n*m is an adjacent matrix between L and P, then the normalized matrix of I LP along the row vector is defined as",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "LP LP k m LP 1 Definition 2 Reachable probability matrix 39 In a heterogeneous network, the reachable probability matrix R \uf050 for path = + \uf04c PP P ( ) n 1 2 1 \uf050 of length n, where P i belongs to any objects in the heterogeneous network, can be expressed as",
+            "cite_spans": [
+                {
+                    "start": 57,
+                    "end": 59,
+                    "text": "39",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "P P P P P P n n 1 2 2 3 1 \uf050 Based on the definitions above, the steps of calculating HeteSim scores between two kinds of objects (lncRNA and protein) can be presented as follows:",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "\u2022 Split the path into two parts. When the length n of path \uf050 is even, we can split it into \uf050 = \uf04c P P ( )",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "Otherwise, if n is odd, the path cannot be divided into two equallength paths. In order to deal with such problem, we need to split the path twice by setting , respectively. Then, we can obtain a HeteSim score for each mid value, the final score will be the average of the two scores.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "\u2022 Achieve the transition probability matrix and reachable probability matrix under the path L \uf050 and R \uf050 . \u2022 Calculate the HeteSim score: where \uf050 \u2212 R 1 is the reverse path of R \uf050 . An example of calculating HeteSim score is indicated in Fig. 8 . We can see that there are three kinds of objects L, T and P in the network. The simplified steps of computing HeteSim score between l3 and p2 under the path \uf050 = (LTP) is as follows:",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 236,
+                    "end": 242,
+                    "text": "Fig. 8",
+                    "ref_id": "FIGREF11"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "\u2022 Split the path \uf050 into two components \uf050 = LT ( )",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "\u2022 Given the adjacent matrix I LT and I TP below, which means the interactions between lncRNAs and proteins, we can obtain the transition probability matrix T LT and T TP by normalizing the two matrix along the row vector. The PLPIHS method. Among a heterogeneous network, different paths can express different semantic meanings. For instance, a lncRNA and a protein is connected via 'lncRNA-lncRNA-protein' path or 'lncRNA-protein-protein' path representing totally different meanings. The former means that if a lncRNA is associated with a protein, then another lncRNA similar to the lncRNA will be potential associated with the protein. The latter shows that if a protein associated with a lncRNA, then another protein interacted with the protein will be likely associated with the lncRNA. Therefore, the potential information hidden in each path is extraordinary essential to be taken into account during prediction.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The PLPIHS framework is illustrated in Fig. 2 . Firstly, we construct a heterogeneous network consisting of a lncRNA-lncRNA similarity network, a lncRNA-protein association network and a protein-protein interaction network. Three kinds of sparse networks are obtained from the heterogeneous network under different cutoff value 0.3, 0.5 and 0.9 (see lncRNA-Protein associations). The larger cutoff is, the network is more sparse. A total of 15941 lncRNAs genes and 20284 protein-coding genes are extracted as presented in Section 2.3. We randomly take out 1511 lncRNAs and 344 proteins to construct a smaller network for the following experiments in consideration of computing costs. The construction of the smaller heterogeneous networks under different cutoff values are shown in Table 4 , where 'lnc2lnc' denotes the lncRNA-lncRNA network, 'lnc2code' denotes the lncRNA-protein network and 'code2code' denotes the protein-lncRNA network. Table 1 . We use id to indicate the path combination, i.e., 1\u2032~2\u2032 represents path 'LLP' and path 'LPP' . Next, we calculate the heteSim score for each lncRNA-protein pair under each path. The results of different paths are used as different features. And we combine a constant factor \u03b2 to inhibit the influence of longer paths.The longer the path length is, the smaller the inhibiting factor is. Finally, a SVM classifier is built with these scores to predict potential lncRNA-protein associations. On the account of the HeteSim measure is based on the path-based relevance framework 39 , it can effectively dig out the subtle semantics of each paths. ",
+            "cite_spans": [
+                {
+                    "start": 1525,
+                    "end": 1527,
+                    "text": "39",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 39,
+                    "end": 45,
+                    "text": "Fig. 2",
+                    "ref_id": "FIGREF1"
+                },
+                {
+                    "start": 782,
+                    "end": 789,
+                    "text": "Table 4",
+                    "ref_id": "TABREF6"
+                },
+                {
+                    "start": 941,
+                    "end": 948,
+                    "text": "Table 1",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Emerging roles of rna and rna-binding protein network in cancer cells",
+            "authors": [
+                {
+                    "first": "M.-Y",
+                    "middle": [],
+                    "last": "Kim",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Hur",
+                    "suffix": ""
+                },
+                {
+                    "first": "S.-J",
+                    "middle": [],
+                    "last": "Jeong",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "BMB reports",
+            "volume": "42",
+            "issn": "",
+            "pages": "125--130",
+            "other_ids": {}
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "Rna-rna and rna-protein interactions in coronavirus replication and transcription",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Sola",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mateos-Gomez",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Almazan",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Zu\u00f1iga",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Enjuanes",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "RNA biology",
+            "volume": "8",
+            "issn": "",
+            "pages": "237--248",
+            "other_ids": {}
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Deciphering the role of rna-binding proteins in the post-transcriptional control of gene expression",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Kishore",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Luber",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Zavolan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Briefings in functional genomics",
+            "volume": "9",
+            "issn": "",
+            "pages": "391--404",
+            "other_ids": {}
+        },
+        "BIBREF3": {
+            "ref_id": "b3",
+            "title": "a long non-coding rna prediction tool using deep neural network",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Tripathi",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Patel",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Kumari",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Chakraborty",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Varadwaj",
+                    "suffix": ""
+                },
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "Deeplnc",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Network Modeling Analysis in Health Informatics and Bioinformatics",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Integrated analysis of dysregulated lncrna expression in breast cancer cell identified by rnaseq study",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Tripathi",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Soni",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Varadwaj",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Non-coding RNA Research",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Rna-protein interactions in human health and disease",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Khalil",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Rinn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Seminars in Cell & Developmental Biology",
+            "volume": "22",
+            "issn": "",
+            "pages": "359--65",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "Diverse roles of host rna binding proteins in rna virus replication",
+            "authors": [
+                {
+                    "first": "Z",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Nagy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "RNA biology",
+            "volume": "8",
+            "issn": "",
+            "pages": "305--315",
+            "other_ids": {}
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Evolutionary dynamics and tissue specificity of human long noncoding rnas in six mammals",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Washietl",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Kellis",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Garber",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Genome Research",
+            "volume": "24",
+            "issn": "",
+            "pages": "616--644",
+            "other_ids": {}
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "The gencode v7 catalog of human long noncoding rnas: analysis of their gene structure, evolution, and expression",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Derrien",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Genome Research",
+            "volume": "22",
+            "issn": "",
+            "pages": "1775--89",
+            "other_ids": {}
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Genome-wide analysis of rna-protein interactions in plants",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Barkan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Methods in Molecular Biology",
+            "volume": "553",
+            "issn": "",
+            "pages": "13--37",
+            "other_ids": {}
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Silencing and innate immunity in plant defense against viral and non-viral pathogens",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Zvereva",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Pooggin",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Viruses",
+            "volume": "4",
+            "issn": "",
+            "pages": "2578--2597",
+            "other_ids": {}
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "In silico characterization and prediction of global protein-mrna interactions in yeast",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Pancaldi",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "B\u00e4hler",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nucleic acids research",
+            "volume": "39",
+            "issn": "",
+            "pages": "5826--5836",
+            "other_ids": {}
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Predicting rna-protein interactions using only sequence information",
+            "authors": [
+                {
+                    "first": "U",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Muppirala",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Honavar",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Dobbs",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "BMC bioinformatics",
+            "volume": "12",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "Predicting protein-protein interactions based only on sequences information",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Shen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "104",
+            "issn": "",
+            "pages": "4337--4378",
+            "other_ids": {}
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Predicting protein associations with long noncoding rnas",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Bellucci",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Agostini",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Masin",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Tartaglia",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nature methods",
+            "volume": "8",
+            "issn": "",
+            "pages": "444--445",
+            "other_ids": {}
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "De novo prediction of rna-protein interactions from sequence information",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Molecular Biosystems",
+            "volume": "9",
+            "issn": "",
+            "pages": "133--142",
+            "other_ids": {}
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Computational prediction of associations between long non-coding rnas and proteins",
+            "authors": [
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Lu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "BMC genomics",
+            "volume": "14",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Rpi-pred: predicting ncrna-protein interaction using sequence and structural information",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Suresh",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Adjeroh",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zhou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Nucleic Acids Research",
+            "volume": "43",
+            "issn": "",
+            "pages": "1370--1379",
+            "other_ids": {}
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "Prediction and validation of gene-disease associations using methods inspired by social network analyses",
+            "authors": [
+                {
+                    "first": "U",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Singh-Blom",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PloS one",
+            "volume": "8",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "A new status index derived from sociometric analysis",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Katz",
+                    "suffix": ""
+                }
+            ],
+            "year": 1953,
+            "venue": "Psychometrika",
+            "volume": "18",
+            "issn": "",
+            "pages": "39--43",
+            "other_ids": {}
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Walking the interactome for prioritization of candidate disease genes",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "K\u00f6hler",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bauer",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Horn",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "N"
+                    ],
+                    "last": "Robinson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "The American Journal of Human Genetics",
+            "volume": "82",
+            "issn": "",
+            "pages": "949--958",
+            "other_ids": {}
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "Predicting long noncoding rna and protein interactions using heterogeneous network model",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ge",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Zhang",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Peng",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Wang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "A comprehensive evaluation of disease phenotype networks for gene prioritization",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Plos One",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "Network-based integration of disparate omic data to identify\" silent players\" in cancer",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Ruffalo",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Koyut\u00fcrk",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Sharan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLOS Comput Biol",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Prediction and validation of disease genes using hetesim scores",
+            "authors": [
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Zeng",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Liao",
+                    "suffix": ""
+                },
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Zou",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "IEEE/ACM Transactions on Computational Biology & Bioinformatics",
+            "volume": "1",
+            "issn": "",
+            "pages": "1--1",
+            "other_ids": {}
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "A study of cross-validation and bootstrap for accuracy estimation and model selection",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Kohavi",
+                    "suffix": ""
+                }
+            ],
+            "year": 1995,
+            "venue": "International Joint Conference on Artificial Intelligence",
+            "volume": "",
+            "issn": "",
+            "pages": "1137--1143",
+            "other_ids": {}
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "An introduction to roc analysis",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Fawcett",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Pattern Recognition Letters",
+            "volume": "27",
+            "issn": "",
+            "pages": "861--874",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "An Introduction to Error Analysis: The Study of Uncertainties in Physical Measurements",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Taylor",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Thompson",
+                    "suffix": ""
+                }
+            ],
+            "year": 1982,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Ophthalmic statistics note 5: diagnostic tests-sensitivity and specificity",
+            "authors": [
+                {
+                    "first": "L",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Saunders",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "British Journal of Ophthalmology",
+            "volume": "99",
+            "issn": "",
+            "pages": "1168--70",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Evaluation: From precision, recall and f-factor to roc, informedness, markedness & correlation",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "M W"
+                    ],
+                    "last": "Powers",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of Machine Learning Technologies",
+            "volume": "2",
+            "issn": "",
+            "pages": "2229--3981",
+            "other_ids": {}
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "The malat1 long non-coding rna is upregulated by signalling through the perk axis of unfolded protein response during flavivirus infection",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bhattacharyya",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Vrati",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Scientific Reports",
+            "volume": "5",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF32": {
+            "ref_id": "b32",
+            "title": "Long noncoding rna malat1: Insights into its biogenesis and implications in human disease",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Meng",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Current Pharmaceutical Design",
+            "volume": "21",
+            "issn": "",
+            "pages": "5017--5045",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Malat1 long non-coding rna in cancer",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Yoshimoto",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Mayeda",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Yoshida",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Nakagawa",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Biochimica Et Biophysica Acta",
+            "volume": "1859",
+            "issn": "",
+            "pages": "192--199",
+            "other_ids": {}
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "Npinter v3. 0: an upgraded database of noncoding rna-associated interactions",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Hao",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Database",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Long non-coding rna malat1 promotes tumour growth and metastasis in colorectal cancer through binding to sfpq and releasing oncogene ptbp2 from sfpq-[sol]-ptbp2 complex",
+            "authors": [
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Ji",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "British Journal of Cancer",
+            "volume": "111",
+            "issn": "",
+            "pages": "736--784",
+            "other_ids": {}
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Genome-wide analysis reveals sr protein cooperation and competition in regulated splicing",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Pandit",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Molecular Cell",
+            "volume": "50",
+            "issn": "",
+            "pages": "223--235",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "The nuclear-retained noncoding rna malat1 regulates alternative splicing by modulating sr splicing factor phosphorylation",
+            "authors": [
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Tripathi",
+                    "suffix": ""
+                }
+            ],
+            "year": 2010,
+            "venue": "Molecular Cell",
+            "volume": "39",
+            "issn": "",
+            "pages": "925--963",
+            "other_ids": {}
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Characterizing the rna targets and position-dependent splicing regulation by tdp-43",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Tollervey",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Nature neuroscience",
+            "volume": "14",
+            "issn": "",
+            "pages": "452--458",
+            "other_ids": {}
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "Hetesim: A general framework for relevance measure in heterogeneous networks",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Shi",
+                    "suffix": ""
+                },
+                {
+                    "first": "X",
+                    "middle": [],
+                    "last": "Kong",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Huang",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "Y"
+                    ],
+                    "last": "Philip",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Wu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "IEEE Transactions on Knowledge and Data Engineering",
+            "volume": "26",
+            "issn": "",
+            "pages": "2479--2492",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Coxpresdb in 2015: coexpression database for animal species by dna-microarray and rnaseq-based expression data with multiple quality assessment systems",
+            "authors": [
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Okamura",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nucleic acids research",
+            "volume": "43",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Arrayexpress a public repository for microarray gene expression data at the ebi",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Brazma",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Nucleic acids research",
+            "volume": "31",
+            "issn": "",
+            "pages": "68--71",
+            "other_ids": {}
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Ncbi geo: mining tens of millions of expression profiles-database and tools update",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Barrett",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Nucleic acids research",
+            "volume": "35",
+            "issn": "",
+            "pages": "760--765",
+            "other_ids": {}
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "Lncrna2function: a comprehensive resource for functional investigation of human lncrnas based on rna-seq data",
+            "authors": [
+                {
+                    "first": "Q",
+                    "middle": [],
+                    "last": "Jiang",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Bmc Genomics",
+            "volume": "16",
+            "issn": "",
+            "pages": "1--11",
+            "other_ids": {}
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "Noncode: an integrated knowledge database of non-coding rnas",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Liu",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Nucleic acids research",
+            "volume": "33",
+            "issn": "",
+            "pages": "112--115",
+            "other_ids": {}
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "String v10: protein-protein interaction networks, integrated over the tree of life",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Szklarczyk",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Nucleic acids research",
+            "volume": "43",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "Example of understanding HeteSim measure. Circle, squares and triangle denote three different kinds of objects in the heterogeneous network.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Flowchart of PLPIHS. It includes three steps: (1) constructing a heterogeneous network consisting of a lncRNA-lncRNA similarity network, a lncRNA-protein association network and a protein-protein interaction network; (2) using the HeteSim measure to calculate a score for each lncRNA-protein pair in each path; (3) combining the scores of different paths with a SVM classifier and making predictions.Scientific RepoRts | 7: 3664 | DOI:10.1038/s41598-017-03986-1",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "Comparison with existing network-based methods. To evaluate the performance of the proposed PLPIHS, we compare it with three state-of-the-art methods: PRINCE, LPIHN and RWR. The parameters of PRINCE is set as follow: \u03b1 = 0.9, c = \u221215, d = log(9999) and the number of propagation iteration is ten. The parameters of LPIHN are consistent with the original implementation as well (\u03b3 = 0.5, \u03b2 = 0.5 and \u03b4 = 0.3). For id name path",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "The performance comparison of different paths. The X-axis represents different performance measures and the Y-axis indicates the values of these measures. The colored lines denote the performances of different paths.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "The ROC curves of PLPIHS method under three different levels of sparse networks.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "The ROC curves of all methods under 0.3 network, 0.5 network and 0.9 network.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "The ROC curves of the independent test set in PLPIHS.Scientific RepoRts | 7: 3664 | DOI:10.1038/s41598-017-03986-1",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "Case study of lncRNA MALAT1. The four chord graphs show the results of PLPIHS (A), PRINCE (B), RWR (C) and LPIHN (D) respectively. The biggest baby blue node represents lncRNA MALAT1 and the other nodes are related proteins, red lines denotes wrong prediction while green lines are correct prediction and the violet lines means the interactions between proteins. Scientific RepoRts | 7: 3664 | DOI:10.1038/s41598-017-03986-1",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "Npinter 3.0 34 in April 2016 and then filter the lncRNAs and their interaction proteins, by restricting the organism of lncRNAs to \"Homo sapiens\". The score I(l, p) is 1 if there is an interaction between lncRNA l and protein p, otherwise the score is 0. LncRNA co-expression similarity. The lncRNA expression profiles are obtained from NONCODE2016 database 44 (downloaded on April 6, 2016), including the expression profiles of 90,062 lncRNA in 24 human tissues or cell types. Pearson's correlation coefficient between the expression profiles of each pair of lncRNAs is calculated as the similarity.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "Example of calculating HeteSim score. Scientific RepoRts | 7: 3664 | DOI:10.1038/s41598-017-03986-1Actually, the reachable probability matrix for path L \uf050 and \uf050 R are equivalent their corresponding transition probability matrix, for example, \uf050 R L = T LT and R L \uf050 = T TP . Calculate the HeteSim score for each pair in the network. and the hetesim score matrix are displayed below. i.e.,",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF12": {
+            "text": "For example, there are 25,469 interactions in the lncRNA-protein network under the cutoff if 0.3. Then, we randomly select 2000 lncRNA-protein pairs as positive examples from the 0.9 network and the same number of interaction pairs as negative examples from the 0.3 network. The paths with length less than six transferred from a lncRNA to a protein among the heterogeneous network are listed in",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "are defined as follow:TN and TP represent the number of negative sites and positive sites that are correctly predicted. FP and FN represent the number of positive sites and negative sites that are wrongly predicted. Meanwhile, some common used measurements, namely, accuracy(ACC), precision(PRE), Mathew correlation coefficient(MCC) and F1-Score 30 , are calculated as follows:",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF2": {
+            "text": "Table 2. The AUC under different beta values.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF4": {
+            "text": "The",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF6": {
+            "text": "Construction of the three networks under different cutoffs.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "Y.X., J.Z., and L.D. conceived this work and designed the experiments. Y.X. and J.Z. carried out the experiments. Y.X. and L.D. collected the data and analyzed the results. Y.X., J.Z., and L.D. wrote, revised, and approved the manuscript.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Contributions"
+        },
+        {
+            "text": "Competing Interests: The authors declare that they have no competing interests.Publisher's note: Springer Nature remains neutral with regard to jurisdictional claims in published maps and institutional affiliations.Open Access This article is licensed under a Creative Commons Attribution 4.0 International License, which permits use, sharing, adaptation, distribution and reproduction in any medium or format, as long as you give appropriate credit to the original author(s) and the source, provide a link to the Creative Commons license, and indicate if changes were made. The images or other third party material in this article are included in the article's Creative Commons license, unless indicated otherwise in a credit line to the material. If material is not included in the article's Creative Commons license and your intended use is not permitted by statutory regulation or exceeds the permitted use, you will need to obtain permission directly from the copyright holder. To view a copy of this license, visit http://creativecommons.org/licenses/by/4.0/.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Additional Information"
+        }
+    ]
+}

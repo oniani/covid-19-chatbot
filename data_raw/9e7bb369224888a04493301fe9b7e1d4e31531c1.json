@@ -1,0 +1,3705 @@
+{
+    "paper_id": "9e7bb369224888a04493301fe9b7e1d4e31531c1",
+    "metadata": {
+        "title": "Phylogenetic Trees",
+        "authors": [
+            {
+                "first": "Federica",
+                "middle": [],
+                "last": "Giardina",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Stockholm University",
+                    "location": {
+                        "settlement": "Stockholm",
+                        "country": "Sweden"
+                    }
+                },
+                "email": "*federica@math.su.se"
+            },
+            {
+                "first": "Ethan",
+                "middle": [
+                    "Obie"
+                ],
+                "last": "Romero-Severson",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "Theoretical Biology and Biophysics Group",
+                    "institution": "Los Alamos National Laboratory",
+                    "location": {
+                        "settlement": "Los Alamos",
+                        "region": "New Mexico"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Jan",
+                "middle": [],
+                "last": "Albert",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Karolinska Institute",
+                    "location": {
+                        "settlement": "Stockholm",
+                        "country": "Sweden"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Tom",
+                "middle": [],
+                "last": "Britton",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "",
+                    "institution": "Stockholm University",
+                    "location": {
+                        "settlement": "Stockholm",
+                        "country": "Sweden"
+                    }
+                },
+                "email": ""
+            },
+            {
+                "first": "Thomas",
+                "middle": [],
+                "last": "Leitner",
+                "suffix": "",
+                "affiliation": {
+                    "laboratory": "Theoretical Biology and Biophysics Group",
+                    "institution": "Los Alamos National Laboratory",
+                    "location": {
+                        "settlement": "Los Alamos",
+                        "region": "New Mexico"
+                    }
+                },
+                "email": ""
+            }
+        ]
+    },
+    "abstract": [
+        {
+            "text": "Phylogenetic inference is an attractive means to reconstruct transmission histories and epidemics. However, there is not a perfect correspondence between transmission history and virus phylogeny. Both node height and topological differences may occur, depending on the interaction between within-host evolutionary dynamics and between-host transmission patterns. To investigate these interactions, we added a within-host evolutionary model in epidemiological simulations and examined if the resulting phylogeny could recover different types of contact networks. To further improve realism, we also introduced patient-specific differences in infectivity across disease stages, and on the epidemic level we considered incomplete sampling and the age of the epidemic. Second, we implemented an inference method based on approximate Bayesian computation (ABC) to discriminate among three well-studied network models and jointly estimate both network parameters and key epidemiological quantities such as the infection rate. Our ABC framework used both topological and distance-based tree statistics for comparison between simulated and observed trees. Overall, our simulations showed that a virus time-scaled phylogeny (genealogy) may be substantially different from the between-host transmission tree. This has important implications for the interpretation of what a phylogeny reveals about the underlying epidemic contact network. In particular, we found that while the within-host evolutionary process obscures the transmission tree, the diversification process and infectivity dynamics also add discriminatory power to differentiate between different types of contact networks. We also found that the possibility to differentiate contact networks depends on how far an epidemic has progressed, where distance-based tree statistics have more power early in an epidemic. Finally, we applied our ABC inference on two different outbreaks from the Swedish HIV-1 epidemic.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Over the past few years, epidemiological models for infectious diseases have incorporated network structure: each individual has a set of contacts to whom they can pass the PLOS Computational Biology | infection. However, collecting data to develop a good representation of the network is very challenging. The increasing availability of sequence data provide additional information: previous work has shown that it is possible to recover social network features from viral phylogenies. Until now, however, it was assumed that within-host evolution is negligible in the reconstruction. Here, we propose an approach based on approximate Bayesian computation to infer network structure from a virus phylogeny, explicitly including a model for within-host evolution. In addition, we incorporate other important heterogeneity factors such as individual-based transmission rates and infectivity varying by diseasestage. We show that in some situations the within-host virus diversity adds valuable signal to identify network structure, but in other situations it muddles the underlying contact structure.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        },
+        {
+            "text": "Inference of Transmission Network Structure from HIV Phylogenetic Trees PLOS Computational Biology |",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Abstract"
+        }
+    ],
+    "body_text": [
+        {
+            "text": "a1111111111 a1111111111 a1111111111 a1111111111 a1111111111",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": ""
+        },
+        {
+            "text": "Infectious diseases that are directly transmitted spread over contact networks, where each individual host can be represented by a node with a finite set of contacts (edges) via which they can transmit the pathogen. The structure of these networks is a major determinant of the pathogen transmission dynamics and possible control strategies [1] . For example, it has been suggested that human sexual contact networks are characterized by a power-law-like degree distribution [2] [3] [4] which, in a specific range of the scaling exponent, results in an infinite variance of the network's degree distribution. This implies the absence of an epidemic threshold, making prophylactic strategies for sexually transmitted diseases very challenging.",
+            "cite_spans": [
+                {
+                    "start": 341,
+                    "end": 344,
+                    "text": "[1]",
+                    "ref_id": "BIBREF0"
+                },
+                {
+                    "start": 475,
+                    "end": 478,
+                    "text": "[2]",
+                    "ref_id": "BIBREF1"
+                },
+                {
+                    "start": 479,
+                    "end": 482,
+                    "text": "[3]",
+                    "ref_id": "BIBREF2"
+                },
+                {
+                    "start": 483,
+                    "end": 486,
+                    "text": "[4]",
+                    "ref_id": "BIBREF4"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The main issue with contact network-based epidemiology has been the difficulty of collecting individual-and population-level data needed to develop an accurate representation of the underlying host population's contact structure. This has led to an interest in methods to infer information about host contact networks from epidemiological data. Previously, Britton and O'Neill [5] estimated the parameters of an Erd\u0151s-R\u00e9nyi network and a stochastic epidemic process on it using recovery times of infected hosts, and Groendyke et al. extended the approach to exponential-family random graph models [6] using covariate information [7] .",
+            "cite_spans": [
+                {
+                    "start": 377,
+                    "end": 380,
+                    "text": "[5]",
+                    "ref_id": "BIBREF5"
+                },
+                {
+                    "start": 597,
+                    "end": 600,
+                    "text": "[6]",
+                    "ref_id": "BIBREF6"
+                },
+                {
+                    "start": 629,
+                    "end": 632,
+                    "text": "[7]",
+                    "ref_id": "BIBREF7"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The use of other common epidemiological measures such as the basic reproduction number (R 0 ), epidemic peak size, duration and final size, has been shown to be effective in classifying the degree of heterogeneity in a population's unobserved contact structure [8] .",
+            "cite_spans": [
+                {
+                    "start": 261,
+                    "end": 264,
+                    "text": "[8]",
+                    "ref_id": "BIBREF8"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "During the course of an epidemic, the pathogen spreads over a subset of edges in the social network forming a subgraph that is the realized transmission history. Keeping track of who transmits to whom and assuming that every individual may be infected only once and by only one other individual, such a transmission history can be represented as a rooted tree (transmission tree) [9] . However, full transmission histories are rarely observed and commonly available epidemiological data such as diagnosis-recovery times of infected people may provide information on who was infected, when, and for how long, but it provides limited information on who acquired infection from whom [10] .",
+            "cite_spans": [
+                {
+                    "start": 380,
+                    "end": 383,
+                    "text": "[9]",
+                    "ref_id": "BIBREF9"
+                },
+                {
+                    "start": 680,
+                    "end": 684,
+                    "text": "[10]",
+                    "ref_id": "BIBREF10"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Since pathogens evolve over a transmission history, the analysis of pathogen genetic sequences taken from different hosts provides a way to infer the most likely donor and recipient [11] introducing constraints on the space of possible transmission trees, which are a trace of the underlying contact network. Phylodynamics [12] focuses on linking methods of phylogenetic analysis with epidemiological models under the assumption that if the evolution of a pathogen occurs sufficiently fast, transmission histories become \"recorded\" in the betweenhost pathogen phylogeny (phylogenetic tree).",
+            "cite_spans": [
+                {
+                    "start": 182,
+                    "end": 186,
+                    "text": "[11]",
+                    "ref_id": "BIBREF11"
+                },
+                {
+                    "start": 323,
+                    "end": 327,
+                    "text": "[12]",
+                    "ref_id": "BIBREF12"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Phylodynamic analyses of HIV-1 have shown that asymmetry in viral phylogenies may be indicative of heterogeneity in transmissions [13] ; networks with more heterogeneous degree distributions yield transmission trees with smaller mean cluster sizes, shorter mean branch lengths, and somewhat higher tree imbalance than networks with relatively homogeneous degree distributions. However, it has been argued that these direct effects are relatively modest for dynamic networks [14] or if only a small fraction of infected individuals are sampled [15] . Also, factors other than contact rate, such as high infectiousness during acute infection, may have a more dramatic impact on asymmetry [15] .",
+            "cite_spans": [
+                {
+                    "start": 130,
+                    "end": 134,
+                    "text": "[13]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 474,
+                    "end": 478,
+                    "text": "[14]",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 543,
+                    "end": 547,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 686,
+                    "end": 690,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "However, previous studies as well as more recent papers [16] [17] [18] , assume that the unobserved transmission tree is identical to the reconstructed time-scaled phylogeny (virus genealogy), i.e. the internal nodes of the genealogy correspond to transmission events between hosts over time and within-host diversity is fundamentally ignorable. This is unrealistic since all coalescent events in a pathogen phylogeny occur within hosts, pushing the genealogy node heights further back in time than the nodes of the transmission tree, known as the pre-transmission interval [19] . In addition, the order of coalescent events may not correspond to the order of transmission events but rather reflect within-host dynamics [20] [21] [22] .",
+            "cite_spans": [
+                {
+                    "start": 56,
+                    "end": 60,
+                    "text": "[16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 61,
+                    "end": 65,
+                    "text": "[17]",
+                    "ref_id": "BIBREF17"
+                },
+                {
+                    "start": 66,
+                    "end": 70,
+                    "text": "[18]",
+                    "ref_id": "BIBREF18"
+                },
+                {
+                    "start": 574,
+                    "end": 578,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 720,
+                    "end": 724,
+                    "text": "[20]",
+                    "ref_id": "BIBREF20"
+                },
+                {
+                    "start": 725,
+                    "end": 729,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                },
+                {
+                    "start": 730,
+                    "end": 734,
+                    "text": "[22]",
+                    "ref_id": "BIBREF22"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "The objective of this study was to include within-host evolution, disease stage, and individual specific transmission rates to improve the realism of social network reconstruction. We simulated epidemic spread on three prototypic network types and investigated the behavior of several tree statistics, including both topological imbalance measures and tree-based distance measures. In addition, we investigated the effect of varying epidemic size, varying sampling proportion, as well as heterochronous sampling on the tree statistics. Finally, we analyzed data from two different epidemiological scenarios of spread among injecting drug users (IDU) in the Swedish HIV-1 epidemic using approximate Bayesian computation (ABC) for network model choice and parameter inference following the algorithm defined in [23] . We found that virus geneaologies can differ from the underlying transmission tree in both topology and branch length and, therefore, that meaningful inference of social networks needs to take within-host evolution into account.",
+            "cite_spans": [
+                {
+                    "start": 809,
+                    "end": 813,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Introduction"
+        },
+        {
+            "text": "Networks. We considered three prototypic network models to represent population contact structure: the Erd\u0151s-R\u00e9nyi (ER) random graph [24] , the Barab\u00e1si-Albert (BA) graph [25] and the Watts-Strogatz (WS) graph [26] with low rewiring probability (Fig 1) . These three networks are characterized by different degree distributions and amount of clustering. The degree of a node in a network is the number of connections to other nodes it has and the degree distribution is the probability distribution of these degrees over the whole network.",
+            "cite_spans": [
+                {
+                    "start": 133,
+                    "end": 137,
+                    "text": "[24]",
+                    "ref_id": "BIBREF24"
+                },
+                {
+                    "start": 171,
+                    "end": 175,
+                    "text": "[25]",
+                    "ref_id": "BIBREF25"
+                },
+                {
+                    "start": 210,
+                    "end": 214,
+                    "text": "[26]",
+                    "ref_id": "BIBREF26"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 245,
+                    "end": 252,
+                    "text": "(Fig 1)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Simulation of transmission history"
+        },
+        {
+            "text": "The ER model generates networks with Poisson degree distributions (in the limit), i.e.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Simulation of transmission history"
+        },
+        {
+            "text": "p\u00f0k\u00de \u00bc e \u00c0 y y \u00c0 k k! . The BA model is generated by using a linear preferential attachment algorithm that produces scale-free networks with a power-law degree distribution p(k) / k \u2212\u03b1 with \u03b1 = 3. The WS model has a Dirac degree distribution centered at K (all nodes have the same degree) when the rewiring probability tends to 0. If the rewiring probability tends to 1, the degree distribution is Poisson. For intermediate values, the shape of the degree distribution has a pronounced peak at k = K and decays exponentially for large |k \u2212 K|. A WS network is characterized by a relatively homogeneous structure, as all nodes have more or less the same degree, and by a high degree of local clustering as opposed to ER and BA networks. The networks were simulated using the igraph package in R [27] .",
+            "cite_spans": [
+                {
+                    "start": 794,
+                    "end": 798,
+                    "text": "[27]",
+                    "ref_id": "BIBREF27"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simulation of transmission history"
+        },
+        {
+            "text": "Epidemic model. We simulated outbreaks from a susceptible-infected-removed (SIR) type dynamic [28] of HIV-1 spread in the susceptible population on each type of contact network. We compared differences among the transmission trees obtained by simulating epidemic spread under four increasingly more realistic transmission (S1 Fig) The first model specification assumed that the rate of transmission per contact between a susceptible and an infected individual, \u03bb, is constant over time. The removal rate of infected individuals \u03b3 is also constant over time and includes both diagnosis and death. We denoted with p the probability of being sampled at the moment of diagnosis (DNA sequences obtained from the virus of the diagnosed patient). We assumed that (i) diagnosis coincides with treatment start, (ii) the rate of transmission after treatment start is negligible, and (iii) nobody goes off treatment. We believe these assumptions to be reasonable for our analysis since Sweden has already achieved the 90-90-90 target set by UNAIDS in 2014 [29] according to which (i) 90% of all people leaving with HIV will know their HIV status, (ii) 90% of all people with diagnosed HIV infection will receive sustained antiretroviral therapy, and (iii) 90% of all people receiving antiretroviral therapy will have viral suppression [30] .",
+            "cite_spans": [
+                {
+                    "start": 94,
+                    "end": 98,
+                    "text": "[28]",
+                    "ref_id": "BIBREF29"
+                },
+                {
+                    "start": 1045,
+                    "end": 1049,
+                    "text": "[29]",
+                    "ref_id": "BIBREF30"
+                },
+                {
+                    "start": 1324,
+                    "end": 1328,
+                    "text": "[30]",
+                    "ref_id": "BIBREF31"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 326,
+                    "end": 330,
+                    "text": "Fig)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Simulation of transmission history"
+        },
+        {
+            "text": "In the second model specification we considered three stages of HIV infection (acute, chronic, and pre-AIDS). Here, the transmission rates are dependent on the disease stage of the infected individual and denoted \u03bb 1 , \u03bb 2 , and \u03bb 3 (S1 Fig). We assumed the removal rate to be independent on the disease stage. The acute stage was assumed to last 30 days for each individual [31] , the chronic stage had variable length described by an exponential random variable T 2 with a mean of 8 years [32] , and the pre-AIDS stage lasted until death or diagnosis. The three transmission rates were calculated to preserve the individual total infectivity during their infectious period in order to make results comparable with the first model specification. This derivation is shown in S1 Text.",
+            "cite_spans": [
+                {
+                    "start": 375,
+                    "end": 379,
+                    "text": "[31]",
+                    "ref_id": "BIBREF33"
+                },
+                {
+                    "start": 491,
+                    "end": 495,
+                    "text": "[32]",
+                    "ref_id": "BIBREF34"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 237,
+                    "end": 242,
+                    "text": "Fig).",
+                    "ref_id": null
+                }
+            ],
+            "section": "Simulation of transmission history"
+        },
+        {
+            "text": "In the third model specification we modeled individual variability of transmission rates. We did that by multiplying the constant transmission rate \u03bb (as in the first model specification) with a log-normal variable Z i for each i individual (node) with location parameter \u2212\u03c3 2 /2 and scale \u03c3 in order to preserve the mean of \u03bb (i.e. E(\u03bb i ) = \u03bb since E(Z i ) = 1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Simulation of transmission history"
+        },
+        {
+            "text": "Finally, the fourth model specification combined stage-specific infectivity with individual heterogeneity. The sampling process was modeled explicitly in each model specification. We used Gillespie's next-reaction method [33, 34] to simulate disease spread according to the above outlined model specifications until there were no more infectives or until a predefined number of samples. Keeping track of who-infects-whom, each epidemic simulation yields a transmission history.",
+            "cite_spans": [
+                {
+                    "start": 221,
+                    "end": 225,
+                    "text": "[33,",
+                    "ref_id": "BIBREF35"
+                },
+                {
+                    "start": 226,
+                    "end": 229,
+                    "text": "34]",
+                    "ref_id": "BIBREF36"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Simulation of transmission history"
+        },
+        {
+            "text": "The phylogeny of pathogens such as HIV-1 collected from infected persons in an epidemic reveals a considerable amount of information about the underlying transmission history since mutations are typically accumulated faster than transmission occurs. The common assumption that the internal nodes of a phylogeny correspond to transmission events between hosts over time is, however, unrealistic because transmitted lineages must already exist in the donor at the time of transmission. Thus, neglecting the time difference between the common ancestor and the transmission event (i.e. the pre-transmission interval, [19] ) will bias the estimated time of transmission backwards in time.",
+            "cite_spans": [
+                {
+                    "start": 613,
+                    "end": 617,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Within-host evolution model"
+        },
+        {
+            "text": "Furthermore, new infections may come from HIV-1 variants derived from a latent reservoir (lineages can persist for long time in the host [35, 36] ), and the order of coalescent events may not correspond to the order of transmission events but reflect instead withinhost dynamics [21] .",
+            "cite_spans": [
+                {
+                    "start": 137,
+                    "end": 141,
+                    "text": "[35,",
+                    "ref_id": "BIBREF37"
+                },
+                {
+                    "start": 142,
+                    "end": 145,
+                    "text": "36]",
+                    "ref_id": "BIBREF38"
+                },
+                {
+                    "start": 279,
+                    "end": 283,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Within-host evolution model"
+        },
+        {
+            "text": "To address these issues, we used a two-phase coalescent model described by a linear growth from a single transmitted variant (transmission bottleneck) to a maximum population size followed by either stabilization or decline of the effective population size [21] .",
+            "cite_spans": [
+                {
+                    "start": 257,
+                    "end": 261,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Within-host evolution model"
+        },
+        {
+            "text": "Let N(t) denote the viral population size at time t since infection (expressed in days), such that",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Within-host evolution model"
+        },
+        {
+            "text": "where \u03b1 1 is the population size (i.e. the number of virus variants in a given host) at the moment of infection, \u03b2 1 is the rate of population size increase until t x (time at maximum diversity), and \u03b2 2 the rate of decline after the maximum. We assume \u03b1 1 = 1, \u03b2 1 = 3, t x uniformly distributed between t a = 2 and t b = 8 (years) and Virus genealogies conditional on a transmission history are simulated by generating random coalescence times for each person in the tree. Random coalescence times are generated from the inverse cumulative density function (derivation in [21] )",
+            "cite_spans": [
+                {
+                    "start": 574,
+                    "end": 578,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Within-host evolution model"
+        },
+        {
+            "text": "where u is a uniform random variate on (0, 1), t is the current time along the forward time axis, b is the linear rate of change (\u03b2 1 or \u03b2 2 depending on the phase), a is the starting population size (1 in the first phase and \u03b2 1 t x in the second phase) and k is the number of extant sampled lineages in a given host. For each host we draw random values of t x and \u03b2 2 from the prior distributions. Starting at the last transmission or sampling event, we first move to the next event along the reverse time axis, which is either a transmission event, a rate change, or the time at which the current host was infected. If the event is a transmission event, then k is incremented and a random coalescence time is generated. If that time occurs before (along the reverse time axis) the next event, then two random extant lineages in the sample are selected to coalesce; or if not, then time is moved to the time of the next event. At t x , when the rate changes, the parameters of the inverse cumulative density function are changed to correspond to the first model-phase and the process continues until the transmission time of the current host is reached. In the rare instance where more than one sampled lineage exists at the time of infection, the existing lineages are randomly coalesced with zero length branches. Finally, each individual sub-tree is joined into a single viral genealogy according to the transmission history.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Within-host evolution model"
+        },
+        {
+            "text": "The 4 model specifications introduced in the previous section were used for simulations until the \"end\" of each outbreak, i.e. when there are no infectives left. We compared outbreaks of similar final size and multiple realizations of virus genealogies for each transmission history. All simulations were implemented using the statistical software R [37] .",
+            "cite_spans": [
+                {
+                    "start": 350,
+                    "end": 354,
+                    "text": "[37]",
+                    "ref_id": "BIBREF39"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Within-host evolution model"
+        },
+        {
+            "text": "Transmission trees and virus genealogies are complex objects. Therefore, in order to evaluate and compare them we used a number of summary statistics (Table 1) .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 150,
+                    "end": 159,
+                    "text": "(Table 1)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Tree statistics"
+        },
+        {
+            "text": "These tree statistics include topology measures, branch length summaries, and lineages through time progression. The Sackin's index can be normalized according to a reference model (we used the Yule model) in order to obtain a statistic that does not depend on the tree size. Both Sackin's index and Colless index depend only on the topology of the tree, and they are invariant under isomorphisms and relabeling of leaves. They reach their maximum value at caterpillars (ladder-like trees), and their minimum on the maximally balanced trees. A binary tree is considered to be perfectly balanced if each internal node in the tree divides the leaves descending from it into two equally sized groups. The expected number of cherries in a tree with n taxa under a Yule model is n/3. In an asymmetric tree (more ladder-like tree), tips tend to coalesce with branches deeper in the tree, and there are fewer cherries than expected. The number of cherries and Sackin's index complement each other well, as the number of cherries captures asymmetry in the recent evolutionary past, while Sackin's index captures asymmetry over the entire evolutionary history of the sample. These two measures are only weakly correlated [15] . A high ratio of internal branch to external branch length occurs in 'star-like' trees. The tree height in a virus genealogy represents the time from the first infection to the last sampling event. Since epidemics progress at different speed on different networks, heterogeneities in tree heights are expected.",
+            "cite_spans": [
+                {
+                    "start": 1212,
+                    "end": 1216,
+                    "text": "[15]",
+                    "ref_id": "BIBREF15"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Tree statistics"
+        },
+        {
+            "text": "Sackin's Index [38] The average number of splits or ancestors from a tip to the root of the tree.",
+            "cite_spans": [
+                {
+                    "start": 15,
+                    "end": 19,
+                    "text": "[38]",
+                    "ref_id": "BIBREF40"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Tree statistics Definition"
+        },
+        {
+            "text": "Colless Index [39] At each internal node, partition the tips that descend into groups of sizes r (to the right) and l (to the left), and compute the sum of absolute values |r \u2212 l| for all nodes.",
+            "cite_spans": [
+                {
+                    "start": 14,
+                    "end": 18,
+                    "text": "[39]",
+                    "ref_id": "BIBREF41"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Tree statistics Definition"
+        },
+        {
+            "text": "The number of clades with two taxa.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Cherries"
+        },
+        {
+            "text": "The ratio between the mean external branch length (branch that ends with a sampling event) and the mean internal branch length (branches between coalescence events).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "External/internal branch length ratio"
+        },
+        {
+            "text": "The time from the first infection/coalescence (after the index case) to the last sampling event.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tree height"
+        },
+        {
+            "text": "Topological distance Twice the number of internal branches defining different bipartitions of the tips.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tree height"
+        },
+        {
+            "text": "Number of lineages through time [40] The number of lineages across the tree. If all infected individuals are sampled, it corresponds to the prevalence curve.",
+            "cite_spans": [
+                {
+                    "start": 32,
+                    "end": 36,
+                    "text": "[40]",
+                    "ref_id": "BIBREF42"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Tree height"
+        },
+        {
+            "text": "Branch length growth rate over time",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tree height"
+        },
+        {
+            "text": "The average branch length obtained at several time points, divided by the tree height evaluated at the same.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tree height"
+        },
+        {
+            "text": "doi:10.1371/journal.pcbi.1005316.t001",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Tree height"
+        },
+        {
+            "text": "The topological distance was obtained as twice the number of internal branches defining different bipartitions of the tips. A topological distance that takes branch lengths into account was also considered (the sum of the branch lengths that need be erased to have two similar trees.) The number of lineages through time was normalized in time and by the maximum number of lineages [40] . We used the R package ape (Analyses of Phylogenetics and Evolution) [41] to create and plot the phylogenies and the package apTreeshape [42] for the evaluation of some tree statistics.",
+            "cite_spans": [
+                {
+                    "start": 382,
+                    "end": 386,
+                    "text": "[40]",
+                    "ref_id": "BIBREF42"
+                },
+                {
+                    "start": 457,
+                    "end": 461,
+                    "text": "[41]",
+                    "ref_id": "BIBREF43"
+                },
+                {
+                    "start": 525,
+                    "end": 529,
+                    "text": "[42]",
+                    "ref_id": "BIBREF44"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Tree height"
+        },
+        {
+            "text": "To further investigate how well time-scaled phylogenies can estimate the epidemic process and identify the underlying contact network, we applied an inference framework for model selection and parameter estimation based on approximate Bayesian computation (ABC). ABC is a methodology to estimate model parameters replacing the likelihood function with a simulation-based procedure and a distance function to measure the similarity between simulated and observed data. Various ABC algorithms have been proposed, from the simple ABC-rejection [43] to ABC Markov chain Monte Carlo (MCMC) [44] and ABC based on sequential Monte Carlo (SMC) methods [23, 45] .",
+            "cite_spans": [
+                {
+                    "start": 541,
+                    "end": 545,
+                    "text": "[43]",
+                    "ref_id": "BIBREF45"
+                },
+                {
+                    "start": 585,
+                    "end": 589,
+                    "text": "[44]",
+                    "ref_id": "BIBREF46"
+                },
+                {
+                    "start": 644,
+                    "end": 648,
+                    "text": "[23,",
+                    "ref_id": "BIBREF23"
+                },
+                {
+                    "start": 649,
+                    "end": 652,
+                    "text": "45]",
+                    "ref_id": "BIBREF47"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Approximate Bayesian Computation for network model selection"
+        },
+        {
+            "text": "Here, we use ABC-SMC as proposed by Toni et al. [23] because it addresses some of the potential drawbacks of previous ABC algorithms, such as slow convergence rate, by sampling from a sequence of intermediate distributions. The SMC sampler introduces a number of intermediate steps decreasing iteratively the tolerance threshold for samples acceptance. At the first iteration, N particles \u03b8 0 (representing the parameters of interest) are generated from the prior distribution and data are simulated from the model based on \u03b8 0 . The proposed parameters are accepted if the difference between the summary statistics of the simulated data D 0 and the observed data D is below the threshold 1 . At iteration t > 1, the particles are drawn from the previous population of the accepted samples at the iteration t \u2212 1 (with threshold t\u22121 ) with slight perturbations. In our work, data (observed virus genealogy) and simulated trees are compared through the use of summary statistics which correspond to the above listed tree statistics ( Table 1) .",
+            "cite_spans": [
+                {
+                    "start": 48,
+                    "end": 52,
+                    "text": "[23]",
+                    "ref_id": "BIBREF23"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1033,
+                    "end": 1041,
+                    "text": "Table 1)",
+                    "ref_id": null
+                }
+            ],
+            "section": "Approximate Bayesian Computation for network model selection"
+        },
+        {
+            "text": "The three network models M = {WS, ER, BA} were used to simulate outbreaks using the stage-varying infectivity profile with ratio 10:1 acute:chronic and patient infectivity variation (\u03c3 = 3). We assumed that network model and one network parameter were unknown. For ER, the network parameter of interest was the probability of drawing an edge between two arbitrary vertices; for BA it was the number of edges to add in each time step of the generating algorithm, and for WS it was the neighborhood within which the vertices of the lattice are connected. We also estimated the removal rate \u03b3 and the infection rate in the acute phase \u03bb 1 (infection rates in the chronic and immuno-compromised stage can be obtained deterministically from the acute phase infection rate). Therefore, \u03b8 consists of 3 parameters for each type of network and they are model specific. All remaining parameters characterizing both the network structure and the epidemic process were considered known.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Approximate Bayesian Computation for network model selection"
+        },
+        {
+            "text": "The output of the algorithm were the approximations of the model M marginal posterior distributions P(M|D) which is the proportion of times that each model is selected in N samples, and the marginal posterior distributions of parameters P(\u03b8|D, M) for the candidate models. We used a discrete uniform distribution from 1 to 3 as model prior \u03c0(M).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Approximate Bayesian Computation for network model selection"
+        },
+        {
+            "text": "We chose to decrease the tolerance values following an exponential decay such that t = 0 exp(\u22120.5t) where t is the current sequential step, as proposed in [46] . A pilot run of 100 simulations for each model in M was used to define the initial thresholds. Convergence was assumed when the acceptance rate of newly proposed particles had dropped below 1 in 100, and visual inspection of the posterior distribution showed no change in the last iterations. We found that convergence was achieved with T = 10 iterations and N = 1000 particles per iteration. The prior distributions on the parameters \u03bb 1 and \u03b3 were Uniform (0.0001, 0.1) and (0.00025, 0.1), respectively. The computation time of the algorithm depended on the tree size and sampling fraction and it took between 1 and 2 hours in a parallel implementation on 8 processors. Further details of the algorithm and its computational cost can be found in S2 Text.",
+            "cite_spans": [
+                {
+                    "start": 155,
+                    "end": 159,
+                    "text": "[46]",
+                    "ref_id": "BIBREF48"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Approximate Bayesian Computation for network model selection"
+        },
+        {
+            "text": "We applied the ABC inference method to the analysis of two HIV-1 DNA sequence sets sampled from different IDU transmission epidemics in Sweden [47, 48] . To reconstruct the timescaled virus phylogenies from the DNA sequences we used a Bayesian Skyline coalescent model in BEAST 1.8 [49] . The general time reversible nucleotide substitution model was used with an uncorrelated log-normal relaxed clock and a discretized gamma distribution with four categories was used to model rate heterogeneity across the sequence. For the log-normal relaxed clock parameters, a uniform prior on the positive axis was assumed for the mean, and an exponential with mean 1/3 for the standard deviation. A Uniform prior on (0, 1) was used for the nucleotide frequencies. The MCMC was run for 10 million iterations, with a 10% burnin period and samples saved every 10000 iterations. We selected the maximum credibility tree and the negative branches were set equal to zero.",
+            "cite_spans": [
+                {
+                    "start": 143,
+                    "end": 147,
+                    "text": "[47,",
+                    "ref_id": "BIBREF49"
+                },
+                {
+                    "start": 148,
+                    "end": 151,
+                    "text": "48]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 282,
+                    "end": 286,
+                    "text": "[49]",
+                    "ref_id": "BIBREF51"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Real epidemiological data and genealogical reconstruction"
+        },
+        {
+            "text": "To compare our simulation results, we used networks with the same mean degree (8) and a constant rewiring probability (\u03c1 = 0.01) for the WS networks. The SIR-type models were characterized by a transmission rate of 0.01 per contact, a removal rate \u03b3 = 2.8 year \u22121 and sampling probability p = 1, unless specified otherwise.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Results"
+        },
+        {
+            "text": "The within-host model generates virus genealogies that are consistent with a given transmission history, but not necessarily identical to it. An example of the impact of the within-host evolutionary process in a small size network/epidemic is shown in Fig 2. This figure shows a transmission history (A), its transmission tree representation (B), and four compatible virus genealogies (C-F). The genealogies display branch elongation/compression as compared to the transmission tree but also changes in topology. For instance, lineage 5, sampled in individual 5 infected by 2 soon after 2's own infection, appears consistently on the top part of the simulated virus genealogies and its branch can only be elongated by a small amount (because the pretransmission interval is small). On the other hand, lineage 10, infected later by 2, is located in different parts of the possible genealogies, thus indicating changes in the virus genealogy topology versus the underlying transmission tree. This happens because longer time implies an increase in the virus diversity in 2, i.e. more lineages are available in the donor. Therefore, as many virus trees are possible under any transmission history, it is important to evaluate the additional variation within-host diversity inflicts on the epidemiological inference. An epidemic can spread faster on ER and BA networks, thus the resulting transmission tree from a WS network includes longer times resulting in taller trees (Fig 3A) . This is mainly because WS has higher clustering than ER or BA. Both the unobservable transmission tree and the observable virus genealogy show the same tree height information. Other tree statistics, however, show different patterns of network discrimination based on transmission tree or virus genealogy. The proportion of cherries per taxa is slightly less informative on virus genealogies than on transmission trees (Fig 3A) . In particular, while there is a decrease for ER and WS (less balanced in virus genealogies than transmission trees), it increases for BA (more balanced in virus genealogies than transmission trees). A similar pattern is seen using Sackin's Index or Colless' Index (ER and WS less balanced in virus genealogy, BA more balanced (Fig 3D and  3E) ). Overall, differences between BA and WS become more evident in virus genealogies. Because Sackin's Index and Colless' Index are highly correlated we will only report Sackin's Index from now on.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 252,
+                    "end": 258,
+                    "text": "Fig 2.",
+                    "ref_id": "FIGREF3"
+                },
+                {
+                    "start": 1469,
+                    "end": 1477,
+                    "text": "(Fig 3A)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1899,
+                    "end": 1907,
+                    "text": "(Fig 3A)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 2236,
+                    "end": 2252,
+                    "text": "(Fig 3D and  3E)",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Within-host evolution affects inference of contact networks"
+        },
+        {
+            "text": "An epidemic spreading on an ER network is similar to a population random mixing model. Therefore, it is expected to generate a balanced transmission tree [13, 15] . The average number of people infected by an individual in the ER network show little variance and therefore the within host evolution model will add some heterogeneity producing small changes in the tree topology leading to an increase in the unbalancedness in the resulting virus genealogy. In BA models, instead, the presence of superspreaders generate transmission histories that are very unbalanced [13] . When a donor infects two or more recipients within a short interval, the order of transmissions along with infection times become impossible to accurately reconstruct; all splits are within the donor, describing within-host evolution in the donor (also shown in [21] ). Overall, the pretransmission interval associated with each and every transmission is a random draw from the possible coalescence times in the donor's viral population. Therefore, in BA networks the virus genealogy will show larger changes in the tree topology with respect to the underlying transmission trees and result in more balanced trees. The ratio of the mean internal to external branch lengths is informative about the type of network (smallest for BA, higher for ER, highest for WS). While the trends were similar in transmission trees and virus genealogies, the expected ranges overlapped for ER and WS in transmission trees, and virus genealogies showed generally smaller ratios (Fig 3C) . Branch lengths increase linearly as a function of tree height during epidemic spread on both ER and BA networks. Deviations from linearity are observed for epidemic spread on WS (S3 Fig). At the end of an epidemic, the mean branch length is constant among networks but longer in virus genealogies rather than in transmission trees (Fig 3F) . Overall, trees from ER and WS networks are more imbalanced based on virus genealogies. However, as an epidemic spreads much faster in a BA network, the resulting virus genealogy will instead become more balanced because the virus does not have time to evolve time-structure between transmission events.",
+            "cite_spans": [
+                {
+                    "start": 154,
+                    "end": 158,
+                    "text": "[13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 159,
+                    "end": 162,
+                    "text": "15]",
+                    "ref_id": "BIBREF15"
+                },
+                {
+                    "start": 568,
+                    "end": 572,
+                    "text": "[13]",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 837,
+                    "end": 841,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1536,
+                    "end": 1544,
+                    "text": "(Fig 3C)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1725,
+                    "end": 1734,
+                    "text": "(S3 Fig).",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1878,
+                    "end": 1886,
+                    "text": "(Fig 3F)",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Within-host evolution affects inference of contact networks"
+        },
+        {
+            "text": "Infectivity is known to vary across HIV-1 pathogenesis [50, 51] . Thus, rather than assuming a constant transmission rate throughout an infected person's disease stages, we tested 7 different infectivity profiles varying the ratio between the acute and chronic transmission rates and measured how they affected network model discrimination. The transmission rate in the pre-AIDS stage was held constant. Tree height becomes much less informative of network type the bigger the difference is between acute and chronic stage infectivity (Fig 4A) . This is because higher acute stage infectivity causes more infections in the acute phase and consequently the epidemic spread is faster. Since infection happens so rapidly, the external branches become very long compared to the internal branches, as all internal nodes are pushed to the root the higher the ratio between acute and chronic stage infectivity. Therefore, the total tree height is dominated by the external branch lengths (which are on average 1/\u03b3). Similarly, mean internal over external branch lengths, which was an important index when constant infectivity was assumed, is less informative if we assume high acute/chronic stage infectivity ratios. Differences observed between ER and BA assuming a constant infectivity profile diminish (Fig 4D) . Hence, branch length and tree height measures are less informative of network type when differences in acute-chronic infectivity are considered. Topological tree measures, i.e., cherries per taxa, and Sackin's Index, were less affected by differences in acute-chronic infectivities ( Fig  4B and 4C ). Both these measures, calculated on the possible virus genealogies, still informed about the underlying contact network structure that HIV spread upon.",
+            "cite_spans": [
+                {
+                    "start": 55,
+                    "end": 59,
+                    "text": "[50,",
+                    "ref_id": "BIBREF52"
+                },
+                {
+                    "start": 60,
+                    "end": 63,
+                    "text": "51]",
+                    "ref_id": "BIBREF53"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 535,
+                    "end": 543,
+                    "text": "(Fig 4A)",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 1298,
+                    "end": 1306,
+                    "text": "(Fig 4D)",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 1593,
+                    "end": 1607,
+                    "text": "Fig  4B and 4C",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Contact network heterogeneity becomes less evident under stage varying infectivity"
+        },
+        {
+            "text": "The next stage of introducing realistic host evolutionary dynamics is to model patient specific differences. We did that by introducing variability in the overall infectivity level while keeping the acute-chronic ratio at 10:1 (\u03c3 = 0, 3, 10). While it was clear that introducing a non-constant infectivity profile diminished genealogical differences between underlying contact network structures, it was less obvious what effect introducing between-patient variation had (Fig 5) . While tree height remained with no power to discriminate between networks, internal to external branch length ratios became more discriminative (BA had lowest ratio, ER intermediary, and WS high). Individual variability seems to affect tree symmetry near the root more than towards the tips, since the Sackin's Index shows much more variation than the number of cherries per taxa. However, they both improved their power to discriminate between contact network structures, and Sackin's Index could differentiate WS from BA and ER networks. Thus, these simulations showed that the complex interactions that affect the resulting tree statistics when multiple levels of variability interact (within-host coalescence process, timing of infections relative to disease-and epidemic-stage, disease-stage infectivity differences, and patient individual variation), may induce non-trivial dynamic patterns.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 471,
+                    "end": 478,
+                    "text": "(Fig 5)",
+                    "ref_id": "FIGREF7"
+                }
+            ],
+            "section": "Variability in individual infectivity may affect network discrimination"
+        },
+        {
+            "text": "If no influx of susceptibles occurs, the mean branch length increases as trees grow taller because it takes longer time to find uninfected hosts later in an epidemic (Fig 6A and 6B , see also S4A Fig) . At 100% sampling of infecteds at any time during an epidemic, the mean branch length increases as a function of total number of sampled infecteds (number of taxa, Fig 6B) . BA typically produces shorter tree branches than ER and WS as more individuals are sampled. Thus, if it were possible to sample everyone at time of infection, then the trend of adding longer tips towards the end of the epidemic becomes more pronounced (Fig 6A) . The internal to external branch length ratios typically decrease as the epidemic progresses (S4B Fig) . This is mainly explained by the depletion of susceptible neighbors for individuals infected late in an epidemic, thus generating very long external branches. In addition, branches added later in the epidemic, resulting from chronic donors, divide already existing branches into shorter segments. BA trees show lower ratios than ER and WS throughout the epidemic, but WS and ER are less distinguishable during an epidemic. On the topological level, the Sackin's Index typically decreases as an epidemic matures (Fig 6C) . At the end of an epidemic (Fig 3) , BA and ER show more unbalanced trees throughout an epidemic and the most imbalanced trees come from WS networks (Fig 6C and 6D) . Simulations on networks of size 5000 show similar results: for comparison, see Fig 6 with S5 Fig and S4 Fig with S6 Fig. Thus , while these statistics are indicative of the underlying contact network, they are confounded by epidemic stage and the size of the susceptible population. Consequently, to be able to infer the underlying contact ",
+            "cite_spans": [
+                {
+                    "start": 192,
+                    "end": 200,
+                    "text": "S4A Fig)",
+                    "ref_id": null
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 166,
+                    "end": 180,
+                    "text": "(Fig 6A and 6B",
+                    "ref_id": "FIGREF9"
+                },
+                {
+                    "start": 366,
+                    "end": 373,
+                    "text": "Fig 6B)",
+                    "ref_id": "FIGREF9"
+                },
+                {
+                    "start": 628,
+                    "end": 636,
+                    "text": "(Fig 6A)",
+                    "ref_id": "FIGREF9"
+                },
+                {
+                    "start": 731,
+                    "end": 740,
+                    "text": "(S4B Fig)",
+                    "ref_id": "FIGREF5"
+                },
+                {
+                    "start": 1253,
+                    "end": 1261,
+                    "text": "(Fig 6C)",
+                    "ref_id": "FIGREF9"
+                },
+                {
+                    "start": 1290,
+                    "end": 1297,
+                    "text": "(Fig 3)",
+                    "ref_id": "FIGREF4"
+                },
+                {
+                    "start": 1412,
+                    "end": 1427,
+                    "text": "(Fig 6C and 6D)",
+                    "ref_id": "FIGREF9"
+                },
+                {
+                    "start": 1509,
+                    "end": 1555,
+                    "text": "Fig 6 with S5 Fig and S4 Fig with S6 Fig. Thus",
+                    "ref_id": "FIGREF5"
+                }
+            ],
+            "section": "Tree statistics change as epidemics develop"
+        },
+        {
+            "text": "While a genealogical tree grows as an epidemic matures, the sampling fraction has no real effect on mean branch length, albeit with smaller sample fractions the estimation becomes somewhat more uncertain due to stochastic effects (S7 Fig). Interestingly, lower sampling fraction increases mean branch lengths derived from any underlying contact network (S7 Fig). This happens because the remaining branches in the genealogy represent increased numbers of infected hosts. However, this effect does not cause additional confusion over that caused by epidemic stage, as the differences between BA, ER, and WS networks are distinct at all epidemic stages and number of infected. On the other hand, we do not usually know at what stage an epidemic is (i.e., number of actually infected) but only the number of sampled hosts. The mean branch length as a function of number of taxa (Fig 7) could mislead the inference of underlying contact network, especially for small sample fractions. In fact, any branch length or tree height index would be affected by mistaking number of sampled hosts with stage of the epidemic because the number of infected grows faster than the number of sampled early in an epidemic.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 234,
+                    "end": 239,
+                    "text": "Fig).",
+                    "ref_id": null
+                },
+                {
+                    "start": 357,
+                    "end": 362,
+                    "text": "Fig).",
+                    "ref_id": null
+                },
+                {
+                    "start": 875,
+                    "end": 882,
+                    "text": "(Fig 7)",
+                    "ref_id": "FIGREF10"
+                }
+            ],
+            "section": "Sample fraction affects tree statistics"
+        },
+        {
+            "text": "The topological indices were also affected by sampling fraction. While general trends (Fig  3) remain constant through the cumulative number of samples over an epidemic, it is again important to know at what stage an epidemic is at time of sampling. Similar to branch length indices, topological indices can be misleading if sampling faction and stage of the epidemic are unknown.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 86,
+                    "end": 94,
+                    "text": "(Fig  3)",
+                    "ref_id": "FIGREF4"
+                }
+            ],
+            "section": "Sample fraction affects tree statistics"
+        },
+        {
+            "text": "We illustrate the performance of the ABC inference on 100 simulated viral genealogies for each network type of size 1000. The parameters were chosen so that the mean degree of each network type was 8, the diagnosis rate was 2.8 years \u22121 (derived from the average time from seroconversion to diagnosis in Sweden estimated in [52] ), and infection rate in the acute phase was \u03bb 1 = 0.005. The sampling probability p was set at 0.5 because the data from the general HIV Swedish epidemic have coverage of around 50% [52] [53] [54] .",
+            "cite_spans": [
+                {
+                    "start": 324,
+                    "end": 328,
+                    "text": "[52]",
+                    "ref_id": "BIBREF54"
+                },
+                {
+                    "start": 512,
+                    "end": 516,
+                    "text": "[52]",
+                    "ref_id": "BIBREF54"
+                },
+                {
+                    "start": 517,
+                    "end": 521,
+                    "text": "[53]",
+                    "ref_id": "BIBREF55"
+                },
+                {
+                    "start": 522,
+                    "end": 526,
+                    "text": "[54]",
+                    "ref_id": "BIBREF56"
+                }
+            ],
+            "ref_spans": [],
+            "section": "ABC inference of transmission network type"
+        },
+        {
+            "text": "To investigate model selection performance of the ABC algorithm, we record the number of times that the true model has the highest posterior model probability P(M|D) among the three models for the 100 simulated datasets. The algorithm was able to discriminate among the network models quite well. For the first network model (ER), in 78 out of the 100 simulated datasets, the true model had the highest posterior probability among the 3 different network types. For the second model (BA), similar results were obtained; 76 out of the 100 simulated datasets identified BA. Outbreaks on the WS network were misclassified only 1 time out of 100. The corresponding network parameters were estimated reasonably well in most cases ( Table 2) . For illustration, we report the results of a randomly chosen experiment where the observed data were obtained from an epidemic spread on an ER network ( Table 2 ). The parameters to estimate are the mean degree, diagnosis and infection rate for an outbreak on an ER network. The estimation of the removal (i.e. diagnosis) rate was sometimes skewed towards the upper bound, which probably is due to branch elongation induced by the within-host evolution model.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 727,
+                    "end": 735,
+                    "text": "Table 2)",
+                    "ref_id": "TABREF0"
+                },
+                {
+                    "start": 891,
+                    "end": 898,
+                    "text": "Table 2",
+                    "ref_id": "TABREF0"
+                }
+            ],
+            "section": "ABC inference of transmission network type"
+        },
+        {
+            "text": "We only estimate three parameters per network/epidemic model. In principle, it would be possible to add the rewiring probability, \u03c1, of the WS network in the ABC inference and estimate it. However, the rewiring probability of the WS networks turns out to be quite difficult to identify in the model choice setting. This is because for large values of \u03c1 a WS network becomes indistinguishable from a ER network S1 Table. At \u03c1 < 0.1 there was typically still a good chance (P(M = m|D) = 0.70 \u2212 0.95) to identify the correct network structure m.",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 413,
+                    "end": 419,
+                    "text": "Table.",
+                    "ref_id": null
+                }
+            ],
+            "section": "ABC inference of transmission network type"
+        },
+        {
+            "text": "Inference of epidemic parameters as well as network type becomes more complex in real outbreaks. We consider two genealogies from separate IDU-associated HIV-1 CRF01 and subtype B epidemics in Sweden, respectively. The CRF01 tree was sampled from a rapid outbreak that was imported from Finland [48] around 2003, which was quiescent until the outbreak started in 2006. The subtype B tree was sampled from the more slowly, and typical, spreading IDU epidemic in Sweden [47] .",
+            "cite_spans": [
+                {
+                    "start": 295,
+                    "end": 299,
+                    "text": "[48]",
+                    "ref_id": "BIBREF50"
+                },
+                {
+                    "start": 468,
+                    "end": 472,
+                    "text": "[47]",
+                    "ref_id": "BIBREF49"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Application to data from real epidemics"
+        },
+        {
+            "text": "While tree indices were different between the trees from the Swedish HIV-epidemic (Fig 8) , and superficially in line with what one might expect comparing an outbreak scenario to a more endemic situation, e.g., mean branch lengths were 279 and 913, and tree height 4176 and 10527, respectively, they cannot be directly compared because these trees represent different stages in the respective epidemic. Furthermore, real data is rarely sampled at 100% of all infected or even diagnosed, so comparisons to our simulated overall network differences are difficult to evaluate. Thus, to evaluate genealogies from real epidemics we must consider epidemic stage and sampling fraction (Figs 6 and 7) . In the ABC analysis of the two IDU HIV-1 transmission chains among IDU we have assumed the same epidemiological model as in the simulations (stage-varying infectivity profile with ratio 10:1 acute:chronic, patient infectivity variation (\u03c3 = 3)) and a sampling fraction of 50%. For the CRF01 IDU outbreak, the susceptible population was assumed to be 200 and in the Swedish subtype B ongoing epidemic it was set to 3000. Results are shown in Table 3 .",
+            "cite_spans": [],
+            "ref_spans": [
+                {
+                    "start": 82,
+                    "end": 89,
+                    "text": "(Fig 8)",
+                    "ref_id": "FIGREF11"
+                },
+                {
+                    "start": 678,
+                    "end": 692,
+                    "text": "(Figs 6 and 7)",
+                    "ref_id": "FIGREF9"
+                },
+                {
+                    "start": 1136,
+                    "end": 1143,
+                    "text": "Table 3",
+                    "ref_id": "TABREF1"
+                }
+            ],
+            "section": "Application to data from real epidemics"
+        },
+        {
+            "text": "Overall, convergence was more difficult to achieve in the analysis of the real data and the tolerance levels had to be set to higher values than in the simulation studies. However, the posterior model probabilities seem to indicate that the two outbreaks display different associations to the three network models considered even though there is no single model (among the three network models considered) that can be used to appropriately describe each outbreak.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Application to data from real epidemics"
+        },
+        {
+            "text": "For the CRF01 outbreak, there is weak evidence (45%) in favor of the BA network type although the ER was also supported with a posterior probability of 39%, with small differences in the parameter estimates. The infection rate in the acute phase was \u03bb 1 = 0.018(0.009, 0.031) vs \u03bb 1 = 0.023(0.0015, 0.036), \u03b3 = 0.001(0.0006, 0.002) vs \u03b3 = 0.001(0.0005, 0.002) and the mean degree was 3.2(2.4, 3.6) vs 3.7(2.2, 4.1) in the BA and ER respectively. The HIV-1 subtype B outbreak was mostly (57%) associated with an ER network type. However, there was considerable uncertainty in the parameter estimates: \u03bb 1 = 0.0025(0.001, 0.004), \u03b3 = 0.0003(0.0003, 0.001) and the mean degree 1.4(1.3, 2.1).",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Application to data from real epidemics"
+        },
+        {
+            "text": "In this study we addressed several outstanding factors that could affect HIV phylogenetic tree shape in addition to the underlying contact network upon which HIV spreads. While previous studies have evaluated how contact networks affect the resulting tree [13, 14, 16] , they ignored differences between transmission trees and virus phylogenies, varying infectivity over disease progression, among patient infectivity variation, sampling fraction, and epidemic stage. Here, we show that all these factors put further restrictions on what type of phylogeny one can expect, but also that these additional factors may confound the inference of contact network. Transmission histories are not perfectly reconstructed by virus phylogenies. In fact, it has been previously shown that virus phylogenies have a time bias that elongates external branches, shifts internal nodes backwards, and may cause lineage disordering relative to the transmission history [19] . In this study we account for these factors by sampling (many) possible virus genealogies from a transmission history using a recently developed within-host coalescent model [21] . Because many virus genealogies may be consistent with one single transmission history, one would expect this factor to add uncertainty to the network inference. However, there is also added signal about transmission times because the within-host diversity changes over the time of infection. Thus, because the degree distributions are different for each network type (Fig 1) , transmissions happen after different lengths of infection time, which affects the phylogenetic tree shape. Indeed, we show that the contact network inference from virus genealogies can be quite different than that from transmission trees, and that tree balance differences in fact may be more informative using virus phylogenies. Besides, transmission histories or trees can never be observed, or only partially and then with great uncertainty, which is the main reason for turning to phylogenetic reconstruction in the first place.",
+            "cite_spans": [
+                {
+                    "start": 256,
+                    "end": 260,
+                    "text": "[13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 261,
+                    "end": 264,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 265,
+                    "end": 268,
+                    "text": "16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 951,
+                    "end": 955,
+                    "text": "[19]",
+                    "ref_id": "BIBREF19"
+                },
+                {
+                    "start": 1131,
+                    "end": 1135,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 1505,
+                    "end": 1512,
+                    "text": "(Fig 1)",
+                    "ref_id": "FIGREF1"
+                }
+            ],
+            "section": "Discussion"
+        },
+        {
+            "text": "It is well known that infectivity is not constant over disease progression, albeit the literature is uncertain about how big the difference is between acute and chronic stage infectivity [51, 55] . Indeed, we find that varying infectivity affects the expected phylogeny under different contact networks. In fact, this factor alone seems to diminish phylogenetic differences between contact networks. Somewhat surprisingly, patient variation in infectivity works in the opposite direction, i.e., it seemed to amplify differences in the contact network structures. The result is that virus genealogies do carry a signal of what type of contact network HIV spread upon, but the expectations are different than what one would expect from a na\u00efve model where no virus diversity exists and all hosts are described by an identical constant infectivity over their pathogenesis.",
+            "cite_spans": [
+                {
+                    "start": 187,
+                    "end": 191,
+                    "text": "[51,",
+                    "ref_id": "BIBREF53"
+                },
+                {
+                    "start": 192,
+                    "end": 195,
+                    "text": "55]",
+                    "ref_id": "BIBREF57"
+                }
+            ],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We do not investigate systematically if there is one factor that explains the expected genealogies simulated under the different network assumptions. Rather, the complex dynamic interaction of the heterogeneity factors included implies that a single cause for the differences observed may not exist. However, we compare only epidemic spread on three network types with the same mean degree and we used tree statistics to assess the differences. In certain settings, ER and BA behaved similarly (and differently from WS). In this case, it is likely that the difference is due to clustering, since there is no large difference between the degree distributions in the ER and WS, whilst WS is the only network (among the three considered) allowing clustering. In some other scenarios, WS and ER behaved more similarly (and differently from BA). This is most likely due to the different degree distributions.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "We show that any tree index that one would measure is affected by sampling fraction and the stage of the epidemic. We show that phylogenies cannot be meaningfully interpreted without this additional knowledge, as tree statistics otherwise may mislead the inference of contact network. While our results relate to epidemic situations relevant to HIV epidemics, they may also be relevant to other measurably evolving pathogens such as hepatitis C and influenza.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Discussion"
+        },
+        {
+            "text": "The developed ABC inference framework for network identification and parameter estimation showed discriminatory power and ability to recover epidemiological parameters when applied to simulated data. The model used for validating the ABC algorithm included stage varying infectivity, individual, and within-host variability. For complex models such as epidemic spreads on networks the likelihood function is computationally costly to evaluate and ABC offered a way to perform likelihood-free statistical inference. Furthermore, the use of summary statistics allowed us to study the relationship between readily measurable tree statistics and complex transmission dynamics. The analysis of the two outbreaks from the Swedish HIV-1 epidemic showed that inference on real datasets is typically much harder. As is to be expected, real world networks do not match perfectly with the simplified models considered in this study, that were chosen for comparability with previous studies [13, 14, 16] . In fact, in the ABC algorithm, the proposed parameters values are accepted if the simulated data based on them are close enough to the observed data. If the observed data were generated from a rather different or more complex model, then the simulated data from the candidate model probably will be far away from the observed data. Hence, very few proposed parameter values will be accepted. More realistic models, such as dynamic networks, may be able to better capture the features of the outbreaks, especially those occurring over a long period of time. Another class of network models that could be suitable in modelling these outbreaks is the configuration model which is flexible and has been studied extensively in the literature, or exponential random graph models (although in general slower to fit to data) which include a broader spectrum of degree distributions and clustering levels rather than the three simple networks considered here. The ABC inference scheme can also be extended to take into account uncertainty in the phylogenetic reconstruction, as shown in [56] . Each summary statistics calculated on the simulated trees would then be compared to the distribution of the same statistics calculated on the posterior distribution of virus genealogies. Romero et al. [56] apply this procedure investigating transmission between a heterosexual couple. However, the outbreaks we are analyzing in this paper are bigger in size and the whole algorithm would be more computationally expensive. Lastly, this work could be further extended to integrate other sources of network data coming from social surveys and/or public health intervention studies, as recently outlined in a review paper by [57] to improve network analysis in HIV epidemiology. The length of the acute phase was assumed constant, t 1 = 30 days while \u03b2 was assumed to be 1/8 year \u22121 . We do not assume a length for the AIDS phase a priori, but if an individual reaches the third stage, he will stay in the third phase until he is diagnosed or until death occurs. (TIF) S2 Fig. Within-host evolution model. The effective viral population size is modelled as a two piece linear function: first, it grows at rate \u03b2 1 until a random peak time t x , allowed to vary among individuals between t a and t b . After t x , the viral population size decreases or stabilizes at a rate \u03b2 2 . The dashed line represents one possible realization. This figure is part of [21] . ",
+            "cite_spans": [
+                {
+                    "start": 979,
+                    "end": 983,
+                    "text": "[13,",
+                    "ref_id": "BIBREF13"
+                },
+                {
+                    "start": 984,
+                    "end": 987,
+                    "text": "14,",
+                    "ref_id": "BIBREF14"
+                },
+                {
+                    "start": 988,
+                    "end": 991,
+                    "text": "16]",
+                    "ref_id": "BIBREF16"
+                },
+                {
+                    "start": 2072,
+                    "end": 2076,
+                    "text": "[56]",
+                    "ref_id": "BIBREF58"
+                },
+                {
+                    "start": 2280,
+                    "end": 2284,
+                    "text": "[56]",
+                    "ref_id": "BIBREF58"
+                },
+                {
+                    "start": 2701,
+                    "end": 2705,
+                    "text": "[57]",
+                    "ref_id": "BIBREF59"
+                },
+                {
+                    "start": 3431,
+                    "end": 3435,
+                    "text": "[21]",
+                    "ref_id": "BIBREF21"
+                }
+            ],
+            "ref_spans": [
+                {
+                    "start": 3048,
+                    "end": 3081,
+                    "text": "Fig. Within-host evolution model.",
+                    "ref_id": null
+                }
+            ],
+            "section": "Discussion"
+        }
+    ],
+    "bib_entries": {
+        "BIBREF0": {
+            "ref_id": "b0",
+            "title": "Networks and epidemic models",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Keeling",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Eames",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Journal of the Royal Society Interface",
+            "volume": "2",
+            "issn": "4",
+            "pages": "295--307",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rsif.2005.0051"
+                ]
+            }
+        },
+        "BIBREF1": {
+            "ref_id": "b1",
+            "title": "The web of human sexual contacts",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Liljeros",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Edling",
+                    "suffix": ""
+                },
+                {
+                    "first": "Lan",
+                    "middle": [],
+                    "last": "Amaral",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Stanley",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "\u00c5berg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2001,
+            "venue": "Nature",
+            "volume": "411",
+            "issn": "6840",
+            "pages": "907--908",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/35082140"
+                ],
+                "PMID": [
+                    "11418846"
+                ]
+            }
+        },
+        "BIBREF2": {
+            "ref_id": "b2",
+            "title": "Agent-based and phylogenetic analyses reveal how HIV-1 moves between risk groups: injecting drug users sustain the heterosexual epidemic in Latvia",
+            "authors": [
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Graw",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Leitner",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Ribeiro",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Epidemics",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF4": {
+            "ref_id": "b4",
+            "title": "Subnets of scale-free networks are not scale-free: sampling properties of networks",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Stumpf",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Wiuf",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "May",
+                    "suffix": ""
+                }
+            ],
+            "year": 2005,
+            "venue": "Proceedings of the National Academy of Sciences of the United States of America",
+            "volume": "102",
+            "issn": "12",
+            "pages": "4221--4224",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0501179102"
+                ],
+                "PMID": [
+                    "15767579"
+                ]
+            }
+        },
+        "BIBREF5": {
+            "ref_id": "b5",
+            "title": "Bayesian inference for stochastic epidemics in populations with random social structure",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Britton",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Neill",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "Scandinavian Journal of Statistics",
+            "volume": "29",
+            "issn": "3",
+            "pages": "375--390",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/1467-9469.00296"
+                ]
+            }
+        },
+        "BIBREF6": {
+            "ref_id": "b6",
+            "title": "Bayesian inference for contact networks given epidemic data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Groendyke",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Welch",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Hunter",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Scandinavian Journal of Statistics",
+            "volume": "38",
+            "issn": "3",
+            "pages": "600--616",
+            "other_ids": {}
+        },
+        "BIBREF7": {
+            "ref_id": "b7",
+            "title": "A Network-based analysis of the 1861 Hagelloch measles data",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Groendyke",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Welch",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Hunter",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Biometrics",
+            "volume": "68",
+            "issn": "3",
+            "pages": "755--765",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/j.1541-0420.2012.01748.x"
+                ],
+                "PMID": [
+                    "22364540"
+                ]
+            }
+        },
+        "BIBREF8": {
+            "ref_id": "b8",
+            "title": "Inferring population-level contact heterogeneity from common epidemic data",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Stack",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Bansal",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Kumar",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Grenfell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Journal of The Royal Society Interface",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rsif.2012.0578"
+                ],
+                "PMID": [
+                    "23034353"
+                ]
+            }
+        },
+        "BIBREF9": {
+            "ref_id": "b9",
+            "title": "Is network clustering detectable in transmission trees?",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Welch",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Viruses",
+            "volume": "3",
+            "issn": "6",
+            "pages": "659--676",
+            "other_ids": {
+                "DOI": [
+                    "10.3390/v3060659"
+                ],
+                "PMID": [
+                    "21731813"
+                ]
+            }
+        },
+        "BIBREF10": {
+            "ref_id": "b10",
+            "title": "Different epidemic curves for severe acute respiratory syndrome reveal similar impacts of control measures",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Teunis",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "American Journal of Epidemiology",
+            "volume": "160",
+            "issn": "6",
+            "pages": "509--516",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/aje/kwh255"
+                ],
+                "PMID": [
+                    "15353409"
+                ]
+            }
+        },
+        "BIBREF11": {
+            "ref_id": "b11",
+            "title": "Phylogenetically resolving epidemiologic linkage",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Romero-Severson",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Bulla",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Leitner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "113",
+            "issn": "10",
+            "pages": "2690--2695",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.1522930113"
+                ],
+                "PMID": [
+                    "26903617"
+                ]
+            }
+        },
+        "BIBREF12": {
+            "ref_id": "b12",
+            "title": "Unifying the epidemiological and evolutionary dynamics of pathogens",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Grenfell",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [
+                        "G"
+                    ],
+                    "last": "Pybus",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "R"
+                    ],
+                    "last": "Gog",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Wood",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Daly",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Mumford",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Science",
+            "volume": "303",
+            "issn": "5656",
+            "pages": "327--332",
+            "other_ids": {
+                "DOI": [
+                    "10.1126/science.1090727"
+                ],
+                "PMID": [
+                    "14726583"
+                ]
+            }
+        },
+        "BIBREF13": {
+            "ref_id": "b13",
+            "title": "Inferring epidemic contact structure from phylogenetic trees",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Leventhal",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Kouyos",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Stadler",
+                    "suffix": ""
+                },
+                {
+                    "first": "Von",
+                    "middle": [],
+                    "last": "Wyl",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Yerly",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "B\u00f6ni",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "PLoS computational biology",
+            "volume": "8",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1002413"
+                ],
+                "PMID": [
+                    "22412361"
+                ]
+            }
+        },
+        "BIBREF14": {
+            "ref_id": "b14",
+            "title": "How the dynamics and structure of sexual contact networks shape pathogen phylogenies",
+            "authors": [
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Robinson",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Fyson",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Cohen",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Fraser",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "PLoS computational biology",
+            "volume": "9",
+            "issn": "6",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1003105"
+                ],
+                "PMID": [
+                    "23818840"
+                ]
+            }
+        },
+        "BIBREF15": {
+            "ref_id": "b15",
+            "title": "Modelling tree shape and structure in viral phylodynamics",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Frost",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Volz",
+                    "suffix": ""
+                }
+            ],
+            "year": null,
+            "venue": "Philosophical Transactions of the Royal Society B: Biological Sciences",
+            "volume": "368",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rstb.2012.0208"
+                ],
+                "PMID": [
+                    "23382430"
+                ]
+            }
+        },
+        "BIBREF16": {
+            "ref_id": "b16",
+            "title": "Phylogenetic tree shapes resolve disease transmission patterns. Evolution, medicine, and public health",
+            "authors": [
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Colijn",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Gardy",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "1",
+            "issn": "",
+            "pages": "96--108",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/emph/eou018"
+                ],
+                "PMID": [
+                    "24916411"
+                ]
+            }
+        },
+        "BIBREF17": {
+            "ref_id": "b17",
+            "title": "Measuring asymmetry in time-stamped phylogenies",
+            "authors": [
+                {
+                    "first": "B",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Dearlove",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Frost",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLOS Comput Biol",
+            "volume": "11",
+            "issn": "7",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1004312"
+                ],
+                "PMID": [
+                    "26147205"
+                ]
+            }
+        },
+        "BIBREF18": {
+            "ref_id": "b18",
+            "title": "Phylodynamic inference with kernel ABC and its application to HIV epidemiology",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Poon",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Molecular biology and evolution",
+            "volume": "32",
+            "issn": "9",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/molbev/msv123"
+                ],
+                "PMID": [
+                    "26006189"
+                ]
+            }
+        },
+        "BIBREF19": {
+            "ref_id": "b19",
+            "title": "The molecular clock of HIV-1 unveiled through analysis of a known transmission history",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Leitner",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Albert",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "96",
+            "issn": "19",
+            "pages": "10752--10757",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.96.19.10752"
+                ],
+                "PMID": [
+                    "10485898"
+                ]
+            }
+        },
+        "BIBREF20": {
+            "ref_id": "b20",
+            "title": "Relating phylogenetic trees to transmission trees of infectious disease outbreaks",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Ypma",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Van Ballegooijen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Wallinga",
+                    "suffix": ""
+                }
+            ],
+            "year": 2013,
+            "venue": "Genetics",
+            "volume": "195",
+            "issn": "3",
+            "pages": "1055--1062",
+            "other_ids": {
+                "DOI": [
+                    "10.1534/genetics.113.154856"
+                ],
+                "PMID": [
+                    "24037268"
+                ]
+            }
+        },
+        "BIBREF21": {
+            "ref_id": "b21",
+            "title": "Timing and order of transmission events is not directly reflected in a pathogen phylogeny",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Romero-Severson",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Skar",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Bulla",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Albert",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Leitner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Molecular biology and evolution",
+            "volume": "31",
+            "issn": "9",
+            "pages": "2472--2482",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/molbev/msu179"
+                ],
+                "PMID": [
+                    "24874208"
+                ]
+            }
+        },
+        "BIBREF22": {
+            "ref_id": "b22",
+            "title": "SCOTTI: Efficient Reconstruction of Transmission within Outbreaks with the Structured Coalescent",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "De Maio",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Wu",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wilson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "PLoS Comput Biol",
+            "volume": "12",
+            "issn": "9",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1005130"
+                ],
+                "PMID": [
+                    "27681228"
+                ]
+            }
+        },
+        "BIBREF23": {
+            "ref_id": "b23",
+            "title": "Approximate Bayesian computation scheme for parameter inference and model selection in dynamical systems",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Toni",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Welch",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Strelkowa",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Ipsen",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Stumpf",
+                    "suffix": ""
+                }
+            ],
+            "year": 2009,
+            "venue": "Journal of the Royal Society Interface",
+            "volume": "6",
+            "issn": "31",
+            "pages": "187--202",
+            "other_ids": {
+                "DOI": [
+                    "10.1098/rsif.2008.0172"
+                ],
+                "PMID": [
+                    "19205079"
+                ]
+            }
+        },
+        "BIBREF24": {
+            "ref_id": "b24",
+            "title": "On random graphs",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Erd\u0151s",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "R\u00e9nyi",
+                    "suffix": ""
+                }
+            ],
+            "year": 1959,
+            "venue": "Inference of Transmission Network Structure from HIV Phylogenetic Trees PLOS Computational Biology",
+            "volume": "6",
+            "issn": "",
+            "pages": "290--297",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1005316"
+                ]
+            }
+        },
+        "BIBREF25": {
+            "ref_id": "b25",
+            "title": "Statistical mechanics of complex networks. Reviews of modern physics",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [],
+                    "last": "Albert",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Barab\u00e1si",
+                    "suffix": ""
+                }
+            ],
+            "year": 2002,
+            "venue": "",
+            "volume": "74",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1103/RevModPhys.74.47"
+                ]
+            }
+        },
+        "BIBREF26": {
+            "ref_id": "b26",
+            "title": "Collective dynamics of 'small-world' networks",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Watts",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [
+                        "H"
+                    ],
+                    "last": "Strogatz",
+                    "suffix": ""
+                }
+            ],
+            "year": 1998,
+            "venue": "Nature",
+            "volume": "393",
+            "issn": "6684",
+            "pages": "440--442",
+            "other_ids": {
+                "DOI": [
+                    "10.1038/30918"
+                ],
+                "PMID": [
+                    "9623998"
+                ]
+            }
+        },
+        "BIBREF27": {
+            "ref_id": "b27",
+            "title": "The igraph software package for complex network research",
+            "authors": [
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Csardi",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Nepusz",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "InterJournal",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF28": {
+            "ref_id": "b28",
+            "title": "Complex Systems:1695",
+            "authors": [],
+            "year": null,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF29": {
+            "ref_id": "b29",
+            "title": "Infectious diseases of humans: dynamics and control",
+            "authors": [
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Anderson",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "May",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [],
+                    "last": "Anderson",
+                    "suffix": ""
+                }
+            ],
+            "year": 1992,
+            "venue": "",
+            "volume": "28",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF30": {
+            "ref_id": "b30",
+            "title": "Sweden, the first country to achieve the Joint United Nations Programme on HIV/AIDS (UNAIDS)/World Health Organization (WHO) 90-90-90 continuum of HIV care targets",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gissl\u00e9n",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Svedhem",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Lindborg",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Flamholc",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Norrgren",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Wendahl",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "HIV Medicine",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/hiv.12431"
+                ],
+                "PMID": [
+                    "27535540"
+                ]
+            }
+        },
+        "BIBREF31": {
+            "ref_id": "b31",
+            "title": "UNAIDS. 90-90-90 An ambitious treatment target to help end the AIDS epidemic",
+            "authors": [],
+            "year": 2014,
+            "venue": "JC2684",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF33": {
+            "ref_id": "b33",
+            "title": "Prospective Study of Acute HIV-1 Infection in Adults in East Africa and Thailand",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Robb",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Eller",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Kibuuka",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Rono",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Maganga",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Nitayaphan",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "New England Journal of Medicine",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJMoa1508952"
+                ],
+                "PMID": [
+                    "27192360"
+                ]
+            }
+        },
+        "BIBREF34": {
+            "ref_id": "b34",
+            "title": "The dynamics of CD4+ T-lymphocyte decline in HIV-infected individuals: a Markov modeling approach",
+            "authors": [
+                {
+                    "first": "I",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Longini",
+                    "suffix": ""
+                },
+                {
+                    "first": "W",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Clark",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "I"
+                    ],
+                    "last": "Gardner",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "F"
+                    ],
+                    "last": "Brundage",
+                    "suffix": ""
+                }
+            ],
+            "year": 1991,
+            "venue": "JAIDS Journal of Acquired Immune Deficiency Syndromes",
+            "volume": "4",
+            "issn": "11",
+            "pages": "1141--1147",
+            "other_ids": {
+                "PMID": [
+                    "1684387"
+                ]
+            }
+        },
+        "BIBREF35": {
+            "ref_id": "b35",
+            "title": "Exact stochastic simulation of coupled chemical reactions. The journal of physical chemistry",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Gillespie",
+                    "suffix": ""
+                }
+            ],
+            "year": 1977,
+            "venue": "",
+            "volume": "81",
+            "issn": "",
+            "pages": "2340--2361",
+            "other_ids": {
+                "DOI": [
+                    "10.1021/j100540a008"
+                ]
+            }
+        },
+        "BIBREF36": {
+            "ref_id": "b36",
+            "title": "Stochastic modelling for systems biology",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wilkinson",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF37": {
+            "ref_id": "b37",
+            "title": "Reduced evolutionary rates in HIV-1 reveal extensive latency periods among replicating lineages",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Immonen",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Leitner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "Retrovirology",
+            "volume": "11",
+            "issn": "",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1186/s12977-014-0081-0"
+                ]
+            }
+        },
+        "BIBREF38": {
+            "ref_id": "b38",
+            "title": "Recombination Enhances HIV-1 Envelope Diversity by Facilitating the Survival of Latent Genomic Fragments in the Plasma Virus Population",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Immonen",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Conway",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Romero-Severson",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Perelson",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Leitner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Comput Biol",
+            "volume": "11",
+            "issn": "12",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pcbi.1004625"
+                ],
+                "PMID": [
+                    "26693708"
+                ]
+            }
+        },
+        "BIBREF39": {
+            "ref_id": "b39",
+            "title": "R: A Language and Environment for Statistical Computing",
+            "authors": [
+                {
+                    "first": "",
+                    "middle": [],
+                    "last": "R Core Team",
+                    "suffix": ""
+                }
+            ],
+            "year": 2014,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF40": {
+            "ref_id": "b40",
+            "title": "Good\" and \"bad\" phenograms",
+            "authors": [
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Sackin",
+                    "suffix": ""
+                }
+            ],
+            "year": 1972,
+            "venue": "Systematic Biology",
+            "volume": "21",
+            "issn": "2",
+            "pages": "225--226",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/sysbio/21.2.225"
+                ]
+            }
+        },
+        "BIBREF41": {
+            "ref_id": "b41",
+            "title": "Congruence between morphometric and allozyme data for Menidia species: a reappraisal",
+            "authors": [
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Colless",
+                    "suffix": ""
+                }
+            ],
+            "year": 1980,
+            "venue": "Systematic Zoology",
+            "volume": "29",
+            "issn": "3",
+            "pages": "288--299",
+            "other_ids": {
+                "DOI": [
+                    "10.2307/2412663"
+                ]
+            }
+        },
+        "BIBREF42": {
+            "ref_id": "b42",
+            "title": "Approximate Bayesian Computation of diversification rates from molecular phylogenies: introducing a new efficient summary statistic, the nLTT",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Janzen",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "H\u00f6hna",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "S"
+                    ],
+                    "last": "Etienne",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "Methods in Ecology and Evolution",
+            "volume": "6",
+            "issn": "5",
+            "pages": "566--575",
+            "other_ids": {
+                "DOI": [
+                    "10.1111/2041-210X.12350"
+                ]
+            }
+        },
+        "BIBREF43": {
+            "ref_id": "b43",
+            "title": "APE: analyses of phylogenetics and evolution in R language",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Paradis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Claude",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Strimmer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2004,
+            "venue": "Bioinformatics",
+            "volume": "20",
+            "issn": "",
+            "pages": "289--290",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/btg412"
+                ],
+                "PMID": [
+                    "14734327"
+                ]
+            }
+        },
+        "BIBREF44": {
+            "ref_id": "b44",
+            "title": "apTreeshape: statistical analysis of phylogenetic tree shape",
+            "authors": [
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Bortolussi",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Durand",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Blum",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Fran\u00e7ois",
+                    "suffix": ""
+                }
+            ],
+            "year": 2006,
+            "venue": "Bioinformatics",
+            "volume": "22",
+            "issn": "3",
+            "pages": "363--364",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/bioinformatics/bti798"
+                ],
+                "PMID": [
+                    "16322049"
+                ]
+            }
+        },
+        "BIBREF45": {
+            "ref_id": "b45",
+            "title": "Population growth of human Y chromosomes: a study of Y chromosome microsatellites. Molecular biology and evolution",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [
+                        "K"
+                    ],
+                    "last": "Pritchard",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Seielstad",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Perez-Lezaun",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Feldman",
+                    "suffix": ""
+                }
+            ],
+            "year": 1999,
+            "venue": "",
+            "volume": "16",
+            "issn": "",
+            "pages": "1791--1798",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/oxfordjournals.molbev.a026091"
+                ],
+                "PMID": [
+                    "10605120"
+                ]
+            }
+        },
+        "BIBREF46": {
+            "ref_id": "b46",
+            "title": "Markov chain Monte Carlo without likelihoods",
+            "authors": [
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Marjoram",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Molitor",
+                    "suffix": ""
+                },
+                {
+                    "first": "V",
+                    "middle": [],
+                    "last": "Plagnol",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Tavar\u00e9",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "100",
+            "issn": "26",
+            "pages": "15324--15328",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0306899100"
+                ],
+                "PMID": [
+                    "14663152"
+                ]
+            }
+        },
+        "BIBREF47": {
+            "ref_id": "b47",
+            "title": "Sequential Monte Carlo without likelihoods",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Sisson",
+                    "suffix": ""
+                },
+                {
+                    "first": "Y",
+                    "middle": [],
+                    "last": "Fan",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Tanaka",
+                    "suffix": ""
+                }
+            ],
+            "year": 2007,
+            "venue": "Proceedings of the National Academy of Sciences",
+            "volume": "104",
+            "issn": "6",
+            "pages": "1760--1765",
+            "other_ids": {
+                "DOI": [
+                    "10.1073/pnas.0607208104"
+                ]
+            }
+        },
+        "BIBREF48": {
+            "ref_id": "b48",
+            "title": "An adaptive sequential Monte Carlo method for approximate Bayesian computation",
+            "authors": [
+                {
+                    "first": "Del",
+                    "middle": [],
+                    "last": "Moral",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Doucet",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Jasra",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "Statistics and Computing",
+            "volume": "22",
+            "issn": "5",
+            "pages": "1009--1020",
+            "other_ids": {
+                "DOI": [
+                    "10.1007/s11222-011-9271-y"
+                ]
+            }
+        },
+        "BIBREF49": {
+            "ref_id": "b49",
+            "title": "Multiple HIV-1 introductions into the Swedish intravenous drug user population. Infection",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Skar",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Sylvan",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [
+                        "B"
+                    ],
+                    "last": "Hansson",
+                    "suffix": ""
+                },
+                {
+                    "first": "O",
+                    "middle": [],
+                    "last": "Gustavsson",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Boman",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Albert",
+                    "suffix": ""
+                }
+            ],
+            "year": 2008,
+            "venue": "Genetics and Evolution",
+            "volume": "8",
+            "issn": "5",
+            "pages": "545--552",
+            "other_ids": {
+                "DOI": [
+                    "10.1016/j.meegid.2008.03.004"
+                ],
+                "PMID": [
+                    "18472306"
+                ]
+            }
+        },
+        "BIBREF50": {
+            "ref_id": "b50",
+            "title": "Dynamics of two separate but linked HIV-1 CRF01_AE outbreaks among injection drug users in",
+            "authors": [
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Skar",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Axelsson",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Berggren",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Thalme",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Gyllensten",
+                    "suffix": ""
+                },
+                {
+                    "first": "K",
+                    "middle": [],
+                    "last": "Liitsola",
+                    "suffix": ""
+                }
+            ],
+            "year": 2011,
+            "venue": "Journal of virology",
+            "volume": "85",
+            "issn": "1",
+            "pages": "510--518",
+            "other_ids": {
+                "DOI": [
+                    "10.1128/JVI.01413-10"
+                ]
+            }
+        },
+        "BIBREF51": {
+            "ref_id": "b51",
+            "title": "Bayesian phylogenetics with BEAUti and the BEAST 1.7. Molecular biology and evolution",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Drummond",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Suchard",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Xie",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Rambaut",
+                    "suffix": ""
+                }
+            ],
+            "year": 2012,
+            "venue": "",
+            "volume": "29",
+            "issn": "",
+            "pages": "1969--1973",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/molbev/mss075"
+                ],
+                "PMID": [
+                    "22367748"
+                ]
+            }
+        },
+        "BIBREF52": {
+            "ref_id": "b52",
+            "title": "Dynamics of HIV viremia and antibody seroconversion in plasma donors: implications for diagnosis and staging of primary HIV infection",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "W"
+                    ],
+                    "last": "Fiebig",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wright",
+                    "suffix": ""
+                },
+                {
+                    "first": "B",
+                    "middle": [
+                        "D"
+                    ],
+                    "last": "Rawal",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Garrett",
+                    "suffix": ""
+                },
+                {
+                    "first": "R",
+                    "middle": [
+                        "T"
+                    ],
+                    "last": "Schumacher",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "Peddada",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "AIDS",
+            "volume": "17",
+            "issn": "13",
+            "pages": "1871--1879",
+            "other_ids": {
+                "DOI": [
+                    "10.1097/01.aids.0000076308.76477.b8"
+                ],
+                "PMID": [
+                    "12960819"
+                ]
+            }
+        },
+        "BIBREF53": {
+            "ref_id": "b53",
+            "title": "Reassessment of HIV-1 acute phase infectivity: accounting for heterogeneity and study design with simulated cohorts",
+            "authors": [
+                {
+                    "first": "S",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Bellan",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Dushoff",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [
+                        "P"
+                    ],
+                    "last": "Galvani",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [
+                        "A"
+                    ],
+                    "last": "Meyers",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Newell",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "PLoS Medicine",
+            "volume": "12",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pmed.1001801"
+                ],
+                "PMID": [
+                    "25781323"
+                ]
+            }
+        },
+        "BIBREF54": {
+            "ref_id": "b54",
+            "title": "Trends of HIV-1 incidence with credible intervals in Sweden 2002-09 reconstructed using a dynamic model of within-patient IgG growth",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Romero-Severson",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [
+                        "L"
+                    ],
+                    "last": "Petrie",
+                    "suffix": ""
+                },
+                {
+                    "first": "E",
+                    "middle": [],
+                    "last": "Ionides",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Albert",
+                    "suffix": ""
+                },
+                {
+                    "first": "T",
+                    "middle": [],
+                    "last": "Leitner",
+                    "suffix": ""
+                }
+            ],
+            "year": 2015,
+            "venue": "International Journal of Epidemiology",
+            "volume": "44",
+            "issn": "3",
+            "pages": "998--1006",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/ije/dyv034"
+                ],
+                "PMID": [
+                    "26163684"
+                ]
+            }
+        },
+        "BIBREF55": {
+            "ref_id": "b55",
+            "title": "Low prevalence of transmitted drug resistance in patients newly diagnosed with HIV-1 infection in Sweden",
+            "authors": [
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Karlsson",
+                    "suffix": ""
+                },
+                {
+                    "first": "P",
+                    "middle": [],
+                    "last": "Bj\u00f6rkman",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [],
+                    "last": "Bratt",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Ekvall",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Gissl\u00e9n",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "S\u00f6nnerborg",
+                    "suffix": ""
+                }
+            ],
+            "year": 2003,
+            "venue": "PloS ONE",
+            "volume": "7",
+            "issn": "3",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1371/journal.pone.0033484"
+                ],
+                "PMID": [
+                    "22448246"
+                ]
+            }
+        },
+        "BIBREF56": {
+            "ref_id": "b56",
+            "title": "HIV-1 transmission between MSM and heterosexuals, and increasing proportions of circulating recombinant forms in the Nordic Countries",
+            "authors": [
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Esbj\u00f6rnsson",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [],
+                    "last": "Mild",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Audelin",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [],
+                    "last": "Fonager",
+                    "suffix": ""
+                },
+                {
+                    "first": "H",
+                    "middle": [],
+                    "last": "Skar",
+                    "suffix": ""
+                },
+                {
+                    "first": "Bruun",
+                    "middle": [],
+                    "last": "J\u00f8rgensen",
+                    "suffix": ""
+                },
+                {
+                    "first": "L",
+                    "middle": [],
+                    "last": "",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "Virus Evolution",
+            "volume": "2",
+            "issn": "1",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1093/ve/vew010"
+                ],
+                "PMID": [
+                    "27774303"
+                ]
+            }
+        },
+        "BIBREF57": {
+            "ref_id": "b57",
+            "title": "Viral load and heterosexual transmission of human immunodeficiency virus type 1",
+            "authors": [
+                {
+                    "first": "T",
+                    "middle": [
+                        "C"
+                    ],
+                    "last": "Quinn",
+                    "suffix": ""
+                },
+                {
+                    "first": "M",
+                    "middle": [
+                        "J"
+                    ],
+                    "last": "Wawer",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Sewankambo",
+                    "suffix": ""
+                },
+                {
+                    "first": "D",
+                    "middle": [],
+                    "last": "Serwadda",
+                    "suffix": ""
+                },
+                {
+                    "first": "C",
+                    "middle": [],
+                    "last": "Li",
+                    "suffix": ""
+                },
+                {
+                    "first": "F",
+                    "middle": [],
+                    "last": "Wabwire-Mangen",
+                    "suffix": ""
+                }
+            ],
+            "year": 2000,
+            "venue": "New England Journal of Medicine",
+            "volume": "342",
+            "issn": "13",
+            "pages": "921--929",
+            "other_ids": {
+                "DOI": [
+                    "10.1056/NEJM200003303421303"
+                ],
+                "PMID": [
+                    "10738050"
+                ]
+            }
+        },
+        "BIBREF58": {
+            "ref_id": "b58",
+            "title": "Inference of direction, diversity, and frequency of HIV-1 transmission using approximate Bayesian computation. bioRxiv",
+            "authors": [
+                {
+                    "first": "E",
+                    "middle": [
+                        "O"
+                    ],
+                    "last": "Romero-Severson",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Bulla",
+                    "suffix": ""
+                },
+                {
+                    "first": "N",
+                    "middle": [],
+                    "last": "Hengartner",
+                    "suffix": ""
+                },
+                {
+                    "first": "I",
+                    "middle": [],
+                    "last": "Bartolo",
+                    "suffix": ""
+                },
+                {
+                    "first": "A",
+                    "middle": [],
+                    "last": "Abecasis",
+                    "suffix": ""
+                },
+                {
+                    "first": "J",
+                    "middle": [
+                        "M"
+                    ],
+                    "last": "Azevedo-Pereira",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "",
+            "volume": "",
+            "issn": "",
+            "pages": "",
+            "other_ids": {}
+        },
+        "BIBREF59": {
+            "ref_id": "b59",
+            "title": "Connecting the dots: network data and models in HIV epidemiology",
+            "authors": [
+                {
+                    "first": "W",
+                    "middle": [],
+                    "last": "Delva",
+                    "suffix": ""
+                },
+                {
+                    "first": "G",
+                    "middle": [
+                        "E"
+                    ],
+                    "last": "Leventhal",
+                    "suffix": ""
+                },
+                {
+                    "first": "S",
+                    "middle": [],
+                    "last": "Helleringer",
+                    "suffix": ""
+                }
+            ],
+            "year": 2016,
+            "venue": "AIDS",
+            "volume": "30",
+            "issn": "13",
+            "pages": "",
+            "other_ids": {
+                "DOI": [
+                    "10.1097/QAD.0000000000001184"
+                ],
+                "PMID": [
+                    "27314176"
+                ]
+            }
+        }
+    },
+    "ref_entries": {
+        "FIGREF0": {
+            "text": "and evolutionary model specifications (S2 Fig):",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF1": {
+            "text": "Prototypic network structures. A. Erd\u0151s-R\u00e9nyi network (ER), B. Barab\u00e1si-Albert network (BA), C. Watts-Strogatz network (WS). To illustrate the typical configurations, all networks have the same size (50 nodes) and they are characterized by the same mean degree (6). The rewiring probability is 0.01 in WS. doi:10.1371/journal.pcbi.1005316.g001",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF2": {
+            "text": "with N min being the minimum population size, (assumed to be 100) and t M the maximum sampling time (20 years) (S2 Fig).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF3": {
+            "text": "Relationship among transmission history, transmission tree and virus genealogy. For a given transmission history between hosts (A), we can construct a binary representation, i.e. the transmission history (B). The lower panels (C) show 4 possible virus genealogies of this transmission history invoking our within-host population model. doi:10.1371/journal.pcbi.1005316.g002",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF4": {
+            "text": "Box plots of tree statistics on transmission trees (red) and reconstructed virus genealogies (light blue). Tree height (A), number of cherries per taxa (B), mean internal/external branch lengths ratio (C), Colless Index (D), Sackin's Index (E), mean branch length (F). The boxes correspond to the first and third quartiles. The upper/lower whisker extends from the third/first quartile to the highest/lowest value which is within 1.5 IQR from the box, where IQR is the inter-quartile range. doi:10.1371/journal.pcbi.1005316.g003",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF5": {
+            "text": "Box plots of tree statistics on virus genealogies under varying infectivity profiles. Tree height (A), number of cherries per taxa (B), Sackin's index (C), mean internal/external branch lengths ratio (D). Box plots limits are as in Fig 3.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF6": {
+            "text": "doi:10.1371/journal.pcbi.1005316.g004",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF7": {
+            "text": "Box plots of tree statistics on virus genealogies for different assumptions on individual heterogeneity. Tree height (A), number of cherries per taxa (B), Sackin's index (C), mean internal/external branch lengths ratio (D). Box plots limits are as in Fig 3.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF8": {
+            "text": "doi:10.1371/journal.pcbi.1005316.g005",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF9": {
+            "text": "Distance based and topological tree statistics on virus genealogies as epidemic progresses on a network of size 1000. Mean branch length (MBL) as function of the number of infected individuals (A) and as function of the number of taxa (sampled infected individuals) (B) for simulated outbreaks on networks of size 1000 as epidemics progress. Note that there is a time interval between infections and diagnoses (which correspond to removal/sampling times). Sackin's index (C) and number of cherries per taxa (D) as function of the number of taxa in networks of size 1000. The envelopes represent 95% confidence intervals around the medians. The curves are obtained using local regression (LOESS). WS (red), ER (green), BA (blue). doi:10.1371/journal.pcbi.1005316.g006network from genealogies we must also know what stage an epidemic has reached and the number of susceptibles.",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF10": {
+            "text": "Mean branch length as function of the number of taxa varying sampling fraction. Mean branch length as function of sampled hosts, with varying sampling fraction (p = 1-0.25). The envelopes represent 95% confidence intervals around the medians. The curves are obtained using local regression (LOESS). Note that for smaller sampling fractions the envelopes include fewer taxa. WS (red), ER (green), BA (blue). doi:10.1371/journal.pcbi.1005316.g007",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF11": {
+            "text": "Time-scaled HIV-1 phylogenies from the Swedish epidemic among IDU. A. The genealogy from a rapid CRF01 outbreak, and B the genealogy from a slower spreading subtype B epidemics. Trees were inferred by a Bayesian skyline coalescent model using BEAST 1.8[49].doi:10.1371/journal.pcbi.1005316.g008",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF12": {
+            "text": "Text. Probability to escape infection. (PDF) S2 Text. Approximate Bayesian Computation for model choice. (PDF) S1 Fig. Infectivity profiles. The first two model specifications represented: (i) constant rate (red line) and (ii) stage dependent infectivity (black lines).",
+            "latex": null,
+            "type": "figure"
+        },
+        "FIGREF13": {
+            "text": "(TIF) S3 Fig. Mean branch lengths evaluated as a function of tree height for an epidemic spreading on networks of size 1000. Mean branch length is evaluated at each coalescence event (originating internal branches) and each sampling event (external branches) until every individual is sampled. WS (red), ER (green), BA (blue). (TIF) S4 Fig. Additional distance based tree statistics on virus genealogies as epidemic progresses on a network of size 1000. Mean branch length (MBL) as function of tree height (A) and internal/external branch length ratio (B) as function of the number of taxa for simulated outbreaks on networks of size 1000. The envelopes represent 95% confidence intervals around the medians. The curves are obtained using local regression (LOESS). WS (red), ER (green), BA (blue). (TIF) S5 Fig. Distance based and topological tree statistics on virus genealogies as epidemic progresses on a network of size 5000. Mean branch length (MBL) as function of the number of infected individuals (A) and as function of the number of taxa (sampled infected individuals) (B) for simulated outbreaks on networks of size 5000 as epidemics progress. Note that there is a time interval between infections and diagnoses (which correspond to removal/sampling times). Sackin's index (C) and number of cherries per taxa (D) as function of the number of taxa in networks of size 1000. The envelopes represent 95% confidence intervals around the medians. The curves are obtained using local regression (LOESS). WS (red), ER (green), BA (blue). (TIF) S6 Fig. Additional distance based tree statistics on virus genealogies as epidemic progresses on a network of size 5000. Mean branch length (MBL) as function of tree height (A) and internal/external branch length ratio (B) as function of the number of taxa for simulated outbreaks on networks of size 5000. The envelopes represent 95% confidence intervals around the medians. The curves are obtained using local regression (LOESS). WS (red), ER (green), BA (blue). (TIF) S7 Fig. Mean branch length as epidemic progresses with varying sampling fraction. The mean branch length as function of number of infecteds, with varying sampling fraction (p = 1-0.25). The envelopes represent 95% confidence intervals around the medians. The curves are obtained using local regression (LOESS). WS (red), ER (green), BA (blue). (TIF) S1 Table. Effect of increased rewiring probability (\u03c1) on network identification. (PDF)",
+            "latex": null,
+            "type": "figure"
+        },
+        "TABREF0": {
+            "text": "Parameter estimation for one epidemic spread on an ER network.",
+            "latex": null,
+            "type": "table"
+        },
+        "TABREF1": {
+            "text": "Network type posterior probability for the two Swedish outbreaks.",
+            "latex": null,
+            "type": "table"
+        }
+    },
+    "back_matter": [
+        {
+            "text": "We would like to thank Joakim Esbj\u00f6rnsson for providing useful inputs.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Acknowledgments"
+        },
+        {
+            "text": "Conceived and designed the experiments: FG EORS JA TB TL.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Author Contributions"
+        },
+        {
+            "text": "Analyzed the data: FG.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Performed the experiments: FG."
+        },
+        {
+            "text": "Wrote the paper: FG EORS TL.",
+            "cite_spans": [],
+            "ref_spans": [],
+            "section": "Contributed reagents/materials/analysis tools: FG EORS."
+        }
+    ]
+}
