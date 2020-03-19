@@ -166,6 +166,9 @@ parser.add_argument(
     default=0,
     help="Calculate validation loss every STEPS steps.",
 )
+parser.add_argument(
+    "--num_iterations", type=int, default=100, help="Number of iterations.",
+)
 
 
 def maketree(path):
@@ -409,50 +412,48 @@ def main():
         avg_loss = (0.0, 0.0)
         start_time = time.time()
 
-        try:
-            while True:
-                if counter % args.save_every == 0:
-                    save()
-                if counter % args.sample_every == 0:
-                    generate_samples()
-                if args.val_every > 0 and (
-                    counter % args.val_every == 0 or counter == 1
-                ):
-                    validation()
+        for _ in range(args.num_iterations):
+            if counter % args.save_every == 0:
+                save()
 
-                if args.accumulate_gradients > 1:
-                    sess.run(opt_reset)
-                    for _ in range(args.accumulate_gradients):
-                        sess.run(
-                            opt_compute, feed_dict={context: sample_batch()}
-                        )
-                    (v_loss, v_summary) = sess.run((opt_apply, summaries))
-                else:
-                    (_, v_loss, v_summary) = sess.run(
-                        (opt_apply, loss, summaries),
-                        feed_dict={context: sample_batch()},
-                    )
+            if counter % args.sample_every == 0:
+                generate_samples()
 
-                summary_log.add_summary(v_summary, counter)
+            if args.val_every > 0 and (
+                counter % args.val_every == 0 or counter == 1
+            ):
+                validation()
 
-                avg_loss = (
-                    avg_loss[0] * 0.99 + v_loss,
-                    avg_loss[1] * 0.99 + 1.0,
+            if args.accumulate_gradients > 1:
+                sess.run(opt_reset)
+                for _ in range(args.accumulate_gradients):
+                    sess.run(opt_compute, feed_dict={context: sample_batch()})
+                (v_loss, v_summary) = sess.run((opt_apply, summaries))
+            else:
+                (_, v_loss, v_summary) = sess.run(
+                    (opt_apply, loss, summaries),
+                    feed_dict={context: sample_batch()},
                 )
 
-                print(
-                    "[{counter} | {time:2.2f}] loss={loss:2.2f} avg={avg:2.2f}".format(
-                        counter=counter,
-                        time=time.time() - start_time,
-                        loss=v_loss,
-                        avg=avg_loss[0] / avg_loss[1],
-                    )
-                )
+            summary_log.add_summary(v_summary, counter)
 
-                counter += 1
-        except KeyboardInterrupt:
-            print("interrupted")
-            save()
+            avg_loss = (
+                avg_loss[0] * 0.99 + v_loss,
+                avg_loss[1] * 0.99 + 1.0,
+            )
+
+            print(
+                "[{counter} | {time:2.2f}] loss={loss:2.2f} avg={avg:2.2f}".format(
+                    counter=counter,
+                    time=time.time() - start_time,
+                    loss=v_loss,
+                    avg=avg_loss[0] / avg_loss[1],
+                )
+            )
+
+            counter += 1
+
+        save()
 
 
 if __name__ == "__main__":
