@@ -25,7 +25,6 @@ drive.mount("/content/drive")
 
 # Install the pretrained model
 !git clone https://github.com/openai/gpt-2 "/content/drive/My Drive/gpt-2"
-
 %cd "/content/drive/My Drive/COVID-19 CHATBOT/"
 !rm -rf ./checkpoint ./models
 !python3 "/content/drive/My Drive/gpt-2/download_model.py" 345M
