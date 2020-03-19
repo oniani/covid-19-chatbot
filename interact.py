@@ -9,7 +9,7 @@ E-mail:   oniani.david@mayo.edu
 Description:
 
     This is an implementation of an interactive chatbot that answer questions
-    related to Alzheimer's Disease.
+    related to COVID-19/Novel Coronavirus.
 
     It relies on two state-of-the-art MODELs: GPT-2 and USE (Universal Sentence
     Encoder).
@@ -68,7 +68,7 @@ CHECKPOINT = "./checkpoint/run2/model-513"
 def main():
     """Run the MODEL interactively."""
 
-    print("\nWelcome to Mayo Clinic's Alzheimer's Disease chatbot!")
+    print("\nWelcome to Mayo Clinic's COVID-19 chatbot!")
     print("The input prompt will appear shortly\n\n")
 
     models_dir = os.path.expanduser(os.path.expandvars(MODELS_DIR))
@@ -108,11 +108,11 @@ def main():
         saver.restore(sess, CHECKPOINT)
 
         while True:
-            question = input("AD CHATBOT> ")
+            question = input("COVID-19 CHATBOT> ")
 
             while not question:
                 print("Prompt should not be empty!")
-                question = input("AD CHATBOT> ")
+                question = input("COVID-19 CHATBOT> ")
 
             context_tokens = enc.encode(question)
 
