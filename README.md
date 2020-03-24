@@ -20,13 +20,13 @@ Google Colaboratory (re)training example:
 ```python
 # Mount the drive
 from google.colab import drive
-drive.mount(/content/drive)
+drive.mount("/content/drive")
 
 # Set up the repository
-%cd /content/drive/My\ Drive
+%cd "/content/drive/My Drive"
 !mkdir COVID-19_CHATBOT
 !rm -rf gpt-2
-!git clone https://github.com/oniani/gpt-2 /content/drive/My\ Drive/COVID-19_CHATBOT/gpt-2/
+!git clone https://github.com/oniani/gpt-2 "/content/drive/My Drive/COVID-19_CHATBOT/gpt-2/"
 %cd COVID-19_CHATBOT/gpt-2/
 
 # Install the pretrained model and its dependencies
@@ -43,7 +43,7 @@ drive.mount(/content/drive)
 #
 # NOTE: You will need to upload `data` folder from this repository and put it
 # into the `COVID-19_CHATBOT` directory
-!PYTHONPATH=src python3 train.py --dataset=/content/drive/My\ Drive/COVID-19_CHATBOT/data \
+!PYTHONPATH=src python3 train.py --dataset="/content/drive/My Drive/COVID-19_CHATBOT/data" \
                                  --model_name=774M \
                                  --batch_size=8 \
                                  --optimizer=adam \
