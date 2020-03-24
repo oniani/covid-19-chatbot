@@ -3,7 +3,7 @@
 ## Table of Contents
 
 - [Chatbot](#chatbot)
-- [Transfer Learning](#transfer-learning]
+- [Transfer Learning](#transfer-learning)
 
 ## Chatbot
 
