@@ -3,26 +3,56 @@
 
 """
 Filename: similarity.py
-Date: 2020-03-06 10:36:29 AM
 Author: David Oniani
 E-mail: oniani.david@mayo.edu
 
 Description:
     Filter answers based on the similarity to the original question.
+    This approach uses Universal Sentence Classfier (USE).
 """
+
+import re
+import string
+
+import nltk
 
 import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 
+from typing import List
+
+
+nltk.download("stopwords")
+nltk.download("wordnet")
+
+
+def normalization_transform(text: str) -> str:
+    """Transform into a more 'classifiable' text."""
+
+    lemmatizer = nltk.stem.WordNetLemmatizer()
+    stopwords = nltk.corpus.stopwords.words("english")
+
+    text = "".join(
+        [word.lower() for word in text if word not in string.punctuation]
+    )
+
+    tokens = re.split("\\W+", text)
+    result = [
+        lemmatizer.lemmatize(word) for word in tokens if word not in stopwords
+    ]
+
+    return " ".join(result)
+
 
 def calculate_similarity(features):
     """Calculate the correlation score.
 
-    The embeddings produced by the Universal Sentence Encoder are approximately
-    normalized. The semantic similarity of two sentences can be trivially
-    computed as the inner product of the encodings.
+    The embeddings produced by the USE are approximately normalized. The
+    semantic similarity of two sentences can be trivially computed as the inner
+    product of the encodings.
     """
+
     return np.inner(features, features)
 
 
@@ -30,15 +60,29 @@ def get_features(texts, embed):
     """A simple function to wrap TF call. We create a session and run the embed
        node in the graph. This gives us the vector for each text.
     """
+
     if type(texts) is str:
         texts = [texts]
+
     with tf.Session() as sess:
         sess.run([tf.global_variables_initializer(), tf.tables_initializer()])
         return sess.run(embed(texts))
 
 
-def filter_answer(question, answer_list, number_of_sentences):
+def filter_answer(
+    question: str, answer_list: List[str], num_sentences: int
+) -> str:
     """Get a better, filtered answer."""
+
+    # Deal with cases related to the number of sentences
+    if num_sentences > len(answer_list) and len(answer_list) > 1:
+        num_sentences = len(answer_list) // 2
+
+    elif len(answer_list) == 1:
+        num_sentences = 1
+
+    elif len(answer_list) == 0:
+        num_sentences = 0
 
     # Load USE (Universal Sentence Encoder) version 2
     module_url = "https://tfhub.dev/google/universal-sentence-encoder-large/3"
@@ -53,19 +97,22 @@ def filter_answer(question, answer_list, number_of_sentences):
     #
     # We proceed by creating the embeddings for the `answer_list` and
     # calculating the similarity scores
-    answer_list.append(question)
-    features = get_features(answer_list, embed)
+    answer_list.append(normalization_transform(question))
+    features = get_features([answer.lower() for answer in answer_list], embed)
     similarity_matrix = calculate_similarity(features)
 
     # Find `number_of_sentences` number of indices (for the answer sentences)
     # with the highest correlation to the question
     highest = sorted(
-        np.argpartition(-similarity_matrix[:-1, -1], number_of_sentences)[
-            :number_of_sentences
+        np.argpartition(-similarity_matrix[:-1, -1], num_sentences)[
+            :num_sentences
         ]
     )
 
     # Prepare the final answer
+    #
+    # Although the words were converted to lowercase, `answer_list` indices
+    # remain the same.
     final_answer = ""
     for idx in highest[:-1]:
         final_answer += answer_list[idx] + " "

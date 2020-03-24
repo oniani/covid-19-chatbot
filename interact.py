@@ -62,7 +62,7 @@ TOP_K = 40
 MODELS_DIR = "models"
 
 # Path to the saved MODEL info
-CHECKPOINT = "./checkpoint/run2/model-513"
+CHECKPOINT = "model/model-2000.hdf5"
 
 
 def main():
@@ -168,7 +168,9 @@ def main():
                         final_answers.extend(temp)
 
                 try:
-                    print(similarity.filter_answer(question, final_answers, 5))
+                    print(
+                        similarity.filter_answer(question, final_answers, 5,)
+                    )
 
                 except Exception:
                     print(final_answers)
