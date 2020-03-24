@@ -77,8 +77,8 @@ drive.mount("/content/drive")
                                  --init_tpu
 ```
 
-Thanks to [@shawwn](https://github.com/shawwn) for making GPT-2 TPU-trainable
-on Google Colaboratory.
+Special thanks to [@shawwn](https://github.com/shawwn) for making GPT-2
+TPU-trainable on Google Colaboratory.
 
 ## Future Work
 
