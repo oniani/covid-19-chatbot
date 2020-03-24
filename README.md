@@ -1,5 +1,10 @@
 # COVID-19 Chatbot
 
+## Table of Contents
+
+- (Chatbot)[#chatbot]
+- (Transfer Learning)[#transfer-learning]
+
 ## Chatbot
 
 Below find the sequence of commands for running the chatbot.
