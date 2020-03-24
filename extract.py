@@ -57,5 +57,5 @@ def main() -> None:
             file.writelines("\n".join(content))
 
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()

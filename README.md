@@ -2,10 +2,26 @@
 
 ## Table of Contents
 
+- [Dataset](#dataset)
 - [Chatbot](#chatbot)
 - [Transfer Learning](#transfer-learning)
 - [Future Work](#future-work)
 - [Developers](#developers)
+
+## Dataset
+
+The dataset is the initial _Commercial use subset_ taken from
+[COVID-19 Open Research Dataset (CORD-19)](https://pages.semanticscholar.org/coronavirus-research)
+and consists of 9000 scholarly articles.
+
+For the training purposes, we have extracted the abstract and the main body from
+these articles and merged them together.
+
+For (re)extracting the data, run the command below.
+
+```sh
+python3 extract.py
+```
 
 ## Chatbot
 
