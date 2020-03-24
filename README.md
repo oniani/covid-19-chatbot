@@ -8,7 +8,7 @@ Below find the sequence of commands for running the chatbot.
 git clone https://github.com/oniani/covid-19-chatbot
 cd covid-19-chatbot
 python3 -m pip install -r requirements.txt
-PYTHONPATH=src && python -W ignore interact.py
+PYTHONPATH=src python -W ignore interact.py
 ```
 
 ## Transfer Learning
