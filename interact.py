@@ -26,7 +26,11 @@ import fire
 import numpy as np
 import tensorflow as tf
 
-import encoder, model, sample, similarity
+import encoder
+import model
+import sample
+import similarity
+import tflex
 
 
 # String, which MODEL to use
@@ -38,11 +42,11 @@ SEED = None
 # Number of samples to return total
 NSAMPLES = 1
 
-# Number of batches (only affects speed/memory). Must divide nsamples
-BATCH_SIZE = 1
+# Number of batches (only affects speed/memory, must divide nsamples)
+BATCH_SIZE = 8
 
-# Number of tokens in generated text, if None (default), is determined by
-# MODEL hyperparameters
+# Number of tokens in generated text, if None (default), is determined by the
+# hyperparameters of the model
 LENGTH = None
 
 # Float value controlling randomness in boltzmann distribution. Lower
@@ -104,7 +108,7 @@ def main():
             top_k=TOP_K,
         )
 
-        saver = tf.train.Saver()
+        saver = tflex.Saver()
         saver.restore(sess, CHECKPOINT)
 
         while True:
@@ -173,11 +177,11 @@ def main():
                     )
 
                 except Exception:
-                    print(final_answers)
-                    print("Model cannot generate an answer")
+                    print(" ".join(final_answers))
+                    print("WARNING: Model cannot generate an answer using USE")
 
             print()
-            print("=" * 80)
+            print("=" * 79)
             print()
 
 
