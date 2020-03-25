@@ -32,6 +32,10 @@ import sample
 import similarity
 import tflex
 
+
+# String, which MODEL to use
+MODEL_NAME = "774M"
+
 # Integer seed for random number generators, fix seed to reproduce results
 SEED = None
 
@@ -58,10 +62,11 @@ TEMPERATURE = 1
 TOP_K = 40
 
 # Path to parent folder containing MODEL subfolders
-MODEL_DIR = "model"
+# (i.e. contains the <MODEL_NAME> folder)
+MODELS_DIR = "models"
 
 # Path to the saved MODEL info
-CHECKPOINT = "model/model-2500.hdf5"
+CHECKPOINT = "model/model-2000.hdf5"
 
 
 def main():
@@ -70,17 +75,14 @@ def main():
     print("\nWelcome to Mayo Clinic's COVID-19 chatbot!")
     print("The input prompt will appear shortly\n\n")
 
+    models_dir = os.path.expanduser(os.path.expandvars(MODELS_DIR))
+
     assert NSAMPLES % BATCH_SIZE == 0
 
-    enc = encoder.get_encoder("774M")
+    enc = encoder.get_encoder(MODEL_NAME)
     hparams = model.default_hparams()
 
-    with open(
-        os.path.join(
-            os.path.expanduser(os.path.expandvars(MODEL_DIR)),
-            "hparams774M.json",
-        )
-    ) as file:
+    with open(os.path.join(models_dir, MODEL_NAME, "hparams.json")) as file:
         hparams.override_from_dict(json.load(file))
 
     if LENGTH is None:
