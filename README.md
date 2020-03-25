@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [Dataset](#dataset)
+- [Model](#model)
 - [Chatbot](#chatbot)
 - [Transfer Learning](#transfer-learning)
 - [Future Work](#future-work)
@@ -22,6 +23,15 @@ For (re)extracting the data, run the command below.
 ```sh
 python3 extract.py
 ```
+
+## Model
+
+We have retrained GPT-2 774M model with the COVID-19 corpus.
+
+The model was trained using the Adam optimizer with the learning rate of
+0.0001. It went through 2500 iterations with the batch size of 8.
+
+The model is hosted and available at this [Google Drive link](https://drive.google.com/open?id=1-BnJ5uCb2kwS2eg5qupZV2vvDbRxDRU_).
 
 ## Chatbot
 
