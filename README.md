@@ -35,7 +35,9 @@ The model is hosted and available at this [Google Drive link](https://drive.goog
 
 ## Chatbot
 
-Below find the sequence of commands for running the chatbot.
+Once you have downloaded the model, make a directory called `model` and put the
+model inside this directory. Afterward, to run the chatbot, execute the
+sequence of commands shown below.
 
 ```sh
 git clone https://github.com/oniani/covid-19-chatbot
