@@ -10,7 +10,7 @@
 
 ## Dataset
 
-The dataset is the initial _Commercial use subset_ taken from
+The dataset is the initial _commercial use subset_ taken from
 [COVID-19 Open Research Dataset (CORD-19)](https://pages.semanticscholar.org/coronavirus-research)
 and consists of 9000 scholarly articles.
 
