@@ -43,7 +43,7 @@ SEED = None
 NSAMPLES = 1
 
 # Number of batches (only affects speed/memory, must divide nsamples)
-BATCH_SIZE = 8
+BATCH_SIZE = 1
 
 # Number of tokens in generated text, if None (default), is determined by the
 # hyperparameters of the model
