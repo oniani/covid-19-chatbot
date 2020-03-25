@@ -94,9 +94,9 @@ TPU-trainable on Google Colaboratory.
 
 ## Future Work
 
-The work we would like to see in the future can include retraining the model
-with a different dataset, tweaking the hyperparameters, and/or applying the
-larger GPT-2 model (1.5B parameters).
+The work we would like to see in the future includes retraining the model with
+a different dataset, tweaking the hyperparameters, and/or applying the larger
+GPT-2 model (1.5B parameters).
 
 ## Developers
 
