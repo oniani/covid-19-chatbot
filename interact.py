@@ -172,9 +172,7 @@ def main():
                         final_answers.extend(temp)
 
                 try:
-                    print(
-                        similarity.filter_answer(question, final_answers, 5,)
-                    )
+                    print(similarity.filter_answer(question, final_answers, 4))
 
                 except Exception:
                     print(" ".join(final_answers))
