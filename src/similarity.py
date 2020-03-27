@@ -140,7 +140,9 @@ def cosine_similarity_filter(
         num_sentences = len(answer_list)
 
     answer_list.append(normalization_transform(question))
-    vectorized = TfidfVectorizer().fit_transform(answer_list)
+    vectorized = TfidfVectorizer().fit_transform(
+        [answer.lower() for answer in answer_list]
+    )
     cosine_similarity_matrix = cosine_similarity(vectorized)
 
     # Find `number_of_sentences` number of indices (for the answer sentences)
