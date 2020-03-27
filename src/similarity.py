@@ -22,6 +22,9 @@ import tensorflow_hub as hub
 
 from typing import List
 
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 
 nltk.download("stopwords")
 nltk.download("wordnet")
@@ -75,14 +78,14 @@ def filter_answer(
     """Get a better, filtered answer."""
 
     # Deal with cases related to the number of sentences
-    if num_sentences > len(answer_list) and len(answer_list) > 1:
-        num_sentences = len(answer_list) // 2
+    if len(answer_list) == 0:
+        return ""
 
     elif len(answer_list) == 1:
-        num_sentences = 1
+        return answer_list[0]
 
-    elif len(answer_list) == 0:
-        num_sentences = 0
+    if num_sentences > len(answer_list):
+        num_sentences = len(answer_list)
 
     # Load USE (Universal Sentence Encoder) version 2
     module_url = "https://tfhub.dev/google/universal-sentence-encoder-large/3"
@@ -104,8 +107,8 @@ def filter_answer(
     # Find `number_of_sentences` number of indices (for the answer sentences)
     # with the highest correlation to the question
     highest = sorted(
-        np.argpartition(-similarity_matrix[:-1, -1], num_sentences)[
-            :num_sentences
+        np.argpartition(similarity_matrix[:-1, -1], -num_sentences)[
+            -num_sentences:
         ]
     )
 
@@ -116,6 +119,45 @@ def filter_answer(
     final_answer = ""
     for idx in highest[:-1]:
         final_answer += answer_list[idx] + " "
-    final_answer += answer_list[-1]
+    final_answer += answer_list[highest[-1]]
+
+    return final_answer
+
+
+def cosine_similarity_filter(
+    question: str, answer_list: List[str], num_sentences: int
+) -> str:
+    """Find a cosine similarity between two strings."""
+
+    # Deal with cases related to the number of sentences
+    if len(answer_list) == 0:
+        return ""
+
+    elif len(answer_list) == 1:
+        return answer_list[0]
+
+    if num_sentences > len(answer_list):
+        num_sentences = len(answer_list)
+
+    answer_list.append(normalization_transform(question))
+    vectorized = TfidfVectorizer().fit_transform(answer_list)
+    cosine_similarity_matrix = cosine_similarity(vectorized)
+
+    # Find `number_of_sentences` number of indices (for the answer sentences)
+    # with the highest correlation to the question
+    highest = sorted(
+        np.argpartition(cosine_similarity_matrix[:-1, -1], -num_sentences)[
+            -num_sentences:
+        ]
+    )
+
+    # Prepare the final answer
+    #
+    # Although the words were converted to lowercase, `answer_list` indices
+    # remain the same.
+    final_answer = ""
+    for idx in highest[:-1]:
+        final_answer += answer_list[idx] + " "
+    final_answer += answer_list[highest[-1]]
 
     return final_answer
