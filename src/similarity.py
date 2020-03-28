@@ -72,7 +72,7 @@ def get_features(texts, embed):
         return sess.run(embed(texts))
 
 
-def filter_answer(
+def use_filter(
     question: str, answer_list: List[str], num_sentences: int
 ) -> str:
     """Get a better, filtered answer."""
@@ -100,8 +100,11 @@ def filter_answer(
     #
     # We proceed by creating the embeddings for the `answer_list` and
     # calculating the similarity scores
-    answer_list.append(normalization_transform(question))
-    features = get_features([answer.lower() for answer in answer_list], embed)
+    answer_list.append(question)
+    features = get_features(
+        [normalization_transform(answer.lower()) for answer in answer_list],
+        embed,
+    )
     similarity_matrix = calculate_similarity(features)
 
     # Find `number_of_sentences` number of indices (for the answer sentences)
@@ -139,9 +142,9 @@ def cosine_similarity_filter(
     if num_sentences > len(answer_list):
         num_sentences = len(answer_list)
 
-    answer_list.append(normalization_transform(question))
+    answer_list.append(question)
     vectorized = TfidfVectorizer().fit_transform(
-        [answer.lower() for answer in answer_list]
+        [normalization_transform(answer.lower()) for answer in answer_list]
     )
     cosine_similarity_matrix = cosine_similarity(vectorized)
 
