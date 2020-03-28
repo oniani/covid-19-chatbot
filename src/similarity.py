@@ -22,6 +22,8 @@ import tensorflow_hub as hub
 
 from typing import List
 
+from bert_serving.client import BertClient
+
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -30,8 +32,8 @@ nltk.download("stopwords")
 nltk.download("wordnet")
 
 
-def normalization_transform(text: str) -> str:
-    """Transform into a more 'classifiable' text."""
+def preprocess(text: str) -> str:
+    """Preprocess the sentences."""
 
     lemmatizer = nltk.stem.WordNetLemmatizer()
     stopwords = nltk.corpus.stopwords.words("english")
@@ -102,8 +104,7 @@ def use_filter(
     # calculating the similarity scores
     answer_list.append(question)
     features = get_features(
-        [normalization_transform(answer.lower()) for answer in answer_list],
-        embed,
+        [preprocess(answer.lower()) for answer in answer_list], embed,
     )
     similarity_matrix = calculate_similarity(features)
 
@@ -142,9 +143,10 @@ def cosine_similarity_filter(
     if num_sentences > len(answer_list):
         num_sentences = len(answer_list)
 
+    # Find the cosine similarity
     answer_list.append(question)
     vectorized = TfidfVectorizer().fit_transform(
-        [normalization_transform(answer.lower()) for answer in answer_list]
+        [preprocess(answer.lower()) for answer in answer_list]
     )
     cosine_similarity_matrix = cosine_similarity(vectorized)
 
@@ -154,6 +156,49 @@ def cosine_similarity_filter(
         np.argpartition(cosine_similarity_matrix[:-1, -1], -num_sentences)[
             -num_sentences:
         ]
+    )
+
+    # Prepare the final answer
+    #
+    # Although the words were converted to lowercase, `answer_list` indices
+    # remain the same.
+    final_answer = ""
+    for idx in highest[:-1]:
+        final_answer += answer_list[idx] + " "
+    final_answer += answer_list[highest[-1]]
+
+    return final_answer
+
+
+def bert_cosine_filter(
+    question: str, answer_list: List[str], num_sentences: int
+) -> str:
+    """Find a cosine similarity between two strings using BERT."""
+
+    # Deal with cases related to the number of sentences
+    if len(answer_list) == 0:
+        return ""
+
+    elif len(answer_list) == 1:
+        return answer_list[0]
+
+    if num_sentences > len(answer_list):
+        num_sentences = len(answer_list)
+
+    # Find the cosine similarity using BERT
+    answer_list.append(question)
+    bc = BertClient(port=5555, port_out=5556)
+    vectorized = bc.encode(
+        [preprocess(answer.lower()) for answer in answer_list]
+    )
+    bert_cosine_similarity_matrix = cosine_similarity(vectorized)
+
+    # Find `number_of_sentences` number of indices (for the answer sentences)
+    # with the highest correlation to the question
+    highest = sorted(
+        np.argpartition(
+            bert_cosine_similarity_matrix[:-1, -1], -num_sentences
+        )[-num_sentences:]
     )
 
     # Prepare the final answer
