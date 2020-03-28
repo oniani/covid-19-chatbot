@@ -173,7 +173,10 @@ def cosine_similarity_filter(
 def bert_cosine_filter(
     question: str, answer_list: List[str], num_sentences: int
 ) -> str:
-    """Find a cosine similarity between two strings using BERT."""
+    """Find a cosine similarity between two strings using BERT.
+
+    NOTE: First run `bert-serving-start -model_dir uncased_L-12_H-768_A-12`
+    """
 
     # Deal with cases related to the number of sentences
     if len(answer_list) == 0:
