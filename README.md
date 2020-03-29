@@ -6,6 +6,7 @@
 - [Model](#model)
 - [Chatbot](#chatbot)
 - [Transfer Learning](#transfer-learning)
+- [Benchmarks](#benchmarks)
 - [Future Work](#future-work)
 - [Developers](#developers)
 
@@ -91,6 +92,15 @@ drive.mount("/content/drive")
 
 Special thanks to [@shawwn](https://github.com/shawwn) for making GPT-2
 TPU-trainable on Google Colaboratory.
+
+## Benchmarks
+
+| Approach                                                                                                           | Review |
+| ------------------------------------------------------------------------------------------------------------------ | ------ |
+| [BERT + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/benchmark/BERT-Cosine.txt)       | TBD    |
+| [BioBERT + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/benchmark/BioBERT-Cosine.txt) | TBD    |
+| [TfidfVectorizer + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/benchmark/Cosine.txt) | TBD    |
+| [Universal Sentence Encoder (USE)](https://github.com/oniani/covid-19-chatbot/blob/master/benchmark/USE.txt)       | TBD    |
 
 ## Future Work
 
