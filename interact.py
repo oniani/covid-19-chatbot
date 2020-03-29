@@ -17,9 +17,9 @@ Description:
     We use 774M model of GPT=2.
 """
 
+import json
 import os
 import re
-import json
 
 import fire
 
@@ -73,7 +73,7 @@ CHECKPOINT = "model/model-2500.hdf5"
 def main():
     """Run the MODEL interactively."""
 
-    print("\nWelcome to Mayo Clinic's COVID-19 chatbot!")
+    print("\nWelcome to COVID-19 chatbot!")
     print("The input prompt will appear shortly\n\n")
 
     models_dir = os.path.expanduser(os.path.expandvars(MODELS_DIR))
@@ -135,7 +135,7 @@ def main():
                     answers += enc.decode(out[idx])
 
                 # Process the string (cleanup)
-                final_answers = cleaner.clean_text(final_answers)
+                final_answers = cleaner.clean_text(answers)
 
                 try:
                     print(similarity.use_filter(question, final_answers, 5))
