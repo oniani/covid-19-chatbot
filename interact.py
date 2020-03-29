@@ -120,7 +120,6 @@ def main():
 
             context_tokens = enc.encode(question)
 
-            generated = 0
             for _ in range(NSAMPLES // BATCH_SIZE):
                 out = sess.run(
                     output,
@@ -134,7 +133,6 @@ def main():
                 # Build the answers string
                 answers = ""  # Filter this out - set to [] every iter
                 for idx in range(BATCH_SIZE):
-                    generated += 1
                     answers += enc.decode(out[idx])
 
                 # Chunk the answer into sentences
@@ -150,32 +148,11 @@ def main():
                         item = item.replace("  ", " ")
                     answer_list[idx] = item
 
-                # Handle the punctuation
-                final_answers = []
-                for idx, answer in enumerate(answer_list):
-                    if answer.count(".") > 1:
-                        new_items = answer.split(".")
-                        temp = [item.strip() + "." for item in new_items[:-1]]
-                        temp.append(new_items[-1].strip())
-                        final_answers.extend(temp)
-
-                    if answer.count("?") > 1:
-                        new_items = answer.split("?")
-                        temp = [item.strip() + "?" for item in new_items[:-1]]
-                        temp.append(new_items[-1].strip())
-                        final_answers.extend(temp)
-
-                    if answer.count("!") > 1:
-                        new_items = answer.split("!")
-                        temp = [item.strip() + "!" for item in new_items[:-1]]
-                        temp.append(new_items[-1].strip())
-                        final_answers.extend(temp)
-
                 try:
-                    print(similarity.filter_answer(question, final_answers, 4))
+                    print(similarity.use_filter(question, answer_list, 5))
 
                 except Exception:
-                    print(" ".join(final_answers))
+                    print(" ".join(answer_list))
                     print("WARNING: Model cannot generate an answer using USE")
 
             print()
