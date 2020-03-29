@@ -26,6 +26,7 @@ import fire
 import numpy as np
 import tensorflow as tf
 
+import cleaner
 import encoder
 import model
 import sample
@@ -128,31 +129,19 @@ def main():
                     },
                 )[:, len(context_tokens) :]
 
-                # P R O C E S S  T H E  D A T A
-
                 # Build the answers string
-                answers = ""  # Filter this out - set to [] every iter
+                answers = ""
                 for idx in range(BATCH_SIZE):
                     answers += enc.decode(out[idx])
 
-                # Chunk the answer into sentences
-                answer_list = [
-                    answer.strip().replace("\n", " ")
-                    for answer in re.split(r"<|endoftext|>", answers)
-                    if answer != ""
-                ]
-
-                # Eliminate double spaces (if present)
-                for idx, item in enumerate(answer_list):
-                    while "  " in item:
-                        item = item.replace("  ", " ")
-                    answer_list[idx] = item
+                # Process the string (cleanup)
+                final_answers = cleaner.clean_text(final_answers)
 
                 try:
-                    print(similarity.use_filter(question, answer_list, 5))
+                    print(similarity.use_filter(question, final_answers, 5))
 
                 except Exception:
-                    print(" ".join(answer_list))
+                    print(" ".join(final_answers))
                     print("WARNING: Model cannot generate an answer using USE")
 
             print()
