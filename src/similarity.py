@@ -176,6 +176,9 @@ def bert_cosine_filter(
     """Find a cosine similarity between two strings using BERT.
 
     NOTE: First run `bert-serving-start -model_dir uncased_L-12_H-768_A-12`
+
+    NOTE: This also works with BioBERT, however, one must rename files in the
+          model directory so that it matches the structure of BERT
     """
 
     # Deal with cases related to the number of sentences
