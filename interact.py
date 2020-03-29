@@ -66,7 +66,7 @@ TOP_K = 40
 MODELS_DIR = "models"
 
 # Path to the saved MODEL info
-CHECKPOINT = "model/model-2000.hdf5"
+CHECKPOINT = "model/model-2500.hdf5"
 
 
 def main():
