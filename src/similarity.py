@@ -128,7 +128,7 @@ def use_filter(
     return final_answer
 
 
-def cosine_similarity_filter(
+def tfidfvectorizer_cosine_filter(
     question: str, answer_list: List[str], num_sentences: int
 ) -> str:
     """Find a cosine similarity between two strings."""

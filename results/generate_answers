@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 """
-Filename: compare_results.py
+Filename: generate_answers.py
 Author: David Oniani
 E-mail: oniani.david@mayo.edu
 
@@ -35,7 +35,8 @@ nltk.download("stopwords")
 nltk.download("wordnet")
 
 
-DATA_DIR: str = "generated_data"
+RAW_DATA_DIR: str = "answers_raw"
+DATA_DIR: str = "answers"
 
 
 def preprocess(text: str) -> str:
@@ -134,7 +135,7 @@ def use_filter(
     return final_answer
 
 
-def cosine_similarity_filter(
+def tfidfvectorizer_cosine_filter(
     question: str, answer_list: List[str], num_sentences: int
 ) -> str:
     """Find a cosine similarity between two strings."""
@@ -199,7 +200,7 @@ def bert_cosine_filter(
 
     # Find the cosine similarity using BERT
     answer_list.append(question)
-    bc = BertClient(port=5555, port_out=5556)  # , check_length=False)
+    bc = BertClient(port=5555, port_out=5556)
     vectorized = bc.encode(
         [preprocess(answer.lower()) for answer in answer_list]
     )
@@ -228,42 +229,41 @@ def bert_cosine_filter(
 def main() -> None:
     """The main function. Benchmarking is done here."""
 
-    data = []
-    for filename in os.listdir(DATA_DIR):
-        data.append(
+    for filename in os.listdir(RAW_DATA_DIR):
+        data = [
             extract.chunk_into_sentences(extract.clean_additional(item))
-            for item in extract.extract(os.path.join(DATA_DIR, filename))
-        )
-        break
+            for item in extract.extract(os.path.join(RAW_DATA_DIR, filename))
+        ]
 
-    print(data[0])
+        question = data[0][0]
+        answers_lists = data[1:]  # All answers (each one is already a list)
 
-    # print("Universal Sentence Encoder (USE) - Model 3 (Large)")
+        with open(
+            os.path.join(
+                DATA_DIR, filename[:-4], "tfidfvectorizer_cosine.txt"
+            ),
+            "w",
+        ) as file:
+            file.write(f"{'-' * 79}\n")
+            file.write("| MODEL" + 69 * " " + "|\n")
+            file.write(f"{'-' * 79}\n\n")
+            file.write(
+                "TfidfVectorizer + Cosine Similarity (Scikit-learn)\n\n"
+            )
 
-    # print("-" * 79)
-    # print("| ANSWER #0" + 67 * " " + "|")
-    # print("-" * 79 + "\n")
-    # print(use_filter(QUESTION, ANSWER_0, 3))
+            file.write(f"{'-' * 79}\n")
+            file.write("| QUESTION" + 69 * " " + "|\n")
+            file.write(f"{'-' * 79}\n\n")
+            file.write(f"{question}\n\n")
 
-    # print("\n" + "-" * 79)
-    # print("| ANSWER #1" + 67 * " " + "|")
-    # print("-" * 79 + "\n")
-    # print(use_filter(QUESTION, ANSWER_1, 3))
-
-    # print("\n" + "-" * 79)
-    # print("| ANSWER #2" + 67 * " " + "|")
-    # print("-" * 79 + "\n")
-    # print(use_filter(QUESTION, ANSWER_2, 3))
-
-    # print("\n" + "-" * 79)
-    # print("| ANSWER #3" + 67 * " " + "|")
-    # print("-" * 79 + "\n")
-    # print(use_filter(QUESTION, ANSWER_3, 3))
-
-    # print("\n" + "-" * 79)
-    # print("| ANSWER #4" + 67 * " " + "|")
-    # print("-" * 79 + "\n")
-    # print(use_filter(QUESTION, ANSWER_4, 3))
+            for idx, answer_list in enumerate(answers_lists):
+                file.write(f"{'-' * 79}\n")
+                file.write(f"| ANSWER #{idx}" + 67 * " " + "|" + "\n")
+                file.write(f"{'-' * 79}\n\n")
+                file.write(
+                    tfidfvectorizer_cosine_filter(question, answer_list, 3)
+                )
+                file.write("\n\n")
 
 
 if __name__ == "__main__":
