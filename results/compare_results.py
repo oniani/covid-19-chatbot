@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 """
-Filename: compare_results
+Filename: compare_results.py
 Author: David Oniani
 E-mail: oniani.david@mayo.edu
 
@@ -11,10 +11,13 @@ Description:
     This approach uses Universal Sentence Classfier (USE).
 """
 
+import os
 import re
 import string
 
 import nltk
+
+import extract
 
 import numpy as np
 import tensorflow as tf
@@ -27,10 +30,12 @@ from bert_serving.client import BertClient
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from answers import *
 
 nltk.download("stopwords")
 nltk.download("wordnet")
+
+
+DATA_DIR: str = "generated_data"
 
 
 def preprocess(text: str) -> str:
@@ -223,32 +228,42 @@ def bert_cosine_filter(
 def main() -> None:
     """The main function. Benchmarking is done here."""
 
-    print("Universal Sentence Encoder (USE) - Model 3 (Large)")
+    data = []
+    for filename in os.listdir(DATA_DIR):
+        data.append(
+            extract.chunk_into_sentences(extract.clean_additional(item))
+            for item in extract.extract(os.path.join(DATA_DIR, filename))
+        )
+        break
 
-    print("-" * 79)
-    print("| ANSWER #0" + 67 * " " + "|")
-    print("-" * 79 + "\n")
-    print(use_filter(QUESTION, ANSWER_0, 3))
+    print(data[0])
 
-    print("\n" + "-" * 79)
-    print("| ANSWER #1" + 67 * " " + "|")
-    print("-" * 79 + "\n")
-    print(use_filter(QUESTION, ANSWER_1, 3))
+    # print("Universal Sentence Encoder (USE) - Model 3 (Large)")
 
-    print("\n" + "-" * 79)
-    print("| ANSWER #2" + 67 * " " + "|")
-    print("-" * 79 + "\n")
-    print(use_filter(QUESTION, ANSWER_2, 3))
+    # print("-" * 79)
+    # print("| ANSWER #0" + 67 * " " + "|")
+    # print("-" * 79 + "\n")
+    # print(use_filter(QUESTION, ANSWER_0, 3))
 
-    print("\n" + "-" * 79)
-    print("| ANSWER #3" + 67 * " " + "|")
-    print("-" * 79 + "\n")
-    print(use_filter(QUESTION, ANSWER_3, 3))
+    # print("\n" + "-" * 79)
+    # print("| ANSWER #1" + 67 * " " + "|")
+    # print("-" * 79 + "\n")
+    # print(use_filter(QUESTION, ANSWER_1, 3))
 
-    print("\n" + "-" * 79)
-    print("| ANSWER #4" + 67 * " " + "|")
-    print("-" * 79 + "\n")
-    print(use_filter(QUESTION, ANSWER_4, 3))
+    # print("\n" + "-" * 79)
+    # print("| ANSWER #2" + 67 * " " + "|")
+    # print("-" * 79 + "\n")
+    # print(use_filter(QUESTION, ANSWER_2, 3))
+
+    # print("\n" + "-" * 79)
+    # print("| ANSWER #3" + 67 * " " + "|")
+    # print("-" * 79 + "\n")
+    # print(use_filter(QUESTION, ANSWER_3, 3))
+
+    # print("\n" + "-" * 79)
+    # print("| ANSWER #4" + 67 * " " + "|")
+    # print("-" * 79 + "\n")
+    # print(use_filter(QUESTION, ANSWER_4, 3))
 
 
 if __name__ == "__main__":

@@ -135,7 +135,11 @@ def main():
                     answers += enc.decode(out[idx])
 
                 # Process the string (cleanup)
-                final_answers = cleaner.clean_text(answers)
+                clean_answers = cleaner.clean_additional(
+                    " ".join(cleaner.clean_text(answers))
+                )
+
+                final_answers = cleaner.chunk_into_sentences(clean_answers)
 
                 try:
                     print(similarity.use_filter(question, final_answers, 5))

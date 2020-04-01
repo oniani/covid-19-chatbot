@@ -62,3 +62,27 @@ def clean_text(answers: str) -> List[str]:
             final_answers.append(answer)
 
     return final_answers
+
+
+def clean_additional(string: str) -> str:
+    """Additional cleanup."""
+
+    clean_string = re.sub(r"(?:\d+,\s*)+\d+", "", string)
+    clean_string = re.sub(r"\[\d*\]", "", clean_string)
+
+    for _ in range(2):
+        clean_string = (
+            clean_string.replace("  ", " ")
+            .replace(" . ", ". ")
+            .replace(" , ", ", ")
+            .replace(" ? ", "? ")
+            .replace(" ! ", "! ")
+        )
+
+    return clean_string
+
+
+def chunk_into_sentences(string: str) -> List[str]:
+    """Chunks a long string into a list of sentences."""
+
+    return re.split(r"\.\s", string)
