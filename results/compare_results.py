@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 """
-Filename: similarity.py
+Filename: compare_results
 Author: David Oniani
 E-mail: oniani.david@mayo.edu
 
