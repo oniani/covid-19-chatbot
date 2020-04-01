@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 """
-Filename: generate_answers.py
+Filename: generate_final_results.py
 Author: David Oniani
 E-mail: oniani.david@mayo.edu
 
@@ -11,6 +11,7 @@ Description:
     This approach uses Universal Sentence Classfier (USE).
 """
 
+import csv
 import os
 import re
 import string
@@ -35,7 +36,6 @@ nltk.download("stopwords")
 nltk.download("wordnet")
 
 
-RAW_DATA_DIR: str = "answers_raw"
 DATA_DIR: str = "answers"
 
 
@@ -96,7 +96,7 @@ def use_filter(
     if num_sentences > len(answer_list):
         num_sentences = len(answer_list)
 
-    # Load USE (Universal Sentence Encoder) version 2
+    # Load USE (Universal Sentence Encoder) version 3 - large
     module_url = "https://tfhub.dev/google/universal-sentence-encoder-large/3"
     print("Loading model from {}".format(module_url))
     embed = hub.Module(module_url)
@@ -110,8 +110,9 @@ def use_filter(
     # We proceed by creating the embeddings for the `answer_list` and
     # calculating the similarity scores
     answer_list.append(question)
+    answers = [preprocess(answer.lower()) for answer in answer_list]
     features = get_features(
-        [preprocess(answer.lower()) for answer in answer_list], embed,
+        [answer for answer in answers if answer != ""], embed,
     )
     similarity_matrix = calculate_similarity(features)
 
@@ -152,8 +153,9 @@ def tfidfvectorizer_cosine_filter(
 
     # Find the cosine similarity
     answer_list.append(question)
+    answers = [preprocess(answer.lower()) for answer in answer_list]
     vectorized = TfidfVectorizer().fit_transform(
-        [preprocess(answer.lower()) for answer in answer_list]
+        [answer for answer in answers if answer != ""]
     )
     cosine_similarity_matrix = cosine_similarity(vectorized)
 
@@ -201,9 +203,8 @@ def bert_cosine_filter(
     # Find the cosine similarity using BERT
     answer_list.append(question)
     bc = BertClient(port=5555, port_out=5556)
-    vectorized = bc.encode(
-        [preprocess(answer.lower()) for answer in answer_list]
-    )
+    answers = [preprocess(answer.lower()) for answer in answer_list]
+    vectorized = bc.encode([answer for answer in answers if answer != ""])
     bert_cosine_similarity_matrix = cosine_similarity(vectorized)
 
     # Find `number_of_sentences` number of indices (for the answer sentences)
@@ -229,41 +230,27 @@ def bert_cosine_filter(
 def main() -> None:
     """The main function. Benchmarking is done here."""
 
-    for filename in os.listdir(RAW_DATA_DIR):
+    writer = csv.writer(open("use_cosine.csv", "w"))
+    writer.writerow(["Question", "Answer", "Approach"])
+
+    for filename in os.listdir(DATA_DIR):
         data = [
             extract.chunk_into_sentences(extract.clean_additional(item))
-            for item in extract.extract(os.path.join(RAW_DATA_DIR, filename))
+            for item in extract.extract(os.path.join(DATA_DIR, filename))
         ]
 
         question = data[0][0]
-        answers_lists = data[1:]  # All answers (each one is already a list)
+        answer_lists = data[1:]  # All answers (each one is already a list)
 
-        with open(
-            os.path.join(
-                DATA_DIR, filename[:-4], "tfidfvectorizer_cosine.txt"
-            ),
-            "w",
-        ) as file:
-            file.write(f"{'-' * 79}\n")
-            file.write("| MODEL" + 69 * " " + "|\n")
-            file.write(f"{'-' * 79}\n\n")
-            file.write(
-                "TfidfVectorizer + Cosine Similarity (Scikit-learn)\n\n"
+        for answer_list in answer_lists:
+            writer.writerow(
+                [
+                    question,
+                    use_filter(question, answer_list, 3),
+                    "Universal Sentence Encoder Version 3 Large + Cosine "
+                    "Similarity (Scikit-learn)",
+                ]
             )
-
-            file.write(f"{'-' * 79}\n")
-            file.write("| QUESTION" + 69 * " " + "|\n")
-            file.write(f"{'-' * 79}\n\n")
-            file.write(f"{question}\n\n")
-
-            for idx, answer_list in enumerate(answers_lists):
-                file.write(f"{'-' * 79}\n")
-                file.write(f"| ANSWER #{idx}" + 67 * " " + "|" + "\n")
-                file.write(f"{'-' * 79}\n\n")
-                file.write(
-                    tfidfvectorizer_cosine_filter(question, answer_list, 3)
-                )
-                file.write("\n\n")
 
 
 if __name__ == "__main__":
