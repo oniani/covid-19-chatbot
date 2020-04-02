@@ -102,6 +102,8 @@ TPU-trainable on Google Colaboratory.
 | [BioBERT + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/results/biobert_cosine.csv)                | TBD    |
 | [Universal Sentence Encoder (USE)](https://github.com/oniani/covid-19-chatbot/blob/master/results/use_cosine.csv)               | TBD    |
 
+The results are also available in a single file [here](https://github.com/oniani/covid-19-chatbot/blob/master/results/answers.csv).
+
 ## Future Work
 
 The work we would like to see in the future includes retraining the model with
