@@ -230,7 +230,7 @@ def bert_cosine_filter(
 def main() -> None:
     """The main function. Benchmarking is done here."""
 
-    writer = csv.writer(open("use_cosine.csv", "w"))
+    writer = csv.writer(open("use_inner.csv", "w"))
     writer.writerow(["Question", "Answer", "Approach"])
 
     for filename in os.listdir(DATA_DIR):
@@ -247,8 +247,8 @@ def main() -> None:
                 [
                     question,
                     use_filter(question, answer_list, 3),
-                    "Universal Sentence Encoder Version 3 Large + Cosine "
-                    "Similarity (Scikit-learn)",
+                    "Universal Sentence Encoder Version 3 Large + Inner "
+                    "Product (numpy)",
                 ]
             )
 
