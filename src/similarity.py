@@ -89,7 +89,7 @@ def use_filter(
     if num_sentences > len(answer_list):
         num_sentences = len(answer_list)
 
-    # Load USE (Universal Sentence Encoder) version 2
+    # Load USE (Universal Sentence Encoder) version 3 - large
     module_url = "https://tfhub.dev/google/universal-sentence-encoder-large/3"
     print("Loading model from {}".format(module_url))
     embed = hub.Module(module_url)
@@ -103,8 +103,9 @@ def use_filter(
     # We proceed by creating the embeddings for the `answer_list` and
     # calculating the similarity scores
     answer_list.append(question)
+    answers = [preprocess(answer.lower()) for answer in answer_list]
     features = get_features(
-        [preprocess(answer.lower()) for answer in answer_list], embed,
+        [answer for answer in answers if answer != ""], embed,
     )
     similarity_matrix = calculate_similarity(features)
 
@@ -145,8 +146,9 @@ def tfidfvectorizer_cosine_filter(
 
     # Find the cosine similarity
     answer_list.append(question)
+    answers = [preprocess(answer.lower()) for answer in answer_list]
     vectorized = TfidfVectorizer().fit_transform(
-        [preprocess(answer.lower()) for answer in answer_list]
+        [answer for answer in answers if answer != ""]
     )
     cosine_similarity_matrix = cosine_similarity(vectorized)
 
@@ -194,9 +196,8 @@ def bert_cosine_filter(
     # Find the cosine similarity using BERT
     answer_list.append(question)
     bc = BertClient(port=5555, port_out=5556)
-    vectorized = bc.encode(
-        [preprocess(answer.lower()) for answer in answer_list]
-    )
+    answers = [preprocess(answer.lower()) for answer in answer_list]
+    vectorized = bc.encode([answer for answer in answers if answer != ""])
     bert_cosine_similarity_matrix = cosine_similarity(vectorized)
 
     # Find `number_of_sentences` number of indices (for the answer sentences)
