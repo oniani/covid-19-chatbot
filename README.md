@@ -112,4 +112,4 @@ GPT-2 model (1.5B parameters).
 
 ## Developers
 
-The project was developed by [David Oniani](https://github.com/oniani) and [Dr. Yanshan Wang](https://github.com/yanshanwang).
+The project was developed by [David Oniani](https://github.com/oniani) and [Dr. Yanshan Wang](https://www.mayo.edu/research/faculty/wang-yanshan-ph-d/bio-20199713).
