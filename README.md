@@ -100,7 +100,7 @@ TPU-trainable on Google Colaboratory.
 | [TfidfVectorizer + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/results/tfidvectorizer_cosine.csv) | TBD    |
 | [BERT + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/results/bert_cosine.csv)                      | TBD    |
 | [BioBERT + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/results/biobert_cosine.csv)                | TBD    |
-| [Universal Sentence Encoder (USE)](https://github.com/oniani/covid-19-chatbot/blob/master/results/use_inner.csv)               | TBD    |
+| [Universal Sentence Encoder (USE)](https://github.com/oniani/covid-19-chatbot/blob/master/results/use_inner.csv)                | TBD    |
 
 The results are also available in a single file [here](https://github.com/oniani/covid-19-chatbot/blob/master/results/answers.csv).
 
@@ -112,4 +112,4 @@ GPT-2 model (1.5B parameters).
 
 ## Developers
 
-The project was developed by [David Oniani](https://github.com/oniani) and [Dr. Yanshan Wang](https://www.mayo.edu/research/faculty/wang-yanshan-ph-d/bio-20199713).
+The project was developed by David Oniani and [Dr. Yanshan Wang](https://www.mayo.edu/research/faculty/wang-yanshan-ph-d/bio-20199713).
