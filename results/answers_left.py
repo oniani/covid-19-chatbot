@@ -2,12 +2,12 @@
 # encoding: UTF-8
 
 """
-Filename: 220_answers_left.py
+Filename: answers_left.py
 Author: David Oniani
 E-mail: oniani.david@mayo.edu
 
 Description:
-    Filter out 220 answers that have to be annotated.
+    Generate the file with the answers that are left to be annotated.
 """
 
 import csv
@@ -63,17 +63,7 @@ def main() -> None:
 
         for question, answer, approach in left:
             writer.writerow(
-                [
-                    question,
-                    answer,
-                    "Answer Category - Relevant?",
-                    "Answer Category - Well-formed?",
-                    "Answer Category - Informative?",
-                    "Answer Category - Acceptable?",
-                    "Answer Category - Poor?",
-                    "Answer Relevance (1-5)",
-                    approach,
-                ]
+                [question, answer, "", "", "", "", "", "", approach,]
             )
 
 
