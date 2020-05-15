@@ -14,7 +14,7 @@ Description:
     It relies on two state-of-the-art models: GPT-2 and USE (Universal Sentence
     Encoder).
 
-    We use 774M model of GPT=2.
+    We use 774M model of GPT-2.
 """
 
 import json
