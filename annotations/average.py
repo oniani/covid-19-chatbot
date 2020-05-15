@@ -15,7 +15,9 @@ import pandas as pd
 
 
 def avg_approach(df: pd.DataFrame, name: str) -> float:
-    return (df.loc[df["Approach"] == name]["Answer Relevance (1-5)"]).mean()
+    return round(
+        (df.loc[df["Approach"] == name]["Answer Relevance (1-5)"]).mean(), 3
+    )
 
 
 if __name__ == "__main__":
