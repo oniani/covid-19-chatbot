@@ -36,9 +36,9 @@ The model is hosted and available at this [Google Drive link](https://drive.goog
 
 ## Chatbot
 
-Once you have downloaded the model, make a directory called `model` and put the
-model inside this directory. Afterward, to run the chatbot, execute the
-sequence of commands shown below.
+Once you have downloaded the model, and put the model inside the `models`
+directory. Afterward, to run the chatbot, execute the sequence of commands
+shown below.
 
 ```sh
 git clone https://github.com/oniani/covid-19-chatbot
@@ -46,6 +46,11 @@ cd covid-19-chatbot
 python3 -m pip install -r requirements.txt
 PYTHONPATH=src python3 -W ignore interact.py
 ```
+
+### Web Application
+
+For running the web application, navigate to the `web-app` directory and run
+`flask run` (it should be hosted on port 5000, usually).
 
 ## Transfer Learning
 

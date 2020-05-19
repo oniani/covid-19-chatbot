@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 """
-Filename: interact.py
+Filename: generate_response.py
 Author:   David Oniani
 E-mail:   oniani.david@mayo.edu
 
@@ -16,6 +16,10 @@ Description:
 
     We use 774M model of GPT-2.
 """
+
+import sys
+
+sys.path.insert(1, "../src/")
 
 import json
 import os
@@ -64,23 +68,20 @@ TOP_K = 40
 
 # Path to parent folder containing MODEL subfolders
 # (i.e. contains the <MODEL_NAME> folder)
-MODELS_DIR = "models"
+MODELS_DIR = "../models"
 
 # Path to the saved MODEL info
-CHECKPOINT = "models/model-2500.hdf5"
+CHECKPOINT = "../models/model-2500.hdf5"
 
 
-def main():
-    """Run the MODEL interactively."""
-
-    print("\nWelcome to COVID-19 chatbot!")
-    print("The input prompt will appear shortly\n\n")
+def chatbot_response(question: str) -> str:
+    """Respond to a question."""
 
     models_dir = os.path.expanduser(os.path.expandvars(MODELS_DIR))
 
     assert NSAMPLES % BATCH_SIZE == 0
 
-    enc = encoder.get_encoder(MODEL_NAME)
+    enc = encoder.get_encoder(MODEL_NAME, dirback=True)
     hparams = model.default_hparams()
 
     with open(os.path.join(models_dir, MODEL_NAME, "hparams.json")) as file:
@@ -112,58 +113,33 @@ def main():
         saver = tflex.Saver()
         saver.restore(sess, CHECKPOINT)
 
-        while True:
-            question = input("COVID-19 CHATBOT> ")
+        context_tokens = enc.encode(question)
 
-            while not question:
-                print("Prompt should not be empty!")
-                question = input("COVID-19 CHATBOT> ")
+        response: str = ""
+        for _ in range(NSAMPLES // BATCH_SIZE):
+            out = sess.run(
+                output,
+                feed_dict={
+                    context: [context_tokens for _ in range(BATCH_SIZE)]
+                },
+            )[:, len(context_tokens) :]
 
-            context_tokens = enc.encode(question)
+            # Build the answers string
+            answers = ""
+            for idx in range(BATCH_SIZE):
+                answers += enc.decode(out[idx])
 
-            for _ in range(NSAMPLES // BATCH_SIZE):
-                out = sess.run(
-                    output,
-                    feed_dict={
-                        context: [context_tokens for _ in range(BATCH_SIZE)]
-                    },
-                )[:, len(context_tokens) :]
+            # Process the string (cleanup)
+            clean_answers = cleaner.clean_additional(
+                " ".join(cleaner.clean_text(answers))
+            )
 
-                # Build the answers string
-                answers = ""
-                for idx in range(BATCH_SIZE):
-                    answers += enc.decode(out[idx])
+            final_answers = cleaner.chunk_into_sentences(clean_answers)
 
-                # Process the string (cleanup)
-                clean_answers = cleaner.clean_additional(
-                    " ".join(cleaner.clean_text(answers))
-                )
+            try:
+                response += similarity.use_filter(question, final_answers, 5)
 
-                final_answers = cleaner.chunk_into_sentences(clean_answers)
+            except Exception:
+                response += " ".join(final_answers)
 
-                try:
-                    print(similarity.use_filter(question, final_answers, 5))
-
-                except Exception:
-                    print(" ".join(final_answers))
-                    print("WARNING: Model cannot generate an answer using USE")
-
-            print()
-            print("=" * 79)
-            print()
-
-
-if __name__ == "__main__":
-    # Suppress (most) logging messages
-    import absl
-    import logging
-
-    logger = logging.getLogger()
-    logger.disabled = True
-    absl.logging._warn_preinit_stderr = 0
-
-    # Disable TensorFlow deprecation warnings
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
-
-    # Run
-    fire.Fire(main())
+        return response
