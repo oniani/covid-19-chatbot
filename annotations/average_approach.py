@@ -2,7 +2,7 @@
 # encoding: UTF-8
 
 """
-Filename: average.py
+Filename: average_approach.py
 Author:   David Oniani
 E-mail:   oniani.david@mayo.edu
 
