@@ -19,20 +19,20 @@ def one_sample_one_tailed(sample_data, popmean, alternative="greater"):
 
 if __name__ == "__main__":
     sample_data = [
-        0.833,
-        0.274,
-        0.353,
-        0.055,
-        0.368,
-        0.15,
-        0.0,
-        0.631,
-        0.222,
+        0.750,
+        0.250,
+        0.300,
+        0.050,
+        0.350,
+        0.150,
+        0.000,
+        0.000,
+        0.200,
         0.294,
-        0.2,
-        0.158,
+        0.200,
+        0.150,
     ]
 
-    one_sample_one_tailed(sample_data, 0.2)
-    one_sample_one_tailed(sample_data, 0.353)
-    one_sample_one_tailed(sample_data, 0.222)
+    one_sample_one_tailed(sample_data, 0.200)
+    one_sample_one_tailed(sample_data, 0.300)
+    one_sample_one_tailed(sample_data, 0.200)
