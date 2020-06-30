@@ -4,6 +4,8 @@
 general research purposes only. It is not a diagnostic tool, nor is it a
 substitute for medical advice or treatment for specific conditions.**
 
+The paper is available [here: https://arxiv.org/abs/2006.10964](https://arxiv.org/abs/2006.10964).
+
 ## Table of Contents
 
 - [Dataset](#dataset)
@@ -105,13 +107,6 @@ Special thanks to [@shawwn](https://github.com/shawwn) for making GPT-2
 TPU-trainable on Google Colaboratory.
 
 ## Results
-
-| Approach                                                                                                                        | Review |
-| ------------------------------------------------------------------------------------------------------------------------------- | ------ |
-| [TfidfVectorizer + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/results/tfidvectorizer_cosine.csv) | TBD    |
-| [BERT + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/results/bert_cosine.csv)                      | TBD    |
-| [BioBERT + Cosine Similarity](https://github.com/oniani/covid-19-chatbot/blob/master/results/biobert_cosine.csv)                | TBD    |
-| [Universal Sentence Encoder (USE)](https://github.com/oniani/covid-19-chatbot/blob/master/results/use_inner.csv)                | TBD    |
 
 The results are also available in a single file [here](https://github.com/oniani/covid-19-chatbot/blob/master/results/answers_all.csv).
 
