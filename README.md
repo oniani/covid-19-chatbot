@@ -4,17 +4,22 @@
 general research purposes only. It is not a diagnostic tool, nor is it a
 substitute for medical advice or treatment for specific conditions.**
 
-The paper is available [here: https://arxiv.org/abs/2006.10964](https://arxiv.org/abs/2006.10964).
 
 ## Table of Contents
 
+- [Paper](#paper)
 - [Dataset](#dataset)
 - [Model](#model)
 - [Chatbot](#chatbot)
 - [Transfer Learning](#transfer-learning)
 - [Results](#results)
 - [Future Work](#future-work)
-- [Developers](#developers)
+- [Development](#development)
+
+## Paper
+
+Our work has been accepted at [ACM-BCB](https://acm-bcb.org/).
+The paper is available [here: https://arxiv.org/abs/2006.10964](https://arxiv.org/abs/2006.10964).
 
 ## Dataset
 
@@ -116,6 +121,6 @@ The work we would like to see in the future includes retraining the model with
 a different dataset, tweaking the hyperparameters, and/or applying the larger
 GPT-2 model (1.5B parameters).
 
-## Developers
+## Development
 
 The project was developed by David Oniani and [Dr. Yanshan Wang](https://www.mayo.edu/research/faculty/wang-yanshan-ph-d/bio-20199713).
