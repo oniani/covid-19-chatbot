@@ -19,7 +19,7 @@ substitute for medical advice or treatment for specific conditions.**
 ## Paper
 
 Our work has been accepted at [ACM-BCB](https://acm-bcb.org/).
-The paper is available [here: https://arxiv.org/abs/2006.10964](https://arxiv.org/abs/2006.10964).
+The paper is available [here: https://dl.acm.org/doi/abs/10.1145/3388440.3412413](https://dl.acm.org/doi/abs/10.1145/3388440.3412413).
 
 ## Dataset
 

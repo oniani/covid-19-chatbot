@@ -6,8 +6,7 @@ Filename: tflex.py
 Author:   David Oniani
 E-mail:   oniani.david@mayo.edu
 
-Originally created together by @shawwn (https://github.com/shawwn)
-Updated by David Oniani
+Original Author: @shawwn (https://github.com/shawwn)
 
 Description:
     Utilities for training and loading the model via TPU.
