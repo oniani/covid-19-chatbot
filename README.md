@@ -4,18 +4,6 @@
 general research purposes only. It is not a diagnostic tool, nor is it a
 substitute for medical advice or treatment for specific conditions.**
 
-
-## Table of Contents
-
-- [Paper](#paper)
-- [Dataset](#dataset)
-- [Model](#model)
-- [Chatbot](#chatbot)
-- [Transfer Learning](#transfer-learning)
-- [Results](#results)
-- [Future Work](#future-work)
-- [Development](#development)
-
 ## Paper
 
 Our work has been accepted at [ACM-BCB](https://acm-bcb.org/).
