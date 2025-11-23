@@ -7,7 +7,7 @@ Author:   David Oniani
 E-mail:   oniani.david@mayo.edu
 
 Description:
-    Reports metrics for Inner Annotation Agreement (IAA).
+    Reports metrics for Inter-Annotator Agreement (IAA).
 """
 
 import numpy as np
